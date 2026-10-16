@@ -574,21 +574,21 @@
                 <div class="flex flex-wrap items-center gap-2 mb-3">
                     <span class="step-num">2</span>
                     <span class="font-semibold text-slate-800">运行角色</span>
-                    <span class="text-xs text-slate-400" id="role-hint">同一个程序，通过 config.yml 设置单机 / 中控 / 受管机模式</span>
+                    <span class="text-xs text-slate-400" id="role-hint">通过配置中的 cluster 段设置单机 / 中控 / 受管机模式</span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <button type="button" class="option-card" data-opt="role" data-val="server" onclick="setOpt('role','server')">
                         <span class="badge badge-blue">默认</span>
                         <p class="font-semibold text-slate-800 mt-1">单机</p>
-                        <p class="text-xs text-slate-500 mt-1">--mode server，独立管理本机</p>
+                        <p class="text-xs text-slate-500 mt-1">cluster.mode: server，独立管理本机</p>
                     </button>
                     <button type="button" class="option-card" data-opt="role" data-val="center" onclick="setOpt('role','center')">
                         <p class="font-semibold text-slate-800">中控</p>
-                        <p class="text-xs text-slate-500 mt-1">--mode center，一个控制台管理多台服务器</p>
+                        <p class="text-xs text-slate-500 mt-1">cluster.mode: center，一个控制台管理多台服务器</p>
                     </button>
                     <button type="button" class="option-card" data-opt="role" data-val="agent" onclick="setOpt('role','agent')">
                         <p class="font-semibold text-slate-800">受管机</p>
-                        <p class="text-xs text-slate-500 mt-1">--mode agent，主动出站接入中控，不监听端口</p>
+                        <p class="text-xs text-slate-500 mt-1">cluster.mode: agent，主动出站接入中控，不监听端口</p>
                     </button>
                 </div>
                 <div id="role-agent-inputs" class="hidden mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -947,11 +947,11 @@
                 <div class="flex flex-wrap items-center justify-center gap-2 text-sm">
                     <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 text-slate-600">浏览器</div>
                     <span class="arch-arrow">→</span>
-                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">server.mode: center</div>
+                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">cluster.mode: center</div>
                     <span class="arch-arrow">⇄</span>
                     <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 text-slate-600">隧道</div>
                     <span class="arch-arrow">⇠</span>
-                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">server.mode: agent</div>
+                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">cluster.mode: agent</div>
                     <span class="text-slate-400 text-xs">× N 台</span>
                 </div>
                 <p class="mt-4 text-xs text-slate-400 text-center">隧道由受管机主动发起，中控从不主动外连；受管机位于 NAT 或防火墙后也可以接入</p>
@@ -960,7 +960,7 @@
             <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div class="bg-white border border-slate-200 rounded-lg p-4">
                     <p class="font-semibold text-slate-700 mb-1">一个二进制，三种角色</p>
-                    <p class="text-slate-500"><code class="bg-slate-100 px-1 rounded">--mode</code> 选择 <code class="bg-slate-100 px-1 rounded">server</code>（默认单机）、<code class="bg-slate-100 px-1 rounded">center</code>（中控）或 <code class="bg-slate-100 px-1 rounded">agent</code>（受管机），无需额外程序，默认配置文件无需改动</p>
+                    <p class="text-slate-500">通过配置中的 <code class="bg-slate-100 px-1 rounded">cluster.mode</code> 选择 <code class="bg-slate-100 px-1 rounded">server</code>（默认单机）、<code class="bg-slate-100 px-1 rounded">center</code>（中控）或 <code class="bg-slate-100 px-1 rounded">agent</code>（受管机），修改后重启服务生效</p>
                 </div>
                 <div class="bg-white border border-slate-200 rounded-lg p-4">
                     <p class="font-semibold text-slate-700 mb-1">切换节点即切换视角</p>
@@ -968,7 +968,7 @@
                 </div>
                 <div class="bg-white border border-slate-200 rounded-lg p-4">
                     <p class="font-semibold text-slate-700 mb-1">账号与权限统一在中控</p>
-                    <p class="text-slate-500">成员、权限、系统配置和 AI 助手只维护一份；单机用户看不到任何节点界面，升级后行为不变</p>
+                    <p class="text-slate-500">成员、权限、系统配置和 AI 助手只维护一份</p>
                 </div>
                 <div class="bg-white border border-slate-200 rounded-lg p-4">
                     <p class="font-semibold text-slate-700 mb-1">接入可控，随时吊销</p>
@@ -1382,7 +1382,7 @@
 
         function buildNotes(s, v) {
             var notes = [];
-            if (s.method !== 'docker') notes.push('请以 root 身份在 Bash 中执行；脚本负责安装与后续升级；运行设置在控制台或 config.yml 中填写。');
+            if (s.method !== 'docker') notes.push('请以 root 身份在 Bash 中执行；脚本负责安装与后续升级。');
             if (s.method === 'docker') {
                 notes.push('请确认 Docker 已启动；数据目录 ' + '<code>' + esc(v.data) + '</code>' + ' 会挂载到容器 /data。');
                 if (s.net === 'auto') notes.push('自动创建单机 bridge 网络 sdnet；跨主机需在高级选项中选择已有 overlay 网络。');
@@ -1416,7 +1416,7 @@
             });
             byId('role-hint').textContent = s.method === 'script-docker'
                 ? '安装脚本的 Docker 模式固定为单机；中控 / 受管机请选二进制或 docker run'
-                : '同一个程序，通过 config.yml 设置单机 / 中控 / 受管机模式';
+                : '通过配置中的 cluster 段设置单机 / 中控 / 受管机模式';
 
             var desc = SOURCE_DESC[s.method];
             byId('source-auto-desc').textContent = desc[0];
@@ -1465,7 +1465,7 @@
             var command = joinSegments(segments);
             if (s.role !== 'server') {
                 var configPath = isDocker ? v.data + '/conf/isrvd.yml' : '/usr/local/isrvd/config.yml';
-                var configLines = ['# ' + (isDocker ? '启动前' : '安装后') + '将以下字段合并到完整配置 ' + configPath, '# server:', '#   mode: ' + s.role];
+                var configLines = ['# ' + (isDocker ? '启动前' : '安装后') + '将以下字段合并到完整配置 ' + configPath, '# cluster:', '#   mode: ' + s.role];
                 if (isAgent) configLines.push('#   centerUrl: ' + JSON.stringify(v.centerUrl), '#   nodeToken: ' + JSON.stringify(v.code));
                 if (!isDocker) configLines.push('# 保存配置后执行 systemctl restart isrvd；安装默认以单机模式启动');
                 command = configLines.join('\n') + '\n\n' + command;
