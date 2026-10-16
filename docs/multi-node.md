@@ -1,6 +1,6 @@
 # 集中管理（多服务器）
 
-同一个 `isrvd` 二进制，通过 `config.yml` 的 `cluster.mode` 选择角色，也可在控制台「系统配置 / 基础服务」配置。模式与连接参数保存后重启生效：
+同一个 `isrvd` 二进制，通过环境变量 `ISRVD_MODE` 选择角色。部署参数不存入 YAML 或 etcd，也不由后台配置 API 管理；修改环境变量后重启生效：
 
 | 模式 | 作用 |
 |------|------|
@@ -14,16 +14,16 @@
                                                   ▲ 受管机主动出站，中控从不主动外连
 ```
 
-中控在原配置的 `cluster` 分区设置 `mode: center`；受控机设置：
+中控设置 `ISRVD_MODE=center`；受控机启动示例：
 
-```yaml
-cluster:
-  mode: agent
-  centerUrl: https://center.example.com
-  nodeToken: "<中控生成的 token>"
+```bash
+export ISRVD_MODE=agent
+export ISRVD_CENTER_URL=https://center.example.com
+export ISRVD_NODE_TOKEN='<中控生成的 token>'
+isrvd
 ```
 
-以上字段合并进已有配置，保留其他设置，启动只需执行 `isrvd`。
+旧 YAML 的 `cluster` 分区不再读取，后续保存配置时会移除。升级前请将部署参数迁移到进程环境；未设置模式时按单机启动。各节点可以共享 etcd 配置，部署角色与令牌由各自环境独立提供。
 
 ## 工作方式
 
@@ -37,48 +37,52 @@ cluster:
 
 ## 部署
 
-**中控**：在控制台设置中控模式（或编辑 `cluster.mode: center`），沿用原来的 `listenAddr`，然后重启。
+**中控**：设置环境变量 `ISRVD_MODE=center`，沿用原来的 `listenAddr`，然后重启。
 
-**受控机**：先在中控「接入节点」生成 token，将弹窗中的配置片段合并到受控机原有配置，或在受控机切换模式前的控制台填写受控模式、服务器地址及 token，然后重启。切换后不再开放对外管理端口，只能经中控访问；地址填错时需要直接编辑受控机配置恢复。
+**受控机**：先在中控「接入节点」生成 token，将弹窗中的环境变量配置到受控机启动环境，然后重启。切换后只能经中控访问；地址填错时需修改受控机环境变量并重启。
 
 token 在激活前有有效期，首次连接时激活为节点；之后沿用相同 token，直到吊销或删除。**同一 token 只允许一个在线或正在握手的客户端**；重复连接返回 `409`，不会顶替已有会话，断线后可用同一 token 重连。
 
-**Docker**：提前准备完整的 `/srv/data/conf/isrvd.yml`，在其 `cluster` 分区填写模式与连接信息。中控和受控机应使用各自的数据目录：
+**Docker**：提前准备完整的 `/srv/data/conf/isrvd.yml`，通过 `-e` 传入部署参数。中控和受控机应使用各自的数据目录：
 
 ```bash
-# 中控（配置 mode: center，8080 为对外入口）
-docker run -d --name isrvd-center --network sdnet -p 8080:8080 \
+# 中控（8080 为对外入口）
+docker run -d --name isrvd-center -e ISRVD_MODE=center --network sdnet -p 8080:8080 \
   -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
 
-# 受控机（配置 mode: agent，不需要 -p）
+# 受控机（不需要 -p）
 docker run -d --name isrvd-agent --network sdnet \
+  -e ISRVD_MODE=agent -e ISRVD_CENTER_URL=https://center.example.com \
+  -e ISRVD_NODE_TOKEN="<中控生成的 token>" \
   -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
 ```
 
-**systemd**：编辑安装目录下的 `config.yml` 或在控制台保存配置，再执行 `systemctl restart isrvd`。安装默认以单机模式启动。
+安装脚本的 Docker `update` 会保留现有容器的 `ISRVD_MODE`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN`，更新失败回滚时同样保留。
 
-| 配置字段 | 适用 | 说明 |
+**systemd**：通过 `systemctl edit isrvd` 在 `[Service]` 中设置 `Environment="ISRVD_MODE=center"`；受控机还需设置 `ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN`。执行 `systemctl daemon-reload` 与 `systemctl restart isrvd`。安装默认以单机模式启动。
+
+| 环境变量 | 适用 | 说明 |
 |----------|------|------|
-| `cluster.mode` | 全部 | `server`（默认）/ `center` / `agent` |
-| `cluster.centerUrl` | agent，必填 | HTTP(S) 中控地址，不含路径、查询参数、片段或账号密码 |
-| `cluster.nodeToken` | agent，必填 | 中控直接生成的 token；配置查询不回显，控制台留空保留旧值 |
+| `ISRVD_MODE` | 全部 | `server`（默认）/ `center` / `agent` |
+| `ISRVD_CENTER_URL` | agent，必填 | HTTP(S) 中控地址，不含路径、查询参数、片段或账号密码 |
+| `ISRVD_NODE_TOKEN` | agent，必填 | 中控直接生成的 token；仅从进程环境读取，不通过配置 API 返回或修改 |
 
-`ISRVD_CONFIG` 用于指定配置文件或 etcd 位置。配置含长期 token，应限制文件权限为 `0600`，不要提交或公开。
+`ISRVD_CONFIG` 用于指定配置文件或 etcd 位置。保存 token 的环境文件应限制权限为 `0600`，不要提交或公开。
 
 接入流程：在「节点管理」页点击「接入节点」生成令牌（列表中显示为「待接入」）→ 受管机携带令牌启动 → 首次连接时中控校验并激活该令牌，节点建立常连，状态变为「在线」。节点与待接入的令牌在同一个列表里，用状态区分。
 
 **受管机被中控拒绝时**（节点被吊销、删除、令牌已过期未激活，或中控数据被重置、恢复了旧备份）受管机每分钟重试并记录错误日志。中控数据恢复后自动重连；确实要重新接入时，生成新的令牌并重启受管机。
 
-数据位置：中控的节点表与注册码（`node-list.yml`、`node-code.yml`）与计划任务、SSH 主机等业务数据一样，保存在 `rootDirectory` 下，使用 etcd 时随配置一起同步。受控机的 token 保存在主配置 `cluster.nodeToken`。
+数据位置：中控的节点表与注册码（`node-list.yml`、`node-code.yml`）与计划任务、SSH 主机等业务数据一样，保存在 `rootDirectory` 下，使用 etcd 时随配置一起同步。受控机的 token 由环境变量 `ISRVD_NODE_TOKEN` 提供，不写入主配置。
 
 ## 本地调试
 
-仓库的 `./develop.sh` 读取 `.local.yml` 中的 `cluster.mode`；需调试节点管理时设置为 `center`。前端开发服务器（`3000`）同时代理 `/api/`、`/openapi/` 和节点视角的 `/n/`。
+使用 `ISRVD_MODE=center ./develop.sh` 调试节点管理；`.local.yml` 仅保存业务配置。前端开发服务器（`3000`）同时代理 `/api/`、`/openapi/` 和节点视角的 `/n/`。
 
 要在本机调试一个受管机，另开终端用另一份配置（不同的 `rootDirectory`）启动：
 
 ```bash
-ISRVD_CONFIG=./agent.yml go run ./server/cmd/server
+ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<token>" ISRVD_CONFIG=./agent.yml go run ./server/cmd/server
 ```
 
 `/n/<节点ID>/` 下的页面由后端内嵌的前端产物提供，修改前端后需执行 `npm run build`，才能在节点视角下看到变化。
@@ -94,7 +98,7 @@ ISRVD_CONFIG=./agent.yml go run ./server/cmd/server
 - 节点管理操作（生成注册码、吊销、删除等）、节点上的写操作与 WebSocket 都会记入中控的审计页面，规则与 isrvd 一致：非 GET 与全部 WebSocket 记录，WebSocket 在会话结束时记录；操作人是中控登录用户，URI 带 `/n/<节点ID>/` 前缀，请求体按 isrvd 的规则脱敏。受管机本机的审计页面里同一操作记录为其本地创始人。
 - 网关审计和节点 token 认证失败限流统一使用连接对端 IP，不采信客户端的 `X-Forwarded-For` 或 `X-Real-IP`；向中控内部服务转发时重新生成来源 IP 头，不透传外部来源链。部署在反向代理后，审计记录代理 IP，同一代理后的客户端共享节点认证失败限流额度。
 - AI 助手在节点页面下仍作用于中控本机。
-- 配置重载（SIGHUP、保存系统配置或 etcd 变更）后，`allowedOrigins` 与 `rootDirectory` 的变化对中控即时生效（节点表与注册码随 `rootDirectory` 切换到新位置，与计划任务等业务数据一致）；`mode`、`centerUrl`、`nodeToken`、`listenAddr` 仍需重启。
+- 配置重载（SIGHUP、保存系统配置或 etcd 变更）后，`allowedOrigins` 与 `rootDirectory` 的变化对中控即时生效（节点表与注册码随 `rootDirectory` 切换到新位置，与计划任务等业务数据一致）；部署环境变量与 `listenAddr` 仍需重启。
 - 中控为单实例设计；重启时所有节点会短暂断开，受管机按 1 秒起步的指数退避加抖动自动重连。
 - 受管机与中控的版本需一致；协议版本不一致时节点显示「版本不兼容」并拒绝转发。
 

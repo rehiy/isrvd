@@ -43,7 +43,7 @@ server/service/{shell,docker,system} → server/i18n（仅 TC / Translate，i18n
 - `server/service/{account,apisix,...}`：业务组合、参数校验、稳定 API 类型转换；各服务在 `NewService()` 中直接构造底层客户端；不得依赖 `server/app`，**不得依赖 gin**（需要请求信息时接收 `*http.Request`、`context.Context` 或普通结构体）
 - `server/app/`：Gin HTTP/WebSocket 入口、路由索引、中间件、服务生命周期与响应封装
 - `server/gateway/`：中控模式的网关（节点管理 API、`/n/<节点ID>/` 转发、受管机隧道入口），以 `http.Handler` 形式由 `cmd/server` 装配；不依赖 `server/app`，页面一律由 webview 提供；`?token=` 的适用范围与 isrvd 保持一致，由 `cmd/server` 通过 `Options.QueryTokenRoutes`（来自 `app.QueryTokenRoutes()`）注入，不得在网关里另写一份路由清单；上游不可达返回 502，不得当作未登录（401）；操作经 `Options.Audit`（`app.Audit()`，写入 app 当前的审计服务，重载后自动指向新实例）按 isrvd 审计基线记录，不得另建 `AuditService` 写同一目录；会随配置重载变化的值（如 `allowedOrigins`）以函数传入、每次读取，不得在启动时固化
-- `server/cmd/server/`：`main.go` 按 `config.Init → run` 初始化并启动；`launch.go` 按配置中的 `cluster.mode`（`server`/`center`/`agent`）装配并调用 `app.StartApp`，是唯一的组装点，业务逻辑不得写在这里。构建与运行一律用包路径 `./server/cmd/server`（含多个文件，不能再用单文件路径）
+- `server/cmd/server/`：`main.go` 按 `config.Init → run` 初始化并启动；`launch.go` 按环境变量 `ISRVD_MODE`（`server`/`center`/`agent`）装配并调用 `app.StartApp`，是唯一的组装点，业务逻辑不得写在这里。构建与运行一律用包路径 `./server/cmd/server`（含多个文件，不能再用单文件路径）
 
 ### 禁止
 
@@ -256,9 +256,9 @@ docs/
 
 ### 配置结构体与 Provider
 
-- 顶层 `Config`（`server/config/types.go`）当前包含 `Schema`、`Cluster`、`Server`、`Password`、`Passkey`、`OIDC`、`THA`、`Copilot`、`Notify`、`Apisix`、`Caddy`、`Docker`、`Monitor`、`Marketplace`、`Links`、`Members`
+- 顶层 `Config`（`server/config/types.go`）当前包含 `Schema`、`Server`、`Password`、`Passkey`、`OIDC`、`THA`、`Copilot`、`Notify`、`Apisix`、`Caddy`、`Docker`、`Monitor`、`Marketplace`、`Links`、`Members`
 - `PUT /api/system/config` 支持按分区提交：`AllConfig` 中为 nil 的分区跳过更新，密钥类字段为空表示保留原值
-- 多节点部署统一通过 `Cluster` 分区的 `Mode`、`CenterURL`、`NodeToken` 访问；配置 API 的 `cluster.nodeToken` 查询脱敏、提交留空保留
+- 多节点部署仅通过环境变量 `ISRVD_MODE`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN` 传入，由 `config.Init` 读取并通过 `config.Cluster()` 返回副本；不持久化到 YAML/etcd，不由配置 API 管理，修改后重启生效
 - `Server` 必须作为 `config.Server` 结构体统一访问，禁止重新展开为 `config.Debug`、`config.ListenAddr` 等包级散变量
 - 镜像仓库 `DockerRegistry`（含 `Name`、`URL`、`Username`、`Password`、`Description`）
 - 远程 Docker：`DockerConfig.TLS`（`DockerTLSConfig`，证书与私钥为 PEM 文本，不使用文件路径，以便随 etcd 配置同步）；`pkgs/docker.TLSConfig.Config(host)` 是唯一的校验与构造入口（`NewDockerService` 与 `system.dockerTLSMerge` 共用）；`DockerService.Remote()` 由 `Host` 地址决定（`tcp://` 且非回环，与 TLS 无关），为真时自身容器识别只用 overlay 路径、不按 IP/主机名匹配，并跳过 bind 源的本机检查
@@ -328,7 +328,7 @@ docs/
 
 ## 8) 服务初始化
 
-启动顺序：`main → config.Init → run → app.StartApp`；`run` 按配置中的 `cluster.mode` 选择 `server`（直接 `StartApp`）、`center`（先启动网关再 `StartApp`）或 `agent`（先启动隧道客户端再 `StartApp`），详见 `docs/multi-node.md`
+启动顺序：`main → config.Init → run → app.StartApp`；`run` 按环境变量 `ISRVD_MODE` 选择 `server`（直接 `StartApp`）、`center`（先启动网关再 `StartApp`）或 `agent`（先启动隧道客户端再 `StartApp`），详见 `docs/multi-node.md`
 
 可用性检查：由各 `service` 层的 `CheckAvailability(ctx)` 方法负责（`server/service/docker`、`server/service/swarm`、`server/service/apisix`、`server/service/caddy`、`server/service/compose`）。
 
@@ -347,7 +347,7 @@ docs/
 ## 9) 安全基线（必须遵守）
 
 1. 禁止硬编码密钥/密码/令牌
-2. 配置查询必须深拷贝后清空 JWT、Cluster 节点令牌、OIDC、Copilot、APISIX、Registry 和 Docker TLS 私钥（`docker.tls.key`）；账户密码、TOTP secret、SSH 密码/私钥继续使用 `json:"-"`
+2. 配置查询必须深拷贝后清空 JWT、OIDC、Copilot、APISIX、Registry 和 Docker TLS 私钥（`docker.tls.key`）；账户密码、TOTP secret、SSH 密码/私钥继续使用 `json:"-"`
 3. 文件系统操作防目录遍历；解压防 Zip Slip
 4. WebSocket 必须经过认证链路
 5. 关键资源（内置角色等）前后端双重校验

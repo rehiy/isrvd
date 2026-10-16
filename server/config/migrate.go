@@ -7,7 +7,7 @@ import (
 )
 
 // schema 当前配置格式版本
-var schema = &SchemaConfig{Version: 3}
+var schema = &SchemaConfig{Version: 2}
 
 // migrateFn 迁移函数类型：接收当前配置和原始 YAML 字节，返回是否发生了迁移
 type migrateFn func(conf *Config, data []byte) bool

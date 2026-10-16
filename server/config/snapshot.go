@@ -19,7 +19,6 @@ var (
 
 // Snapshot 是一次完整、发布后只读的运行时配置。
 type Snapshot struct {
-	Cluster     *ClusterConfig           `yaml:"cluster"`
 	Server      *ServerConfig            `yaml:"server"`
 	Password    *PasswordConfig          `yaml:"password"`
 	Passkey     *PasskeyConfig           `yaml:"passkey"`
@@ -63,7 +62,6 @@ func buildSnapshot(conf *Config) (*Snapshot, error) {
 	}
 
 	snapshot := &Snapshot{
-		Cluster:     cloned.Cluster,
 		Server:      cloned.Server,
 		Password:    cloned.Password,
 		Passkey:     cloned.Passkey,
@@ -116,10 +114,7 @@ func cloneSnapshot(snapshot *Snapshot) (*Snapshot, error) {
 }
 
 func validateSnapshot(snapshot *Snapshot) error {
-	if err := ClusterValidate(snapshot.Cluster); err != nil {
-		return err
-	}
-	if snapshot.Cluster.Mode == "agent" && snapshot.THA.Enabled {
+	if Cluster().Mode == "agent" && snapshot.THA.Enabled {
 		return fmt.Errorf("%w：受控模式不能启用代理 Header 登录", ErrInvalidClusterConfig)
 	}
 	if len(strings.TrimSpace(snapshot.Server.JWTSecret)) < 32 {
@@ -207,7 +202,6 @@ func generateJWTSecret() (string, error) {
 
 func normalizeSnapshot(snapshot *Snapshot) error {
 	snapshot.Server = ServerNormalize(snapshot.Server)
-	snapshot.Cluster = ClusterNormalize(snapshot.Cluster)
 	if strings.TrimSpace(snapshot.Server.JWTSecret) == "" || snapshot.Server.JWTSecret == "your-jwt-secret" {
 		secret, err := generateJWTSecret()
 		if err != nil {

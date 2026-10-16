@@ -48,7 +48,6 @@ etcd 空字符串值视为已存在，不触发 fallback。使用 libgo v0.21.0 
 | 配置段 | 说明 |
 | -------- | ------ |
 | `schema` | 配置结构版本，用于自动迁移 |
-| `cluster` | 多节点部署（mode / centerUrl / nodeToken），修改后重启生效 |
 | `server` | 监听地址、数据根目录、上传限制、CORS、JWT 密钥/有效期、OpenAPI 开关和调试模式 |
 | `password` | 密码登录开关与最小密码长度 |
 | `tha` | 代理认证头登录（enabled / headerName / trustedCIDRs；trustedCIDRs 为空时默认填充本机回环地址） |
@@ -121,7 +120,6 @@ isrvd_get "/system/config"
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| cluster | object | `{mode, centerUrl}`（nodeToken 不返回） |
 | server | object | `{listenAddr, rootDirectory, maxUploadSize, allowedOrigins, jwtExpiration, debug, openapi}`（jwtSecret 不返回；`openapi` 默认 false） |
 | password | object | `{disabled, minLength}`（密码登录配置；`minLength` 默认 6） |
 | passkey | object | `{enabled, rpName, rpId, rpOrigins, timeout}` |
@@ -138,17 +136,9 @@ isrvd_get "/system/config"
 
 > 配置文件 / etcd 中的 `schema.version` 由系统维护（用于版本化迁移），不通过该接口返回或修改。
 
-`cluster` 的多节点部署配置：
+多节点部署仅通过环境变量设置，配置 API 不再返回或修改 `cluster`，详见 [集中管理](../../multi-node.md)。受控模式仍禁止启用 `tha.enabled`。
 
-| 字段 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `mode` | string | `server` | `server` 单机、`center` 中控、`agent` 受控；重启生效 |
-| `centerUrl` | string | 空 | 受控模式必填 HTTP(S) 中控地址，不含路径、查询参数、片段及账号密码；重启生效 |
-| `nodeToken` | string | 空 | 中控生成的连接 token，受控模式必填；GET 不回显，PUT 留空保留；重启生效 |
-
-网关没有代理信任开关：审计和节点认证失败限流仅使用连接对端 IP。反向代理后的客户端会共享限流额度，网关审计记录代理 IP。
-
-运行配置无效时返回 `400`，不保存；受控模式不能启用 `tha.enabled`；中控模式允许 THA，网关按 `tha.trustedCIDRs` 校验连接来源，拒绝不可信身份头。token 与其他配置一起保存，审计请求体会脱敏。切换为受控模式后无对外端口，应先确认中控地址和 token 正确。
+网关没有代理信任开关：审计和节点认证失败限流仅使用连接对端 IP。反向代理后的客户端会共享限流额度，网关审计记录代理 IP。中控模式允许 THA，网关按 `tha.trustedCIDRs` 校验连接来源，拒绝不可信身份头。
 
 ## 更新配置
 
@@ -161,21 +151,9 @@ isrvd_put "/system/config" '<CURRENT_CONFIG_WITH_CHANGES>'
 
 支持按分区提交：请求中为 `null` 或未提交的分区跳过更新。保存成功后自动触发配置重载；重载期间提交可能返回"配置正在重载，请稍后重试"。
 
-例如仅设置中控模式：
-
-```bash
-isrvd_put "/system/config" '{"cluster":{"mode":"center"}}'
-```
-
-受控机连接配置：
-
-```bash
-isrvd_put "/system/config" '{"cluster":{"mode":"agent","centerUrl":"https://center.example.com","nodeToken":"<中控生成的 token>"}}'
-```
-
 配置说明：
 
-- `clientSecret`、`jwtSecret`、`cluster.nodeToken`、`apiKey`、`adminKey`、`docker.registries[].password` 等敏感字段不会通过 GET 返回；PUT 时为空（含纯空白）表示保留原值，非空值会去除首尾空白后保存；`docker.registries[].password` 按 `url` + `username` 匹配旧仓库后保留原值。启动加载配置时，如果 `server.jwtSecret` 为空或仍为示例值 `your-jwt-secret`，系统会使用密码学安全随机源生成 256 位密钥并写回配置；手动配置的密钥不能少于 32 个字符。
+- `clientSecret`、`jwtSecret`、`apiKey`、`adminKey`、`docker.registries[].password` 等敏感字段不会通过 GET 返回；PUT 时为空（含纯空白）表示保留原值，非空值会去除首尾空白后保存；`docker.registries[].password` 按 `url` + `username` 匹配旧仓库后保留原值。启动加载配置时，如果 `server.jwtSecret` 为空或仍为示例值 `your-jwt-secret`，系统会使用密码学安全随机源生成 256 位密钥并写回配置；手动配置的密钥不能少于 32 个字符。
 - 连接远程 Docker / Swarm：`docker.host` 设为 `tcp://host:2376`，并设置 `docker.tls`：`enabled`（启用 TLS）、`skipVerify`（跳过服务端证书校验，仅限测试）、`ca`（校验服务端证书的 CA，PEM 文本；留空使用系统根证书）、`cert` 与 `key`（客户端证书与私钥，PEM 文本，daemon 启用 `--tlsverify` 时需要，必须成对）。证书以 PEM 文本保存在配置中，使用 etcd 配置后端时随配置同步，无需在各节点放置证书文件。`tls.enabled` 为 `true` 时 `host` 必须是 `tcp://` 地址，保存时会校验 PEM 与证书私钥是否匹配，不通过则拒绝保存。`tls.key` 留空保留原值；清空 `tls.cert` 会同时清除私钥；请求未携带 `tls` 时沿用原值。Swarm 复用 Docker 连接，目标节点需为 manager。
 - 远程 Docker 的判定与限制：`docker.host`（留空时取环境变量 `DOCKER_HOST`）为 `tcp://` 且主机不是回环地址（`127.0.0.0/8`、`::1`、`localhost`）即视为远程，与是否启用 TLS 无关；`tcp://docker-proxy:2375` 这类无法确认是否同机的别名也按远程处理。远程时：
   - 「自身容器」只按 isrvd 所在容器的 overlay 存储路径（`upperdir`/`workdir`）识别，不再按 IP、主机名匹配（不同主机的默认网桥都是 `172.17.0.x`，会把远程容器误判为自身）；存储驱动不是 overlay 时不识别自身容器，自身保护不生效。

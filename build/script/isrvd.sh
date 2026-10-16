@@ -356,6 +356,7 @@ docker_variant_from_image() {
 run_isrvd_container() {
     local variant="$1"
     local image="$2"
+    shift 2
     local ports=(-p 8080:8080)
 
     case "$variant" in
@@ -370,6 +371,7 @@ run_isrvd_container() {
         "${ports[@]}" \
         -v "$DOCKER_DATA_DIR:/data" \
         -v /var/run/docker.sock:/var/run/docker.sock \
+        "$@" \
         "$image"
 }
 
@@ -424,8 +426,8 @@ install_docker_deployment() {
     echo "  Network:   $DOCKER_NETWORK (overlay, attachable)"
     echo "  Web UI:    http://127.0.0.1:8080"
     echo ""
-    echo "  Set cluster.mode in the config (server/center/agent)."
-    echo "  After changing cluster settings: docker restart $SERVICE_NAME"
+    echo "  Set ISRVD_MODE in the service environment (server/center/agent)."
+    echo "  Recreate the container with -e ISRVD_MODE, -e ISRVD_CENTER_URL, -e ISRVD_NODE_TOKEN."
     echo "=========================================="
 }
 
@@ -433,6 +435,18 @@ update_docker_deployment() {
     local old_image
     local old_image_id
     local variant
+    local old_env
+    local entry
+    local deployment_env=()
+
+    old_env=$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$SERVICE_NAME")
+    while IFS= read -r entry; do
+        case "$entry" in
+            ISRVD_MODE=*|ISRVD_CENTER_URL=*|ISRVD_NODE_TOKEN=*)
+                deployment_env+=(-e "$entry")
+                ;;
+        esac
+    done <<< "$old_env"
 
     old_image=$(docker inspect --format '{{.Config.Image}}' "$SERVICE_NAME")
     old_image_id=$(docker inspect --format '{{.Image}}' "$SERVICE_NAME")
@@ -451,10 +465,10 @@ update_docker_deployment() {
 
     docker pull "$DOCKER_IMAGE"
     docker rm -f "$SERVICE_NAME"
-    if ! run_isrvd_container "$variant" "$DOCKER_IMAGE"; then
+    if ! run_isrvd_container "$variant" "$DOCKER_IMAGE" "${deployment_env[@]}"; then
         echo "[error] Failed to start updated container; restoring previous image"
         docker rm -f "$SERVICE_NAME" 2>/dev/null || true
-        run_isrvd_container "$variant" "$old_image_id"
+        run_isrvd_container "$variant" "$old_image_id" "${deployment_env[@]}"
         exit 1
     fi
 
@@ -463,7 +477,7 @@ update_docker_deployment() {
         echo "[error] Updated container exited; restoring previous image"
         docker logs "$SERVICE_NAME" || true
         docker rm -f "$SERVICE_NAME" >/dev/null 2>&1 || true
-        run_isrvd_container "$variant" "$old_image_id"
+        run_isrvd_container "$variant" "$old_image_id" "${deployment_env[@]}"
         exit 1
     fi
 
@@ -523,8 +537,8 @@ install_binary() {
     echo "  Binary:  $bin_file"
     echo "  Config:  $CONFIG_FILE"
     echo ""
-    echo "  Set cluster.mode in the config (server/center/agent)."
-    echo "  After changing cluster settings: systemctl restart $SERVICE_NAME"
+    echo "  Set ISRVD_MODE in the service environment (server/center/agent)."
+    echo "  Use systemctl edit $SERVICE_NAME, then daemon-reload and restart."
     echo ""
     echo "  Commands:"
     echo "    systemctl start $SERVICE_NAME"
@@ -739,8 +753,8 @@ print_usage() {
     echo "Runtime configuration (restart after changes):"
     echo "  Binary: $CONFIG_FILE"
     echo "  Docker: $DOCKER_DATA_DIR/conf/isrvd.yml"
-    echo "  cluster.mode: server (default), center, or agent"
-    echo "  Agent mode also requires cluster.centerUrl and cluster.nodeToken."
+    echo "  ISRVD_MODE: server (default), center, or agent"
+    echo "  Agent mode also requires ISRVD_CENTER_URL and ISRVD_NODE_TOKEN."
     echo ""
     echo "Note: Docker installs initialize Swarm and create the attachable overlay network sdnet."
 }

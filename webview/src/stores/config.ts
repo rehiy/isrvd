@@ -14,7 +14,6 @@ import type {
 
 /** 配置分区，对应后端 AllConfig 的顶层字段 */
 export type ConfigSection =
-    | 'cluster'
     | 'server'
     | 'password'
     | 'passkey'
@@ -42,7 +41,7 @@ export interface ConfigGroupMeta {
 
 /** 配置分组导航定义：顺序即展示顺序 */
 export const configGroups: ConfigGroupMeta[] = [
-    { id: 'service', label: '基础服务', description: '端口、目录、上传、跨域与 JWT', icon: 'fa-server', sections: ['cluster', 'server'] },
+    { id: 'service', label: '基础服务', description: '端口、目录、上传、跨域与 JWT', icon: 'fa-server', sections: ['server'] },
     { id: 'auth', label: '登录认证', description: '密码、Passkey、OIDC 与代理 Header 登录', icon: 'fa-shield-halved', sections: ['password', 'passkey', 'oidc', 'tha'] },
     { id: 'gateway', label: '网关容器', description: 'APISIX、Caddy 与 Docker 连接参数', icon: 'fa-route', sections: ['apisix', 'caddy', 'docker'] },
     { id: 'alert', label: '监控告警', description: '采集间隔、Webhook 通道、资源阈值与应用故障', icon: 'fa-bell', sections: ['monitor', 'notify'] },
@@ -52,7 +51,6 @@ export const configGroups: ConfigGroupMeta[] = [
 /** 默认配置，保证各分区字段完整，避免表单绑定出现 undefined */
 function defaultConfig(): AllConfig {
     return {
-        cluster: { mode: 'server', centerUrl: '', nodeToken: '' },
         server: { listenAddr: '', rootDirectory: '', maxUploadSize: 104857600, allowedOrigins: [], jwtSecret: '', jwtExpiration: 86400, openapi: false, debug: false },
         password: { disabled: false, minLength: 6 },
         passkey: { enabled: false, rpName: '', rpId: '', rpOrigins: [], timeout: 60000 },
@@ -117,7 +115,6 @@ export const useConfigStore = defineStore('config', () => {
         }
 
         draft.value = {
-            cluster: { ...defaults.cluster, ...payload.cluster },
             server,
             password: { ...defaults.password, ...payload.password },
             passkey,

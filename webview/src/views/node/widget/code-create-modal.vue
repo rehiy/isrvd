@@ -1,5 +1,4 @@
 <script lang="ts">
-import { dump } from 'js-yaml'
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
@@ -38,15 +37,19 @@ class CodeCreateModal extends Vue {
     // ─── 计算属性 ───
     get connectionConfig() {
         if (!this.created) return ''
-        return dump({ cluster: { mode: 'agent', centerUrl: centerUrl(), nodeToken: this.created.code } })
+        return `export ISRVD_MODE=agent\nexport ISRVD_CENTER_URL=${this.shellQuote(centerUrl())}\nexport ISRVD_NODE_TOKEN=${this.shellQuote(this.created.code)}`
     }
 
     get dockerCommand() {
-        return 'docker run -d --name isrvd-agent --restart unless-stopped -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim'
+        return `${this.connectionConfig}\ndocker run -d --name isrvd-agent --restart unless-stopped -e ISRVD_MODE -e ISRVD_CENTER_URL -e ISRVD_NODE_TOKEN -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim`
     }
 
     get expiresText() {
         return formatTime(this.created?.expiresAt)
+    }
+
+    shellQuote(value: string) {
+        return "'" + value.replace(/'/g, "'\\''") + "'"
     }
 
     // ─── 方法 ───
@@ -94,7 +97,7 @@ export default toNative(CodeCreateModal)
           </button>
         </div>
         <pre class="detail-value-mono whitespace-pre-wrap">{{ connectionConfig }}</pre>
-        <p class="mt-2 text-xs text-slate-400">{{ $t('将这些字段合并到受控机 config.yml 的 cluster 分区，或在控制台「系统配置 / 基础服务」填写，然后重启服务。Docker 配置位置为 /srv/data/conf/isrvd.yml。') }}</p>
+        <p class="mt-2 text-xs text-slate-400">{{ $t('在受控机启动环境中设置这些环境变量，再运行 isrvd；修改后需重启服务。') }}</p>
       </div>
       <div>
         <div class="flex items-center justify-between mb-2">

@@ -37,7 +37,7 @@ kill_port 3000
 if [ ! -f .local.yml ]; then
     cp config.yml .local.yml
 fi
-# 运行模式由 .local.yml 的 cluster.mode 决定，可在控制台修改后重启。
+# 运行模式由 ISRVD_MODE 决定；例如 ISRVD_MODE=center ./develop.sh。
 ISRVD_CONFIG=.local.yml go run ./server/cmd/server &
 GO_PID=$!
 

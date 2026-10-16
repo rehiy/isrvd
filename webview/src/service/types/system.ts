@@ -14,12 +14,6 @@ export interface AuditLog {
 
 // ─── 系统配置（复用后端结构） ───
 
-export interface ClusterConfig {
-    mode: 'server' | 'center' | 'agent'
-    centerUrl: string
-    nodeToken?: string
-}
-
 export interface ServerConfig {
     listenAddr: string
     rootDirectory: string
@@ -148,7 +142,6 @@ export interface LinkConfig {
 }
 
 export interface AllConfig {
-    cluster: ClusterConfig
     server: ServerConfig
     password: PasswordConfig
     passkey: PasskeyConfig

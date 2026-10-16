@@ -7,6 +7,7 @@ import (
 	"os"
 	"reflect"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -31,6 +32,9 @@ var (
 )
 
 func Init() error {
+	if err := loadClusterEnv(); err != nil {
+		return err
+	}
 	uri := EnvOrDefault("ISRVD_CONFIG", EnvOrDefault("CONFIG_PATH", "config.yml"))
 
 	var err error
@@ -236,7 +240,6 @@ func persistSnapshot(snapshot *Snapshot) error {
 
 	conf := &Config{
 		Schema:      schema,
-		Cluster:     snapshot.Cluster,
 		Server:      snapshot.Server,
 		Password:    snapshot.Password,
 		Passkey:     snapshot.Passkey,
@@ -337,9 +340,9 @@ func watchConfigChanges(ctx context.Context) {
 	}()
 }
 
-// EnvOrDefault 返回环境变量的值，未设置或为空时返回 fallback。
+// EnvOrDefault 返回去除首尾空白的环境变量值，未设置或去除空白后为空时返回 fallback。
 func EnvOrDefault(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
+	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
 		return v
 	}
 	return fallback

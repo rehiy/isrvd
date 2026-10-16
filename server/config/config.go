@@ -52,29 +52,42 @@ func ServerNormalize(server *ServerConfig) *ServerConfig {
 	return server
 }
 
-// ClusterNormalize 填充多节点部署默认值并归一化连接信息
-func ClusterNormalize(cluster *ClusterConfig) *ClusterConfig {
-	if cluster == nil {
-		cluster = &ClusterConfig{}
+// ClusterConfig 是仅从环境变量读取的进程启动配置，不参与持久化或配置 API。
+type ClusterConfig struct {
+	Mode      string
+	CenterURL string
+	NodeToken string
+}
+
+var clusterConfig = ClusterConfig{Mode: "server"}
+
+// Cluster 返回启动时确定的部署配置副本，修改环境变量后需重启。
+func Cluster() ClusterConfig {
+	return clusterConfig
+}
+
+func loadClusterEnv() error {
+	cluster := ClusterConfig{
+		Mode:      strings.ToLower(EnvOrDefault("ISRVD_MODE", "server")),
+		CenterURL: strings.TrimRight(EnvOrDefault("ISRVD_CENTER_URL", ""), "/"),
+		NodeToken: EnvOrDefault("ISRVD_NODE_TOKEN", ""),
 	}
-	cluster.Mode = strings.ToLower(strings.TrimSpace(cluster.Mode))
-	if cluster.Mode == "" {
-		cluster.Mode = "server"
+	if err := ClusterValidate(&cluster); err != nil {
+		return err
 	}
-	cluster.CenterURL = strings.TrimRight(strings.TrimSpace(cluster.CenterURL), "/")
-	cluster.NodeToken = strings.TrimSpace(cluster.NodeToken)
-	return cluster
+	clusterConfig = cluster
+	return nil
 }
 
 var nodeIDPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 
-// ClusterValidate 统一校验启动及控制台提交的多节点部署配置，不回显连接凭据。
+// ClusterValidate 校验环境变量中的多节点部署配置，不回显连接凭据。
 func ClusterValidate(cluster *ClusterConfig) error {
 	switch cluster.Mode {
 	case "server", "center":
 		return nil
 	case "agent":
-		u, err := parseHTTPURL("cluster.centerUrl", cluster.CenterURL)
+		u, err := parseHTTPURL("ISRVD_CENTER_URL", cluster.CenterURL)
 		if err != nil {
 			return fmt.Errorf("%w：%v", ErrInvalidClusterConfig, err)
 		}

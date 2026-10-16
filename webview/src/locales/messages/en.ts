@@ -1922,7 +1922,7 @@ const messages: Record<string, string> = {
     'token 首次接入前将于 {0} 过期；接入后沿用同一 token，仅允许一个客户端在线。': 'The token expires at {0} before first use; after connecting, keep using the same token. Only one client may be online.',
     '受控机配置': 'Managed host configuration',
     '复制配置': 'Copy configuration',
-    '将这些字段合并到受控机 config.yml 的 cluster 分区，或在控制台「系统配置 / 基础服务」填写，然后重启服务。Docker 配置位置为 /srv/data/conf/isrvd.yml。': 'Merge these fields into the cluster section of the managed host config.yml, or enter them in System Config / Base Service, then restart. Docker config: /srv/data/conf/isrvd.yml.',
+    '在受控机启动环境中设置这些环境变量，再运行 isrvd；修改后需重启服务。': 'Set these environment variables on the managed host before starting isrvd; restart the service after changing them.',
     '有效期仅限制首次接入；连接后同一 token 可用于重启和重连': 'Expiry only limits first use; the same token works for restarts and reconnects afterward',
 }
 

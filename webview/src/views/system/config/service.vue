@@ -22,30 +22,6 @@ export default toNative(ConfigService)
       </div>
     </div>
     <div>
-      <label for="cluster-mode" class="form-label">{{ $t('运行模式') }}</label>
-      <select id="cluster-mode" v-model="config.draft.cluster.mode" class="input">
-        <option value="server">{{ $t('单机模式') }}</option>
-        <option value="center">{{ $t('中控模式') }}</option>
-        <option value="agent">{{ $t('受控模式') }}</option>
-      </select>
-      <p class="mt-1 text-xs text-slate-400">{{ $t('运行模式与连接参数保存到 config.yml，重启服务后生效') }}</p>
-    </div>
-
-    <div v-if="config.draft.cluster.mode === 'agent'" class="space-y-4">
-      <div>
-        <label for="cluster-center-url" class="form-label">{{ $t('服务器地址') }}</label>
-        <input id="cluster-center-url" v-model="config.draft.cluster.centerUrl" type="url" required placeholder="https://center.example.com" class="input" autocomplete="off" />
-        <p class="mt-1 text-xs text-slate-400">{{ $t('中控服务器的 HTTP(S) 地址，不含路径或查询参数') }}</p>
-      </div>
-      <div>
-        <label for="cluster-node-token" class="form-label">{{ $t('连接 token') }}</label>
-        <input id="cluster-node-token" v-model="config.draft.cluster.nodeToken" type="password" :placeholder="$t('留空则保持不变')" class="input" autocomplete="new-password" spellcheck="false" />
-        <p class="mt-1 text-xs text-slate-400">{{ $t('直接填写中控生成的 token；同一 token 仅允许一个客户端在线') }}</p>
-      </div>
-      <p class="text-sm text-amber-600">{{ $t('受控模式不开放对外端口；请确认地址与 token 正确，重启后只能通过中控访问') }}</p>
-    </div>
-
-    <div>
       <label class="form-label">{{ $t('监听地址') }}</label>
       <input v-model="config.draft.server.listenAddr" type="text" :placeholder="$t('请输入监听地址')" class="input" />
       <p class="mt-1 text-xs text-slate-400">{{ $t('HTTP 服务监听地址，如 :8080 或 127.0.0.1:8080（重启生效）') }}</p>

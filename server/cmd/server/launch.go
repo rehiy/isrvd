@@ -1,4 +1,4 @@
-// 启动入口：同一个二进制三种模式，由 config.yml 的 cluster.mode 选择：
+// 启动入口：同一个二进制三种模式，由环境变量 ISRVD_MODE 选择：
 //
 //	server  单机，默认。与以往完全一致。
 //	center  中控。isrvd 改为只监听回环端口，网关接管 listenAddr 作为对外入口，
@@ -25,9 +25,9 @@ import (
 	"isrvd/server/service/node"
 )
 
-// run 按配置中的模式运行，阻塞到收到退出信号。
+// run 按环境变量指定的模式运行，阻塞到收到退出信号。
 func run() error {
-	switch config.Current().Cluster.Mode {
+	switch config.Cluster().Mode {
 	case app.ModeCenter:
 		return runCenter()
 	case app.ModeAgent:
@@ -89,14 +89,13 @@ func runCenter() error {
 
 // runAgent 受管机：isrvd 只在回环端口上服务，隧道客户端主动连接中控
 func runAgent() error {
-	snapshot := config.Current()
 	private, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return fmt.Errorf("监听回环端口失败: %w", err)
 	}
 	agent := node.NewAgent(node.AgentOptions{
-		CenterURL: snapshot.Cluster.CenterURL,
-		NodeToken: snapshot.Cluster.NodeToken,
+		CenterURL: config.Cluster().CenterURL,
+		NodeToken: config.Cluster().NodeToken,
 		Upstream:  &url.URL{Scheme: "http", Host: private.Addr().String()},
 		Token:     account.ServiceToken,
 		Version:   config.Version,
@@ -106,7 +105,7 @@ func runAgent() error {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		logman.Info("agent start", "center", snapshot.Cluster.CenterURL)
+		logman.Info("agent start", "center", config.Cluster().CenterURL)
 		agent.Run(ctx)
 	}()
 
