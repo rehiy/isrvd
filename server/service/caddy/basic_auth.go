@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"golang.org/x/crypto/bcrypt"
+	"github.com/rehiy/libgo/secure"
 
 	"isrvd/pkgs/caddy"
 )
@@ -84,9 +84,9 @@ func (s *Service) BasicAuthUserCreate(ctx context.Context, server string, routeI
 	if err != nil {
 		return err
 	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hash, err := secure.BcryptHash(password)
 	if err != nil {
-		return fmt.Errorf("密码加密失败: %w", err)
+		return err
 	}
 
 	return s.client.ConfigMutate(ctx, func(cfg *caddy.Config) error {
@@ -112,12 +112,12 @@ func (s *Service) BasicAuthUserCreate(ctx context.Context, server string, routeI
 			}
 			accounts = append(accounts, caddy.BasicAuthAccount{
 				Username: username,
-				Password: string(hash),
+				Password: hash,
 			})
 			route.Handle[authIdx] = caddy.HandlerBasicAuth(realm, accounts)
 		} else {
 			newHandler := caddy.HandlerBasicAuth(realm, []caddy.BasicAuthAccount{
-				{Username: username, Password: string(hash)},
+				{Username: username, Password: hash},
 			})
 			route.Handle = append([]caddy.Handler{newHandler}, route.Handle...)
 		}
