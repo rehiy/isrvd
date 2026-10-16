@@ -15,6 +15,9 @@ export interface AuditLog {
 // ─── 系统配置（复用后端结构） ───
 
 export interface ServerConfig {
+    mode: 'server' | 'center' | 'agent'
+    centerUrl: string
+    nodeToken?: string
     listenAddr: string
     rootDirectory: string
     maxUploadSize: number

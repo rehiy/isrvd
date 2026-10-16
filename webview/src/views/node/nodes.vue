@@ -57,7 +57,7 @@ class NodeManage extends Vue {
             key: `code-${code.id}`,
             icon: 'fa-ticket',
             title: code.name || this.$t('未命名注册码'),
-            subtitle: this.$t('一次性注册码'),
+            subtitle: this.$t('连接 token'),
             statusText: this.$t('待接入'),
             statusClass: 'text-slate-500',
             code

@@ -1,4 +1,5 @@
 <script lang="ts">
+import { dump } from 'js-yaml'
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
@@ -35,18 +36,13 @@ class CodeCreateModal extends Vue {
     ]
 
     // ─── 计算属性 ───
-    get command() {
+    get connectionConfig() {
         if (!this.created) return ''
-        return `isrvd --mode agent --center-url ${this.shellArg(centerUrl())} --enroll-code ${this.shellArg(this.created.code)}`
+        return dump({ server: { mode: 'agent', centerUrl: centerUrl(), nodeToken: this.created.code } })
     }
 
     get dockerCommand() {
-        if (!this.created) return ''
-        return `docker run -d --name isrvd-agent --restart unless-stopped -e ISRVD_MODE=agent -e ISRVD_CENTER_URL=${this.shellArg(centerUrl())} -e ISRVD_ENROLL_CODE=${this.shellArg(this.created.code)} -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim`
-    }
-
-    shellArg(value: string) {
-        return `'${value.replace(/'/g, "'\\''")}'`
+        return 'docker run -d --name isrvd-agent --restart unless-stopped -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim'
     }
 
     get expiresText() {
@@ -89,15 +85,16 @@ export default toNative(CodeCreateModal)
   <BaseModal v-model="isOpen" :title="$t('接入节点')" :loading="modalLoading" :show-confirm="!created" confirm-class="btn-orange" show-footer @confirm="handleConfirm">
     <!-- 接入命令：生成后或从列表查看 -->
     <div v-if="created" class="space-y-4">
-      <p class="text-sm text-slate-600">{{ $t('注册码仅可使用一次，将于 {0} 过期；使用前可在节点管理列表中再次查看。', expiresText) }}</p>
+      <p class="text-sm text-slate-600">{{ $t('token 首次接入前将于 {0} 过期；接入后沿用同一 token，仅允许一个客户端在线。', expiresText) }}</p>
       <div>
         <div class="flex items-center justify-between mb-2">
-          <span class="text-sm font-medium text-slate-700">{{ $t('直接运行') }}</span>
-          <button type="button" class="btn btn-secondary" @click="copyCommand(command)">
-            <i class="fas fa-copy"></i>{{ $t('复制命令') }}
+          <span class="text-sm font-medium text-slate-700">{{ $t('受控机配置') }}</span>
+          <button type="button" class="btn btn-secondary" @click="copyCommand(connectionConfig)">
+            <i class="fas fa-copy"></i>{{ $t('复制配置') }}
           </button>
         </div>
-        <code class="detail-value-mono">{{ command }}</code>
+        <pre class="detail-value-mono whitespace-pre-wrap">{{ connectionConfig }}</pre>
+        <p class="mt-2 text-xs text-slate-400">{{ $t('将这些字段合并到受控机 config.yml 的 server 分区，或在控制台「系统配置 / 基础服务」填写，然后重启服务。Docker 配置位置为 /srv/data/conf/isrvd.yml。') }}</p>
       </div>
       <div>
         <div class="flex items-center justify-between mb-2">
@@ -121,7 +118,7 @@ export default toNative(CodeCreateModal)
         <select v-model="formData.ttlMinutes" class="input">
           <option v-for="opt in ttlOptions" :key="opt.value" :value="opt.value">{{ $t(opt.label) }}</option>
         </select>
-        <p class="text-xs text-slate-400 mt-1">{{ $t('注册码只能使用一次，过期或使用后自动失效') }}</p>
+        <p class="text-xs text-slate-400 mt-1">{{ $t('有效期仅限制首次接入；连接后同一 token 可用于重启和重连') }}</p>
       </div>
     </form>
 

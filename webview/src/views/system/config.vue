@@ -41,7 +41,7 @@ class ConfigLayout extends Vue {
         try {
             await this.config.saveAll()
             await this.portal.refresh()
-            this.portal.showNotification('success', this.$t('配置已保存，监听地址变更需重启生效'))
+            this.portal.showNotification('success', this.$t('配置已保存，运行模式、连接参数和监听地址变更需重启生效'))
         } catch {
             this.portal.showNotification('error', this.config.error || this.$t('保存配置失败'))
         }
