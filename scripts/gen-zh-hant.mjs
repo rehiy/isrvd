@@ -41,7 +41,7 @@ try {
 const TERMS = [
     ['内存', '記憶體'],
     ['信息', '資訊'],
-    ['进程', '程序'],
+    ['进程', '行程'],
     ['账号', '帳號'],
     ['账户', '帳戶'],
     ['阈值', '臨界值'],
@@ -68,7 +68,7 @@ const convert = (text) => {
     let out = text
     for (const [cn, tw] of TERMS) out = out.split(cn).join(tw)
     for (const [pattern, tw] of RULES) out = out.replace(pattern, tw)
-    return toTW(out)
+    return toTW(out).replace(/籤發/g, '簽發')
 }
 
 // ─── 读取英文词典的 key ───

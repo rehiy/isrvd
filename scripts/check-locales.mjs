@@ -57,6 +57,11 @@ const LANG_FILES = {
 }
 // 源语言只登记标签，没有词典；不参与检查
 const SOURCE_LANG = 'zh-Hans'
+// 经人工确认：这些写法在日语中与中文同形，不能因同文就误报为未翻译。
+const JA_IDENTICAL = new Set([
+    '使用率: ', '使用率:', '操作', '匿名', '保存中...', '成功', '可用性', '(空)',
+    '50 行', '100 行', '200 行', '500 行', '1000 行', 'CPU 使用率', '使用率'
+])
 
 const files = readdirSync(dir)
 if (!go && !files.includes('en.ts')) {
@@ -90,6 +95,7 @@ if (worklist) {
         if (target.has(key)) continue
         process.stdout.write(`${JSON.stringify({ key, en: enValue })}\n`)
     }
+    await new Promise(resolve => process.stdout.end(resolve))
     process.exit(0)
 }
 
@@ -114,7 +120,7 @@ for (const code of codes.sort()) {
         return a !== b
     })
     // 译文与原文完全相同：可能是尚未翻译的占位，也可能是专有名词，列出来由人工确认
-    const identity = [...entries].filter(([k, v]) => v === k && /[一-鿿]/.test(k))
+    const identity = [...entries].filter(([k, v]) => v === k && /[一-鿿]/.test(k) && (code !== 'ja' || !JA_IDENTICAL.has(k)))
 
     const ratio = en.size ? Math.round(((en.size - missing.length) / en.size) * 100) : 100
     console.log(`${code.padEnd(8)} ${String(entries.size).padStart(5)} 条，覆盖 ${String(ratio).padStart(3)}%，缺失 ${missing.length}`)

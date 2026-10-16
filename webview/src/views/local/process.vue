@@ -223,9 +223,12 @@ class SystemProcessInfoView extends Vue {
         const tip = force
             ? this.$t('强制终止不会给进程清理资源的机会，可能导致数据丢失。')
             : this.$t('进程会收到终止信号，允许其自行清理后退出。')
+        const question = force
+            ? '确定要强制终止 <strong class="text-slate-900">{0}</strong>（PID {1}）吗？{2}'
+            : '确定要终止 <strong class="text-slate-900">{0}</strong>（PID {1}）吗？{2}'
         this.portal.showConfirm({
             title: force ? this.$t('强制终止进程') : this.$t('终止进程'),
-            message: this.$t('确定要{0}终止 <strong class="text-slate-900">{1}</strong>（PID {2}）吗？{3}', force ? '强制' : '', proc.name, proc.pid, tip),
+            message: this.$t(question, proc.name, proc.pid, tip),
             icon: 'fa-skull-crossbones',
             iconColor: 'red',
             confirmText: force ? this.$t('强制终止') : this.$t('确认终止'),

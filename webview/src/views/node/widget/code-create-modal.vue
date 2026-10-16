@@ -89,7 +89,7 @@ export default toNative(CodeCreateModal)
   <BaseModal v-model="isOpen" :title="$t('接入节点')" :loading="modalLoading" :show-confirm="!created" confirm-class="btn-orange" show-footer @confirm="handleConfirm">
     <!-- 接入命令：生成后或从列表查看 -->
     <div v-if="created" class="space-y-4">
-      <p class="text-sm text-slate-600">{{ $t('注册码只能使用一次，') }} {{ expiresText }} {{ $t('过期；未使用前可在节点管理列表中再次查看。') }}</p>
+      <p class="text-sm text-slate-600">{{ $t('注册码仅可使用一次，将于 {0} 过期；使用前可在节点管理列表中再次查看。', expiresText) }}</p>
       <div>
         <div class="flex items-center justify-between mb-2">
           <span class="text-sm font-medium text-slate-700">{{ $t('直接运行') }}</span>

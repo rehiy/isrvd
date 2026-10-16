@@ -92,7 +92,7 @@ func init() {
 		"Passkey rpName 不能为空":          "Passkey rpName cannot be empty",
 		"Passkey rpOrigins 不能为空":       "Passkey rpOrigins cannot be empty",
 		"Passkey 未启用":                  "Passkey is not enabled",
-		"Passkey 会话过多，请稍后重试":           "Passkey session expired, please retry",
+		"Passkey 会话过多，请稍后重试":           "too many Passkey sessions, please try again later",
 		"保存 Passkey 状态失败":              "save Passkey state failed",
 		"OIDC Provider 初始化失败":          "OIDC provider init failed",
 		"OIDC claim %s 为空":             "OIDC claim %s is empty",
