@@ -9,7 +9,6 @@ package main
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"net"
 	"net/http"
@@ -37,26 +36,6 @@ func run() error {
 		app.StartApp(nil, app.ModeServer)
 		return nil
 	}
-}
-
-// parse 仅处理帮助与未知参数；运行参数统一来自配置文件。
-func parse(args []string) error {
-	fs := flag.NewFlagSet("isrvd", flag.ContinueOnError)
-	fs.Usage = func() {
-		fmt.Fprintln(fs.Output(), "用法：isrvd；请在 config.yml 的 server 分区配置 mode、centerUrl 和 nodeToken。")
-	}
-	if err := fs.Parse(args); err != nil {
-		return err
-	}
-	if fs.NArg() > 0 {
-		return errors.New("不接受位置参数，请使用配置文件")
-	}
-	for _, name := range []string{"ISRVD_MODE", "ISRVD_CENTER_URL", "ISRVD_ENROLL_CODE", "ISRVD_NODE_TOKEN", "ISRVD_NODE_NAME"} {
-		if config.EnvOrDefault(name, "") != "" {
-			return errors.New("旧运行环境变量已移除，请迁移到 config.yml 后删除旧变量")
-		}
-	}
-	return nil
 }
 
 // runCenter 中控：isrvd 在回环端口上服务，网关占用配置的 listenAddr 作为对外入口

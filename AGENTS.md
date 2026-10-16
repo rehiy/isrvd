@@ -43,7 +43,7 @@ server/service/{shell,docker,system} → server/i18n（仅 TC / Translate，i18n
 - `server/service/{account,apisix,...}`：业务组合、参数校验、稳定 API 类型转换；各服务在 `NewService()` 中直接构造底层客户端；不得依赖 `server/app`，**不得依赖 gin**（需要请求信息时接收 `*http.Request`、`context.Context` 或普通结构体）
 - `server/app/`：Gin HTTP/WebSocket 入口、路由索引、中间件、服务生命周期与响应封装
 - `server/gateway/`：中控模式的网关（节点管理 API、`/n/<节点ID>/` 转发、受管机隧道入口），以 `http.Handler` 形式由 `cmd/server` 装配；不依赖 `server/app`，页面一律由 webview 提供；`?token=` 的适用范围与 isrvd 保持一致，由 `cmd/server` 通过 `Options.QueryTokenRoutes`（来自 `app.QueryTokenRoutes()`）注入，不得在网关里另写一份路由清单；上游不可达返回 502，不得当作未登录（401）；操作经 `Options.Audit`（`app.Audit()`，写入 app 当前的审计服务，重载后自动指向新实例）按 isrvd 审计基线记录，不得另建 `AuditService` 写同一目录；会随配置重载变化的值（如 `allowedOrigins`）以函数传入、每次读取，不得在启动时固化
-- `server/cmd/server/`：`main.go` 先 `parse` 校验参数（参数错误或 `--help` 不得读取或回写配置），再 `config.Init → run`；`launch.go` 按 `--mode`（`server`/`center`/`agent`）装配并调用 `app.StartApp`，是唯一的组装点，业务逻辑不得写在这里。构建与运行一律用包路径 `./server/cmd/server`（含多个文件，不能再用单文件路径）
+- `server/cmd/server/`：`main.go` 按 `config.Init → run` 初始化并启动，不解析命令行参数；`launch.go` 按配置中的 `server.mode`（`server`/`center`/`agent`）装配并调用 `app.StartApp`，是唯一的组装点，业务逻辑不得写在这里。构建与运行一律用包路径 `./server/cmd/server`（含多个文件，不能再用单文件路径）
 
 ### 禁止
 
@@ -327,7 +327,7 @@ docs/
 
 ## 8) 服务初始化
 
-启动顺序：`main → parse → config.Init → run → app.StartApp`；`run` 按 `--mode` 选择 `server`（直接 `StartApp`）、`center`（先启动网关再 `StartApp`）或 `agent`（先启动隧道客户端再 `StartApp`），详见 `docs/multi-node.md`
+启动顺序：`main → config.Init → run → app.StartApp`；`run` 按配置中的 `server.mode` 选择 `server`（直接 `StartApp`）、`center`（先启动网关再 `StartApp`）或 `agent`（先启动隧道客户端再 `StartApp`），详见 `docs/multi-node.md`
 
 可用性检查：由各 `service` 层的 `CheckAvailability(ctx)` 方法负责（`server/service/docker`、`server/service/swarm`、`server/service/apisix`、`server/service/caddy`、`server/service/compose`）。
 
