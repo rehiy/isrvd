@@ -57,9 +57,16 @@ docker run -d --name isrvd-agent --network sdnet \
   -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
 ```
 
-安装脚本的 Docker `update` 会保留现有容器的 `ISRVD_MODE`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN`，更新失败回滚时同样保留。
+安装脚本的 Docker `update` 会保留现有容器的 `ISRVD_MODE`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN`。更新时将旧容器临时更名为 `isrvd-update-backup`，新容器通过启动检查后才删除旧容器；创建或启动检查失败时恢复旧容器，保留其原有镜像、环境、挂载和端口。若更新中断后遗留备份容器，需先处理该容器再重试。启动检查只确认容器仍在运行，不代表中控连接已成功。
 
-**systemd**：通过 `systemctl edit isrvd` 在 `[Service]` 中设置 `Environment="ISRVD_MODE=center"`；受控机还需设置 `ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN`。执行 `systemctl daemon-reload` 与 `systemctl restart isrvd`。安装默认以单机模式启动。
+**systemd**：通过 `systemctl edit isrvd` 在 `[Service]` 中设置 `Environment="ISRVD_MODE=center"`；受控机还需设置 `ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN`。执行 `systemctl daemon-reload` 与 `systemctl restart isrvd`。安装默认以单机模式启动；在执行脚本 `install` 前导出 `ISRVD_MODE`（受控机同时导出 `ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN`），脚本会将其写入仅 root 可读的 `installer.conf` drop-in，Docker 安装则传入容器环境。agent 模式不发布 Docker 的 8080 端口（Caddy/APISIX 业务端口仍按镜像发布）。`update` 保留已有角色，不读取安装器环境来切换角色。
+
+```bash
+export ISRVD_MODE=agent
+export ISRVD_CENTER_URL=https://center.example.com
+export ISRVD_NODE_TOKEN="<中控生成的注册码>"
+bash isrvd.sh install --docker
+```
 
 | 环境变量 | 适用 | 说明 |
 |----------|------|------|

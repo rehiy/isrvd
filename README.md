@@ -81,7 +81,7 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) ins
 
 The Docker edition always uses the container name `isrvd` and stores data in `/srv/data`; `update` rebuilds the container with the current image variant and preserves `ISRVD_MODE`, `ISRVD_CENTER_URL` and `ISRVD_NODE_TOKEN`, and `uninstall` removes the container while keeping the data directory.
 
-The script installs standalone mode by default. Set `ISRVD_MODE` (`server`, `center`, or `agent`) in the process environment; managed nodes also require `ISRVD_CENTER_URL` and `ISRVD_NODE_TOKEN`. Recreate Docker containers with these environment variables or configure systemd service environment and restart.
+The script reads `ISRVD_MODE` (`server` by default, `center`, or `agent`) from the installer environment. Export it before running `install`; managed nodes also require exported `ISRVD_CENTER_URL` and `ISRVD_NODE_TOKEN`. Installation saves these values in a root-only systemd drop-in (`installer.conf`) or passes them to Docker. Docker agent installations do not publish port 8080. Updates preserve the installed role. To change roles later, recreate the Docker container or edit the systemd environment and restart.
 
 ### Prepare the Network
 
@@ -191,6 +191,8 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) uni
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) download
 ```
 
+Binary updates download and check the archive before stopping the service, and preserve `config.yml`. Docker updates keep the previous container until the replacement stays running through the initial startup check; on failure, the previous container is restored. If an interrupted update leaves `isrvd-update-backup`, resolve that container before retrying. Use `bash isrvd.sh --help` for available commands and options.
+
 The config file location is set via `ISRVD_CONFIG`, see [Configuration](#configuration).
 
 ## Centralized Management
@@ -252,7 +254,7 @@ Managed hosts require a founder member and cannot enable `tha`; `listenAddr` is 
 
 ### systemd Deployment
 
-Use `systemctl edit isrvd` and add `Environment="ISRVD_MODE=center"` under `[Service]`; managed nodes also need `ISRVD_CENTER_URL` and `ISRVD_NODE_TOKEN`. Run `systemctl daemon-reload` and `systemctl restart isrvd`. The installer starts in standalone mode by default.
+Use `systemctl edit isrvd` and add `Environment="ISRVD_MODE=center"` under `[Service]`; managed nodes also need `ISRVD_CENTER_URL` and `ISRVD_NODE_TOKEN`. Run `systemctl daemon-reload` and `systemctl restart isrvd`. The installer defaults to standalone mode; export the deployment environment variables before `install` to select another role.
 
 ### Security and Boundaries
 
