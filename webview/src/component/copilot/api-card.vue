@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, useId } from 'vue'
 
 import { useLocaleStore } from '@/stores'
 
 import { executeCopilotAPI, previewCopilotAPICall } from '@/helper/copilot/api'
 import type { CopilotAPIArgs } from '@/helper/copilot/api'
+import { bindCardAutoCollapse } from '@/helper/copilot/card-scroll'
 import { sanitizeCopilotValue as sanitizeValue } from '@/helper/copilot/sanitize'
 
 const t = useLocaleStore().t
@@ -37,6 +38,26 @@ const props = withDefaults(defineProps<{
 
 const submitting = ref(false)
 const localError = ref('')
+const cardRef = ref<HTMLElement>()
+const expanded = ref(true)
+const manuallyExpanded = ref(false)
+const bodyID = useId()
+let unbindAutoCollapse: (() => void) | undefined
+
+onMounted(() => {
+    if (!cardRef.value) return
+    unbindAutoCollapse = bindCardAutoCollapse(
+        cardRef.value,
+        () => props.status === 'complete' && expanded.value && !manuallyExpanded.value,
+        () => { expanded.value = false },
+    )
+})
+onUnmounted(() => unbindAutoCollapse?.())
+
+function toggleExpanded() {
+    expanded.value = !expanded.value
+    manuallyExpanded.value = expanded.value
+}
 
 const preview = computed(() => previewCopilotAPICall(props.args))
 const method = computed(() => preview.value.method)
@@ -165,98 +186,110 @@ function formatValue(value: unknown): string {
 </script>
 
 <template>
-  <div class="card w-full bg-white">
-    <div class="card-header justify-between">
-      <div class="inline-info">
-        <div class="card-icon" :class="approval && status === 'executing' ? 'bg-amber-100 text-amber-600' : 'bg-primary-100 text-primary-600'">
-          <i class="fas" :class="approval && status === 'executing' ? 'fa-shield-halved' : 'fa-terminal'"></i>
-        </div>
-        <div class="min-w-0">
-          <span class="item-title-sm">{{ cardTitle }}</span>
-          <code class="item-subtitle-mono">{{ path || props.args.callRef || $t('等待调用引用') }}</code>
-        </div>
-      </div>
-      <span v-if="method" class="inline-flex px-2 py-0.5 rounded-lg text-xs font-semibold" :class="methodClass">{{ method }}</span>
-    </div>
-
-    <div class="card-body space-y-3">
-      <div v-if="status === 'inProgress'" class="flex items-center gap-2 text-sm text-slate-500">
-        <span class="spinner w-4 h-4"></span>
-        <span>{{ $t('正在生成请求参数…') }}</span>
-      </div>
-
-      <template v-else-if="approval && status === 'executing'">
-        <div v-if="previewError" class="rounded-lg bg-red-50 border border-red-200 p-3">
-          <p class="text-sm font-medium text-red-600">{{ previewError }}</p>
-        </div>
-        <div class="rounded-lg bg-amber-50 border border-amber-200 p-3">
-          <p class="text-sm font-medium text-amber-700">{{ $t('此请求会修改服务器状态，请确认后执行。') }}</p>
-        </div>
-
-        <details v-if="paramsPreview || bodyPreview" class="rounded-lg border border-slate-200 bg-slate-50">
-          <summary class="px-3 py-2 text-xs font-medium text-slate-600 cursor-pointer">{{ $t('查看请求参数') }}</summary>
-          <div class="border-t border-slate-200 p-3 space-y-3">
-            <div v-if="paramsPreview">
-              <p class="text-xs text-slate-400 mb-1">Query</p>
-              <pre class="text-xs text-slate-600 whitespace-pre-wrap break-all">{{ paramsPreview }}</pre>
-            </div>
-            <div v-if="bodyPreview">
-              <p class="text-xs text-slate-400 mb-1">Body</p>
-              <pre class="text-xs text-slate-600 whitespace-pre-wrap break-all">{{ bodyPreview }}</pre>
-            </div>
+  <!-- 工具 UI 不继承 Markdown 正文的段落/列表间距及 code 引号。 -->
+  <div ref="cardRef" class="copilot-api-card not-prose min-w-0 py-1.5">
+    <div class="card w-full bg-white">
+      <button
+        type="button"
+        class="card-header w-full text-left justify-between px-3 py-2.5"
+        :class="{ 'border-b-0': !expanded, 'cursor-pointer hover:bg-slate-50': status === 'complete' }"
+        :disabled="status !== 'complete'"
+        :aria-expanded="expanded"
+        :aria-controls="bodyID"
+        @click="toggleExpanded"
+      >
+        <div class="inline-info min-w-0 flex-1">
+          <div class="card-icon" :class="approval && status === 'executing' ? 'bg-amber-100 text-amber-600' : 'bg-primary-100 text-primary-600'">
+            <i class="fas" :class="approval && status === 'executing' ? 'fa-shield-halved' : 'fa-terminal'"></i>
           </div>
-        </details>
-
-        <p v-if="localError" class="text-xs text-red-600">{{ localError }}</p>
-        <div class="flex items-center justify-end gap-2 pt-1">
-          <button type="button" class="btn btn-secondary" :disabled="submitting" @click="cancel">
-            {{ $t('取消') }}
-          </button>
-          <button type="button" class="btn" :class="isDanger ? 'btn-danger' : 'btn-primary'" :disabled="submitting || !!previewError" @click="approve">
-            <span v-if="submitting" class="spinner w-3.5 h-3.5"></span>
-            {{ submitting ? $t('执行中…') : $t('确认执行') }}
-          </button>
-        </div>
-      </template>
-
-      <div v-else-if="status === 'executing'" class="flex items-center gap-2 text-sm text-slate-500">
-        <span class="spinner w-4 h-4"></span>
-        <span>{{ method === 'GET' ? $t('正在读取资源…') : $t('正在执行操作…') }}</span>
-      </div>
-
-      <template v-else>
-        <div v-if="resultCanceled" class="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-500">
-          {{ resultMessage || $t('用户取消了操作') }}
-        </div>
-        <div v-else-if="!resultSuccess" class="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
-          {{ resultMessage || $t('请求失败') }}
-        </div>
-        <p v-else-if="resultMessage" class="text-sm text-emerald-600 font-medium">{{ resultMessage }}</p>
-
-        <template v-if="resultSuccess && Array.isArray(payload)">
-          <div class="flex items-center justify-between text-xs text-slate-400">
-            <span>{{ $t('资源列表') }}</span>
-            <span>{{ $t('共') }} {{ payload.length }} {{ $t('项') }}</span>
+          <div class="min-w-0">
+            <span class="item-title-sm">{{ cardTitle }}</span>
+            <code class="item-subtitle-mono">{{ path || props.args.callRef || $t('等待调用引用') }}</code>
           </div>
-          <div v-if="resourceItems.length" class="divide-y divide-slate-100 rounded-lg border border-slate-200 overflow-hidden">
-            <div v-for="(item, index) in resourceItems" :key="index" class="px-3 py-2 min-w-0">
-              <span class="item-title-sm">{{ $t(item.title) }}</span>
-              <span v-if="item.subtitle" class="item-subtitle">{{ item.subtitle }}</span>
+        </div>
+        <span v-if="method" class="badge-sm flex-shrink-0" :class="methodClass">{{ method }}</span>
+        <i v-if="status === 'complete'" class="fas flex-shrink-0 text-xs text-slate-400" :class="expanded ? 'fa-chevron-up' : 'fa-chevron-down'" aria-hidden="true"></i>
+      </button>
+
+      <div v-show="expanded" :id="bodyID" class="card-body p-3 space-y-3">
+        <div v-if="status === 'inProgress'" class="flex items-center gap-2 text-sm text-slate-500">
+          <span class="spinner w-4 h-4"></span>
+          <span>{{ $t('正在生成请求参数…') }}</span>
+        </div>
+
+        <template v-else-if="approval && status === 'executing'">
+          <div v-if="previewError" class="rounded-lg bg-red-50 border border-red-200 p-3">
+            <p class="text-sm font-medium text-red-600">{{ previewError }}</p>
+          </div>
+          <div class="rounded-lg bg-amber-50 border border-amber-200 p-3">
+            <p class="text-sm font-medium text-amber-700">{{ $t('此请求会修改服务器状态，请确认后执行。') }}</p>
+          </div>
+
+          <details v-if="paramsPreview || bodyPreview" class="rounded-lg border border-slate-200 bg-slate-50">
+            <summary class="px-3 py-2 text-xs font-medium text-slate-600 cursor-pointer">{{ $t('查看请求参数') }}</summary>
+            <div class="border-t border-slate-200 p-3 space-y-3">
+              <div v-if="paramsPreview">
+                <p class="text-xs text-slate-400 mb-1">Query</p>
+                <pre class="text-xs text-slate-600 whitespace-pre-wrap break-all">{{ paramsPreview }}</pre>
+              </div>
+              <div v-if="bodyPreview">
+                <p class="text-xs text-slate-400 mb-1">Body</p>
+                <pre class="text-xs text-slate-600 whitespace-pre-wrap break-all">{{ bodyPreview }}</pre>
+              </div>
             </div>
+          </details>
+
+          <p v-if="localError" class="text-xs text-red-600">{{ localError }}</p>
+          <div class="flex items-center justify-end gap-2 pt-1">
+            <button type="button" class="btn btn-secondary" :disabled="submitting" @click="cancel">
+              {{ $t('取消') }}
+            </button>
+            <button type="button" class="btn" :class="isDanger ? 'btn-danger' : 'btn-primary'" :disabled="submitting || !!previewError" @click="approve">
+              <span v-if="submitting" class="spinner w-3.5 h-3.5"></span>
+              {{ submitting ? $t('执行中…') : $t('确认执行') }}
+            </button>
           </div>
-          <p v-if="payload.length > resourceItems.length" class="text-xs text-slate-400">{{ $t('仅展示前') }} {{ resourceItems.length }} {{ $t('项，完整结果仍会提供给 AI 助手。') }}</p>
         </template>
 
-        <dl v-else-if="resultSuccess && resourceRows.length" class="divide-y divide-slate-100 rounded-lg border border-slate-200 overflow-hidden">
-          <div v-for="row in resourceRows" :key="row.key" class="flex items-start gap-3 px-3 py-2">
-            <dt class="w-24 flex-shrink-0 text-xs text-slate-400 break-all">{{ row.key }}</dt>
-            <dd class="min-w-0 text-xs text-slate-600 break-all">{{ row.value }}</dd>
-          </div>
-        </dl>
+        <div v-else-if="status === 'executing'" class="flex items-center gap-2 text-sm text-slate-500">
+          <span class="spinner w-4 h-4"></span>
+          <span>{{ method === 'GET' ? $t('正在读取资源…') : $t('正在执行操作…') }}</span>
+        </div>
 
-        <p v-else-if="resultSuccess && resourceText" class="text-sm text-slate-600 break-words">{{ resourceText }}</p>
-        <p v-else-if="resultSuccess && !resultMessage" class="text-sm text-emerald-600 font-medium">{{ $t('请求执行成功') }}</p>
-      </template>
+        <template v-else>
+          <div v-if="resultCanceled" class="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-500">
+            {{ resultMessage || $t('用户取消了操作') }}
+          </div>
+          <div v-else-if="!resultSuccess" class="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+            {{ resultMessage || $t('请求失败') }}
+          </div>
+          <p v-else-if="resultMessage" class="text-sm text-emerald-600 font-medium">{{ resultMessage }}</p>
+
+          <template v-if="resultSuccess && Array.isArray(payload)">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>{{ $t('资源列表') }}</span>
+              <span>{{ $t('共') }} {{ payload.length }} {{ $t('项') }}</span>
+            </div>
+            <div v-if="resourceItems.length" class="divide-y divide-slate-100 rounded-lg border border-slate-200 overflow-hidden">
+              <div v-for="(item, index) in resourceItems" :key="index" class="px-3 py-2 min-w-0">
+                <span class="item-title-sm">{{ $t(item.title) }}</span>
+                <span v-if="item.subtitle" class="item-subtitle">{{ item.subtitle }}</span>
+              </div>
+            </div>
+            <p v-if="payload.length > resourceItems.length" class="text-xs text-slate-400">{{ $t('仅展示前') }} {{ resourceItems.length }} {{ $t('项，完整结果仍会提供给 AI 助手。') }}</p>
+          </template>
+
+          <dl v-else-if="resultSuccess && resourceRows.length" class="divide-y divide-slate-100 rounded-lg border border-slate-200 overflow-hidden">
+            <div v-for="row in resourceRows" :key="row.key" class="flex items-start gap-3 px-3 py-2">
+              <dt class="w-24 flex-shrink-0 text-xs text-slate-400 break-all">{{ row.key }}</dt>
+              <dd class="min-w-0 text-xs text-slate-600 break-all">{{ row.value }}</dd>
+            </div>
+          </dl>
+
+          <p v-else-if="resultSuccess && resourceText" class="text-sm text-slate-600 break-words">{{ resourceText }}</p>
+          <p v-else-if="resultSuccess && !resultMessage" class="text-sm text-emerald-600 font-medium">{{ $t('请求执行成功') }}</p>
+        </template>
+      </div>
     </div>
   </div>
 </template>
