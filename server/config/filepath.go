@@ -5,19 +5,12 @@ import (
 	"strings"
 )
 
-// PathToAbs 将路径转为绝对路径。
-// 空值返回 rootDir；相对路径基于 rootDir 拼接；绝对路径原样返回。
-func PathToAbs(path string, rootDir string) string {
-	if rootDir == "" {
-		if path == "" {
-			return "."
-		}
-		return filepath.Clean(path)
-	}
+// PathToAbs 基于 rootDir 拼接相对路径并清理结果；rootDir 为绝对路径时结果为绝对路径。
+// 空 path 使用 rootDir；两者均为空时返回 "."。
+func PathToAbs(path, rootDir string) string {
 	if path == "" {
-		return filepath.Clean(rootDir)
-	}
-	if !filepath.IsAbs(path) {
+		path = rootDir
+	} else if rootDir != "" && !filepath.IsAbs(path) {
 		path = filepath.Join(rootDir, path)
 	}
 	return filepath.Clean(path)
@@ -45,10 +38,7 @@ func PathToRel(path string, rootDir string) string {
 // 注意：此函数会直接修改传入的 conf 对象。
 // 只会转换 Server.RootDirectory 内部的绝对路径，外部路径和相对路径保持不变。
 func denormalizePaths(conf *Config) {
-	if conf == nil || conf.Server == nil {
-		return
-	}
-	if conf.Server.RootDirectory == "" {
+	if conf == nil || conf.Server == nil || conf.Server.RootDirectory == "" {
 		return
 	}
 	if conf.Docker != nil {
