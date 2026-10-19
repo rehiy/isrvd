@@ -29,6 +29,7 @@ func (s *Service) Authenticate(r *http.Request, ip string) (*Node, error) {
 	}
 	token, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 	if !ok || len(token) < 64 || len(token) > 96 {
+		logger.Warn("节点接入被拒绝", "reason", "missing_or_invalid_authorization", "remote", ip)
 		s.authLimit.record(ip)
 		return nil, ErrUnauthorized
 	}
@@ -36,10 +37,16 @@ func (s *Service) Authenticate(r *http.Request, ip string) (*Node, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.closed {
+		logger.Warn("节点接入被拒绝", "reason", "service_closed", "remote", ip)
 		return nil, ErrUnauthorized
 	}
 	n := s.nodes.find(func(n *Node) bool { return secretsEqual(n.TokenHash, tokenHash) })
 	if n == nil || (n.Status != StatusPending && n.Status != StatusActive) {
+		reason := "token_not_found"
+		if n != nil {
+			reason = "invalid_node_status"
+		}
+		logger.Warn("节点接入被拒绝", "reason", reason, "remote", ip)
 		s.authLimit.record(ip)
 		return nil, ErrUnauthorized
 	}

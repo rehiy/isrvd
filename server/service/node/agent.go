@@ -74,8 +74,8 @@ func (a *Agent) Run(ctx context.Context) {
 		if errors.Is(err, wstunnel.ErrUnauthorized) {
 			// 节点被吊销或删除，与中控数据被重置、恢复了旧备份，在这里看起来完全一样，
 			// 所以只记录错误并重试：中控数据恢复后自动重连。
-			logger.Error("中控拒绝了节点令牌：节点可能已被吊销或删除，或中控数据被重置。每分钟重试；"+
-				"如需重新接入，请在中控生成新的令牌后重启", "center", a.opt.CenterURL)
+			logger.Error("中控入口拒绝节点接入，每分钟重试；请检查中控或反向代理认证",
+				"center", a.opt.CenterURL, "error", err)
 			if !wstunnel.Sleep(ctx, retryDelay) {
 				return
 			}
@@ -92,7 +92,10 @@ func (a *Agent) serve(sess *wstunnel.Session) {
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
-	_ = srv.Serve(sess.Listener())
+	startedAt := time.Now()
+	if err := srv.Serve(sess.Listener()); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		logger.Warn("节点隧道服务结束", "error", err, "duration", time.Since(startedAt))
+	}
 }
 
 // newHandler 只放行 /api/ 与自身信息接口；其余路径一律 404。
