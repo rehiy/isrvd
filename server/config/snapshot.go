@@ -132,7 +132,7 @@ func validateSnapshot(snapshot *Snapshot) error {
 			return fmt.Errorf("Passkey rpOrigins 不能为空")
 		}
 		for _, origin := range snapshot.Passkey.RPOrigins {
-			if err := ValidateHTTPURL("Passkey rpOrigin", origin); err != nil {
+			if _, err := parseHTTPURL("Passkey rpOrigin", origin); err != nil {
 				return err
 			}
 		}
@@ -141,10 +141,10 @@ func validateSnapshot(snapshot *Snapshot) error {
 		if snapshot.OIDC.ClientID == "" {
 			return fmt.Errorf("OIDC clientId 不能为空")
 		}
-		if err := ValidateHTTPURL("OIDC issuerUrl", snapshot.OIDC.IssuerURL); err != nil {
+		if _, err := parseHTTPURL("OIDC issuerUrl", snapshot.OIDC.IssuerURL); err != nil {
 			return err
 		}
-		if err := ValidateHTTPURL("OIDC redirectUrl", snapshot.OIDC.RedirectURL); err != nil {
+		if _, err := parseHTTPURL("OIDC redirectUrl", snapshot.OIDC.RedirectURL); err != nil {
 			return err
 		}
 	}
@@ -178,12 +178,7 @@ func validateSnapshot(snapshot *Snapshot) error {
 	return nil
 }
 
-// ValidateHTTPURL 校验 value 是带主机的 HTTP(S) 绝对地址（不含用户信息）；name 用于错误提示。
-func ValidateHTTPURL(name, value string) error {
-	_, err := parseHTTPURL(name, value)
-	return err
-}
-
+// parseHTTPURL 校验并返回带主机的 HTTP(S) 绝对地址（不含用户信息）；name 用于错误提示。
 func parseHTTPURL(name, value string) (*url.URL, error) {
 	parsed, err := url.ParseRequestURI(strings.TrimSpace(value))
 	if err != nil || parsed.Host == "" || (parsed.Scheme != "https" && parsed.Scheme != "http") || parsed.User != nil {
