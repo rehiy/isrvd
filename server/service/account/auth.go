@@ -299,7 +299,7 @@ func (s *Service) extractJWT(r *http.Request, allowQueryToken bool) string {
 }
 
 func headerSourceTrusted(snapshot *config.Snapshot, r *http.Request) bool {
-	// 默认可信来源由配置层 THANormalize 填充
+	// 默认可信来源由配置层填充
 	if snapshot.THA == nil || len(snapshot.THA.TrustedCIDRs) == 0 {
 		return true
 	}

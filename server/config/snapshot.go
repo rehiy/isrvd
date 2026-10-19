@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -52,12 +53,8 @@ func buildSnapshot(conf *Config) (*Snapshot, error) {
 	if conf == nil {
 		return nil, fmt.Errorf("配置不能为空")
 	}
-	var cloned Config
-	buf, err := yaml.Marshal(conf)
+	cloned, err := cloneYAML(conf)
 	if err != nil {
-		return nil, err
-	}
-	if err := yaml.Unmarshal(buf, &cloned); err != nil {
 		return nil, err
 	}
 
@@ -102,11 +99,15 @@ func cloneSnapshot(snapshot *Snapshot) (*Snapshot, error) {
 	if snapshot == nil {
 		return buildSnapshot(&Config{})
 	}
-	buf, err := yaml.Marshal(snapshot)
+	return cloneYAML(snapshot)
+}
+
+func cloneYAML[T any](value *T) (*T, error) {
+	buf, err := yaml.Marshal(value)
 	if err != nil {
 		return nil, err
 	}
-	var cloned Snapshot
+	var cloned T
 	if err := yaml.Unmarshal(buf, &cloned); err != nil {
 		return nil, err
 	}
@@ -152,13 +153,9 @@ func validateSnapshot(snapshot *Snapshot) error {
 		return fmt.Errorf("至少需要启用一种登录方式")
 	}
 
-	registries := snapshot.Docker.Registries[:0]
-	for _, registry := range snapshot.Docker.Registries {
-		if registry != nil {
-			registries = append(registries, registry)
-		}
-	}
-	snapshot.Docker.Registries = registries
+	snapshot.Docker.Registries = slices.DeleteFunc(snapshot.Docker.Registries, func(registry *DockerRegistry) bool {
+		return registry == nil
+	})
 	for username, member := range snapshot.Members {
 		if member == nil {
 			delete(snapshot.Members, username)
@@ -167,13 +164,9 @@ func validateSnapshot(snapshot *Snapshot) error {
 		if username == "" || member.Username == "" || username != member.Username {
 			return fmt.Errorf("成员用户名无效: %q", username)
 		}
-		passkeys := member.Passkeys[:0]
-		for _, passkey := range member.Passkeys {
-			if passkey != nil {
-				passkeys = append(passkeys, passkey)
-			}
-		}
-		member.Passkeys = passkeys
+		member.Passkeys = slices.DeleteFunc(member.Passkeys, func(passkey *PasskeyCredential) bool {
+			return passkey == nil
+		})
 	}
 	return nil
 }
@@ -204,14 +197,14 @@ func normalizeSnapshot(snapshot *Snapshot) error {
 		}
 		snapshot.Server.JWTSecret = secret
 	}
-	snapshot.Password = PasswordNormalize(snapshot.Password)
-	snapshot.Passkey = PasskeyNormalize(snapshot.Passkey)
-	snapshot.OIDC = OIDCNormalize(snapshot.OIDC)
-	snapshot.THA = THANormalize(snapshot.THA)
+	snapshot.Password = normalizePassword(snapshot.Password)
+	snapshot.Passkey = normalizePasskey(snapshot.Passkey)
+	snapshot.OIDC = normalizeOIDC(snapshot.OIDC)
+	snapshot.THA = normalizeTHA(snapshot.THA)
 	if snapshot.Copilot == nil {
 		snapshot.Copilot = &CopilotConfig{}
 	}
-	snapshot.Notify = NotifyNormalize(snapshot.Notify)
+	snapshot.Notify = normalizeNotify(snapshot.Notify)
 	if snapshot.Apisix == nil {
 		snapshot.Apisix = &ApisixConfig{}
 	}
@@ -222,7 +215,7 @@ func normalizeSnapshot(snapshot *Snapshot) error {
 		snapshot.Docker = &DockerConfig{}
 	}
 	snapshot.Docker.ContainerRoot = PathToAbs(snapshot.Docker.ContainerRoot, snapshot.Server.RootDirectory)
-	snapshot.Monitor = MonitorNormalize(snapshot.Monitor)
+	snapshot.Monitor = normalizeMonitor(snapshot.Monitor)
 	if snapshot.Marketplace == nil {
 		snapshot.Marketplace = &MarketplaceConfig{}
 	}

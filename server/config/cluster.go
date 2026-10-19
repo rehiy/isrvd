@@ -25,19 +25,19 @@ func Cluster() ClusterConfig {
 
 func loadClusterEnv() error {
 	cluster := ClusterConfig{
-		Mode:      strings.ToLower(EnvOrDefault("ISRVD_MODE", "server")),
-		CenterURL: strings.TrimRight(EnvOrDefault("ISRVD_CENTER_URL", ""), "/"),
-		NodeToken: EnvOrDefault("ISRVD_NODE_TOKEN", ""),
+		Mode:      strings.ToLower(envOrDefault("ISRVD_MODE", "server")),
+		CenterURL: strings.TrimRight(envOrDefault("ISRVD_CENTER_URL", ""), "/"),
+		NodeToken: envOrDefault("ISRVD_NODE_TOKEN", ""),
 	}
-	if err := ClusterValidate(&cluster); err != nil {
+	if err := validateCluster(&cluster); err != nil {
 		return err
 	}
 	clusterConfig = cluster
 	return nil
 }
 
-// ClusterValidate 校验环境变量中的多节点部署配置，不回显连接凭据。
-func ClusterValidate(cluster *ClusterConfig) error {
+// validateCluster 校验环境变量中的多节点部署配置，不回显连接凭据。
+func validateCluster(cluster *ClusterConfig) error {
 	switch cluster.Mode {
 	case "server", "center":
 		return nil

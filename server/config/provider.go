@@ -35,13 +35,13 @@ func Init() error {
 	if err := loadClusterEnv(); err != nil {
 		return err
 	}
-	uri := EnvOrDefault("ISRVD_CONFIG", EnvOrDefault("CONFIG_PATH", "config.yml"))
+	uri := envOrDefault("ISRVD_CONFIG", envOrDefault("CONFIG_PATH", "config.yml"))
 
 	var err error
 	// etcd 认证：ETCD_USERNAME / ETCD_PASSWORD 优先于 URI userinfo
 	store, storeKey, err = cstore.OpenWithKey(uri, cstore.WithEtcdCredentials(
-		EnvOrDefault("ETCD_USERNAME", ""),
-		EnvOrDefault("ETCD_PASSWORD", ""),
+		envOrDefault("ETCD_USERNAME", ""),
+		envOrDefault("ETCD_PASSWORD", ""),
 	))
 	if err != nil {
 		return err
@@ -50,9 +50,11 @@ func Init() error {
 	document = cstore.NewDocument(store, storeKey)
 
 	logman.Info("load config")
-	if err := Load(); err != nil {
+	snapshot, err := ReadStored()
+	if err != nil {
 		return err
 	}
+	Publish(snapshot)
 
 	watchCtx, cancel := context.WithCancel(context.Background())
 	watchCancel = cancel
@@ -99,33 +101,12 @@ func Publish(snapshot *Snapshot) {
 	}
 }
 
-// Load 从 store 加载配置，完整构造后一次性发布。
-func Load() error {
-	snapshot, err := ReadStored()
-	if err != nil {
-		return err
-	}
-	Publish(snapshot)
-	return nil
-}
-
 // Update 在配置副本上串行修改，持久化成功后发布新快照；可选回调用于同步运行态派生数据。
 func Update(mutator func(*Snapshot) error, afterPublish ...func(*Snapshot)) error {
 	updateMu.Lock()
 	defer updateMu.Unlock()
 
-	base := current.Load()
-	stored, err := readSnapshot()
-	if err != nil {
-		return err
-	}
-	if stored != nil {
-		if !reflect.DeepEqual(stored, base) {
-			return fmt.Errorf("配置正在重载，请稍后重试")
-		}
-		base = stored
-	}
-	candidate, err := updateSnapshot(base, mutator)
+	candidate, err := updateSnapshot(mutator)
 	if err != nil {
 		return err
 	}
@@ -143,17 +124,7 @@ func UpdateStored(mutator func(*Snapshot) error) error {
 	updateMu.Lock()
 	defer updateMu.Unlock()
 
-	runtimeSnapshot := current.Load()
-	base, err := readSnapshot()
-	if err != nil {
-		return err
-	}
-	if base == nil {
-		base = runtimeSnapshot
-	} else if !reflect.DeepEqual(base, runtimeSnapshot) {
-		return fmt.Errorf("配置正在重载，请稍后重试")
-	}
-	_, err = updateSnapshot(base, mutator)
+	_, err := updateSnapshot(mutator)
 	return err
 }
 
@@ -200,7 +171,18 @@ func readSnapshot() (*Snapshot, error) {
 	return snapshot, nil
 }
 
-func updateSnapshot(base *Snapshot, mutator func(*Snapshot) error) (*Snapshot, error) {
+// updateSnapshot 在调用方持有 updateMu 时校验基线、构建并保存候选，不发布快照。
+func updateSnapshot(mutator func(*Snapshot) error) (*Snapshot, error) {
+	runtimeSnapshot := Current()
+	base, err := readSnapshot()
+	if err != nil {
+		return nil, err
+	}
+	if base == nil {
+		base = runtimeSnapshot
+	} else if !reflect.DeepEqual(base, runtimeSnapshot) {
+		return nil, fmt.Errorf("配置正在重载，请稍后重试")
+	}
 	if mutator == nil {
 		return nil, fmt.Errorf("配置更新函数不能为空")
 	}
@@ -256,16 +238,12 @@ func persistSnapshot(snapshot *Snapshot) error {
 		Members:     members,
 	}
 
-	buf, err := yaml.Marshal(conf)
+	persistent, err := cloneYAML(conf)
 	if err != nil {
 		return err
 	}
-	var persistent Config
-	if err := yaml.Unmarshal(buf, &persistent); err != nil {
-		return err
-	}
-	denormalizePaths(&persistent)
-	data, err := yaml.Marshal(&persistent)
+	denormalizePaths(persistent)
+	data, err := yaml.Marshal(persistent)
 	if err != nil {
 		return err
 	}
@@ -340,8 +318,8 @@ func watchConfigChanges(ctx context.Context) {
 	}()
 }
 
-// EnvOrDefault 返回去除首尾空白的环境变量值，未设置或去除空白后为空时返回 fallback。
-func EnvOrDefault(key, fallback string) string {
+// envOrDefault 返回去除首尾空白的环境变量值，未设置或去除空白后为空时返回 fallback。
+func envOrDefault(key, fallback string) string {
 	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
 		return v
 	}

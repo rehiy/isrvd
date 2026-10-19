@@ -45,8 +45,8 @@ func ServerNormalize(server *ServerConfig) *ServerConfig {
 	return server
 }
 
-// THANormalize 填充 THA 默认值
-func THANormalize(tha *THAConfig) *THAConfig {
+// normalizeTHA 填充 THA 默认值
+func normalizeTHA(tha *THAConfig) *THAConfig {
 	if tha == nil {
 		tha = &THAConfig{}
 	}
@@ -60,8 +60,8 @@ func THANormalize(tha *THAConfig) *THAConfig {
 	return tha
 }
 
-// OIDCNormalize 填充 OIDC 默认值
-func OIDCNormalize(oidc *OIDCConfig) *OIDCConfig {
+// normalizeOIDC 填充 OIDC 默认值
+func normalizeOIDC(oidc *OIDCConfig) *OIDCConfig {
 	if oidc == nil {
 		oidc = &OIDCConfig{}
 	}
@@ -74,8 +74,8 @@ func OIDCNormalize(oidc *OIDCConfig) *OIDCConfig {
 	return oidc
 }
 
-// PasskeyNormalize 填充 Passkey 默认值
-func PasskeyNormalize(passkey *PasskeyConfig) *PasskeyConfig {
+// normalizePasskey 填充 Passkey 默认值
+func normalizePasskey(passkey *PasskeyConfig) *PasskeyConfig {
 	if passkey == nil {
 		passkey = &PasskeyConfig{}
 	}
@@ -85,8 +85,8 @@ func PasskeyNormalize(passkey *PasskeyConfig) *PasskeyConfig {
 	return passkey
 }
 
-// PasswordNormalize 填充 Password 默认值
-func PasswordNormalize(password *PasswordConfig) *PasswordConfig {
+// normalizePassword 填充 Password 默认值
+func normalizePassword(password *PasswordConfig) *PasswordConfig {
 	if password == nil {
 		password = &PasswordConfig{}
 	}
@@ -96,8 +96,8 @@ func PasswordNormalize(password *PasswordConfig) *PasswordConfig {
 	return password
 }
 
-// MonitorNormalize 填充 Monitor 默认值
-func MonitorNormalize(monitor *MonitorConfig) *MonitorConfig {
+// normalizeMonitor 填充 Monitor 默认值
+func normalizeMonitor(monitor *MonitorConfig) *MonitorConfig {
 	if monitor == nil {
 		monitor = &MonitorConfig{}
 	}
@@ -127,8 +127,8 @@ func FaultAlertNormalize(events *FaultAlertConfig) FaultAlertConfig {
 	return result
 }
 
-// NotifyNormalize 保证应用故障配置完整，并保留旧配置的关闭状态。
-func NotifyNormalize(value *NotifyConfig) *NotifyConfig {
+// normalizeNotify 保证应用故障配置完整，并保留旧配置的关闭状态。
+func normalizeNotify(value *NotifyConfig) *NotifyConfig {
 	result := &NotifyConfig{}
 	if value != nil {
 		*result = *value
