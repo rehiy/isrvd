@@ -121,7 +121,7 @@ import type {
     // Node
     NodeInfo,
     NodeUpdate,
-    NodeForwardUpdate,
+    NodePortMapUpdate,
     NodeCreate,
     NodeCreateResult,
 } from './types'
@@ -911,8 +911,8 @@ class ApiService {
         return http.delete<void>(`node/${id}`)
     }
 
-    nodeForwardUpdate(id: string, data: NodeForwardUpdate) {
-        return http.put<NodeInfo>(`node/${id}/forwards`, data)
+    nodePortMapUpdate(id: string, data: NodePortMapUpdate) {
+        return http.put<NodeInfo>(`node/${id}/portmap`, data)
     }
 
     // ==================== SFTP 文件管理 ====================

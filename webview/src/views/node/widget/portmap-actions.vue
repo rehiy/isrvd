@@ -3,19 +3,19 @@ import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
-import type { NodeForwardInfo } from '@/service/types'
+import type { NodePortMapInfo } from '@/service/types'
 
-import { forwardIs, forwardsPatch } from '@/helper/forward'
+import { portmapIs, portmapPatch } from '@/helper/portmap'
 
 @Component({ emits: ['edit', 'success'] })
-class ForwardActions extends Vue {
-    @Prop({ type: Object, required: true }) readonly item!: NodeForwardInfo
+class PortMapActions extends Vue {
+    @Prop({ type: Object, required: true }) readonly item!: NodePortMapInfo
     @Prop({ type: Boolean, default: false }) readonly compact!: boolean
 
     portal = usePortal()
 
     get canUpdate() {
-        return this.portal.hasPerm('PUT /api/node/:id/forwards')
+        return this.portal.hasPerm('PUT /api/node/:id/portmap')
     }
 
     remove() {
@@ -29,8 +29,8 @@ class ForwardActions extends Vue {
             danger: true,
             onConfirm: async () => {
                 try {
-                    const ok = await forwardsPatch(item.nodeId, list => {
-                        const next = list.filter(f => !forwardIs(f, item))
+                    const ok = await portmapPatch(item.nodeId, list => {
+                        const next = list.filter(f => !portmapIs(f, item))
                         return next.length === list.length ? null : next
                     })
                     if (!ok) {
@@ -45,7 +45,7 @@ class ForwardActions extends Vue {
     }
 }
 
-export default toNative(ForwardActions)
+export default toNative(PortMapActions)
 </script>
 
 <template>

@@ -4,21 +4,21 @@ import { Component, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { NodeForwardInfo, NodeInfo } from '@/service/types'
+import type { NodePortMapInfo, NodeInfo } from '@/service/types'
 
 import { POLL_INTERVAL } from '@/helper/format'
 
 import PageSearch from '@/component/page-search.vue'
 
-import ForwardActions from './widget/forward-actions.vue'
-import NodeForwardModal from './widget/node-forward-modal.vue'
+import NodePortMapModal from './widget/node-portmap-modal.vue'
+import PortMapActions from './widget/portmap-actions.vue'
 
 @Component({
-    components: { PageSearch, ForwardActions, NodeForwardModal }
+    components: { PageSearch, PortMapActions, NodePortMapModal }
 })
-class NodeForwards extends Vue {
+class NodePortMaps extends Vue {
     portal = usePortal()
-    @Ref readonly forwardModalRef!: InstanceType<typeof NodeForwardModal>
+    @Ref readonly portmapModalRef!: InstanceType<typeof NodePortMapModal>
 
     // ─── 数据属性 ───
     nodes: NodeInfo[] = []
@@ -29,9 +29,9 @@ class NodeForwards extends Vue {
 
     // ─── 计算属性 ───
     // 把各节点的规则展开成一张表；已吊销的节点不会保留规则
-    get items(): NodeForwardInfo[] {
+    get items(): NodePortMapInfo[] {
         return this.nodes.flatMap(node =>
-            (node.forwards || []).map(f => ({
+            (node.portmaps || []).map(f => ({
                 ...f,
                 nodeId: node.id,
                 nodeName: node.name,
@@ -51,7 +51,7 @@ class NodeForwards extends Vue {
     }
 
     get canUpdate() {
-        return this.portal.hasPerm('PUT /api/node/:id/forwards')
+        return this.portal.hasPerm('PUT /api/node/:id/portmap')
     }
 
     // 启动数据（探活与权限）加载完成后才能判断节点管理是否启用
@@ -73,17 +73,17 @@ class NodeForwards extends Vue {
     }
 
     // ─── 展示辅助 ───
-    nodeStatusText(item: NodeForwardInfo) {
+    nodeStatusText(item: NodePortMapInfo) {
         if (item.nodeStatus === 'pending') return this.$t('待接入')
         return item.nodeOnline ? this.$t('在线') : this.$t('离线')
     }
 
-    nodeStatusClass(item: NodeForwardInfo) {
+    nodeStatusClass(item: NodePortMapInfo) {
         if (item.nodeStatus === 'pending') return 'text-slate-500'
         return item.nodeOnline ? 'text-emerald-600 font-medium' : 'text-red-500 font-medium'
     }
 
-    itemKey(item: NodeForwardInfo) {
+    itemKey(item: NodePortMapInfo) {
         return `${item.nodeId}/${item.proto}/${item.listen}`
     }
 
@@ -118,11 +118,11 @@ class NodeForwards extends Vue {
             this.portal.showNotification('error', this.$t('暂无可用节点，请先在「节点管理」中接入节点'))
             return
         }
-        this.forwardModalRef?.show(this.nodes)
+        this.portmapModalRef?.show(this.nodes)
     }
 
-    openEdit(item: NodeForwardInfo) {
-        this.forwardModalRef?.show(this.nodes, item)
+    openEdit(item: NodePortMapInfo) {
+        this.portmapModalRef?.show(this.nodes, item)
     }
 
     // ─── 生命周期 ───
@@ -131,7 +131,7 @@ class NodeForwards extends Vue {
     }
 }
 
-export default toNative(NodeForwards)
+export default toNative(NodePortMaps)
 </script>
 
 <template>
@@ -149,7 +149,7 @@ export default toNative(NodeForwards)
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="node-forwards" :placeholder="$t('搜索监听端口、目标、节点或备注...')" focus-color="orange" type-to-search />
+          <PageSearch v-model="searchText" search-key="node-portmaps" :placeholder="$t('搜索监听端口、目标、节点或备注...')" focus-color="orange" type-to-search />
           <button class="btn btn-secondary" @click="load()">
             <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
@@ -182,7 +182,7 @@ export default toNative(NodeForwards)
 
     <!-- 移动端搜索 -->
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="node-forwards" :placeholder="$t('搜索监听端口、目标、节点或备注...')" width-class="w-full" focus-color="orange" />
+      <PageSearch v-model="searchText" search-key="node-portmaps" :placeholder="$t('搜索监听端口、目标、节点或备注...')" width-class="w-full" focus-color="orange" />
     </div>
 
     <!-- Loading -->
@@ -238,7 +238,7 @@ export default toNative(NodeForwards)
               </td>
               <td class="td-text font-mono">{{ item.target }}</td>
               <td class="px-4 py-3">
-                <ForwardActions :item="item" compact @edit="openEdit" @success="load(true)" />
+                <PortMapActions :item="item" compact @edit="openEdit" @success="load(true)" />
               </td>
             </tr>
           </tbody>
@@ -272,11 +272,11 @@ export default toNative(NodeForwards)
             <code class="text-xs bg-slate-100 px-2 py-0.5 rounded-lg break-all">{{ item.target }}</code>
           </div>
 
-          <ForwardActions :item="item" @edit="openEdit" @success="load(true)" />
+          <PortMapActions :item="item" @edit="openEdit" @success="load(true)" />
         </div>
       </div>
     </template>
   </div>
 
-  <NodeForwardModal ref="forwardModalRef" @success="load(true)" />
+  <NodePortMapModal ref="portmapModalRef" @success="load(true)" />
 </template>

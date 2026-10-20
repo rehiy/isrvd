@@ -72,9 +72,9 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/node/nodes.vue')
   },
   {
-    path: '/node/forwards',
-    name: 'node-forwards',
-    component: () => import('@/views/node/forwards.vue')
+    path: '/node/portmaps',
+    name: 'node-portmaps',
+    component: () => import('@/views/node/portmaps.vue')
   },
   {
     path: '/apisix',

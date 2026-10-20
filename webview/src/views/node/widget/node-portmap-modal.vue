@@ -3,9 +3,9 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
-import type { NodeForwardInfo, NodeInfo } from '@/service/types'
+import type { NodePortMapInfo, NodeInfo } from '@/service/types'
 
-import { forwardIs, forwardsPatch } from '@/helper/forward'
+import { portmapIs, portmapPatch } from '@/helper/portmap'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -14,7 +14,7 @@ import BaseModal from '@/component/modal.vue'
     components: { BaseModal },
     emits: ['success']
 })
-class NodeForwardModal extends Vue {
+class NodePortMapModal extends Vue {
     portal = usePortal()
 
     // ─── 数据属性 ───
@@ -22,7 +22,7 @@ class NodeForwardModal extends Vue {
     modalLoading = false
     nodes: NodeInfo[] = []
     // 编辑时保存原规则，用于在最新列表中定位；新增时为 null
-    original: NodeForwardInfo | null = null
+    original: NodePortMapInfo | null = null
     nodeId = ''
     name = ''
     proto: 'tcp' | 'udp' = 'tcp'
@@ -43,7 +43,7 @@ class NodeForwardModal extends Vue {
     }
 
     // ─── 方法 ───
-    show(nodes: NodeInfo[], item?: NodeForwardInfo) {
+    show(nodes: NodeInfo[], item?: NodePortMapInfo) {
         this.nodes = nodes
         this.original = item || null
         this.nodeId = item?.nodeId || this.nodeOptions[0]?.id || ''
@@ -71,9 +71,9 @@ class NodeForwardModal extends Vue {
                 target: this.normalizeTarget(this.target)
             }
             const original = this.original
-            const ok = await forwardsPatch(this.nodeId, list => {
+            const ok = await portmapPatch(this.nodeId, list => {
                 if (!original) return [...list, entry]
-                const index = list.findIndex(f => forwardIs(f, original))
+                const index = list.findIndex(f => portmapIs(f, original))
                 if (index < 0) return null
                 list[index] = entry
                 return list
@@ -90,7 +90,7 @@ class NodeForwardModal extends Vue {
     }
 }
 
-export default toNative(NodeForwardModal)
+export default toNative(NodePortMapModal)
 </script>
 
 <template>

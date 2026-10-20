@@ -43,7 +43,7 @@ server/service/{shell,docker,system} → server/i18n（仅 TC / Translate，i18n
 - `server/service/{account,apisix,...}`：业务组合、参数校验、稳定 API 类型转换；各服务在 `NewService()` 中直接构造底层客户端；不得依赖 `server/app`，**不得依赖 gin**（需要请求信息时接收 `*http.Request`、`context.Context` 或普通结构体）
 - `server/app/`：Gin HTTP/WebSocket 入口、路由索引、中间件、服务生命周期与响应封装
 - `server/gateway/`：中控模式的网关（节点管理 API、`/n/<节点ID>/` 转发、受管机隧道入口），以 `http.Handler` 形式由 `cmd/server` 装配；不依赖 `server/app`，页面一律由 webview 提供；`?token=` 的适用范围与 isrvd 保持一致，由 `cmd/server` 通过 `Options.QueryTokenRoutes`（来自 `app.QueryTokenRoutes()`）注入，不得在网关里另写一份路由清单；节点管理路由元信息统一由 `service/node.PermissionRoutes()` 提供，中控权限目录与网关注册共用；节点管理及业务转发经 `Options.CheckPermission`（`app.GatewayPermission`）校验当前成员路由权限，禁止仅以是否登录放行；上游不可达返回 502，不得当作未登录（401）；操作经 `Options.Audit`（`app.Audit()`，写入 app 当前的审计服务，重载后自动指向新实例）按 isrvd 审计基线记录，不得另建 `AuditService` 写同一目录；会随配置重载变化的值（如 `allowedOrigins`）以函数传入、每次读取，不得在启动时固化
-- 节点模块按职责组织：`service/node/node.go` 定义持久化实体 `Node` 与在线响应 `NodeInfo`，`store.go` 只持久化 `Node` 并返回提交快照，`auth.go` 聚合认证、限流与 token 处理，`session.go` 管理会话与传输，`agent.go` 包含受管机客户端及协议数据（隧道流按首字节分流为 HTTP 与端口转发流），`forward.go` 定义转发规则、校验、线路头部及受管机侧中继，`forwarder.go` 是中控侧 TCP/UDP 监听器与规则生命周期（监听范围与地址来自配置文件 `portmap` 分区，由 `config.PortMapConfig` 提供校验与判定，服务创建时读取一次，修改后重启生效）。网关的节点 HTTP/WebSocket 接入、转发与启动数据聚合、中间件、响应分别放在 `gateway/{node,proxy,middleware,response}.go`，`gateway.go` 只负责装配与路由。部署环境配置在 `server/config/cluster.go` 定义、读取与校验。
+- 节点模块按职责组织：`service/node/node.go` 定义持久化实体 `Node` 与在线响应 `NodeInfo`，`store.go` 只持久化 `Node` 并返回提交快照，`auth.go` 聚合认证、限流与 token 处理，`session.go` 管理会话与传输，`agent.go` 包含受管机客户端及协议数据（隧道流按首字节分流为 HTTP 与端口转发流），`portmap.go` 定义端口转发规则、校验、线路头部及受管机侧中继，`portmap_listener.go` 是中控侧 TCP/UDP 监听器与规则生命周期（监听范围与地址来自配置文件 `portmap` 分区，由 `config.PortMapConfig` 提供校验与判定，服务创建时读取一次，修改后重启生效）。网关的节点 HTTP/WebSocket 接入、转发与启动数据聚合、中间件、响应分别放在 `gateway/{node,proxy,middleware,response}.go`，`gateway.go` 只负责装配与路由。部署环境配置在 `server/config/cluster.go` 定义、读取与校验。
 - `server/cmd/server/`：`main.go` 按 `config.Init → run` 初始化并启动；`launch.go` 按环境变量 `ISRVD_MODE`（`server`/`center`/`agent`）装配并调用 `app.StartApp`，是唯一的组装点，业务逻辑不得写在这里。构建与运行一律用包路径 `./server/cmd/server`（含多个文件，不能再用单文件路径）
 
 ### 禁止
@@ -318,7 +318,7 @@ docs/
 - Caddy：`/caddy/servers`、`/caddy/routes`、`/caddy/certs`、`/caddy/global`、`/caddy/basic-auth`、`/caddy/raw`
 - Docker：`/docker/containers`、`/docker/images`、`/docker/networks`、`/docker/volumes`、`/docker/registries` 及对应详情页
 - Swarm：`/swarm/nodes`、`/swarm/services`、`/swarm/tasks` 及对应详情/日志页
-- 集中管控（仅 `center` 模式且有节点列表路由权限）：侧边栏二级菜单，`/node/access`（节点管理）单个列表页展示全部节点，通过 pending/active/revoked 状态区分待接入、已激活和已吊销；`/node/forwards`（端口转发）展示全部节点的转发规则；`/node` 重定向到 `/node/access`；节点视角为页面路径 `/n/<节点ID>/`
+- 集中管控（仅 `center` 模式且有节点列表路由权限）：侧边栏二级菜单，`/node/access`（节点管理）单个列表页展示全部节点，通过 pending/active/revoked 状态区分待接入、已激活和已吊销；`/node/portmaps`（端口转发）展示全部节点的转发规则；`/node` 重定向到 `/node/access`；节点视角为页面路径 `/n/<节点ID>/`
 - 系统模块：`/system/config`（父布局 + 5 个分组子路由 `/system/config/{service,auth,gateway,alert,integrations}`，默认跳转 `service`；侧边栏「系统配置」为折叠子菜单，项名与顺序来自 `webview/src/stores/config.ts` 的 `configGroups`，该常量同时定义分组与后端配置分区的映射）、`/system/audit/logs`；用户管理：`/account/members`；账户设置：`/account/password`、`/account/passkeys`、`/account/apikey`
 - 计划任务：`/cron/jobs`；Compose：`/compose/marketplace`、`/compose/deploy`
 - 折叠子菜单展开状态跟随当前路由（`@Watch` immediate）

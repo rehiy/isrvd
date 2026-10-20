@@ -30,7 +30,7 @@ isrvd_get "/node/nodes"
 | `os` | string | 注册时上报的操作系统 |
 | `arch` | string | 注册时上报的 CPU 架构 |
 | `createdAt` | string | 节点创建时间（只读） |
-| `forwards` | array | 端口转发规则，未配置时不返回；字段见下文「配置端口转发」 |
+| `portmaps` | array | 端口转发规则，未配置时不返回；字段见下文「配置端口转发」 |
 | `online` | bool | 当前是否在线 |
 | `latency` | number | 隧道往返延迟（毫秒），离线为 `0` |
 | `agentVersion` | string | 受管机程序版本，离线时不返回 |
@@ -102,10 +102,10 @@ isrvd_delete "/node/<ID>"
 在中控监听端口，经隧道转发到节点侧的任意 `host:port`（类似 frp），支持 TCP 与 UDP；也可在 Web 界面「集中管控 → 端口转发」中管理。需先在中控配置文件设置 `portmap.ports`（可分配的监听端口范围，如 `20000-20999`；留空则功能关闭），修改后重启生效，详见 [集中管理](../../multi-node.md)。
 
 ```bash
-isrvd_put "/node/<ID>/forwards" '{"forwards":[{"name":"SSH","proto":"tcp","listen":20022,"target":"127.0.0.1:22"},{"proto":"udp","listen":25353,"target":"127.0.0.1:53"}]}'
+isrvd_put "/node/<ID>/portmap" '{"portmaps":[{"name":"SSH","proto":"tcp","listen":20022,"target":"127.0.0.1:22"},{"proto":"udp","listen":25353,"target":"127.0.0.1:53"}]}'
 ```
 
-请求体整体替换该节点的规则；传 `{"forwards":[]}` 清空。保存前会先确认新增端口可监听，失败则不保存任何变更。
+请求体整体替换该节点的规则；传 `{"portmaps":[]}` 清空。保存前会先确认新增端口可监听，失败则不保存任何变更。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|

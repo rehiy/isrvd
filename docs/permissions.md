@@ -19,7 +19,7 @@
 | `node` | `PUT /api/node/:id` | 重命名节点 |
 | `node` | `POST /api/node/:id/revoke` | 吊销节点 |
 | `node` | `DELETE /api/node/:id` | 删除节点 |
-| `node` | `PUT /api/node/:id/forwards` | 配置节点端口转发（等同于访问节点网络内任意地址，且转发连接不经 isrvd 认证，建议仅创始人） |
+| `node` | `PUT /api/node/:id/portmap` | 配置节点端口转发（等同于访问节点网络内任意地址，且转发连接不经 isrvd 认证，建议仅创始人） |
 | `overview` | `GET /api/overview/version` | 系统概览（版本信息） |
 | `overview` | `GET /api/overview/monitor` | 系统概览（监控数据） |
 | `overview` | `POST /api/overview/upgrade` | 系统概览（在线升级） |

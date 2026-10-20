@@ -1,5 +1,5 @@
 // 端口转发规则：中控监听 listen，经隧道连到节点侧 target
-export interface NodeForward {
+export interface NodePortMap {
     name?: string
     proto: 'tcp' | 'udp'
     listen: number // 中控监听端口
@@ -7,12 +7,12 @@ export interface NodeForward {
 }
 
 // 端口转发规则整体替换请求
-export interface NodeForwardUpdate {
-    forwards: NodeForward[]
+export interface NodePortMapUpdate {
+    portmaps: NodePortMap[]
 }
 
 // 端口转发列表项：规则及其所属节点（由节点列表展开得到，后端不返回）
-export interface NodeForwardInfo extends NodeForward {
+export interface NodePortMapInfo extends NodePortMap {
     nodeId: string
     nodeName: string
     nodeOnline: boolean
@@ -28,7 +28,7 @@ export interface NodeInfo {
     os: string
     arch: string
     createdAt: string
-    forwards?: NodeForward[]
+    portmaps?: NodePortMap[]
     online: boolean
     latency: number // 隧道往返延迟（毫秒），离线为 0
     agentVersion?: string

@@ -588,7 +588,7 @@ export default toNative(NavigationBar)
               <i class="fas fa-server"></i>
               <span>{{ $t('节点管理') }}</span>
             </router-link>
-            <router-link to="/node/forwards" class="nav-link" :class="{ 'nav-link-active': isActive('/node/forwards') }">
+            <router-link to="/node/portmaps" class="nav-link" :class="{ 'nav-link-active': isActive('/node/portmaps') }">
               <i class="fas fa-right-left"></i>
               <span>{{ $t('端口转发') }}</span>
             </router-link>

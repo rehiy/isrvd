@@ -30,7 +30,7 @@ isrvd
 - 每个进程内部仍是完整的 isrvd：`center` 与 `agent` 模式下，isrvd 只监听 `127.0.0.1` 的随机端口。`center` 另起网关占用配置里的 `listenAddr` 作为对外入口；`agent` 不监听任何对外端口，配置里的 `listenAddr` 不生效。
 - 浏览器访问 `/n/<节点ID>/`，页面仍由中控提供；其中的 Docker、Swarm、Compose、文件、本机进程、Shell 终端、计划任务、APISIX、Caddy、系统概览接口经隧道转发到该节点，包括流式日志、终端和文件上传下载。
 - 账号、系统配置、AI 助手、SSH 远程管理始终由中控自己处理，即使在 `/n/<节点ID>/` 下访问也一样。
-- 节点切换与节点管理是 webview 的一部分，**按需启用**：只有 `center` 模式（`/api/overview/bootstrap` 的 `probe.node` 为 `true`）且当前用户有 `GET /api/node/nodes` 权限时，才会出现头部的节点切换器；侧边栏「集中管控」还要求当前处于本机（中控）视角（位于「用户管理」下方），是带两个子页的折叠菜单：「节点管理」（`#/node/access`）管理节点，「端口转发」（`#/node/forwards`）管理端口映射。单机模式、`agent` 模式和无节点列表权限的成员看不到任何节点界面，也不会发出节点接口请求，直接访问 `#/node` 会回到概览。
+- 节点切换与节点管理是 webview 的一部分，**按需启用**：只有 `center` 模式（`/api/overview/bootstrap` 的 `probe.node` 为 `true`）且当前用户有 `GET /api/node/nodes` 权限时，才会出现头部的节点切换器；侧边栏「集中管控」还要求当前处于本机（中控）视角（位于「用户管理」下方），是带两个子页的折叠菜单：「节点管理」（`#/node/access`）管理节点，「端口转发」（`#/node/portmaps`）管理端口转发。单机模式、`agent` 模式和无节点列表权限的成员看不到任何节点界面，也不会发出节点接口请求，直接访问 `#/node` 会回到概览。
 - 切换节点是一次整页跳转：地址变为 `/n/<节点ID>/`，页面停留在当前功能页（带资源参数的详情页回到概览，从中控管理页面切换到子节点时也回到概览）。子节点视角隐藏「节点管理」「用户管理」「系统配置」「操作审计」与「SSH 远程管理」，直接访问这些页面会回到概览；头部节点切换器与个人账户设置保留。此限制仅影响前端页面，相关接口作用于中控，并执行中控的认证与权限校验。
 - 认证与权限复用中控当前的账户服务：网关在进程内验证调用者凭据并检查请求对应的路由权限。成员权限、密码或 JWT 密钥变更在配置发布后对新请求立即生效；已建立的长连接不会逐条消息重新认证。应用未就绪或正在重载时，节点管理与转发返回 `502`，避免前端误判为登录过期。节点视角的页面启动仍聚合中控身份与节点服务能力，中控上游不可达时同样返回 `502`。
 - 中控网关在请求带 `Upgrade: websocket` 或命中声明了 `QueryToken` 的 `GET` 路由时可从 `?token=` 读取令牌；无论凭据来自哪里，节点管理和转发仍须通过中控身份认证与路由权限校验。普通请求不要把令牌放进 URL，避免进入访问日志、浏览器历史记录或 Referer。
@@ -97,7 +97,7 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 
 ## 端口转发（类似 frp）
 
-在「集中管控 → 端口转发」页点击「添加转发」，或调用 `PUT /api/node/{id}/forwards`，即可让中控监听一个端口，把 TCP 或 UDP 流量经隧道转发到节点侧的任意 `host:port`（`host` 缺省为节点本机 `127.0.0.1`）。规则由中控统一管理并存入 `node-list.yml`，受管机不需要额外配置，也不开放任何端口。
+在「集中管控 → 端口转发」页点击「添加转发」，或调用 `PUT /api/node/{id}/portmap`，即可让中控监听一个端口，把 TCP 或 UDP 流量经隧道转发到节点侧的任意 `host:port`（`host` 缺省为节点本机 `127.0.0.1`）。规则由中控统一管理并存入 `node-list.yml`，受管机不需要额外配置，也不开放任何端口。
 
 ```text
 客户端 ──TCP/UDP──> center:20022 ──隧道流──> agent ──> 127.0.0.1:22
@@ -121,7 +121,7 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 
 ## 接口路径变更
 
-节点管理接口由 `/api/node/item/...` 缩短为 `/api/node/...`（创建 `POST /api/node`，其余为 `PUT|DELETE /api/node/{id}`、`POST /api/node/{id}/revoke`、`PUT /api/node/{id}/forwards`）。旧路径不再保留。
+节点管理接口由 `/api/node/item/...` 缩短为 `/api/node/...`（创建 `POST /api/node`，其余为 `PUT|DELETE /api/node/{id}`、`POST /api/node/{id}/revoke`、`PUT /api/node/{id}/portmap`）。旧路径不再保留。
 
 - 成员权限按路由字符串精确匹配，不会自动迁移：升级后，已被授予旧写法（如 `PUT /api/node/item/:id`）的普通成员需要在成员管理中重新勾选新的节点管理权限；创始人不受影响。
 - 自行编写的脚本或集成需要改用新路径。`GET /api/node/nodes` 与受管机接入的 `GET /api/node/connect` 不变。
@@ -152,7 +152,7 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 | `PUT /api/node/{id}` | 对应路由权限 | 重命名，body `{"name":"…"}`（1–64 个字符） |
 | `POST /api/node/{id}/revoke` | 对应路由权限 | 吊销：令牌立即失效并断开连接，需删除后用新令牌重新接入 |
 | `DELETE /api/node/{id}` | 对应路由权限 | 删除并断开连接 |
-| `PUT /api/node/{id}/forwards` | 对应路由权限 | 整体替换节点的端口转发规则，body `{"forwards":[{"proto":"tcp","listen":20022,"target":"127.0.0.1:22"}]}`，见上文「端口转发」 |
+| `PUT /api/node/{id}/portmap` | 对应路由权限 | 整体替换节点的端口转发规则，body `{"portmaps":[{"proto":"tcp","listen":20022,"target":"127.0.0.1:22"}]}`，见上文「端口转发」 |
 | `GET /api/node/connect` | 节点令牌 | 受管机建立 WebSocket 隧道，首次连接时激活待接入的令牌；令牌只经 `Authorization: Bearer` 头传递，带 `Origin` 的浏览器请求会被拒绝 |
 | `/n/{id}/…` | 对应路由权限 | 以某个节点的视角访问，见上文「工作方式」 |
 
@@ -168,12 +168,12 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 | `node/auth.go` | 握手认证与限流、token 生成和哈希；认证、吊销、删除共用服务锁，避免重复接入和吊销竞态 |
 | `node/session.go` | 会话登记/释放、在线状态投影、隧道传输和延迟采样；协议协商继承连接的 context |
 | `node/agent.go` | 两端共用的协商协议与受管机常连客户端；隧道流按首字节分流为 HTTP 与端口转发 |
-| `node/forward.go` | 转发规则 `Forward`、校验、线路头部与 UDP 分帧、受管机侧的转发中继 |
-| `node/forwarder.go` | 中控侧监听器（TCP/UDP）、规则更新与监听生命周期 |
+| `node/portmap.go` | 端口转发规则 `PortMap`、校验、线路头部与 UDP 分帧、受管机侧的转发中继 |
+| `node/portmap_listener.go` | 中控侧监听器（TCP/UDP）、规则更新与监听生命周期 |
 | `node/proxy.go`、`node/permission.go` | 节点业务转发及共享权限目录 |
 
 表中 `node/` 均指 `server/service/node/`。部署模式、中心地址及 token 的环境变量由 `server/config/cluster.go` 统一读取、校验。存储层只接收 `Node`，在线状态通过 `NodeInfo` 投影到响应中，不进入 YAML；接口的 JSON 字段继续保持扁平结构。
 
 网关 `server/gateway` 按 HTTP 职责组织：`gateway.go` 负责装配和路由，`node.go` 处理节点管理与 WebSocket 接入，`proxy.go` 负责节点转发与启动数据聚合，`middleware.go` 复用中控认证/权限/审计，`response.go` 统一输出 JSON。网关不构造账户或审计服务，始终通过 `Options` 使用应用当前实例。
 
-前端 `views/node/nodes.vue`（节点管理）负责节点列表、搜索、轮询和弹窗；`widget/node-actions.vue` 统一桌面与移动端的重命名、吊销、删除按钮及权限检查；创建和编辑表单由各自的 modal 维护。`views/node/forwards.vue`（端口转发）把各节点的规则展开成一张表，`widget/forward-actions.vue` 负责编辑与删除，`widget/node-forward-modal.vue` 维护单条规则；后端按节点整体替换规则，所以 `helper/forward.ts` 的 `forwardsPatch` 在每次增删改前先读取节点最新的规则列表，避免覆盖他人刚做的修改。
+前端 `views/node/nodes.vue`（节点管理）负责节点列表、搜索、轮询和弹窗；`widget/node-actions.vue` 统一桌面与移动端的重命名、吊销、删除按钮及权限检查；创建和编辑表单由各自的 modal 维护。`views/node/portmaps.vue`（端口转发）把各节点的规则展开成一张表，`widget/portmap-actions.vue` 负责编辑与删除，`widget/node-portmap-modal.vue` 维护单条规则；后端按节点整体替换规则，所以 `helper/portmap.ts` 的 `portmapPatch` 在每次增删改前先读取节点最新的规则列表，避免覆盖他人刚做的修改。
