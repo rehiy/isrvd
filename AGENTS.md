@@ -352,7 +352,7 @@ docs/
 3. 文件系统操作防目录遍历；解压防 Zip Slip
 4. WebSocket 必须经过认证链路
 5. 关键资源（内置角色等）前后端双重校验
-6. SSH 密码/私钥加密落盘（`server/service/webssh/secret.go`，密钥由 JWT 密钥派生）；节点 token 为 86 字符随机串，仅创建时返回，中控 `node-list.yml` 只保存 SHA-256 哈希，受管机从 `ISRVD_NODE_TOKEN` 读取
+6. SSH 密码/私钥加密落盘（`server/service/webssh/secret.go`，密钥由 JWT 密钥派生）；节点 token 为 86 字符纯字母数字随机串，仅创建时返回，中控 `node-list.yml` 只保存 SHA-256 哈希，受管机从 `ISRVD_NODE_TOKEN` 读取
 
 ---
 

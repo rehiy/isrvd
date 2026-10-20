@@ -69,7 +69,7 @@ type NodeCreateResult struct {
 	Token string    `json:"token"`
 }
 
-// NodeCreate 创建待接入节点，令牌由 64 字节随机数编码为 86 个 URL 安全字符。
+// NodeCreate 创建待接入节点，令牌由密码学随机数采样为 86 个字母数字字符。
 func (s *Service) NodeCreate(req *NodeRequest) (*NodeCreateResult, error) {
 	name, err := req.name()
 	if err != nil {

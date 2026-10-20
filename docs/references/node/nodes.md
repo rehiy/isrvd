@@ -52,7 +52,7 @@ isrvd_post "/node/item" '{"name":"杭州机房 web-01"}'
 | 响应字段 | 类型 | 说明 |
 |------|------|------|
 | `node` | object | 上表中的节点对象，初始 `status` 为 `pending` |
-| `token` | string | 86 字符的密码学安全随机 token，无时效限制，仅在创建时返回 |
+| `token` | string | 86 字符的纯字母数字随机 token，无时效限制，仅在创建时返回 |
 
 中控在 `node-list.yml` 中只保存 token 的 SHA-256 哈希（`tokenHash`），不保存明文或可解密密文。列表和更新响应均不返回 token；遗失后删除节点并重新创建。JWT 密钥变更不影响节点 token。
 

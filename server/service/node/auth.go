@@ -1,16 +1,16 @@
 package node
 
 import (
-	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
-	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/rehiy/libgo/strutil"
 )
 
 var (
@@ -125,13 +125,9 @@ func (l *rateLimiter) prune(key string, now time.Time) []time.Time {
 
 // ─── 辅助函数 ───
 
-// newToken 将 64 字节密码学随机数编码为 86 字符令牌。
+// newToken 生成 86 字符的纯字母数字密码学安全令牌，熵约 512 位。
 func newToken() (string, error) {
-	buf := make([]byte, 64)
-	if _, err := rand.Read(buf); err != nil {
-		return "", err
-	}
-	return base64.RawURLEncoding.EncodeToString(buf), nil
+	return strutil.Rand(86), nil
 }
 
 func hashToken(token string) string {
