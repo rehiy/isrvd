@@ -29,6 +29,7 @@ type AllConfig struct {
 	Docker      *config.DockerConfig      `json:"docker"`      // Docker 配置（registry.Password：响应脱敏 / 请求空保留）
 	Monitor     *config.MonitorConfig     `json:"monitor"`     // 监控配置
 	Marketplace *config.MarketplaceConfig `json:"marketplace"` // 应用市场配置
+	Forward     *config.ForwardConfig     `json:"forward"`     // 中控端口转发配置（仅 center 模式使用，修改后需重启生效）
 	Links       []*config.LinkConfig      `json:"links"`       // 导航链接列表
 }
 
@@ -56,6 +57,7 @@ func (s *ConfigService) ConfigAll() *AllConfig {
 		Docker:      snapshot.Docker,
 		Monitor:     snapshot.Monitor,
 		Marketplace: snapshot.Marketplace,
+		Forward:     snapshot.Forward,
 		Links:       snapshot.Links,
 	}
 	dst, err := deepCopyJSON(src)
@@ -179,6 +181,9 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 		}
 		if req.Marketplace != nil {
 			draft.Marketplace = req.Marketplace
+		}
+		if req.Forward != nil {
+			draft.Forward = req.Forward
 		}
 		if req.Links != nil {
 			draft.Links = req.Links

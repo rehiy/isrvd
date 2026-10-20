@@ -32,6 +32,7 @@ type Snapshot struct {
 	Docker      *DockerConfig            `yaml:"docker"`
 	Monitor     *MonitorConfig           `yaml:"monitor"`
 	Marketplace *MarketplaceConfig       `yaml:"marketplace"`
+	Forward     *ForwardConfig           `yaml:"forward,omitempty"`
 	Links       []*LinkConfig            `yaml:"links"`
 	Members     map[string]*MemberConfig `yaml:"members"`
 }
@@ -71,6 +72,7 @@ func buildSnapshot(conf *Config) (*Snapshot, error) {
 		Docker:      cloned.Docker,
 		Monitor:     cloned.Monitor,
 		Marketplace: cloned.Marketplace,
+		Forward:     cloned.Forward,
 		Links:       cloned.Links,
 		Members:     make(map[string]*MemberConfig, len(cloned.Members)),
 	}
@@ -149,6 +151,9 @@ func validateSnapshot(snapshot *Snapshot) error {
 			return err
 		}
 	}
+	if err := validateForward(snapshot.Forward); err != nil {
+		return err
+	}
 	if snapshot.Password.Disabled && !snapshot.Passkey.Enabled && !snapshot.OIDC.Enabled && !snapshot.THA.Enabled {
 		return fmt.Errorf("至少需要启用一种登录方式")
 	}
@@ -218,6 +223,10 @@ func normalizeSnapshot(snapshot *Snapshot) error {
 	snapshot.Monitor = normalizeMonitor(snapshot.Monitor)
 	if snapshot.Marketplace == nil {
 		snapshot.Marketplace = &MarketplaceConfig{}
+	}
+	if snapshot.Forward != nil {
+		snapshot.Forward.Ports = strings.TrimSpace(snapshot.Forward.Ports)
+		snapshot.Forward.Bind = strings.TrimSpace(snapshot.Forward.Bind)
 	}
 	if snapshot.Members == nil {
 		snapshot.Members = map[string]*MemberConfig{}

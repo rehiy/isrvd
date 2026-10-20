@@ -4,21 +4,22 @@ import "time"
 
 // 配置结构
 type Config struct {
-	Schema      *SchemaConfig      `yaml:"schema"`      // 配置格式元信息，用于版本化迁移
-	Server      *ServerConfig      `yaml:"server"`      // 服务配置
-	Password    *PasswordConfig    `yaml:"password"`    // 密码登录配置
-	Passkey     *PasskeyConfig     `yaml:"passkey"`     // Passkey 登录配置
-	OIDC        *OIDCConfig        `yaml:"oidc"`        // OIDC 登录配置
-	THA         *THAConfig         `yaml:"tha"`         // 代理 Header 登录配置
-	Copilot     *CopilotConfig     `yaml:"copilot"`     // Copilot LLM 配置
-	Notify      *NotifyConfig      `yaml:"notify"`      // 告警通知配置
-	Apisix      *ApisixConfig      `yaml:"apisix"`      // APISIX 配置
-	Caddy       *CaddyConfig       `yaml:"caddy"`       // Caddy 配置
-	Docker      *DockerConfig      `yaml:"docker"`      // Docker 配置
-	Monitor     *MonitorConfig     `yaml:"monitor"`     // 监控配置
-	Marketplace *MarketplaceConfig `yaml:"marketplace"` // 应用市场配置
-	Links       []*LinkConfig      `yaml:"links"`       // 工具栏链接列表
-	Members     []*MemberConfig    `yaml:"members"`     // 成员列表
+	Schema      *SchemaConfig      `yaml:"schema"`            // 配置格式元信息，用于版本化迁移
+	Server      *ServerConfig      `yaml:"server"`            // 服务配置
+	Password    *PasswordConfig    `yaml:"password"`          // 密码登录配置
+	Passkey     *PasskeyConfig     `yaml:"passkey"`           // Passkey 登录配置
+	OIDC        *OIDCConfig        `yaml:"oidc"`              // OIDC 登录配置
+	THA         *THAConfig         `yaml:"tha"`               // 代理 Header 登录配置
+	Copilot     *CopilotConfig     `yaml:"copilot"`           // Copilot LLM 配置
+	Notify      *NotifyConfig      `yaml:"notify"`            // 告警通知配置
+	Apisix      *ApisixConfig      `yaml:"apisix"`            // APISIX 配置
+	Caddy       *CaddyConfig       `yaml:"caddy"`             // Caddy 配置
+	Docker      *DockerConfig      `yaml:"docker"`            // Docker 配置
+	Monitor     *MonitorConfig     `yaml:"monitor"`           // 监控配置
+	Marketplace *MarketplaceConfig `yaml:"marketplace"`       // 应用市场配置
+	Forward     *ForwardConfig     `yaml:"forward,omitempty"` // 中控端口转发配置（仅 center 模式使用）
+	Links       []*LinkConfig      `yaml:"links"`             // 工具栏链接列表
+	Members     []*MemberConfig    `yaml:"members"`           // 成员列表
 }
 
 // SchemaConfig 配置格式元信息
@@ -36,6 +37,12 @@ type ServerConfig struct {
 	JWTExpiration  int64    `yaml:"jwtExpiration" json:"jwtExpiration"`   // JWT 过期时间（秒），默认 86400
 	OpenAPI        bool     `yaml:"openapi" json:"openapi"`               // 是否对外提供 OpenAPI 文档（/openapi/），默认关闭
 	Debug          bool     `yaml:"debug" json:"debug"`                   // 是否启用调试模式
+}
+
+// ForwardConfig 中控节点端口转发配置，仅 center 模式使用，修改后需重启生效。
+type ForwardConfig struct {
+	Ports string `yaml:"ports,omitempty" json:"ports,omitempty"` // 允许分配的监听端口范围，如 20000-20999 或单个端口；留空表示不启用
+	Bind  string `yaml:"bind,omitempty" json:"bind,omitempty"`   // 监听地址（IP），默认 127.0.0.1；对外开放须显式设为 0.0.0.0 等地址
 }
 
 // 密码登录配置

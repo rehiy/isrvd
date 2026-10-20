@@ -9507,6 +9507,10 @@
           "THA": {
             "description": "代理 Header 登录配置",
             "type": "object"
+          },
+          "Forward": {
+            "description": "中控端口转发配置（仅 center 模式使用）",
+            "type": "object"
           }
         },
         "type": "object"
@@ -12531,6 +12535,10 @@
           "tha": {
             "$ref": "#/components/schemas/config.THAConfig",
             "description": "代理 Header 认证配置"
+          },
+          "forward": {
+            "$ref": "#/components/schemas/config.ForwardConfig",
+            "description": "中控端口转发配置（仅 center 模式使用，修改后需重启生效）"
           }
         },
         "type": "object"
@@ -12698,6 +12706,19 @@
           "name",
           "addr"
         ],
+        "type": "object"
+      },
+      "config.ForwardConfig": {
+        "properties": {
+          "bind": {
+            "description": "监听地址（IP），默认 127.0.0.1；对外开放须显式设为 0.0.0.0 等地址",
+            "type": "string"
+          },
+          "ports": {
+            "description": "允许分配的监听端口范围，如 20000-20999 或单个端口；留空表示不启用",
+            "type": "string"
+          }
+        },
         "type": "object"
       }
     },

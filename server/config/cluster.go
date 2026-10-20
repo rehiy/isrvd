@@ -11,16 +11,14 @@ import (
 // ErrInvalidClusterConfig 表示多节点部署配置无效。
 var ErrInvalidClusterConfig = errors.New("运行模式配置无效")
 
+// ErrInvalidForwardConfig 表示中控端口转发配置无效。
+var ErrInvalidForwardConfig = errors.New("端口转发配置无效")
+
 // ClusterConfig 是仅从环境变量读取的进程启动配置，不参与持久化或配置 API。
 type ClusterConfig struct {
 	Mode      string
 	CenterURL string
 	NodeToken string
-
-	// 以下仅 center 使用：端口转发的监听地址与允许分配的监听端口范围，范围为 0 表示未启用。
-	ForwardBind    string
-	ForwardPortMin int
-	ForwardPortMax int
 }
 
 var clusterConfig = ClusterConfig{Mode: "server"}
@@ -30,28 +28,11 @@ func Cluster() ClusterConfig {
 	return clusterConfig
 }
 
-// ForwardEnabled 判断中控是否启用端口转发。
-func (c ClusterConfig) ForwardEnabled() bool {
-	return c.ForwardPortMax > 0
-}
-
-// ForwardPortAllowed 判断端口是否在允许分配的监听范围内。
-func (c ClusterConfig) ForwardPortAllowed(port int) bool {
-	return c.ForwardEnabled() && port >= c.ForwardPortMin && port <= c.ForwardPortMax
-}
-
 func loadClusterEnv() error {
 	cluster := ClusterConfig{
-		Mode:        strings.ToLower(envOrDefault("ISRVD_MODE", "server")),
-		CenterURL:   strings.TrimRight(envOrDefault("ISRVD_CENTER_URL", ""), "/"),
-		NodeToken:   envOrDefault("ISRVD_NODE_TOKEN", ""),
-		ForwardBind: strings.TrimSpace(envOrDefault("ISRVD_FORWARD_BIND", "127.0.0.1")),
-	}
-	if cluster.Mode == "center" {
-		var err error
-		if cluster.ForwardPortMin, cluster.ForwardPortMax, err = parsePortRange(envOrDefault("ISRVD_FORWARD_PORTS", "")); err != nil {
-			return fmt.Errorf("%w：ISRVD_FORWARD_PORTS %v", ErrInvalidClusterConfig, err)
-		}
+		Mode:      strings.ToLower(envOrDefault("ISRVD_MODE", "server")),
+		CenterURL: strings.TrimRight(envOrDefault("ISRVD_CENTER_URL", ""), "/"),
+		NodeToken: envOrDefault("ISRVD_NODE_TOKEN", ""),
 	}
 	if err := validateCluster(&cluster); err != nil {
 		return err
@@ -63,12 +44,7 @@ func loadClusterEnv() error {
 // validateCluster 校验环境变量中的多节点部署配置，不回显连接凭据。
 func validateCluster(cluster *ClusterConfig) error {
 	switch cluster.Mode {
-	case "server":
-		return nil
-	case "center":
-		if cluster.ForwardEnabled() && net.ParseIP(cluster.ForwardBind) == nil {
-			return fmt.Errorf("%w：ISRVD_FORWARD_BIND 必须是 IP 地址", ErrInvalidClusterConfig)
-		}
+	case "server", "center":
 		return nil
 	case "agent":
 		u, err := parseHTTPURL("ISRVD_CENTER_URL", cluster.CenterURL)
@@ -87,20 +63,68 @@ func validateCluster(cluster *ClusterConfig) error {
 	}
 }
 
-// parsePortRange 解析 "20000-20999" 或单个端口 "20022"；空串表示未启用。
-func parsePortRange(value string) (int, int, error) {
+// Enabled 判断是否配置了端口转发的监听端口范围；nil 视为未启用。
+func (f *ForwardConfig) Enabled() bool {
+	_, hi := f.PortRange()
+	return hi > 0
+}
+
+// PortRange 返回允许分配的监听端口范围；未配置或格式无效时返回 0, 0。
+func (f *ForwardConfig) PortRange() (int, int) {
+	if f == nil {
+		return 0, 0
+	}
+	lo, hi, ok := parsePortRange(f.Ports)
+	if !ok {
+		return 0, 0
+	}
+	return lo, hi
+}
+
+// PortAllowed 判断端口是否在允许分配的监听范围内。
+func (f *ForwardConfig) PortAllowed(port int) bool {
+	lo, hi := f.PortRange()
+	return hi > 0 && port >= lo && port <= hi
+}
+
+// BindAddr 返回监听地址，未配置时仅绑定回环。
+func (f *ForwardConfig) BindAddr() string {
+	if f == nil || f.Bind == "" {
+		return "127.0.0.1"
+	}
+	return f.Bind
+}
+
+// validateForward 校验端口转发配置；未配置（nil）合法。
+func validateForward(f *ForwardConfig) error {
+	if f == nil {
+		return nil
+	}
+	if f.Ports != "" {
+		if _, _, ok := parsePortRange(f.Ports); !ok {
+			return fmt.Errorf("%w：forward.ports 格式应为 20000-20999 或单个端口（1–65535）", ErrInvalidForwardConfig)
+		}
+	}
+	if f.Bind != "" && net.ParseIP(f.Bind) == nil {
+		return fmt.Errorf("%w：forward.bind 必须是 IP 地址", ErrInvalidForwardConfig)
+	}
+	return nil
+}
+
+// parsePortRange 解析 "20000-20999" 或单个端口 "20022"；空串返回 0, 0, true 表示未启用。
+func parsePortRange(value string) (lo, hi int, ok bool) {
 	value = strings.TrimSpace(value)
 	if value == "" {
-		return 0, 0, nil
+		return 0, 0, true
 	}
-	lo, hi, found := strings.Cut(value, "-")
+	loText, hiText, found := strings.Cut(value, "-")
 	if !found {
-		hi = lo
+		hiText = loText
 	}
-	min, err1 := strconv.Atoi(strings.TrimSpace(lo))
-	max, err2 := strconv.Atoi(strings.TrimSpace(hi))
-	if err1 != nil || err2 != nil || min < 1 || max > 65535 || min > max {
-		return 0, 0, fmt.Errorf("格式应为 20000-20999 或单个端口（1–65535）")
+	lo, err1 := strconv.Atoi(strings.TrimSpace(loText))
+	hi, err2 := strconv.Atoi(strings.TrimSpace(hiText))
+	if err1 != nil || err2 != nil || lo < 1 || hi > 65535 || lo > hi {
+		return 0, 0, false
 	}
-	return min, max, nil
+	return lo, hi, true
 }

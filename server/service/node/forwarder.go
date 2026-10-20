@@ -10,8 +10,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"isrvd/server/config"
 )
 
 const (
@@ -68,7 +66,7 @@ func (l *fwdListener) close() {
 // NodeForwardUpdate 整体替换节点的端口转发规则。先确认新增端口可监听，再持久化，最后撤销被移除的监听；
 // 任一步失败都回滚，不会出现「已保存但未生效」。
 func (s *Service) NodeForwardUpdate(id string, req *ForwardRequest) (*NodeInfo, error) {
-	rules, err := normalizeForwards(req.Forwards)
+	rules, err := normalizeForwards(req.Forwards, s.forward)
 	if err != nil {
 		return nil, err
 	}
@@ -157,13 +155,12 @@ func (s *Service) agentSupportsForward(id string) bool {
 func (s *Service) forwardsRestore() {
 	s.fwdMu.Lock()
 	defer s.fwdMu.Unlock()
-	cluster := config.Cluster()
 	for _, n := range s.nodes.list() {
 		if n.Status == StatusRevoked {
 			continue
 		}
 		for _, f := range n.Forwards {
-			if !cluster.ForwardPortAllowed(f.Listen) {
+			if !s.forward.PortAllowed(f.Listen) {
 				logger.Warn("端口转发未启用或端口超出允许范围，已跳过", "node", n.ID, "listen", f.Listen, "proto", f.Proto)
 				continue
 			}
@@ -196,7 +193,7 @@ func (s *Service) forwardStopAll() {
 
 // forwardStart 开始监听一条规则，调用方须持有 fwdMu。
 func (s *Service) forwardStart(nodeID string, f Forward) error {
-	addr := net.JoinHostPort(config.Cluster().ForwardBind, strconv.Itoa(f.Listen))
+	addr := net.JoinHostPort(s.forward.BindAddr(), strconv.Itoa(f.Listen))
 	l := &fwdListener{nodeID: nodeID, proto: f.Proto, port: f.Listen, conns: map[net.Conn]struct{}{}}
 	l.target.Store(f.Target)
 	switch f.Proto {

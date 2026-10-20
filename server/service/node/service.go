@@ -9,6 +9,8 @@ import (
 
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/strutil"
+
+	"isrvd/server/config"
 )
 
 var logger = logman.Named("node")
@@ -24,8 +26,9 @@ type Service struct {
 
 	authLimit *rateLimiter // 令牌认证：按来源 IP 限制失败次数
 
-	fwdMu sync.Mutex              // 串行化端口转发的监听变更；加锁顺序：fwdMu → mu
-	fwd   map[string]*fwdListener // "proto/端口" → 正在监听的转发规则
+	forward *config.ForwardConfig   // 启动时读取的端口转发配置，修改配置文件后需重启生效
+	fwdMu   sync.Mutex              // 串行化端口转发的监听变更；加锁顺序：fwdMu → mu
+	fwd     map[string]*fwdListener // "proto/端口" → 正在监听的转发规则
 }
 
 // NewService 创建中控侧节点服务；节点表保存在业务数据存储中（后端见 config.OpenData）
@@ -39,6 +42,7 @@ func NewService() (*Service, error) {
 		conns:      map[string]*nodeConn{},
 		connecting: map[string]*Node{},
 		authLimit:  &rateLimiter{hits: map[string][]time.Time{}},
+		forward:    config.Current().Forward,
 		fwd:        map[string]*fwdListener{},
 	}
 	s.forwardsRestore()

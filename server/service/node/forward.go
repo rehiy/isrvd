@@ -52,12 +52,11 @@ const (
 	maxTargetLen      = 200
 )
 
-// normalizeForwards 校验并规整规则；监听端口须在中控允许的范围内。
-func normalizeForwards(in []Forward) ([]Forward, error) {
+// normalizeForwards 校验并规整规则；监听端口须在中控配置 forward.ports 允许的范围内。
+func normalizeForwards(in []Forward, allow *config.ForwardConfig) ([]Forward, error) {
 	if len(in) > maxForwards {
 		return nil, fmt.Errorf("每个节点最多 %d 条转发规则", maxForwards)
 	}
-	cluster := config.Cluster()
 	seen := map[string]bool{}
 	out := make([]Forward, 0, len(in))
 	for _, f := range in {
@@ -69,11 +68,12 @@ func normalizeForwards(in []Forward) ([]Forward, error) {
 		if f.Proto != ProtoTCP && f.Proto != ProtoUDP {
 			return nil, errors.New("转发协议只能是 tcp 或 udp")
 		}
-		if !cluster.ForwardEnabled() {
-			return nil, errors.New("中控未启用端口转发，请设置环境变量 ISRVD_FORWARD_PORTS 后重启")
+		if !allow.Enabled() {
+			return nil, errors.New("中控未启用端口转发，请在配置文件 forward.ports 中设置后重启")
 		}
-		if !cluster.ForwardPortAllowed(f.Listen) {
-			return nil, fmt.Errorf("监听端口 %d 不在允许范围 %d-%d 内", f.Listen, cluster.ForwardPortMin, cluster.ForwardPortMax)
+		if !allow.PortAllowed(f.Listen) {
+			lo, hi := allow.PortRange()
+			return nil, fmt.Errorf("监听端口 %d 不在允许范围 %d-%d 内", f.Listen, lo, hi)
 		}
 		target, err := normalizeTarget(f.Target)
 		if err != nil {
