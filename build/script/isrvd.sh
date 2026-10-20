@@ -363,8 +363,8 @@ docker_variant_from_image() {
     esac
 }
 
-# 读取 Docker 数据目录配置里的 portmap.ports；未配置返回空，格式无效时终止。
-docker_portmap_ports() {
+# 读取配置文件 portmap.ports 给出的监听端口范围；未配置返回空，格式无效时终止。
+portmap_range() {
     local file="$DOCKER_DATA_DIR/conf/isrvd.yml" value
     [ -f "$file" ] || return 0
     value=$(awk '
@@ -393,10 +393,10 @@ run_isrvd_container() {
     fi
     if [ "$mode" = "center" ]; then
         # 端口转发的监听范围（配置文件 portmap.ports）需要发布到宿主机（TCP 与 UDP）；容器内须同时设置 portmap.bind: 0.0.0.0
-        local portmap_ports
-        portmap_ports=$(docker_portmap_ports)
-        if [ -n "$portmap_ports" ]; then
-            ports+=(-p "$portmap_ports:$portmap_ports" -p "$portmap_ports:$portmap_ports/udp")
+        local range
+        range=$(portmap_range)
+        if [ -n "$range" ]; then
+            ports+=(-p "$range:$range" -p "$range:$range/udp")
         fi
     fi
 
