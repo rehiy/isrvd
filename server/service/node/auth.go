@@ -22,7 +22,7 @@ var (
 )
 
 // Authenticate 按完整 token 的哈希查找节点，并在同一把锁内激活及预占握手。
-// token 只通过 Authorization 头传递，不包含节点 ID，不放在 URL 中。
+// token 只通过 Authorization 头传递，不放在 URL 中。
 func (s *Service) Authenticate(r *http.Request, ip string) (*Node, error) {
 	if !s.authLimit.allow(ip) {
 		return nil, ErrRateLimited

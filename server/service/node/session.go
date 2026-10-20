@@ -213,8 +213,7 @@ func (s *Service) nodeInfo(n *Node) *NodeInfo {
 	if c.info != nil {
 		info.AgentVersion = c.info.Version
 	}
-	connectedAt := c.connectedAt
-	info.ConnectedAt, info.RemoteAddr = &connectedAt, c.remote
+	info.ConnectedAt, info.RemoteAddr = &c.connectedAt, c.remote
 	return info
 }
 

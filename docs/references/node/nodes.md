@@ -70,8 +70,6 @@ bash <(curl -sL https://isrvd.rehiy.com/install/) install --docker
 
 安装脚本会保存这些环境变量。已有服务需更新启动环境并重启。首次认证通过后节点状态变为 `active`，重启和重连继续使用同一 token。
 
-> 旧版含节点 ID 的 token 与授权码接口已移除。升级后需重新创建节点、更新受管机的 `ISRVD_NODE_TOKEN` 并重启；普通成员需授权新的 `POST /api/node/item` 权限。
-
 ### 重命名节点
 
 ```bash
