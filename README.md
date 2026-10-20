@@ -79,9 +79,9 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) ins
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --apisix
 ```
 
-The Docker edition always uses the container name `isrvd` and stores data in `/srv/data`; `update` rebuilds the container with the current image variant and preserves `ISRVD_MODE`, `ISRVD_CENTER_URL`, `ISRVD_NODE_TOKEN`, `ISRVD_FORWARD_PORTS` and `ISRVD_FORWARD_BIND`, and `uninstall` removes the container while keeping the data directory.
+The Docker edition always uses the container name `isrvd` and stores data in `/srv/data`; `update` rebuilds the container with the current image variant and preserves `ISRVD_MODE`, `ISRVD_CENTER_URL` and `ISRVD_NODE_TOKEN`, and `uninstall` removes the container while keeping the data directory.
 
-The script reads `ISRVD_MODE` (`server` by default, `center`, or `agent`) from the installer environment. Export it before running `install`; managed nodes also require exported `ISRVD_CENTER_URL` and `ISRVD_NODE_TOKEN`. Installation saves these values in a root-only systemd drop-in (`installer.conf`) or passes them to Docker. A center may also export `ISRVD_FORWARD_PORTS` (for example `20000-20999`) to enable port forwarding; Docker centers publish that range (TCP and UDP, keep it small) and need `ISRVD_FORWARD_BIND=0.0.0.0`. Docker agent installations do not publish port 8080. Updates preserve the installed role. To change roles later, recreate the Docker container or edit the systemd environment and restart.
+The script reads `ISRVD_MODE` (`server` by default, `center`, or `agent`) from the installer environment. Export it before running `install`; managed nodes also require exported `ISRVD_CENTER_URL` and `ISRVD_NODE_TOKEN`. Installation saves these values in a root-only systemd drop-in (`installer.conf`) or passes them to Docker. A center enables port forwarding in the config file (`forward.ports`, for example `20000-20999`, and `forward.bind`); for Docker centers set `forward.bind: 0.0.0.0` and run `update`, which publishes the `forward.ports` range (TCP and UDP, keep it small). Docker agent installations do not publish port 8080. Updates preserve the installed role. To change roles later, recreate the Docker container or edit the systemd environment and restart.
 
 ### Prepare the Network
 

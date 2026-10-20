@@ -60,6 +60,7 @@ etcd 空字符串值视为已存在，不触发 fallback。使用 libgo v0.21.0 
 | `monitor` | 系统与容器监控的采集间隔（5/15/30/60 秒，其他值禁用自动采集） |
 | `notify` | Webhook 通道、CPU/内存/磁盘规则，以及容器异常、任务失败和网关证书到期告警；默认关闭应用故障告警 |
 | `marketplace` | 应用市场地址 |
+| `forward` | 中控端口转发（ports 监听端口范围 / bind 监听地址；仅 center 模式使用，修改后重启生效） |
 | `links` | 自定义快捷链接（名称、URL、图标） |
 | `members` | 用户账号、家目录、Founder 标记、路由权限、Passkey 与 TOTP 信息 |
 
@@ -132,11 +133,12 @@ isrvd_get "/system/config"
 | docker | object | `{host, tls, containerRoot, registries}`（registry password、`tls.key` 不返回） |
 | monitor | object | `{interval}`（采集间隔秒数，非法值表示禁用） |
 | marketplace | object | `{url}` |
+| forward | object | `{ports, bind}`（中控端口转发；`ports` 如 `20000-20999` 或单个端口，留空不启用；`bind` 为监听 IP，默认 `127.0.0.1`；格式无效返回 `400`；修改后重启生效） |
 | links | object[] | `{label, url, icon}` |
 
 > 配置文件 / etcd 中的 `schema.version` 由系统维护（用于版本化格式转换），不通过该接口返回或修改。
 
-多节点部署参数通过 `ISRVD_MODE`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN` 环境变量设置（中控另可选 `ISRVD_FORWARD_PORTS`、`ISRVD_FORWARD_BIND` 启用端口转发）；配置 API 管理业务配置，详见 [集中管理](../../multi-node.md)。受控模式要求 `tha.enabled=false`。
+多节点部署参数通过 `ISRVD_MODE`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN` 环境变量设置；配置 API 管理业务配置，详见 [集中管理](../../multi-node.md)。受控模式要求 `tha.enabled=false`。
 
 网关没有代理信任开关：审计和节点认证失败限流仅使用连接对端 IP。反向代理后的客户端会共享限流额度，网关审计记录代理 IP。中控模式允许 THA，网关按 `tha.trustedCIDRs` 校验连接来源，拒绝不可信身份头。
 

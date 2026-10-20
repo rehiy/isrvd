@@ -43,7 +43,7 @@ server/service/{shell,docker,system} → server/i18n（仅 TC / Translate，i18n
 - `server/service/{account,apisix,...}`：业务组合、参数校验、稳定 API 类型转换；各服务在 `NewService()` 中直接构造底层客户端；不得依赖 `server/app`，**不得依赖 gin**（需要请求信息时接收 `*http.Request`、`context.Context` 或普通结构体）
 - `server/app/`：Gin HTTP/WebSocket 入口、路由索引、中间件、服务生命周期与响应封装
 - `server/gateway/`：中控模式的网关（节点管理 API、`/n/<节点ID>/` 转发、受管机隧道入口），以 `http.Handler` 形式由 `cmd/server` 装配；不依赖 `server/app`，页面一律由 webview 提供；`?token=` 的适用范围与 isrvd 保持一致，由 `cmd/server` 通过 `Options.QueryTokenRoutes`（来自 `app.QueryTokenRoutes()`）注入，不得在网关里另写一份路由清单；节点管理路由元信息统一由 `service/node.PermissionRoutes()` 提供，中控权限目录与网关注册共用；节点管理及业务转发经 `Options.CheckPermission`（`app.GatewayPermission`）校验当前成员路由权限，禁止仅以是否登录放行；上游不可达返回 502，不得当作未登录（401）；操作经 `Options.Audit`（`app.Audit()`，写入 app 当前的审计服务，重载后自动指向新实例）按 isrvd 审计基线记录，不得另建 `AuditService` 写同一目录；会随配置重载变化的值（如 `allowedOrigins`）以函数传入、每次读取，不得在启动时固化
-- 节点模块按职责组织：`service/node/node.go` 定义持久化实体 `Node` 与在线响应 `NodeInfo`，`store.go` 只持久化 `Node` 并返回提交快照，`auth.go` 聚合认证、限流与 token 处理，`session.go` 管理会话与传输，`agent.go` 包含受管机客户端及协议数据（隧道流按首字节分流为 HTTP 与端口转发流），`forward.go` 定义转发规则、校验、线路头部及受管机侧中继，`forwarder.go` 是中控侧 TCP/UDP 监听器与规则生命周期（`ISRVD_FORWARD_PORTS`/`ISRVD_FORWARD_BIND` 在 `config/cluster.go` 读取）。网关的节点 HTTP/WebSocket 接入、转发与启动数据聚合、中间件、响应分别放在 `gateway/{node,proxy,middleware,response}.go`，`gateway.go` 只负责装配与路由。部署环境配置在 `server/config/cluster.go` 定义、读取与校验。
+- 节点模块按职责组织：`service/node/node.go` 定义持久化实体 `Node` 与在线响应 `NodeInfo`，`store.go` 只持久化 `Node` 并返回提交快照，`auth.go` 聚合认证、限流与 token 处理，`session.go` 管理会话与传输，`agent.go` 包含受管机客户端及协议数据（隧道流按首字节分流为 HTTP 与端口转发流），`forward.go` 定义转发规则、校验、线路头部及受管机侧中继，`forwarder.go` 是中控侧 TCP/UDP 监听器与规则生命周期（监听范围与地址来自配置文件 `forward` 分区，由 `config.ForwardConfig` 提供校验与判定，服务创建时读取一次，修改后重启生效）。网关的节点 HTTP/WebSocket 接入、转发与启动数据聚合、中间件、响应分别放在 `gateway/{node,proxy,middleware,response}.go`，`gateway.go` 只负责装配与路由。部署环境配置在 `server/config/cluster.go` 定义、读取与校验。
 - `server/cmd/server/`：`main.go` 按 `config.Init → run` 初始化并启动；`launch.go` 按环境变量 `ISRVD_MODE`（`server`/`center`/`agent`）装配并调用 `app.StartApp`，是唯一的组装点，业务逻辑不得写在这里。构建与运行一律用包路径 `./server/cmd/server`（含多个文件，不能再用单文件路径）
 
 ### 禁止
@@ -257,9 +257,10 @@ docs/
 
 ### 配置结构体与 Provider
 
-- 顶层 `Config`（`server/config/types.go`）当前包含 `Schema`、`Server`、`Password`、`Passkey`、`OIDC`、`THA`、`Copilot`、`Notify`、`Apisix`、`Caddy`、`Docker`、`Monitor`、`Marketplace`、`Links`、`Members`
+- 顶层 `Config`（`server/config/types.go`）当前包含 `Schema`、`Server`、`Password`、`Passkey`、`OIDC`、`THA`、`Copilot`、`Notify`、`Apisix`、`Caddy`、`Docker`、`Monitor`、`Marketplace`、`Forward`、`Links`、`Members`
 - `PUT /api/system/config` 支持按分区提交：`AllConfig` 中为 nil 的分区跳过更新，密钥类字段为空表示保留原值
-- 多节点部署仅通过环境变量 `ISRVD_MODE`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN` 传入（中控另可选 `ISRVD_FORWARD_PORTS`、`ISRVD_FORWARD_BIND` 启用端口转发），由 `config.Init` 读取并通过 `config.Cluster()` 返回副本；不持久化到 YAML/etcd，不由配置 API 管理，修改后重启生效
+- 多节点部署仅通过环境变量 `ISRVD_MODE`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN` 传入，由 `config.Init` 读取并通过 `config.Cluster()` 返回副本；不持久化到 YAML/etcd，不由配置 API 管理，修改后重启生效
+- 中控端口转发是业务配置而非部署环境：监听范围与地址在配置文件 `forward` 分区（`ForwardConfig{Ports,Bind}`，可选分区，未配置为 `nil`），随配置持久化并可经 `GET|PUT /api/system/config` 管理；校验在 `validateSnapshot`，无效配置返回 `ErrInvalidForwardConfig`（400）；`node.NewService` 读取一次，修改后重启生效
 - `Server` 必须作为 `config.Server` 结构体统一访问，禁止重新展开为 `config.Debug`、`config.ListenAddr` 等包级散变量
 - 镜像仓库 `DockerRegistry`（含 `Name`、`URL`、`Username`、`Password`、`Description`）
 - 远程 Docker：`DockerConfig.TLS`（`DockerTLSConfig`，证书与私钥为 PEM 文本，不使用文件路径，以便随 etcd 配置同步）；`pkgs/docker.TLSConfig.Config(host)` 是唯一的校验与构造入口（`NewDockerService` 与 `system.dockerTLSMerge` 共用）；`DockerService.Remote()` 由 `Host` 地址决定（`tcp://` 且非回环，与 TLS 无关），为真时自身容器识别只用 overlay 路径、不按 IP/主机名匹配，并跳过 bind 源的本机检查
