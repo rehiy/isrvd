@@ -166,7 +166,7 @@ export default toNative(NodeForwards)
           </div>
           <div class="min-w-0">
             <h1 class="title-text">{{ $t('端口转发') }}</h1>
-            <p class="text-xs text-slate-500 truncate">{{ $t('节点端口映射') }}</p>
+            <p class="text-xs text-slate-500 truncate">{{ $t('节点端口转发') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
@@ -199,7 +199,7 @@ export default toNative(NodeForwards)
           <i class="fas fa-right-left text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ items.length === 0 ? $t('暂无转发规则') : $t('未找到匹配规则') }}</p>
-        <p class="text-sm text-slate-400">{{ items.length === 0 ? $t('点击右上角「添加转发」，把节点端口映射到中控') : $t('尝试更换关键词或清空搜索条件') }}</p>
+        <p class="text-sm text-slate-400">{{ items.length === 0 ? $t('点击右上角「添加转发」，把节点端口转发到中控') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
 

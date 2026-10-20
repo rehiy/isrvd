@@ -234,7 +234,7 @@ func persistSnapshot(snapshot *Snapshot) error {
 		Docker:      snapshot.Docker,
 		Monitor:     snapshot.Monitor,
 		Marketplace: snapshot.Marketplace,
-		Forward:     snapshot.Forward,
+		PortMap:     snapshot.PortMap,
 		Links:       snapshot.Links,
 		Members:     members,
 	}

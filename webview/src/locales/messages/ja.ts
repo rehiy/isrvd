@@ -3754,8 +3754,8 @@ const messages: Record<string, string> = {
     '端口转发': 'ポートフォワーディング',
     // The center listens on ports and forwards through the tunnel to nodes (TCP / UDP)
     '中控监听端口，经隧道转发到节点（TCP / UDP）': 'コントローラーがポートで待ち受け、トンネル経由でノードへ転送します（TCP / UDP）',
-    // Node port mapping
-    '节点端口映射': 'ノードのポートマッピング',
+    // Node port forwarding
+    '节点端口转发': 'ノードのポート転送',
     // Search listen port, target, node or note...
     '搜索监听端口、目标、节点或备注...': 'リッスンポート、転送先、ノード、メモを検索...',
     // Add Forward
@@ -3770,8 +3770,8 @@ const messages: Record<string, string> = {
     '目标地址': '転送先アドレス',
     // No forwarding rules
     '暂无转发规则': '転送ルールはありません',
-    // Click "Add Forward" at the top right to map a node port to the center
-    '点击右上角「添加转发」，把节点端口映射到中控': '右上の「転送を追加」からノードのポートをコントローラーにマッピングします',
+    // Click "Add Forward" at the top right to forward a node port to the center
+    '点击右上角「添加转发」，把节点端口转发到中控': '右上の「転送を追加」からノードのポートをコントローラーに転送します',
     // No matching rules found
     '未找到匹配规则': '一致するルールが見つかりません',
     // No node available. Add a node in "Node Management" first
@@ -3792,8 +3792,8 @@ const messages: Record<string, string> = {
     '所属节点': '対象ノード',
     // Center Listen Port
     '中控监听端口': 'コントローラーのリッスンポート',
-    // Must be within the range allowed by forward.ports in the center config file
-    '须在中控配置 forward.ports 允许的范围内': 'コントローラーの設定 forward.ports で許可された範囲内にしてください',
+    // Must be within the range allowed by portmap.ports in the center config file
+    '须在中控配置 portmap.ports 允许的范围内': 'コントローラーの設定 portmap.ports で許可された範囲内にしてください',
     // Node Target Address
     '节点目标地址': 'ノード側の転送先アドレス',
     // host:port; a bare port points to 127.0.0.1 on the node

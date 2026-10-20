@@ -52,8 +52,8 @@ const (
 	maxTargetLen      = 200
 )
 
-// normalizeForwards 校验并规整规则；监听端口须在中控配置 forward.ports 允许的范围内。
-func normalizeForwards(in []Forward, allow *config.ForwardConfig) ([]Forward, error) {
+// normalizeForwards 校验并规整规则；监听端口须在中控配置 portmap.ports 允许的范围内。
+func normalizeForwards(in []Forward, allow *config.PortMapConfig) ([]Forward, error) {
 	if len(in) > maxForwards {
 		return nil, fmt.Errorf("每个节点最多 %d 条转发规则", maxForwards)
 	}
@@ -69,7 +69,7 @@ func normalizeForwards(in []Forward, allow *config.ForwardConfig) ([]Forward, er
 			return nil, errors.New("转发协议只能是 tcp 或 udp")
 		}
 		if !allow.Enabled() {
-			return nil, errors.New("中控未启用端口转发，请在配置文件 forward.ports 中设置后重启")
+			return nil, errors.New("中控未启用端口转发，请在配置文件 portmap.ports 中设置后重启")
 		}
 		if !allow.PortAllowed(f.Listen) {
 			lo, hi := allow.PortRange()

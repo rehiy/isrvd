@@ -363,16 +363,16 @@ docker_variant_from_image() {
     esac
 }
 
-# 读取 Docker 数据目录配置里的 forward.ports；未配置返回空，格式无效时终止。
-docker_forward_ports() {
+# 读取 Docker 数据目录配置里的 portmap.ports；未配置返回空，格式无效时终止。
+docker_portmap_ports() {
     local file="$DOCKER_DATA_DIR/conf/isrvd.yml" value
     [ -f "$file" ] || return 0
     value=$(awk '
-        /^[^[:space:]#]/ { in_forward = ($0 ~ /^forward:[[:space:]]*(#.*)?$/); next }
-        in_forward && /^[[:space:]]+ports:/ {
+        /^[^[:space:]#]/ { in_portmap = ($0 ~ /^portmap:[[:space:]]*(#.*)?$/); next }
+        in_portmap && /^[[:space:]]+ports:/ {
             sub(/^[[:space:]]+ports:[[:space:]]*/, ""); sub(/[[:space:]]*#.*$/, ""); gsub(/["'"'"']/, ""); print; exit
         }' "$file")
-    [ -z "$value" ] || [[ "$value" =~ ^[0-9]+(-[0-9]+)?$ ]] || fail "forward.ports in $file must look like 20000-20999 or 20022"
+    [ -z "$value" ] || [[ "$value" =~ ^[0-9]+(-[0-9]+)?$ ]] || fail "portmap.ports in $file must look like 20000-20999 or 20022"
     printf '%s' "$value"
 }
 
@@ -392,11 +392,11 @@ run_isrvd_container() {
         ports+=(-p 8080:8080)
     fi
     if [ "$mode" = "center" ]; then
-        # 端口转发的监听范围（配置文件 forward.ports）需要发布到宿主机（TCP 与 UDP）；容器内须同时设置 forward.bind: 0.0.0.0
-        local forward_ports
-        forward_ports=$(docker_forward_ports)
-        if [ -n "$forward_ports" ]; then
-            ports+=(-p "$forward_ports:$forward_ports" -p "$forward_ports:$forward_ports/udp")
+        # 端口转发的监听范围（配置文件 portmap.ports）需要发布到宿主机（TCP 与 UDP）；容器内须同时设置 portmap.bind: 0.0.0.0
+        local portmap_ports
+        portmap_ports=$(docker_portmap_ports)
+        if [ -n "$portmap_ports" ]; then
+            ports+=(-p "$portmap_ports:$portmap_ports" -p "$portmap_ports:$portmap_ports/udp")
         fi
     fi
 
@@ -441,7 +441,7 @@ EOF
         echo "  Web UI:    http://127.0.0.1:8080"
     fi
     if [ "$DEPLOYMENT_MODE" = center ]; then
-        echo "  Forward:   To enable port forwarding, set forward.ports and forward.bind: 0.0.0.0 in the config, then run update"
+        echo "  Portmap:   To enable port forwarding, set portmap.ports and portmap.bind: 0.0.0.0 in the config, then run update"
     fi
 }
 
@@ -635,7 +635,7 @@ Install reads and persists exported environment variables:
   ISRVD_CENTER_URL    Required for agent
   ISRVD_NODE_TOKEN    Required for agent
 Docker agents do not publish 8080. Updates preserve the installed role.
-Docker centers publish the TCP/UDP range from forward.ports in $DOCKER_DATA_DIR/conf/isrvd.yml (also set forward.bind: 0.0.0.0).
+Docker centers publish the TCP/UDP range from portmap.ports in $DOCKER_DATA_DIR/conf/isrvd.yml (also set portmap.bind: 0.0.0.0).
 
 Config: $CONFIG_FILE (binary), $DOCKER_DATA_DIR/conf/isrvd.yml (Docker)
 EOF

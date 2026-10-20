@@ -32,7 +32,7 @@ type Snapshot struct {
 	Docker      *DockerConfig            `yaml:"docker"`
 	Monitor     *MonitorConfig           `yaml:"monitor"`
 	Marketplace *MarketplaceConfig       `yaml:"marketplace"`
-	Forward     *ForwardConfig           `yaml:"forward,omitempty"`
+	PortMap     *PortMapConfig           `yaml:"portmap,omitempty"`
 	Links       []*LinkConfig            `yaml:"links"`
 	Members     map[string]*MemberConfig `yaml:"members"`
 }
@@ -72,7 +72,7 @@ func buildSnapshot(conf *Config) (*Snapshot, error) {
 		Docker:      cloned.Docker,
 		Monitor:     cloned.Monitor,
 		Marketplace: cloned.Marketplace,
-		Forward:     cloned.Forward,
+		PortMap:     cloned.PortMap,
 		Links:       cloned.Links,
 		Members:     make(map[string]*MemberConfig, len(cloned.Members)),
 	}
@@ -151,7 +151,7 @@ func validateSnapshot(snapshot *Snapshot) error {
 			return err
 		}
 	}
-	if err := validateForward(snapshot.Forward); err != nil {
+	if err := validatePortMap(snapshot.PortMap); err != nil {
 		return err
 	}
 	if snapshot.Password.Disabled && !snapshot.Passkey.Enabled && !snapshot.OIDC.Enabled && !snapshot.THA.Enabled {
@@ -224,9 +224,9 @@ func normalizeSnapshot(snapshot *Snapshot) error {
 	if snapshot.Marketplace == nil {
 		snapshot.Marketplace = &MarketplaceConfig{}
 	}
-	if snapshot.Forward != nil {
-		snapshot.Forward.Ports = strings.TrimSpace(snapshot.Forward.Ports)
-		snapshot.Forward.Bind = strings.TrimSpace(snapshot.Forward.Bind)
+	if snapshot.PortMap != nil {
+		snapshot.PortMap.Ports = strings.TrimSpace(snapshot.PortMap.Ports)
+		snapshot.PortMap.Bind = strings.TrimSpace(snapshot.PortMap.Bind)
 	}
 	if snapshot.Members == nil {
 		snapshot.Members = map[string]*MemberConfig{}

@@ -26,7 +26,7 @@ type Service struct {
 
 	authLimit *rateLimiter // 令牌认证：按来源 IP 限制失败次数
 
-	forward *config.ForwardConfig   // 启动时读取的端口转发配置，修改配置文件后需重启生效
+	portmap *config.PortMapConfig   // 启动时读取的 portmap 配置，修改配置文件后需重启生效
 	fwdMu   sync.Mutex              // 串行化端口转发的监听变更；加锁顺序：fwdMu → mu
 	fwd     map[string]*fwdListener // "proto/端口" → 正在监听的转发规则
 }
@@ -42,7 +42,7 @@ func NewService() (*Service, error) {
 		conns:      map[string]*nodeConn{},
 		connecting: map[string]*Node{},
 		authLimit:  &rateLimiter{hits: map[string][]time.Time{}},
-		forward:    config.Current().Forward,
+		portmap:    config.Current().PortMap,
 		fwd:        map[string]*fwdListener{},
 	}
 	s.forwardsRestore()

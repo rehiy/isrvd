@@ -11,8 +11,8 @@ import (
 // ErrInvalidClusterConfig 表示多节点部署配置无效。
 var ErrInvalidClusterConfig = errors.New("运行模式配置无效")
 
-// ErrInvalidForwardConfig 表示中控端口转发配置无效。
-var ErrInvalidForwardConfig = errors.New("端口转发配置无效")
+// ErrInvalidPortMapConfig 表示中控端口映射（端口转发）配置无效。
+var ErrInvalidPortMapConfig = errors.New("端口转发配置无效")
 
 // ClusterConfig 是仅从环境变量读取的进程启动配置，不参与持久化或配置 API。
 type ClusterConfig struct {
@@ -64,13 +64,13 @@ func validateCluster(cluster *ClusterConfig) error {
 }
 
 // Enabled 判断是否配置了端口转发的监听端口范围；nil 视为未启用。
-func (f *ForwardConfig) Enabled() bool {
+func (f *PortMapConfig) Enabled() bool {
 	_, hi := f.PortRange()
 	return hi > 0
 }
 
 // PortRange 返回允许分配的监听端口范围；未配置或格式无效时返回 0, 0。
-func (f *ForwardConfig) PortRange() (int, int) {
+func (f *PortMapConfig) PortRange() (int, int) {
 	if f == nil {
 		return 0, 0
 	}
@@ -82,31 +82,31 @@ func (f *ForwardConfig) PortRange() (int, int) {
 }
 
 // PortAllowed 判断端口是否在允许分配的监听范围内。
-func (f *ForwardConfig) PortAllowed(port int) bool {
+func (f *PortMapConfig) PortAllowed(port int) bool {
 	lo, hi := f.PortRange()
 	return hi > 0 && port >= lo && port <= hi
 }
 
 // BindAddr 返回监听地址，未配置时仅绑定回环。
-func (f *ForwardConfig) BindAddr() string {
+func (f *PortMapConfig) BindAddr() string {
 	if f == nil || f.Bind == "" {
 		return "127.0.0.1"
 	}
 	return f.Bind
 }
 
-// validateForward 校验端口转发配置；未配置（nil）合法。
-func validateForward(f *ForwardConfig) error {
+// validatePortMap 校验 portmap 配置；未配置（nil）合法。
+func validatePortMap(f *PortMapConfig) error {
 	if f == nil {
 		return nil
 	}
 	if f.Ports != "" {
 		if _, _, ok := parsePortRange(f.Ports); !ok {
-			return fmt.Errorf("%w：forward.ports 格式应为 20000-20999 或单个端口（1–65535）", ErrInvalidForwardConfig)
+			return fmt.Errorf("%w：portmap.ports 格式应为 20000-20999 或单个端口（1–65535）", ErrInvalidPortMapConfig)
 		}
 	}
 	if f.Bind != "" && net.ParseIP(f.Bind) == nil {
-		return fmt.Errorf("%w：forward.bind 必须是 IP 地址", ErrInvalidForwardConfig)
+		return fmt.Errorf("%w：portmap.bind 必须是 IP 地址", ErrInvalidPortMapConfig)
 	}
 	return nil
 }
