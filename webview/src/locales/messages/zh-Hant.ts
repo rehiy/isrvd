@@ -1911,7 +1911,7 @@ const messages: Record<string, string> = {
     '转发的连接不经过 isrvd 认证，鉴权由目标应用负责；请勿转发无认证的服务。': '轉發的連接不經過 isrvd 認證，鑑權由目標應用負責；請勿轉發無認證的服務。',
     '所属节点': '所屬節點',
     '中控监听端口': '中控監聽端口',
-    '须在中控环境变量 ISRVD_FORWARD_PORTS 允许的范围内': '須在中控環境變量 ISRVD_FORWARD_PORTS 允許的範圍內',
+    '须在中控配置 forward.ports 允许的范围内': '須在中控配置 forward.ports 允許的範圍內',
     '节点目标地址': '節點目標地址',
     'host:port；只填端口时默认指向节点本机 127.0.0.1': 'host:port；只填端口時預設指向節點本機 127.0.0.1',
     '如：SSH': '如：SSH',

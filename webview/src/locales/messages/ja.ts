@@ -3792,8 +3792,8 @@ const messages: Record<string, string> = {
     '所属节点': '対象ノード',
     // Center Listen Port
     '中控监听端口': 'コントローラーのリッスンポート',
-    // Must be within the range allowed by the center environment variable ISRVD_FORWARD_PORTS
-    '须在中控环境变量 ISRVD_FORWARD_PORTS 允许的范围内': 'コントローラーの環境変数 ISRVD_FORWARD_PORTS で許可された範囲内にしてください',
+    // Must be within the range allowed by forward.ports in the center config file
+    '须在中控配置 forward.ports 允许的范围内': 'コントローラーの設定 forward.ports で許可された範囲内にしてください',
     // Node Target Address
     '节点目标地址': 'ノード側の転送先アドレス',
     // host:port; a bare port points to 127.0.0.1 on the node

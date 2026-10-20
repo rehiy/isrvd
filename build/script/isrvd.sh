@@ -132,10 +132,6 @@ prepare_deployment_env() {
     if [ "$DEPLOYMENT_MODE" = agent ]; then
         DEPLOYMENT_ENV+=("ISRVD_CENTER_URL=$ISRVD_CENTER_URL" "ISRVD_NODE_TOKEN=$ISRVD_NODE_TOKEN")
     fi
-    if [ "$DEPLOYMENT_MODE" = center ] && [ -n "${ISRVD_FORWARD_PORTS:-}" ]; then
-        DEPLOYMENT_ENV+=("ISRVD_FORWARD_PORTS=$ISRVD_FORWARD_PORTS")
-        [ -z "${ISRVD_FORWARD_BIND:-}" ] || DEPLOYMENT_ENV+=("ISRVD_FORWARD_BIND=$ISRVD_FORWARD_BIND")
-    fi
 }
 
 # systemd Environment 使用自己的引号与 specifier 规则，不能直接套用 shell 转义。
@@ -367,29 +363,41 @@ docker_variant_from_image() {
     esac
 }
 
+# 读取 Docker 数据目录配置里的 forward.ports；未配置返回空，格式无效时终止。
+docker_forward_ports() {
+    local file="$DOCKER_DATA_DIR/conf/isrvd.yml" value
+    [ -f "$file" ] || return 0
+    value=$(awk '
+        /^[^[:space:]#]/ { in_forward = ($0 ~ /^forward:[[:space:]]*(#.*)?$/); next }
+        in_forward && /^[[:space:]]+ports:/ {
+            sub(/^[[:space:]]+ports:[[:space:]]*/, ""); sub(/[[:space:]]*#.*$/, ""); gsub(/["'"'"']/, ""); print; exit
+        }' "$file")
+    [ -z "$value" ] || [[ "$value" =~ ^[0-9]+(-[0-9]+)?$ ]] || fail "forward.ports in $file must look like 20000-20999 or 20022"
+    printf '%s' "$value"
+}
+
 run_isrvd_container() {
     local variant="$1"
     local image="$2"
     local ports=()
     local environment=()
     local mode="server"
-    local forward_ports=""
     local entry
     for entry in "${DEPLOYMENT_ENV[@]}"; do
         environment+=(-e "$entry")
-        case "$entry" in
-            ISRVD_MODE=*) mode="${entry#*=}" ;;
-            ISRVD_FORWARD_PORTS=*) forward_ports="${entry#*=}" ;;
-        esac
+        case "$entry" in ISRVD_MODE=*) mode="${entry#*=}" ;; esac
     done
     mode="${mode,,}"
     if [ "$mode" != "agent" ]; then
         ports+=(-p 8080:8080)
     fi
-    if [ "$mode" = "center" ] && [ -n "$forward_ports" ]; then
-        # 端口转发的监听范围需要发布到宿主机（TCP 与 UDP）；容器内须同时设置 ISRVD_FORWARD_BIND=0.0.0.0
-        [[ "$forward_ports" =~ ^[0-9]+(-[0-9]+)?$ ]] || fail "ISRVD_FORWARD_PORTS must look like 20000-20999 or 20022"
-        ports+=(-p "$forward_ports:$forward_ports" -p "$forward_ports:$forward_ports/udp")
+    if [ "$mode" = "center" ]; then
+        # 端口转发的监听范围（配置文件 forward.ports）需要发布到宿主机（TCP 与 UDP）；容器内须同时设置 forward.bind: 0.0.0.0
+        local forward_ports
+        forward_ports=$(docker_forward_ports)
+        if [ -n "$forward_ports" ]; then
+            ports+=(-p "$forward_ports:$forward_ports" -p "$forward_ports:$forward_ports/udp")
+        fi
     fi
 
     case "$variant" in
@@ -432,6 +440,9 @@ EOF
     else
         echo "  Web UI:    http://127.0.0.1:8080"
     fi
+    if [ "$DEPLOYMENT_MODE" = center ]; then
+        echo "  Forward:   To enable port forwarding, set forward.ports and forward.bind: 0.0.0.0 in the config, then run update"
+    fi
 }
 
 update_docker_deployment() {
@@ -441,7 +452,7 @@ update_docker_deployment() {
     old_env=$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$SERVICE_NAME")
     while IFS= read -r entry; do
         case "$entry" in
-            ISRVD_MODE=*|ISRVD_CENTER_URL=*|ISRVD_NODE_TOKEN=*|ISRVD_FORWARD_PORTS=*|ISRVD_FORWARD_BIND=*) DEPLOYMENT_ENV+=("$entry") ;;
+            ISRVD_MODE=*|ISRVD_CENTER_URL=*|ISRVD_NODE_TOKEN=*) DEPLOYMENT_ENV+=("$entry") ;;
         esac
     done <<< "$old_env"
     old_image=$(docker inspect --format '{{.Config.Image}}' "$SERVICE_NAME")
@@ -623,9 +634,8 @@ Install reads and persists exported environment variables:
   ISRVD_MODE          server (default), center, or agent
   ISRVD_CENTER_URL    Required for agent
   ISRVD_NODE_TOKEN    Required for agent
-  ISRVD_FORWARD_PORTS Optional for center: listen port range for port forwarding, e.g. 20000-20999
-  ISRVD_FORWARD_BIND  Optional for center: listen address (default 127.0.0.1; Docker needs 0.0.0.0)
 Docker agents do not publish 8080. Updates preserve the installed role.
+Docker centers publish the TCP/UDP range from forward.ports in $DOCKER_DATA_DIR/conf/isrvd.yml (also set forward.bind: 0.0.0.0).
 
 Config: $CONFIG_FILE (binary), $DOCKER_DATA_DIR/conf/isrvd.yml (Docker)
 EOF
