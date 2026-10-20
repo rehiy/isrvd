@@ -24,7 +24,7 @@ const messages: Record<string, string> = {
     '账号安全': 'アカウントセキュリティ',
     // Sign out
     '退出': 'ログアウト',
-    // Current: 
+    // Current:
     '当前：': '現在：',
     // , click to switch
     '，点击切换': '（クリックで切り替え）',
@@ -104,8 +104,8 @@ const messages: Record<string, string> = {
     '操作审计': '操作監査',
     // Members
     '用户管理': 'メンバー管理',
-    // Node Management
-    '节点管理': 'ノード管理',
+    // Central Control
+    '集中管控': '集中管理',
     // Expand menu
     '展开菜单': 'メニューを展開',
     // Collapse menu
@@ -308,7 +308,7 @@ const messages: Record<string, string> = {
     '请输入插件配置 JSON...': 'プラグイン設定の JSON を入力...',
     // Search options
     '搜索选项': '項目を検索',
-    // Invalid JSON: 
+    // Invalid JSON:
     'JSON 格式错误: ': 'JSON の形式が不正です: ',
     // {0} · {1} and {2} nodes
     '{0} · {1} 等 {2} 个节点': '{0} · {1} ほか {2} ノード',
@@ -316,7 +316,7 @@ const messages: Record<string, string> = {
     '{0} 失败': '{0} に失敗しました',
     // {0} cancelled
     '{0} 已取消': '{0} はキャンセルされました',
-    // Usage: 
+    // Usage:
     '使用率: ': '使用率: ',
     // Failed to save the system config
     '保存系统配置失败': 'システム設定の保存に失敗しました',
@@ -342,13 +342,13 @@ const messages: Record<string, string> = {
     '用户取消了 Passkey 认证': 'ユーザーが Passkey 認証をキャンセルしました',
     // Sign-in failed
     '登录失败': 'サインインに失敗しました',
-    // Editing: 
+    // Editing:
     '编辑: ': '編集中: ',
     // Retry
     '重试': '再試行',
     // Retry Failed Items
     '重试失败项': '失敗した項目を再試行',
-    // Preview: 
+    // Preview:
     '预览: ': 'プレビュー: ',
     //  · no snapshot
     ' · 无快照': ' · スナップショットなし',
@@ -362,7 +362,7 @@ const messages: Record<string, string> = {
     '上传 zip': 'zip をアップロード',
     // Host
     '主机': 'ホスト',
-    // Usage: 
+    // Usage:
     '使用率:': '使用率:',
     // A recognizable name, e.g. "production key"
     '便于识别的名称，如 "生产环境密钥"': '識別しやすい名前（例: "本番用キー"）',
@@ -1096,8 +1096,8 @@ const messages: Record<string, string> = {
     'Admin API 连接参数': 'Admin API の接続設定',
     // Enter the Admin URL
     '请输入 Admin URL': 'Admin URL を入力',
-    // Search node name, hostname, OS or creator...
-    '搜索节点名、主机名、系统或创建人...': 'ノード名、ホスト名、OS、作成者で検索...',
+    // Search node name, hostname or OS...
+    '搜索节点名、主机名或系统...': 'ノード名、ホスト名、OS で検索...',
     // Version
     '版本': 'バージョン',
     // Latency
@@ -3722,6 +3722,10 @@ const messages: Record<string, string> = {
     '已吊销': '取り消された',
     // Online
     '在线': 'オンライン',
+    // List nodes
+    '查询节点列表': 'ノード一覧を表示',
+    // Update node
+    '更新节点': 'ノードを更新',
     // Revoke Node
     '吊销节点': 'ノードを取り消す',
     // Revoke node <strong class="text-slate-900">{0}</strong>? The token becomes invalid and disconnects immediately, the node must be deleted and registered again.
@@ -3744,16 +3748,100 @@ const messages: Record<string, string> = {
     '节点已重命名': 'ノードの名前が変更されました',
     // Rename Node
     '重命名节点': 'ノード名の変更',
+    // Node Management
+    '节点管理': 'ノード管理',
+    // Port Forwarding
+    '端口转发': 'ポートフォワーディング',
+    // The center listens on ports and forwards through the tunnel to nodes (TCP / UDP)
+    '中控监听端口，经隧道转发到节点（TCP / UDP）': 'コントローラーがポートで待ち受け、トンネル経由でノードへ転送します（TCP / UDP）',
+    // Node port mapping
+    '节点端口映射': 'ノードのポートマッピング',
+    // Search listen port, target, node or note...
+    '搜索监听端口、目标、节点或备注...': 'リッスンポート、転送先、ノード、メモを検索...',
+    // Add Forward
+    '添加转发': '転送を追加',
+    // Edit Forward
+    '编辑转发': '転送を編集',
+    // Delete Forward
+    '删除转发': '転送を削除',
+    // Listen Port
+    '监听端口': 'リッスンポート',
+    // Target Address
+    '目标地址': '転送先アドレス',
+    // No forwarding rules
+    '暂无转发规则': '転送ルールはありません',
+    // Click "Add Forward" at the top right to map a node port to the center
+    '点击右上角「添加转发」，把节点端口映射到中控': '右上の「転送を追加」からノードのポートをコントローラーにマッピングします',
+    // No matching rules found
+    '未找到匹配规则': '一致するルールが見つかりません',
+    // No node available. Add a node in "Node Management" first
+    '暂无可用节点，请先在「节点管理」中接入节点': '利用可能なノードがありません。先に「ノード管理」でノードを追加してください',
+    // The node or forwarding rule no longer exists. Refresh and try again
+    '节点或转发规则已不存在，请刷新后重试': 'ノードまたは転送ルールが存在しません。更新して再試行してください',
+    // Forwarding rule saved
+    '转发规则已保存': '転送ルールを保存しました',
+    // Forwarding rule deleted
+    '转发规则已删除': '転送ルールを削除しました',
+    // Delete the forwarding rule for listen port <strong class="text-slate-900">{1}/{2}</strong> on node <strong class="text-slate-900">{0}</strong>? Established connections will be closed immediately.
+    '确定要删除节点 <strong class="text-slate-900">{0}</strong> 上监听端口 <strong class="text-slate-900">{1}/{2}</strong> 的转发规则吗？已建立的连接会被立即断开。': 'ノード <strong class="text-slate-900">{0}</strong> のリッスンポート <strong class="text-slate-900">{1}/{2}</strong> の転送ルールを削除しますか？確立済みの接続は直ちに切断されます。',
+    // The center listens on the given port and connects through the tunnel to a target on the node. TCP and UDP are supported.
+    '中控监听指定端口，经隧道连接到节点上的目标地址，支持 TCP 与 UDP。': 'コントローラーが指定ポートで待ち受け、トンネル経由でノード上の転送先に接続します。TCP と UDP に対応しています。',
+    // Forwarded connections bypass isrvd authentication; the target application is responsible for it. Do not forward services without authentication.
+    '转发的连接不经过 isrvd 认证，鉴权由目标应用负责；请勿转发无认证的服务。': '転送される接続は isrvd の認証を通りません。認証は転送先アプリケーションの責任です。認証のないサービスは転送しないでください。',
+    // Node
+    '所属节点': '対象ノード',
+    // Center Listen Port
+    '中控监听端口': 'コントローラーのリッスンポート',
+    // Must be within the range allowed by the center environment variable ISRVD_FORWARD_PORTS
+    '须在中控环境变量 ISRVD_FORWARD_PORTS 允许的范围内': 'コントローラーの環境変数 ISRVD_FORWARD_PORTS で許可された範囲内にしてください',
+    // Node Target Address
+    '节点目标地址': 'ノード側の転送先アドレス',
+    // host:port; a bare port points to 127.0.0.1 on the node
+    'host:port；只填端口时默认指向节点本机 127.0.0.1': 'host:port。ポートのみの場合はノード自身の 127.0.0.1 を指します',
+    // e.g. SSH
+    '如：SSH': '例：SSH',
+    // Save Forward
+    '保存转发': '転送を保存',
     // Enter the node name
     '请输入节点名称': 'ノード名を入力してください',
     // 1–64 characters, only used to tell nodes apart in the UI
     '1–64 个字符，仅用于在界面中区分节点': '1 ～ 64 文字。インターフェイス内のノードを区別するためにのみ使用されます。',
     // Command copied to clipboard
     '命令已复制到剪贴板': 'コマンドがクリップボードにコピーされました',
+    // Install with Docker
+    'Docker 安装': 'Docker でインストール',
+    // Install on bare metal
+    '裸机安装': 'ベアメタルにインストール',
     // Note
     '备注': '備考',
     // e.g. Hangzhou IDC web-01
     '如：杭州机房 web-01': '例: 杭州コンピューター室 web-01',
+    // Generate token
+    '生成 token': 'トークンを生成',
+    // Click Add Node to generate a token, then start the managed host in agent mode
+    '点击右上角「接入节点」生成 token，并在受管机上以 agent 模式启动': '右上の「ノードを追加」をクリックしてトークンを生成し、管理対象ホストを agent モードで起動してください',
+    // Run mode
+    '运行模式': '実行モード',
+    // Standalone mode
+    '单机模式': 'スタンドアロンモード',
+    // Center mode
+    '中控模式': 'コントローラーモード',
+    // Managed mode
+    '受控模式': '管理対象モード',
+    // Server URL
+    '服务器地址': 'サーバー URL',
+    // HTTP(S) URL of the center, without a path or query parameters
+    '中控服务器的 HTTP(S) 地址，不含路径或查询参数': 'コントローラーの HTTP(S) URL（パスやクエリパラメーターは含めません）',
+    // Connection token
+    '连接 token': '接続トークン',
+    // Use the token generated by the center; only one client per token may be online
+    '直接填写中控生成的 token；同一 token 仅允许一个客户端在线': 'コントローラーが生成したトークンを入力してください。同じトークンでオンラインにできるクライアントは 1 つだけです',
+    // Managed mode exposes no public port. Verify the URL and token; after restarting, access is only available through the center
+    '受控模式不开放对外端口；请确认地址与 token 正确，重启后只能通过中控访问': '管理対象モードでは外部ポートを公開しません。URL とトークンが正しいことを確認してください。再起動後はコントローラー経由でのみアクセスできます',
+    // Config saved; run mode, connection and listen address changes require a restart
+    '配置已保存，运行模式、连接参数和监听地址变更需重启生效': '設定を保存しました。実行モード、接続パラメーター、リッスンアドレスの変更は再起動後に反映されます',
+    // The token is shown only when created. Save it securely; it does not expire and permits only one client online.
+    'token 仅在创建时显示，请妥善保存；长期有效，仅允许一个客户端在线。': 'トークンは作成時にのみ表示されます。安全に保管してください。有効期限はなく、オンラインにできるクライアントは 1 つだけです。',
 }
 
 const language: LanguageModule = {

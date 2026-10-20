@@ -82,7 +82,7 @@ if (target === 'webview') {
     const lines = []
     for (const [key, enValue] of en) {
         if (!current.has(key)) continue
-        lines.push(`    // ${enValue}`)
+        lines.push(`    // ${enValue}`.trimEnd())
         lines.push(`    ${quote(key)}: ${quote(current.get(key))},`)
     }
     const meta = readFileSync(path, 'utf8').match(/const language: LanguageModule = \{[\s\S]*$/)
