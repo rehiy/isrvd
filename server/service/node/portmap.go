@@ -52,7 +52,7 @@ const (
 	maxTargetLen      = 200
 )
 
-// normalizePortMaps 校验并规整规则；监听端口须在中控配置 portmap.ports 允许的范围内。
+// normalizePortMaps 校验并规整规则；监听端口须在中控配置 portmap.range 允许的范围内。
 func normalizePortMaps(in []PortMap, allow *config.PortMapConfig) ([]PortMap, error) {
 	if len(in) > maxPortMaps {
 		return nil, fmt.Errorf("每个节点最多 %d 条转发规则", maxPortMaps)
@@ -69,7 +69,7 @@ func normalizePortMaps(in []PortMap, allow *config.PortMapConfig) ([]PortMap, er
 			return nil, errors.New("转发协议只能是 tcp 或 udp")
 		}
 		if !allow.Enabled() {
-			return nil, errors.New("中控未启用端口转发，请在配置文件 portmap.ports 中设置后重启")
+			return nil, errors.New("中控未启用端口转发，请在配置文件 portmap.range 中设置后重启")
 		}
 		if !allow.PortAllowed(f.Listen) {
 			lo, hi := allow.PortRange()

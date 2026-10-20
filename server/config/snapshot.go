@@ -225,7 +225,7 @@ func normalizeSnapshot(snapshot *Snapshot) error {
 		snapshot.Marketplace = &MarketplaceConfig{}
 	}
 	if snapshot.PortMap != nil {
-		snapshot.PortMap.Ports = strings.TrimSpace(snapshot.PortMap.Ports)
+		snapshot.PortMap.Range = strings.TrimSpace(snapshot.PortMap.Range)
 		snapshot.PortMap.Bind = strings.TrimSpace(snapshot.PortMap.Bind)
 	}
 	if snapshot.Members == nil {

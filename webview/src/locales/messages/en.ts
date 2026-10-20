@@ -1911,7 +1911,7 @@ const messages: Record<string, string> = {
     '转发的连接不经过 isrvd 认证，鉴权由目标应用负责；请勿转发无认证的服务。': 'Forwarded connections bypass isrvd authentication; the target application is responsible for it. Do not forward services without authentication.',
     '所属节点': 'Node',
     '中控监听端口': 'Center Listen Port',
-    '须在中控配置 portmap.ports 允许的范围内': 'Must be within the range allowed by portmap.ports in the center config file',
+    '须在中控配置 portmap.range 允许的范围内': 'Must be within the range allowed by portmap.range in the center config file',
     '节点目标地址': 'Node Target Address',
     'host:port；只填端口时默认指向节点本机 127.0.0.1': 'host:port; a bare port points to 127.0.0.1 on the node',
     '如：SSH': 'e.g. SSH',

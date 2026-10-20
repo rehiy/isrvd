@@ -3792,8 +3792,8 @@ const messages: Record<string, string> = {
     '所属节点': '対象ノード',
     // Center Listen Port
     '中控监听端口': 'コントローラーのリッスンポート',
-    // Must be within the range allowed by portmap.ports in the center config file
-    '须在中控配置 portmap.ports 允许的范围内': 'コントローラーの設定 portmap.ports で許可された範囲内にしてください',
+    // Must be within the range allowed by portmap.range in the center config file
+    '须在中控配置 portmap.range 允许的范围内': 'コントローラーの設定 portmap.range で許可された範囲内にしてください',
     // Node Target Address
     '节点目标地址': 'ノード側の転送先アドレス',
     // host:port; a bare port points to 127.0.0.1 on the node

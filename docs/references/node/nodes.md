@@ -99,7 +99,7 @@ isrvd_delete "/node/<ID>"
 
 ### 配置端口转发
 
-在中控监听端口，经隧道转发到节点侧的任意 `host:port`（类似 frp），支持 TCP 与 UDP；也可在 Web 界面「集中管控 → 端口转发」中管理。需先在中控配置文件设置 `portmap.ports`（可分配的监听端口范围，如 `20000-20999`；留空则功能关闭），修改后重启生效，详见 [集中管理](../../multi-node.md)。
+在中控监听端口，经隧道转发到节点侧的任意 `host:port`（类似 frp），支持 TCP 与 UDP；也可在 Web 界面「集中管控 → 端口转发」中管理。需先在中控配置文件设置 `portmap.range`（可分配的监听端口范围，如 `20000-20999`；留空则功能关闭），修改后重启生效，详见 [集中管理](../../multi-node.md)。
 
 ```bash
 isrvd_put "/node/<ID>/portmap" '{"portmaps":[{"name":"SSH","proto":"tcp","listen":20022,"target":"127.0.0.1:22"},{"proto":"udp","listen":25353,"target":"127.0.0.1:53"}]}'
@@ -111,7 +111,7 @@ isrvd_put "/node/<ID>/portmap" '{"portmaps":[{"name":"SSH","proto":"tcp","listen
 |------|------|------|
 | `name` | string | 备注，可选，最多 64 个字符 |
 | `proto` | string | `tcp` 或 `udp` |
-| `listen` | number | 中控监听端口，须在配置 `portmap.ports` 范围内；同一 `proto` 下全局唯一（跨节点） |
+| `listen` | number | 中控监听端口，须在配置 `portmap.range` 范围内；同一 `proto` 下全局唯一（跨节点） |
 | `target` | string | 节点侧目标 `host:port`；`host` 缺省为 `127.0.0.1`，可为 IP 或主机名 |
 
 - 每个节点最多 32 条规则；已吊销的节点不能配置。

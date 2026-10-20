@@ -363,16 +363,16 @@ docker_variant_from_image() {
     esac
 }
 
-# 读取配置文件 portmap.ports 给出的监听端口范围；未配置返回空，格式无效时终止。
+# 读取配置文件 portmap.range 给出的监听端口范围；未配置返回空，格式无效时终止。
 portmap_range() {
     local file="$DOCKER_DATA_DIR/conf/isrvd.yml" value
     [ -f "$file" ] || return 0
     value=$(awk '
         /^[^[:space:]#]/ { in_portmap = ($0 ~ /^portmap:[[:space:]]*(#.*)?$/); next }
-        in_portmap && /^[[:space:]]+ports:/ {
-            sub(/^[[:space:]]+ports:[[:space:]]*/, ""); sub(/[[:space:]]*#.*$/, ""); gsub(/["'"'"']/, ""); print; exit
+        in_portmap && /^[[:space:]]+range:/ {
+            sub(/^[[:space:]]+range:[[:space:]]*/, ""); sub(/[[:space:]]*#.*$/, ""); gsub(/["'"'"']/, ""); print; exit
         }' "$file")
-    [ -z "$value" ] || [[ "$value" =~ ^[0-9]+(-[0-9]+)?$ ]] || fail "portmap.ports in $file must look like 20000-20999 or 20022"
+    [ -z "$value" ] || [[ "$value" =~ ^[0-9]+(-[0-9]+)?$ ]] || fail "portmap.range in $file must look like 20000-20999 or 20022"
     printf '%s' "$value"
 }
 
@@ -392,7 +392,7 @@ run_isrvd_container() {
         ports+=(-p 8080:8080)
     fi
     if [ "$mode" = "center" ]; then
-        # 端口转发的监听范围（配置文件 portmap.ports）需要发布到宿主机（TCP 与 UDP）；容器内须同时设置 portmap.bind: 0.0.0.0
+        # 端口转发的监听范围（配置文件 portmap.range）需要发布到宿主机（TCP 与 UDP）；容器内须同时设置 portmap.bind: 0.0.0.0
         local range
         range=$(portmap_range)
         if [ -n "$range" ]; then
@@ -441,7 +441,7 @@ EOF
         echo "  Web UI:    http://127.0.0.1:8080"
     fi
     if [ "$DEPLOYMENT_MODE" = center ]; then
-        echo "  Portmap:   To enable port forwarding, set portmap.ports and portmap.bind: 0.0.0.0 in the config, then run update"
+        echo "  Portmap:   To enable port forwarding, set portmap.range and portmap.bind: 0.0.0.0 in the config, then run update"
     fi
 }
 
@@ -635,7 +635,7 @@ Install reads and persists exported environment variables:
   ISRVD_CENTER_URL    Required for agent
   ISRVD_NODE_TOKEN    Required for agent
 Docker agents do not publish 8080. Updates preserve the installed role.
-Docker centers publish the TCP/UDP range from portmap.ports in $DOCKER_DATA_DIR/conf/isrvd.yml (also set portmap.bind: 0.0.0.0).
+Docker centers publish the TCP/UDP range from portmap.range in $DOCKER_DATA_DIR/conf/isrvd.yml (also set portmap.bind: 0.0.0.0).
 
 Config: $CONFIG_FILE (binary), $DOCKER_DATA_DIR/conf/isrvd.yml (Docker)
 EOF

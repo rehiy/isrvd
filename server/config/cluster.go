@@ -74,7 +74,7 @@ func (f *PortMapConfig) PortRange() (int, int) {
 	if f == nil {
 		return 0, 0
 	}
-	lo, hi, ok := parsePortRange(f.Ports)
+	lo, hi, ok := parsePortRange(f.Range)
 	if !ok {
 		return 0, 0
 	}
@@ -100,9 +100,9 @@ func validatePortMap(f *PortMapConfig) error {
 	if f == nil {
 		return nil
 	}
-	if f.Ports != "" {
-		if _, _, ok := parsePortRange(f.Ports); !ok {
-			return fmt.Errorf("%w：portmap.ports 格式应为 20000-20999 或单个端口（1–65535）", ErrInvalidPortMapConfig)
+	if f.Range != "" {
+		if _, _, ok := parsePortRange(f.Range); !ok {
+			return fmt.Errorf("%w：portmap.range 格式应为 20000-20999 或单个端口（1–65535）", ErrInvalidPortMapConfig)
 		}
 	}
 	if f.Bind != "" && net.ParseIP(f.Bind) == nil {

@@ -107,7 +107,7 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 
   ```yaml
   portmap:
-    ports: 20000-20999  # 可分配的监听端口范围（或单个端口）；留空则功能关闭
+    range: 20000-20999  # 可分配的监听端口范围（或单个端口）；留空则功能关闭
     bind: 127.0.0.1     # 监听地址（IP），默认只绑回环；对外开放须显式设为 0.0.0.0 等地址
   ```
 
@@ -117,7 +117,7 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 - 隧道里转发流与 HTTP 流共用同一条连接，以首字节区分；UDP 在流上按「2 字节长度 + 数据报」分帧。受管机程序需支持该能力（旧版本不支持，节点在线时保存规则会被拒绝）。
 - **转发的连接不经过 isrvd 的认证、权限与审计，鉴权完全由目标应用负责**。该权限等同于访问节点网络内任意地址，请仅授予创始人，且勿转发无认证的服务。目标应用看到的来源地址是受管机本机，不是真实客户端。
 - 并发上限：每条 TCP 规则 512 个连接，每条 UDP 规则 256 个来源（空闲 60 秒回收）。
-- Docker 部署：中控容器需发布监听范围（如 `-p 20000-20999:20000-20999 -p 20000-20999:20000-20999/udp`），并在配置中设置 `portmap.bind: 0.0.0.0`。使用 `isrvd.sh` 时，先在 `/srv/data/conf/isrvd.yml` 写好 `portmap.ports` 与 `portmap.bind`，再执行 `update`，脚本会读取 `portmap.ports` 并按该范围发布 TCP/UDP 端口；端口范围保存在配置文件里，所以重建容器后不会丢失。受管机在容器内时，`127.0.0.1` 指向容器自身，访问宿主机服务请使用宿主机地址或 host 网络。
+- Docker 部署：中控容器需发布监听范围（如 `-p 20000-20999:20000-20999 -p 20000-20999:20000-20999/udp`），并在配置中设置 `portmap.bind: 0.0.0.0`。使用 `isrvd.sh` 时，先在 `/srv/data/conf/isrvd.yml` 写好 `portmap.range` 与 `portmap.bind`，再执行 `update`，脚本会读取 `portmap.range` 并按该范围发布 TCP/UDP 端口；端口范围保存在配置文件里，所以重建容器后不会丢失。受管机在容器内时，`127.0.0.1` 指向容器自身，访问宿主机服务请使用宿主机地址或 host 网络。
 
 ## 接口路径变更
 
