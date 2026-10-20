@@ -20,14 +20,15 @@ var ErrNotFound = errors.New("记录不存在")
 
 // Node 节点记录。令牌仅保存 SHA-256 哈希，不保存明文或密文。
 type Node struct {
-	ID        string    `yaml:"id" json:"id"`                 // 节点 ID（自动生成）
-	Name      string    `yaml:"name" json:"name"`             // 节点名称
-	Status    string    `yaml:"status" json:"status"`         // pending / active / revoked
-	Hostname  string    `yaml:"hostname" json:"hostname"`     // 注册时上报的主机名
-	OS        string    `yaml:"os" json:"os"`                 // 注册时上报的操作系统
-	Arch      string    `yaml:"arch" json:"arch"`             // 注册时上报的 CPU 架构
-	CreatedAt time.Time `yaml:"createdAt" json:"createdAt"`   // 创建时间
-	TokenHash string    `yaml:"tokenHash,omitempty" json:"-"` // 节点令牌哈希
+	ID        string    `yaml:"id" json:"id"`                                 // 节点 ID（自动生成）
+	Name      string    `yaml:"name" json:"name"`                             // 节点名称
+	Status    string    `yaml:"status" json:"status"`                         // pending / active / revoked
+	Hostname  string    `yaml:"hostname" json:"hostname"`                     // 注册时上报的主机名
+	OS        string    `yaml:"os" json:"os"`                                 // 注册时上报的操作系统
+	Arch      string    `yaml:"arch" json:"arch"`                             // 注册时上报的 CPU 架构
+	CreatedAt time.Time `yaml:"createdAt" json:"createdAt"`                   // 创建时间
+	TokenHash string    `yaml:"tokenHash,omitempty" json:"-"`                 // 节点令牌哈希
+	Forwards  []Forward `yaml:"forwards,omitempty" json:"forwards,omitempty"` // 端口转发规则
 }
 
 // NodeInfo 为接口提供节点数据及实时连接状态，不参与持久化。

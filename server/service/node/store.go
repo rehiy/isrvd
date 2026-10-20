@@ -152,5 +152,6 @@ func (s *nodeStore) indexOf(id string) int {
 
 func cloneNode(item *Node) *Node {
 	c := *item
+	c.Forwards = slices.Clone(item.Forwards)
 	return &c
 }

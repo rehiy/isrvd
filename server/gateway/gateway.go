@@ -92,11 +92,12 @@ func (g *gateway) routes() http.Handler {
 
 	// 节点管理：路由与可分配权限共用 service/node 的元信息。
 	handlers := map[string]http.HandlerFunc{
-		"GET /api/node/nodes":            g.nodeList,
-		"PUT /api/node/item/:id":         g.nodeUpdate,
-		"POST /api/node/item/:id/revoke": g.nodeRevoke,
-		"DELETE /api/node/item/:id":      g.nodeDelete,
-		"POST /api/node/item":            g.nodeCreate,
+		"GET /api/node/nodes":        g.nodeList,
+		"POST /api/node":             g.nodeCreate,
+		"PUT /api/node/:id":          g.nodeUpdate,
+		"POST /api/node/:id/revoke":  g.nodeRevoke,
+		"DELETE /api/node/:id":       g.nodeDelete,
+		"PUT /api/node/:id/forwards": g.nodeForwardUpdate,
 	}
 	for _, route := range node.PermissionRoutes() {
 		key := route.Method + " " + route.Path

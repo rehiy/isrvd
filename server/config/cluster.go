@@ -3,6 +3,8 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net"
+	"strconv"
 	"strings"
 )
 
@@ -14,6 +16,11 @@ type ClusterConfig struct {
 	Mode      string
 	CenterURL string
 	NodeToken string
+
+	// 以下仅 center 使用：端口转发的监听地址与允许分配的监听端口范围，范围为 0 表示未启用。
+	ForwardBind    string
+	ForwardPortMin int
+	ForwardPortMax int
 }
 
 var clusterConfig = ClusterConfig{Mode: "server"}
@@ -23,11 +30,28 @@ func Cluster() ClusterConfig {
 	return clusterConfig
 }
 
+// ForwardEnabled 判断中控是否启用端口转发。
+func (c ClusterConfig) ForwardEnabled() bool {
+	return c.ForwardPortMax > 0
+}
+
+// ForwardPortAllowed 判断端口是否在允许分配的监听范围内。
+func (c ClusterConfig) ForwardPortAllowed(port int) bool {
+	return c.ForwardEnabled() && port >= c.ForwardPortMin && port <= c.ForwardPortMax
+}
+
 func loadClusterEnv() error {
 	cluster := ClusterConfig{
-		Mode:      strings.ToLower(envOrDefault("ISRVD_MODE", "server")),
-		CenterURL: strings.TrimRight(envOrDefault("ISRVD_CENTER_URL", ""), "/"),
-		NodeToken: envOrDefault("ISRVD_NODE_TOKEN", ""),
+		Mode:        strings.ToLower(envOrDefault("ISRVD_MODE", "server")),
+		CenterURL:   strings.TrimRight(envOrDefault("ISRVD_CENTER_URL", ""), "/"),
+		NodeToken:   envOrDefault("ISRVD_NODE_TOKEN", ""),
+		ForwardBind: strings.TrimSpace(envOrDefault("ISRVD_FORWARD_BIND", "127.0.0.1")),
+	}
+	if cluster.Mode == "center" {
+		var err error
+		if cluster.ForwardPortMin, cluster.ForwardPortMax, err = parsePortRange(envOrDefault("ISRVD_FORWARD_PORTS", "")); err != nil {
+			return fmt.Errorf("%w：ISRVD_FORWARD_PORTS %v", ErrInvalidClusterConfig, err)
+		}
 	}
 	if err := validateCluster(&cluster); err != nil {
 		return err
@@ -39,7 +63,12 @@ func loadClusterEnv() error {
 // validateCluster 校验环境变量中的多节点部署配置，不回显连接凭据。
 func validateCluster(cluster *ClusterConfig) error {
 	switch cluster.Mode {
-	case "server", "center":
+	case "server":
+		return nil
+	case "center":
+		if cluster.ForwardEnabled() && net.ParseIP(cluster.ForwardBind) == nil {
+			return fmt.Errorf("%w：ISRVD_FORWARD_BIND 必须是 IP 地址", ErrInvalidClusterConfig)
+		}
 		return nil
 	case "agent":
 		u, err := parseHTTPURL("ISRVD_CENTER_URL", cluster.CenterURL)
@@ -56,4 +85,22 @@ func validateCluster(cluster *ClusterConfig) error {
 	default:
 		return fmt.Errorf("%w：mode 只能是 server、center 或 agent", ErrInvalidClusterConfig)
 	}
+}
+
+// parsePortRange 解析 "20000-20999" 或单个端口 "20022"；空串表示未启用。
+func parsePortRange(value string) (int, int, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return 0, 0, nil
+	}
+	lo, hi, found := strings.Cut(value, "-")
+	if !found {
+		hi = lo
+	}
+	min, err1 := strconv.Atoi(strings.TrimSpace(lo))
+	max, err2 := strconv.Atoi(strings.TrimSpace(hi))
+	if err1 != nil || err2 != nil || min < 1 || max > 65535 || min > max {
+		return 0, 0, fmt.Errorf("格式应为 20000-20999 或单个端口（1–65535）")
+	}
+	return min, max, nil
 }

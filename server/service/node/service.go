@@ -23,6 +23,9 @@ type Service struct {
 	closed     bool
 
 	authLimit *rateLimiter // 令牌认证：按来源 IP 限制失败次数
+
+	fwdMu sync.Mutex              // 串行化端口转发的监听变更；加锁顺序：fwdMu → mu
+	fwd   map[string]*fwdListener // "proto/端口" → 正在监听的转发规则
 }
 
 // NewService 创建中控侧节点服务；节点表保存在业务数据存储中（后端见 config.OpenData）
@@ -31,15 +34,18 @@ func NewService() (*Service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("初始化节点存储失败: %w", err)
 	}
-	return &Service{
+	s := &Service{
 		nodes:      nodes,
 		conns:      map[string]*nodeConn{},
 		connecting: map[string]*Node{},
 		authLimit:  &rateLimiter{hits: map[string][]time.Time{}},
-	}, nil
+		fwd:        map[string]*fwdListener{},
+	}
+	s.forwardsRestore()
+	return s, nil
 }
 
-// Close 关闭全部在线会话，应在应用退出或重载时调用
+// Close 关闭全部在线会话与端口转发监听，应在应用退出或重载时调用
 func (s *Service) Close() {
 	s.mu.Lock()
 	s.closed = true
@@ -50,6 +56,7 @@ func (s *Service) Close() {
 	for _, c := range conns {
 		c.close()
 	}
+	s.forwardStopAll()
 }
 
 // NodeList 列出全部节点，附带在线状态
@@ -113,6 +120,7 @@ func (s *Service) NodeRevoke(id string) error {
 	_, err := s.nodes.update(id, func(n *Node) error {
 		n.Status = StatusRevoked
 		n.TokenHash = ""
+		n.Forwards = nil
 		return nil
 	})
 	if err != nil {
@@ -124,6 +132,7 @@ func (s *Service) NodeRevoke(id string) error {
 	if c != nil {
 		c.close()
 	}
+	s.forwardStopNode(id)
 	logger.Info("节点已吊销", "id", id)
 	return nil
 }
@@ -141,6 +150,7 @@ func (s *Service) NodeDelete(id string) error {
 	if c != nil {
 		c.close()
 	}
+	s.forwardStopNode(id)
 	logger.Info("节点已删除", "id", id)
 	return nil
 }

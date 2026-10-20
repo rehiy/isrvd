@@ -59,6 +59,19 @@ func (g *gateway) nodeDelete(w http.ResponseWriter, r *http.Request) {
 	success(w, r, "节点删除成功", nil)
 }
 
+func (g *gateway) nodeForwardUpdate(w http.ResponseWriter, r *http.Request) {
+	var req node.ForwardRequest
+	if !decode(w, r, &req) {
+		return
+	}
+	n, err := g.nodes.NodeForwardUpdate(r.PathValue("id"), &req)
+	if err != nil {
+		nodeFail(w, r, err)
+		return
+	}
+	success(w, r, "端口转发已更新", n)
+}
+
 // nodeConnect 受管机建立隧道的入口。WebSocket 升级与二进制流适配交给 libgo 的 websocket.ServerConfig，
 // 这里只做它不负责的两件事：拒绝浏览器发起的连接、校验节点令牌（令牌只经 Authorization 头传递，不进 URL）。
 func (g *gateway) nodeConnect() http.Handler {

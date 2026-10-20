@@ -1,14 +1,17 @@
 package node
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/rehiy/libgo/wstunnel"
@@ -28,6 +31,8 @@ type AgentInfo struct {
 	Hostname string `json:"hostname"` // 主机名
 	OS       string `json:"os"`       // 操作系统
 	Arch     string `json:"arch"`     // CPU 架构
+
+	Features []string `json:"features,omitempty"` // 可选能力，如 forward（端口转发）
 }
 
 // AgentOptions 受管机隧道客户端配置
@@ -85,18 +90,88 @@ func (a *Agent) Run(ctx context.Context) {
 	}
 }
 
-// serve 在隧道上提供 HTTP 服务，直到会话关闭
+// serve 在隧道上接受中控发起的流直到会话关闭：HTTP 流交给 http.Server，端口转发流直接中继。
 func (a *Agent) serve(sess *wstunnel.Session) {
 	srv := &http.Server{
 		Handler:           a.handler,
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
+	httpConns := newStreamListener()
 	startedAt := time.Now()
-	if err := srv.Serve(sess.Listener()); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		logger.Warn("节点隧道服务结束", "error", err, "duration", time.Since(startedAt))
+	go func() {
+		if err := srv.Serve(httpConns); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Warn("节点隧道服务结束", "error", err, "duration", time.Since(startedAt))
+		}
+	}()
+	defer srv.Close()
+	defer httpConns.Close()
+
+	for {
+		conn, err := sess.Accept()
+		if err != nil {
+			return
+		}
+		go dispatchStream(conn, httpConns)
 	}
 }
+
+// dispatchStream 按首字节区分 HTTP 流与端口转发流。
+func dispatchStream(conn net.Conn, httpConns *streamListener) {
+	r := bufio.NewReader(conn)
+	_ = conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+	first, err := r.Peek(1)
+	_ = conn.SetReadDeadline(time.Time{})
+	if err != nil {
+		_ = conn.Close()
+		return
+	}
+	if first[0] == forwardMagic {
+		serveForward(conn, r)
+		return
+	}
+	httpConns.push(&bufConn{Conn: conn, r: r})
+}
+
+// streamListener 把已分流的 HTTP 流交给 http.Server。
+type streamListener struct {
+	ch   chan net.Conn
+	done chan struct{}
+	once sync.Once
+}
+
+func newStreamListener() *streamListener {
+	return &streamListener{ch: make(chan net.Conn), done: make(chan struct{})}
+}
+
+func (l *streamListener) push(c net.Conn) {
+	select {
+	case l.ch <- c:
+	case <-l.done:
+		_ = c.Close()
+	}
+}
+
+func (l *streamListener) Accept() (net.Conn, error) {
+	select {
+	case c := <-l.ch:
+		return c, nil
+	case <-l.done:
+		return nil, net.ErrClosed
+	}
+}
+
+func (l *streamListener) Close() error {
+	l.once.Do(func() { close(l.done) })
+	return nil
+}
+
+func (l *streamListener) Addr() net.Addr { return streamAddr("wstunnel") }
+
+type streamAddr string
+
+func (a streamAddr) Network() string { return "wstunnel" }
+func (a streamAddr) String() string  { return string(a) }
 
 // newHandler 只放行 /api/ 与自身信息接口；其余路径一律 404。
 // 转发给本机 isrvd 的请求会换成本机签发的 API 令牌，用户凭据与来源 Origin 都不下发。
@@ -145,5 +220,6 @@ func localAgentInfo(version string) *AgentInfo {
 		Hostname: hostname,
 		OS:       runtime.GOOS,
 		Arch:     runtime.GOARCH,
+		Features: []string{FeatureForward},
 	}
 }
