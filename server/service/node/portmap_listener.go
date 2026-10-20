@@ -13,13 +13,13 @@ import (
 )
 
 const (
-	forwardMaxConns = 512              // 每条 TCP 规则的并发连接上限
+	portmapMaxConns = 512              // 每条 TCP 规则的并发连接上限
 	udpMaxSessions  = 256              // 每条 UDP 规则的并发来源上限
 	udpIdleTimeout  = 60 * time.Second // UDP 来源空闲回收时间
 )
 
-// fwdListener 中控上一条正在监听的转发规则。目标可在规则更新时原地替换，监听不中断。
-type fwdListener struct {
+// portListener 中控上一条正在监听的转发规则。目标可在规则更新时原地替换，监听不中断。
+type portListener struct {
 	nodeID string
 	proto  string
 	port   int
@@ -31,27 +31,27 @@ type fwdListener struct {
 	closed bool
 }
 
-func (l *fwdListener) targetAddr() string { return l.target.Load().(string) }
+func (l *portListener) targetAddr() string { return l.target.Load().(string) }
 
 // track 登记一条客户端连接；监听已关闭或并发达到上限时拒绝。
-func (l *fwdListener) track(c net.Conn) bool {
+func (l *portListener) track(c net.Conn) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	if l.closed || len(l.conns) >= forwardMaxConns {
+	if l.closed || len(l.conns) >= portmapMaxConns {
 		return false
 	}
 	l.conns[c] = struct{}{}
 	return true
 }
 
-func (l *fwdListener) untrack(c net.Conn) {
+func (l *portListener) untrack(c net.Conn) {
 	l.mu.Lock()
 	delete(l.conns, c)
 	l.mu.Unlock()
 }
 
 // close 停止监听并断开已建立的连接。
-func (l *fwdListener) close() {
+func (l *portListener) close() {
 	l.mu.Lock()
 	l.closed = true
 	conns := l.conns
@@ -63,16 +63,16 @@ func (l *fwdListener) close() {
 	}
 }
 
-// NodeForwardUpdate 整体替换节点的端口转发规则。先确认新增端口可监听，再持久化，最后撤销被移除的监听；
+// NodePortMapUpdate 整体替换节点的端口转发规则。先确认新增端口可监听，再持久化，最后撤销被移除的监听；
 // 任一步失败都回滚，不会出现「已保存但未生效」。
-func (s *Service) NodeForwardUpdate(id string, req *ForwardRequest) (*NodeInfo, error) {
-	rules, err := normalizeForwards(req.Forwards, s.portmap)
+func (s *Service) NodePortMapUpdate(id string, req *PortMapRequest) (*NodeInfo, error) {
+	rules, err := normalizePortMaps(req.PortMaps, s.portmap)
 	if err != nil {
 		return nil, err
 	}
 
-	s.fwdMu.Lock()
-	defer s.fwdMu.Unlock()
+	s.listenMu.Lock()
+	defer s.listenMu.Unlock()
 
 	n := s.nodes.get(id)
 	if n == nil {
@@ -81,15 +81,15 @@ func (s *Service) NodeForwardUpdate(id string, req *ForwardRequest) (*NodeInfo, 
 	if n.Status == StatusRevoked {
 		return nil, errors.New("已吊销的节点不能配置端口转发")
 	}
-	if len(rules) > 0 && !s.agentSupportsForward(id) {
+	if len(rules) > 0 && !s.agentSupportsPortMap(id) {
 		return nil, errors.New("节点程序版本过旧，不支持端口转发，请先升级节点")
 	}
 	for _, other := range s.nodes.list() {
 		if other.ID == id {
 			continue
 		}
-		for _, f := range other.Forwards {
-			if slices.ContainsFunc(rules, func(r Forward) bool { return r.Proto == f.Proto && r.Listen == f.Listen }) {
+		for _, f := range other.PortMaps {
+			if slices.ContainsFunc(rules, func(r PortMap) bool { return r.Proto == f.Proto && r.Listen == f.Listen }) {
 				return nil, fmt.Errorf("监听端口 %d/%s 已被节点 %s 使用", f.Listen, f.Proto, other.Name)
 			}
 		}
@@ -98,21 +98,21 @@ func (s *Service) NodeForwardUpdate(id string, req *ForwardRequest) (*NodeInfo, 
 	var started []string
 	rollback := func() {
 		for _, key := range started {
-			s.forwardStop(key)
+			s.portmapStop(key)
 		}
 	}
 	keep := map[string]bool{}
 	for _, r := range rules {
-		key := forwardKey(r.Proto, r.Listen)
+		key := portmapKey(r.Proto, r.Listen)
 		keep[key] = true
-		if l := s.fwd[key]; l != nil {
+		if l := s.listeners[key]; l != nil {
 			if l.nodeID != id {
 				rollback()
 				return nil, fmt.Errorf("监听端口 %d/%s 已被占用", r.Listen, r.Proto)
 			}
 			continue
 		}
-		if err := s.forwardStart(id, r); err != nil {
+		if err := s.portmapStart(id, r); err != nil {
 			rollback()
 			return nil, err
 		}
@@ -123,7 +123,7 @@ func (s *Service) NodeForwardUpdate(id string, req *ForwardRequest) (*NodeInfo, 
 		if m.Status == StatusRevoked { // 与 NodeRevoke 并发时以吊销为准，避免写回规则
 			return errors.New("已吊销的节点不能配置端口转发")
 		}
-		m.Forwards = rules
+		m.PortMaps = rules
 		return nil
 	})
 	if err != nil {
@@ -131,70 +131,70 @@ func (s *Service) NodeForwardUpdate(id string, req *ForwardRequest) (*NodeInfo, 
 		return nil, fmt.Errorf("保存端口转发失败: %w", err)
 	}
 
-	for key, l := range s.fwd {
+	for key, l := range s.listeners {
 		if l.nodeID == id && !keep[key] {
-			s.forwardStop(key)
+			s.portmapStop(key)
 		}
 	}
 	for _, r := range rules {
-		s.fwd[forwardKey(r.Proto, r.Listen)].target.Store(r.Target)
+		s.listeners[portmapKey(r.Proto, r.Listen)].target.Store(r.Target)
 	}
 	logger.Info("端口转发已更新", "id", id, "count", len(rules))
 	return s.nodeInfo(updated), nil
 }
 
-// agentSupportsForward 节点在线时确认其程序支持转发；离线时无法判断，放行。
-func (s *Service) agentSupportsForward(id string) bool {
+// agentSupportsPortMap 节点在线时确认其程序支持转发；离线时无法判断，放行。
+func (s *Service) agentSupportsPortMap(id string) bool {
 	s.mu.RLock()
 	c := s.conns[id]
 	s.mu.RUnlock()
-	return c == nil || (c.info != nil && slices.Contains(c.info.Features, FeatureForward))
+	return c == nil || (c.info != nil && slices.Contains(c.info.Features, FeaturePortMap))
 }
 
-// forwardsRestore 启动时按持久化的规则恢复监听；单条失败只告警，不影响其他规则。
-func (s *Service) forwardsRestore() {
-	s.fwdMu.Lock()
-	defer s.fwdMu.Unlock()
+// portmapRestore 启动时按持久化的规则恢复监听；单条失败只告警，不影响其他规则。
+func (s *Service) portmapRestore() {
+	s.listenMu.Lock()
+	defer s.listenMu.Unlock()
 	for _, n := range s.nodes.list() {
 		if n.Status == StatusRevoked {
 			continue
 		}
-		for _, f := range n.Forwards {
+		for _, f := range n.PortMaps {
 			if !s.portmap.PortAllowed(f.Listen) {
 				logger.Warn("端口转发未启用或端口超出允许范围，已跳过", "node", n.ID, "listen", f.Listen, "proto", f.Proto)
 				continue
 			}
-			if err := s.forwardStart(n.ID, f); err != nil {
+			if err := s.portmapStart(n.ID, f); err != nil {
 				logger.Warn("恢复端口转发失败", "node", n.ID, "listen", f.Listen, "proto", f.Proto, "error", err)
 			}
 		}
 	}
 }
 
-// forwardStopNode 撤销某节点的全部监听（吊销、删除时调用）。
-func (s *Service) forwardStopNode(id string) {
-	s.fwdMu.Lock()
-	defer s.fwdMu.Unlock()
-	for key, l := range s.fwd {
+// portmapStopNode 撤销某节点的全部监听（吊销、删除时调用）。
+func (s *Service) portmapStopNode(id string) {
+	s.listenMu.Lock()
+	defer s.listenMu.Unlock()
+	for key, l := range s.listeners {
 		if l.nodeID == id {
-			s.forwardStop(key)
+			s.portmapStop(key)
 		}
 	}
 }
 
-// forwardStopAll 撤销全部监听（服务关闭时调用）。
-func (s *Service) forwardStopAll() {
-	s.fwdMu.Lock()
-	defer s.fwdMu.Unlock()
-	for key := range s.fwd {
-		s.forwardStop(key)
+// portmapStopAll 撤销全部监听（服务关闭时调用）。
+func (s *Service) portmapStopAll() {
+	s.listenMu.Lock()
+	defer s.listenMu.Unlock()
+	for key := range s.listeners {
+		s.portmapStop(key)
 	}
 }
 
-// forwardStart 开始监听一条规则，调用方须持有 fwdMu。
-func (s *Service) forwardStart(nodeID string, f Forward) error {
+// portmapStart 开始监听一条规则，调用方须持有 listenMu。
+func (s *Service) portmapStart(nodeID string, f PortMap) error {
 	addr := net.JoinHostPort(s.portmap.BindAddr(), strconv.Itoa(f.Listen))
-	l := &fwdListener{nodeID: nodeID, proto: f.Proto, port: f.Listen, conns: map[net.Conn]struct{}{}}
+	l := &portListener{nodeID: nodeID, proto: f.Proto, port: f.Listen, conns: map[net.Conn]struct{}{}}
 	l.target.Store(f.Target)
 	switch f.Proto {
 	case ProtoTCP:
@@ -214,22 +214,22 @@ func (s *Service) forwardStart(nodeID string, f Forward) error {
 	default:
 		return errors.New("转发协议只能是 tcp 或 udp")
 	}
-	s.fwd[forwardKey(f.Proto, f.Listen)] = l
+	s.listeners[portmapKey(f.Proto, f.Listen)] = l
 	logger.Info("端口转发已监听", "node", nodeID, "listen", addr, "proto", f.Proto, "target", f.Target)
 	return nil
 }
 
-// forwardStop 停止监听并断开其连接，调用方须持有 fwdMu。
-func (s *Service) forwardStop(key string) {
-	if l := s.fwd[key]; l != nil {
-		delete(s.fwd, key)
+// portmapStop 停止监听并断开其连接，调用方须持有 listenMu。
+func (s *Service) portmapStop(key string) {
+	if l := s.listeners[key]; l != nil {
+		delete(s.listeners, key)
 		l.close()
 		logger.Info("端口转发已停止", "node", l.nodeID, "listen", l.port, "proto", l.proto)
 	}
 }
 
-// forwardOpen 在节点的隧道上开一条转发流并发送头部；节点离线或隧道不可用时返回错误。
-func (s *Service) forwardOpen(l *fwdListener) (net.Conn, error) {
+// portmapOpen 在节点的隧道上开一条转发流并发送头部；节点离线或隧道不可用时返回错误。
+func (s *Service) portmapOpen(l *portListener) (net.Conn, error) {
 	c, err := s.connFor(l.nodeID)
 	if err != nil {
 		return nil, err
@@ -238,7 +238,7 @@ func (s *Service) forwardOpen(l *fwdListener) (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := writeForwardHeader(stream, l.proto, l.targetAddr()); err != nil {
+	if err := writePortMapHeader(stream, l.proto, l.targetAddr()); err != nil {
 		_ = stream.Close()
 		return nil, err
 	}
@@ -247,7 +247,7 @@ func (s *Service) forwardOpen(l *fwdListener) (net.Conn, error) {
 
 // ─── TCP ───
 
-func (s *Service) acceptTCP(ln net.Listener, l *fwdListener) {
+func (s *Service) acceptTCP(ln net.Listener, l *portListener) {
 	for {
 		c, err := ln.Accept()
 		if err != nil {
@@ -264,7 +264,7 @@ func (s *Service) acceptTCP(ln net.Listener, l *fwdListener) {
 		go func() {
 			defer l.untrack(c)
 			defer c.Close()
-			stream, err := s.forwardOpen(l)
+			stream, err := s.portmapOpen(l)
 			if err != nil {
 				return
 			}
@@ -291,7 +291,7 @@ func (u *udpSession) close() {
 	})
 }
 
-func (s *Service) serveUDP(pc net.PacketConn, l *fwdListener) {
+func (s *Service) serveUDP(pc net.PacketConn, l *portListener) {
 	var mu sync.Mutex
 	sessions := map[string]*udpSession{}
 	stop := make(chan struct{})
@@ -345,7 +345,7 @@ func (s *Service) serveUDP(pc net.PacketConn, l *fwdListener) {
 			if count >= udpMaxSessions {
 				continue
 			}
-			stream, err := s.forwardOpen(l)
+			stream, err := s.portmapOpen(l)
 			if err != nil {
 				continue
 			}

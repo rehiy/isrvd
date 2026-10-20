@@ -26,9 +26,9 @@ type Service struct {
 
 	authLimit *rateLimiter // 令牌认证：按来源 IP 限制失败次数
 
-	portmap *config.PortMapConfig   // 启动时读取的 portmap 配置，修改配置文件后需重启生效
-	fwdMu   sync.Mutex              // 串行化端口转发的监听变更；加锁顺序：fwdMu → mu
-	fwd     map[string]*fwdListener // "proto/端口" → 正在监听的转发规则
+	portmap   *config.PortMapConfig    // 启动时读取的 portmap 配置，修改配置文件后需重启生效
+	listenMu  sync.Mutex               // 串行化端口转发的监听变更；加锁顺序：listenMu → mu
+	listeners map[string]*portListener // "proto/端口" → 正在监听的转发规则
 }
 
 // NewService 创建中控侧节点服务；节点表保存在业务数据存储中（后端见 config.OpenData）
@@ -43,9 +43,9 @@ func NewService() (*Service, error) {
 		connecting: map[string]*Node{},
 		authLimit:  &rateLimiter{hits: map[string][]time.Time{}},
 		portmap:    config.Current().PortMap,
-		fwd:        map[string]*fwdListener{},
+		listeners:  map[string]*portListener{},
 	}
-	s.forwardsRestore()
+	s.portmapRestore()
 	return s, nil
 }
 
@@ -60,7 +60,7 @@ func (s *Service) Close() {
 	for _, c := range conns {
 		c.close()
 	}
-	s.forwardStopAll()
+	s.portmapStopAll()
 }
 
 // NodeList 列出全部节点，附带在线状态
@@ -124,7 +124,7 @@ func (s *Service) NodeRevoke(id string) error {
 	_, err := s.nodes.update(id, func(n *Node) error {
 		n.Status = StatusRevoked
 		n.TokenHash = ""
-		n.Forwards = nil
+		n.PortMaps = nil
 		return nil
 	})
 	if err != nil {
@@ -136,7 +136,7 @@ func (s *Service) NodeRevoke(id string) error {
 	if c != nil {
 		c.close()
 	}
-	s.forwardStopNode(id)
+	s.portmapStopNode(id)
 	logger.Info("节点已吊销", "id", id)
 	return nil
 }
@@ -154,7 +154,7 @@ func (s *Service) NodeDelete(id string) error {
 	if c != nil {
 		c.close()
 	}
-	s.forwardStopNode(id)
+	s.portmapStopNode(id)
 	logger.Info("节点已删除", "id", id)
 	return nil
 }

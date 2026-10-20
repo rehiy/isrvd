@@ -22,21 +22,21 @@ import (
 // 规则由中控管理；转发流与 HTTP 流共用同一条隧道，以首字节区分：
 //
 //	HTTP 流  首字节是请求方法的 ASCII 字母
-//	转发流   forwardMagic | 协议(1=tcp 2=udp) | 目标长度(1 字节) | 目标 host:port
+//	转发流   portmapMagic | 协议(1=tcp 2=udp) | 目标长度(1 字节) | 目标 host:port
 //
 // UDP 在流上以「2 字节大端长度 + 数据报」分帧。
 
-// Forward 端口转发规则
-type Forward struct {
+// PortMap 端口转发规则
+type PortMap struct {
 	Name   string `yaml:"name,omitempty" json:"name,omitempty"` // 备注
 	Proto  string `yaml:"proto" json:"proto"`                   // tcp / udp
 	Listen int    `yaml:"listen" json:"listen"`                 // 中控监听端口
 	Target string `yaml:"target" json:"target"`                 // 节点侧目标 host:port，host 缺省为 127.0.0.1
 }
 
-// ForwardRequest 整体替换某节点的端口转发规则
-type ForwardRequest struct {
-	Forwards []Forward `json:"forwards"`
+// PortMapRequest 整体替换某节点的端口转发规则
+type PortMapRequest struct {
+	PortMaps []PortMap `json:"portmaps"`
 }
 
 // 转发协议与线路格式
@@ -44,21 +44,21 @@ const (
 	ProtoTCP = "tcp"
 	ProtoUDP = "udp"
 
-	// FeatureForward 写入 AgentInfo.Features，表示受管机可处理转发流。
-	FeatureForward = "forward"
+	// FeaturePortMap 写入 AgentInfo.Features，表示受管机可处理转发流。
+	FeaturePortMap = "portmap"
 
-	forwardMagic byte = 0x00
-	maxForwards       = 32
+	portmapMagic byte = 0x00
+	maxPortMaps       = 32
 	maxTargetLen      = 200
 )
 
-// normalizeForwards 校验并规整规则；监听端口须在中控配置 portmap.ports 允许的范围内。
-func normalizeForwards(in []Forward, allow *config.PortMapConfig) ([]Forward, error) {
-	if len(in) > maxForwards {
-		return nil, fmt.Errorf("每个节点最多 %d 条转发规则", maxForwards)
+// normalizePortMaps 校验并规整规则；监听端口须在中控配置 portmap.ports 允许的范围内。
+func normalizePortMaps(in []PortMap, allow *config.PortMapConfig) ([]PortMap, error) {
+	if len(in) > maxPortMaps {
+		return nil, fmt.Errorf("每个节点最多 %d 条转发规则", maxPortMaps)
 	}
 	seen := map[string]bool{}
-	out := make([]Forward, 0, len(in))
+	out := make([]PortMap, 0, len(in))
 	for _, f := range in {
 		f.Name = strings.TrimSpace(f.Name)
 		f.Proto = strings.ToLower(strings.TrimSpace(f.Proto))
@@ -80,7 +80,7 @@ func normalizeForwards(in []Forward, allow *config.PortMapConfig) ([]Forward, er
 			return nil, err
 		}
 		f.Target = target
-		key := forwardKey(f.Proto, f.Listen)
+		key := portmapKey(f.Proto, f.Listen)
 		if seen[key] {
 			return nil, fmt.Errorf("监听端口 %d/%s 重复", f.Listen, f.Proto)
 		}
@@ -116,17 +116,17 @@ func normalizeTarget(target string) (string, error) {
 	return out, nil
 }
 
-func forwardKey(proto string, port int) string {
+func portmapKey(proto string, port int) string {
 	return proto + "/" + strconv.Itoa(port)
 }
 
 // ─── 受管机侧：处理中控发起的转发流 ───
 
-// serveForward 读取转发头部、拨号目标并双向中继；r 是偷看过首字节的读取缓冲。
-func serveForward(conn net.Conn, r *bufio.Reader) {
+// servePortMap 读取转发头部、拨号目标并双向中继；r 是偷看过首字节的读取缓冲。
+func servePortMap(conn net.Conn, r *bufio.Reader) {
 	defer conn.Close()
 	_ = conn.SetReadDeadline(time.Now().Add(10 * time.Second))
-	proto, target, err := readForwardHeader(r)
+	proto, target, err := readPortMapHeader(r)
 	_ = conn.SetReadDeadline(time.Time{})
 	if err != nil {
 		logger.Warn("转发头部无效", "error", err)
@@ -153,16 +153,16 @@ func serveForward(conn net.Conn, r *bufio.Reader) {
 	pipe(stream, out)
 }
 
-func writeForwardHeader(w io.Writer, proto, target string) error {
+func writePortMapHeader(w io.Writer, proto, target string) error {
 	kind := byte(1)
 	if proto == ProtoUDP {
 		kind = 2
 	}
-	_, err := w.Write(append([]byte{forwardMagic, kind, byte(len(target))}, target...))
+	_, err := w.Write(append([]byte{portmapMagic, kind, byte(len(target))}, target...))
 	return err
 }
 
-func readForwardHeader(r io.Reader) (proto, target string, err error) {
+func readPortMapHeader(r io.Reader) (proto, target string, err error) {
 	var head [3]byte
 	if _, err = io.ReadFull(r, head[:]); err != nil {
 		return "", "", err

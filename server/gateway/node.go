@@ -59,12 +59,12 @@ func (g *gateway) nodeDelete(w http.ResponseWriter, r *http.Request) {
 	success(w, r, "节点删除成功", nil)
 }
 
-func (g *gateway) nodeForwardUpdate(w http.ResponseWriter, r *http.Request) {
-	var req node.ForwardRequest
+func (g *gateway) nodePortMapUpdate(w http.ResponseWriter, r *http.Request) {
+	var req node.PortMapRequest
 	if !decode(w, r, &req) {
 		return
 	}
-	n, err := g.nodes.NodeForwardUpdate(r.PathValue("id"), &req)
+	n, err := g.nodes.NodePortMapUpdate(r.PathValue("id"), &req)
 	if err != nil {
 		nodeFail(w, r, err)
 		return

@@ -32,7 +32,7 @@ type AgentInfo struct {
 	OS       string `json:"os"`       // 操作系统
 	Arch     string `json:"arch"`     // CPU 架构
 
-	Features []string `json:"features,omitempty"` // 可选能力，如 forward（端口转发）
+	Features []string `json:"features,omitempty"` // 可选能力，如 portmap（端口转发）
 }
 
 // AgentOptions 受管机隧道客户端配置
@@ -126,8 +126,8 @@ func dispatchStream(conn net.Conn, httpConns *streamListener) {
 		_ = conn.Close()
 		return
 	}
-	if first[0] == forwardMagic {
-		serveForward(conn, r)
+	if first[0] == portmapMagic {
+		servePortMap(conn, r)
 		return
 	}
 	httpConns.push(&bufConn{Conn: conn, r: r})
@@ -220,6 +220,6 @@ func localAgentInfo(version string) *AgentInfo {
 		Hostname: hostname,
 		OS:       runtime.GOOS,
 		Arch:     runtime.GOARCH,
-		Features: []string{FeatureForward},
+		Features: []string{FeaturePortMap},
 	}
 }

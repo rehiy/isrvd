@@ -28,7 +28,7 @@ type Node struct {
 	Arch      string    `yaml:"arch" json:"arch"`                             // 注册时上报的 CPU 架构
 	CreatedAt time.Time `yaml:"createdAt" json:"createdAt"`                   // 创建时间
 	TokenHash string    `yaml:"tokenHash,omitempty" json:"-"`                 // 节点令牌哈希
-	Forwards  []Forward `yaml:"forwards,omitempty" json:"forwards,omitempty"` // 端口转发规则
+	PortMaps  []PortMap `yaml:"portmaps,omitempty" json:"portmaps,omitempty"` // 端口转发规则
 }
 
 // NodeInfo 为接口提供节点数据及实时连接状态，不参与持久化。
