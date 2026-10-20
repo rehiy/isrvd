@@ -64,7 +64,17 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/node',
     name: 'node',
+    redirect: '/node/access'
+  },
+  {
+    path: '/node/access',
+    name: 'node-access',
     component: () => import('@/views/node/nodes.vue')
+  },
+  {
+    path: '/node/forwards',
+    name: 'node-forwards',
+    component: () => import('@/views/node/forwards.vue')
   },
   {
     path: '/apisix',

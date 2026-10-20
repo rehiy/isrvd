@@ -141,7 +141,7 @@ export default toNative(NodeManage)
           <button class="btn btn-secondary" @click="load()">
             <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
-          <button v-if="portal.hasPerm('POST /api/node/item')" class="btn btn-orange" @click="openAdd">
+          <button v-if="portal.hasPerm('POST /api/node')" class="btn btn-orange" @click="openAdd">
             <i class="fas fa-plus"></i>{{ $t('接入节点') }}
           </button>
         </div>
@@ -161,7 +161,7 @@ export default toNative(NodeManage)
           <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="load()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/node/item')" class="btn btn-orange btn-square" :title="$t('接入节点')" @click="openAdd">
+          <button v-if="portal.hasPerm('POST /api/node')" class="btn btn-orange btn-square" :title="$t('接入节点')" @click="openAdd">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>

@@ -21,6 +21,7 @@ class NavigationBar extends Vue {
     dockerExpanded = false
     swarmExpanded = false
     sshExpanded = false
+    nodeExpanded = false
     configExpanded = false
 
     // ─── 计算属性 ───
@@ -46,6 +47,10 @@ class NavigationBar extends Vue {
 
     get isSshActive() {
         return this.isActive('/ssh/')
+    }
+
+    get isNodeActive() {
+        return this.isActive('/node')
     }
 
     get isConfigActive() {
@@ -97,6 +102,13 @@ class NavigationBar extends Vue {
     onSshActiveChange(isActive: boolean) {
         if (isActive && !this.collapsed) {
             this.sshExpanded = true
+        }
+    }
+
+    @Watch('isNodeActive', { immediate: true })
+    onNodeActiveChange(isActive: boolean) {
+        if (isActive && !this.collapsed) {
+            this.nodeExpanded = true
         }
     }
 
@@ -166,6 +178,15 @@ class NavigationBar extends Vue {
         }
     }
 
+    toggleNode() {
+        if (this.collapsed) {
+            this.$emit('update:collapsed', false)
+            this.nodeExpanded = true
+        } else {
+            this.nodeExpanded = !this.nodeExpanded
+        }
+    }
+
     toggleConfig() {
         if (this.collapsed) {
             this.$emit('update:collapsed', false)
@@ -202,6 +223,7 @@ class NavigationBar extends Vue {
         this.dockerExpanded = this.$route.path.startsWith('/docker/')
         this.swarmExpanded = this.$route.path.startsWith('/swarm/')
         this.sshExpanded = this.$route.path.startsWith('/ssh/')
+        this.nodeExpanded = this.$route.path.startsWith('/node')
         this.configExpanded = this.$route.path.startsWith('/system/config')
         window.addEventListener('resize', this.handleResize)
     }
@@ -550,11 +572,29 @@ export default toNative(NavigationBar)
         <span v-if="!collapsed">{{ $t('用户管理') }}</span>
       </router-link>
 
-      <!-- 节点管理（仅本机中控视角的创始人可见） -->
-      <router-link v-if="!portal.currentNodeId && portal.hasPerm('GET /api/node/nodes')" to="/node" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('节点管理') : ''">
-        <i class="fas fa-sitemap"></i>
-        <span v-if="!collapsed">{{ $t('节点管理') }}</span>
-      </router-link>
+      <!-- 受管机折叠子菜单（仅本机中控视角可见；两个子页都依赖节点列表） -->
+      <div v-if="!portal.currentNodeId && portal.hasPerm('GET /api/node/nodes')">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isNodeActive }" :title="$t('集中管控')" @click.stop="toggleNode">
+          <i class="fas fa-sitemap"></i>
+        </button>
+        <template v-else>
+          <button class="nav-link w-full" :class="{ 'nav-link-active': isNodeActive }" @click.stop="toggleNode">
+            <i class="fas fa-sitemap"></i>
+            <span>{{ $t('集中管控') }}</span>
+            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': nodeExpanded }"></i>
+          </button>
+          <div v-show="nodeExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+            <router-link to="/node/access" class="nav-link" :class="{ 'nav-link-active': isActive('/node/access') }">
+              <i class="fas fa-server"></i>
+              <span>{{ $t('节点管理') }}</span>
+            </router-link>
+            <router-link to="/node/forwards" class="nav-link" :class="{ 'nav-link-active': isActive('/node/forwards') }">
+              <i class="fas fa-right-left"></i>
+              <span>{{ $t('端口转发') }}</span>
+            </router-link>
+          </div>
+        </template>
+      </div>
 
       <!-- 系统配置折叠子菜单（GET 或 PUT 任一权限即显示，只读成员同样可查看） -->
       <div v-if="!portal.currentNodeId && (portal.hasPerm('GET /api/system/config') || portal.hasPerm('PUT /api/system/config'))">

@@ -1,3 +1,24 @@
+// 端口转发规则：中控监听 listen，经隧道连到节点侧 target
+export interface NodeForward {
+    name?: string
+    proto: 'tcp' | 'udp'
+    listen: number // 中控监听端口
+    target: string // 节点侧目标 host:port，host 缺省为 127.0.0.1
+}
+
+// 端口转发规则整体替换请求
+export interface NodeForwardUpdate {
+    forwards: NodeForward[]
+}
+
+// 端口转发列表项：规则及其所属节点（由节点列表展开得到，后端不返回）
+export interface NodeForwardInfo extends NodeForward {
+    nodeId: string
+    nodeName: string
+    nodeOnline: boolean
+    nodeStatus: NodeInfo['status']
+}
+
 // 节点信息（列表/详情）
 export interface NodeInfo {
     id: string
@@ -7,6 +28,7 @@ export interface NodeInfo {
     os: string
     arch: string
     createdAt: string
+    forwards?: NodeForward[]
     online: boolean
     latency: number // 隧道往返延迟（毫秒），离线为 0
     agentVersion?: string

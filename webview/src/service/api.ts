@@ -121,6 +121,7 @@ import type {
     // Node
     NodeInfo,
     NodeUpdate,
+    NodeForwardUpdate,
     NodeCreate,
     NodeCreateResult,
 } from './types'
@@ -894,20 +895,24 @@ class ApiService {
         return http.get<NodeInfo[]>('node/nodes')
     }
 
+    nodeCreate(data: NodeCreate) {
+        return http.post<NodeCreateResult>('node', data)
+    }
+
     nodeUpdate(id: string, data: NodeUpdate) {
-        return http.put<NodeInfo>(`node/item/${id}`, data)
+        return http.put<NodeInfo>(`node/${id}`, data)
     }
 
     nodeRevoke(id: string) {
-        return http.post<void>(`node/item/${id}/revoke`)
+        return http.post<void>(`node/${id}/revoke`)
     }
 
     nodeDelete(id: string) {
-        return http.delete<void>(`node/item/${id}`)
+        return http.delete<void>(`node/${id}`)
     }
 
-    nodeCreate(data: NodeCreate) {
-        return http.post<NodeCreateResult>('node/item', data)
+    nodeForwardUpdate(id: string, data: NodeForwardUpdate) {
+        return http.put<NodeInfo>(`node/${id}/forwards`, data)
     }
 
     // ==================== SFTP 文件管理 ====================

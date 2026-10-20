@@ -57,13 +57,13 @@ export default toNative(NodeActions)
 
 <template>
   <div :class="compact ? 'table-actions' : 'card-actions'">
-    <button v-if="portal.hasPerm('PUT /api/node/item/:id')" class="btn-icon btn-icon-blue" :title="$t('重命名')" @click="$emit('edit', node)">
+    <button v-if="portal.hasPerm('PUT /api/node/:id')" class="btn-icon btn-icon-blue" :title="$t('重命名')" @click="$emit('edit', node)">
       <i class="fas fa-pen text-xs"></i><span v-if="!compact" class="text-xs ml-1">{{ $t('重命名') }}</span>
     </button>
-    <button v-if="node.status !== 'revoked' && portal.hasPerm('POST /api/node/item/:id/revoke')" class="btn-icon btn-icon-amber" :title="$t('吊销')" @click="revoke">
+    <button v-if="node.status !== 'revoked' && portal.hasPerm('POST /api/node/:id/revoke')" class="btn-icon btn-icon-amber" :title="$t('吊销')" @click="revoke">
       <i class="fas fa-ban text-xs"></i><span v-if="!compact" class="text-xs ml-1">{{ $t('吊销') }}</span>
     </button>
-    <button v-if="portal.hasPerm('DELETE /api/node/item/:id')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="remove">
+    <button v-if="portal.hasPerm('DELETE /api/node/:id')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="remove">
       <i class="fas fa-trash text-xs"></i><span v-if="!compact" class="text-xs ml-1">{{ $t('删除') }}</span>
     </button>
   </div>

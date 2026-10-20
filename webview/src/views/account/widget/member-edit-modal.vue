@@ -24,7 +24,7 @@ const MODULE_META: Record<string, { icon: string; label: string }> = {
     overview: { icon: 'fas fa-gauge-high',  label: '系统概览' },
     system:   { icon: 'fas fa-gear',        label: '系统管理' },
     account:  { icon: 'fas fa-users',       label: '用户管理' },
-    node:     { icon: 'fas fa-server',      label: '节点管理' },
+    node:     { icon: 'fas fa-server',      label: '集中管控' },
     shell:    { icon: 'fas fa-terminal',    label: 'Shell 终端' },
     filer:    { icon: 'fas fa-folder',      label: '文件管理' },
     copilot:  { icon: 'fas fa-robot',       label: 'AI 助手' },
