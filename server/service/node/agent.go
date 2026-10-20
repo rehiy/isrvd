@@ -18,7 +18,7 @@ import (
 const ProtocolVersion = 1
 
 // AgentInfoPath 仅供隧道内协议协商，不经 /api/ 转发或暴露给页面。
-const AgentInfoPath = "/__agent/info"
+const AgentInfoPath = "/agent/info"
 
 // AgentInfo agent 自身的版本与平台信息，供中控做协议协商
 type AgentInfo struct {
