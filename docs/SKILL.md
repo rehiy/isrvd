@@ -149,7 +149,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
     ├── SSH 主机管理     → references/ssh/hosts.md
     ├── SFTP 远程文件    → references/ssh/sftp.md
     ├── 创建/接入/吊销受管节点 → references/node/nodes.md
-    ├── 把节点端口映射到中控（TCP/UDP）→ references/node/nodes.md §配置端口转发
+    ├── 把节点端口转发到中控（TCP/UDP）→ references/node/nodes.md §配置端口转发
     ├── 操作某个受管节点 → references/node/nodes.md §以节点视角访问（API 根路径加 /n/<节点ID>）
     ├── Shell 终端       → references/shell.md (GET /shell WebSocket)
     └── WebSSH 终端     → references/ssh/hosts.md (GET /ssh/to/:id WebSocket)
