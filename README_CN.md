@@ -79,7 +79,7 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) ins
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --apisix
 ```
 
-Docker 版统一使用容器名 `isrvd`，数据保存在 `/srv/data`；`update` 会按当前镜像类型重建容器，并保留 `ISRVD_MODE`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN`，`uninstall` 删除容器但保留数据目录。
+Docker 版统一使用容器名 `isrvd`，数据保存在 `/srv/data`；`update` 会按当前镜像类型重建容器，并保留 `ISRVD_MODE`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN`、`ISRVD_FORWARD_PORTS`、`ISRVD_FORWARD_BIND`，`uninstall` 删除容器但保留数据目录。
 
 ### 准备网络
 
@@ -210,7 +210,7 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) dow
 - **无需入站端口**：受管机只需要能访问中控，位于 NAT 或防火墙后也可以接入；断线后按指数退避自动重连
 - **切换节点即切换视角**：有权限的成员在页面头部选择节点后，Docker、Swarm、Compose、文件、本机进程、终端、计划任务、APISIX、Caddy 和系统概览都作用于该节点，包括实时日志、终端和大文件上传下载
 - **账号与配置在中控**：成员、权限、系统配置、AI 助手和 SSH 远程管理始终由中控处理，节点上的操作使用中控的登录态
-- **按需出现**：节点切换器和侧边栏「节点管理」在 `center` 模式且当前用户有 `GET /api/node/nodes` 权限时显示
+- **按需出现**：节点切换器和侧边栏「集中管控」在 `center` 模式且当前用户有 `GET /api/node/nodes` 权限时显示
 
 ### 接入节点
 

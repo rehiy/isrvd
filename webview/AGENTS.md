@@ -67,7 +67,7 @@ webview/src/
 - 全局状态使用 Pinia，入口为 `webview/src/stores/index.ts` 导出的 `usePortal()`
 - `main.ts` 中创建 `createPinia()`，再初始化 `portal = usePortal()` 并注入路由守卫
 - `portal` 聚合 `auth`、`system`、`ui`、`node` 等子 store；组件内统一 `portal = usePortal()`
-- 多节点（中控模式）：当前节点由页面路径 `/n/<节点ID>/` 决定，切换是整页跳转（`helper/node.ts` 的 `switchNode`）；节点入口（头部切换器、侧边栏「节点管理」、`/node` 页面）只在 `portal.hasPerm('GET /api/node/nodes')` 为真时出现，页面挂载须等 `portal.initialized` 后判断，不满足时回到概览，不得在未启用时发起节点请求；「节点管理」是单个列表页，展示全部节点，以 pending/active/revoked 区分待接入、已激活和已吊销；接入 token 仅在创建时显示，桌面与移动端操作复用 `views/node/widget/node-actions.vue`，不要再拆成多个页面；侧边栏入口放在「用户管理」下方；头部切换器只负责切换节点，不放「节点管理」链接
+- 多节点（中控模式）：当前节点由页面路径 `/n/<节点ID>/` 决定，切换是整页跳转（`helper/node.ts` 的 `switchNode`）；节点入口（头部切换器、侧边栏「集中管控」、`/node` 页面）只在 `portal.hasPerm('GET /api/node/nodes')` 为真时出现，页面挂载须等 `portal.initialized` 后判断，不满足时回到概览，不得在未启用时发起节点请求；「集中管控」是侧边栏二级折叠菜单（避免与 Swarm 的「节点」混淆），`/node` 重定向到 `/node/access`：「节点管理」是单个列表页，展示全部节点，以 pending/active/revoked 区分待接入、已激活和已吊销，接入 token 仅在创建时显示，桌面与移动端操作复用 `views/node/widget/node-actions.vue`；「端口转发」（`/node/forwards`）把各节点规则展开成一张表，后端按节点整体替换规则，增删改一律经 `helper/forward.ts` 的 `forwardsPatch` 基于节点最新规则提交；两个子页都只依赖 `GET /api/node/nodes`，编辑按钮另按 `PUT /api/node/:id/forwards` 控制；侧边栏入口放在「用户管理」下方；头部切换器只负责切换节点，不放「集中管控」链接
 - 权限：`permissionsLoaded`（布尔）、`permissions`（`string[]`，格式为 `"METHOD /api/path"`），通过 `portal.hasPerm(moduleOrRoute)` 检查；支持模块名（如 `docker`）和精确路由（如 `GET /api/docker/containers`）
 - 页面级草稿 store（如 `stores/config.ts`）不进 `portal`，由 `stores/index.ts` 直接导出 `useConfigStore()`：嵌套路由下由父布局统一 `load`/`save`，子页面仅绑定草稿，保存只提交当前分组涉及的分区；登出时由 `portal.clearAuth()` 调用其 `reset()`
 
@@ -246,7 +246,7 @@ webview/src/
 </td>
 ```
 
-图标配色跟随资源页主色（图标背景通常用 `400` 色阶，toolbar 用 `500` 色阶）：Docker 容器 `emerald/slate`（按状态）、镜像 `blue`、网络 `purple`、数据卷 `amber`、仓库 `purple`；Swarm 节点 `blue`、服务 `emerald`、任务 `cyan`；APISIX 路由 `indigo`、上游 `emerald`、消费者 `violet`、SSL `cyan`、插件配置 `rose`、访问授权 `amber`；Caddy 路由 `indigo`、证书 `cyan`、全局配置 `violet`、原始配置 `slate`；Compose `amber`、Cron `amber/violet`、用户 `blue`、Filer `primary`、节点管理 `orange`（工具栏与弹窗确认按钮用 `btn-orange`）。新模块选未用色（`rose`/`cyan`/`lime` 等）
+图标配色跟随资源页主色（图标背景通常用 `400` 色阶，toolbar 用 `500` 色阶）：Docker 容器 `emerald/slate`（按状态）、镜像 `blue`、网络 `purple`、数据卷 `amber`、仓库 `purple`；Swarm 节点 `blue`、服务 `emerald`、任务 `cyan`；APISIX 路由 `indigo`、上游 `emerald`、消费者 `violet`、SSL `cyan`、插件配置 `rose`、访问授权 `amber`；Caddy 路由 `indigo`、证书 `cyan`、全局配置 `violet`、原始配置 `slate`；Compose `amber`、Cron `amber/violet`、用户 `blue`、Filer `primary`、集中管控 `orange`（工具栏与弹窗确认按钮用 `btn-orange`）。新模块选未用色（`rose`/`cyan`/`lime` 等）
 
 #### 1.9.1 状态文字颜色（强制）
 

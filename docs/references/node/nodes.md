@@ -30,6 +30,7 @@ isrvd_get "/node/nodes"
 | `os` | string | 注册时上报的操作系统 |
 | `arch` | string | 注册时上报的 CPU 架构 |
 | `createdAt` | string | 节点创建时间（只读） |
+| `forwards` | array | 端口转发规则，未配置时不返回；字段见下文「配置端口转发」 |
 | `online` | bool | 当前是否在线 |
 | `latency` | number | 隧道往返延迟（毫秒），离线为 `0` |
 | `agentVersion` | string | 受管机程序版本，离线时不返回 |
@@ -42,7 +43,7 @@ isrvd_get "/node/nodes"
 ### 创建节点并生成 token
 
 ```bash
-isrvd_post "/node/item" '{"name":"杭州机房 web-01"}'
+isrvd_post "/node" '{"name":"杭州机房 web-01"}'
 ```
 
 | 请求字段 | 类型 | 说明 |
@@ -73,7 +74,7 @@ bash <(curl -sL https://isrvd.rehiy.com/install/) install --docker
 ### 重命名节点
 
 ```bash
-isrvd_put "/node/item/<ID>" '{"name":"杭州机房 web-01"}'
+isrvd_put "/node/<ID>" '{"name":"杭州机房 web-01"}'
 ```
 
 `name` 必填，1–64 个字符。
@@ -81,20 +82,44 @@ isrvd_put "/node/item/<ID>" '{"name":"杭州机房 web-01"}'
 ### 吊销节点
 
 ```bash
-isrvd_post "/node/item/<ID>/revoke"
+isrvd_post "/node/<ID>/revoke"
 ```
 
-令牌立即失效并断开在线连接，之后经隧道的请求返回 `503 节点离线`。已吊销的节点需删除后用新令牌重新接入。
+令牌立即失效并断开在线连接，之后经隧道的请求返回 `503 节点离线`；该节点的端口转发规则一并清除。已吊销的节点需删除后用新令牌重新接入。
 
 > 受管机被拒绝后每分钟重试一次并记录错误日志；需要重新接入时，创建新节点并更新受管机 token 后重启即可。
 
 ### 删除节点
 
 ```bash
-isrvd_delete "/node/item/<ID>"
+isrvd_delete "/node/<ID>"
 ```
 
-删除记录并断开在线连接，原 token 立即失效。待接入节点同样可重命名、吊销或删除；保存失败时保留原记录并返回错误，可重试操作。
+删除记录并断开在线连接，原 token 立即失效，同时停止该节点的端口转发监听。待接入节点同样可重命名、吊销或删除；保存失败时保留原记录并返回错误，可重试操作。
+
+### 配置端口转发
+
+在中控监听端口，经隧道转发到节点侧的任意 `host:port`（类似 frp），支持 TCP 与 UDP；也可在 Web 界面「集中管控 → 端口转发」中管理。需先在中控设置环境变量 `ISRVD_FORWARD_PORTS`（可分配的监听端口范围，如 `20000-20999`；未设置则功能关闭）。
+
+```bash
+isrvd_put "/node/<ID>/forwards" '{"forwards":[{"name":"SSH","proto":"tcp","listen":20022,"target":"127.0.0.1:22"},{"proto":"udp","listen":25353,"target":"127.0.0.1:53"}]}'
+```
+
+请求体整体替换该节点的规则；传 `{"forwards":[]}` 清空。保存前会先确认新增端口可监听，失败则不保存任何变更。
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `name` | string | 备注，可选，最多 64 个字符 |
+| `proto` | string | `tcp` 或 `udp` |
+| `listen` | number | 中控监听端口，须在 `ISRVD_FORWARD_PORTS` 范围内；同一 `proto` 下全局唯一（跨节点） |
+| `target` | string | 节点侧目标 `host:port`；`host` 缺省为 `127.0.0.1`，可为 IP 或主机名 |
+
+- 每个节点最多 32 条规则；已吊销的节点不能配置。
+- 监听地址由中控环境变量 `ISRVD_FORWARD_BIND` 决定，默认 `127.0.0.1`；对外开放须显式设为 `0.0.0.0` 等地址。
+- 监听与节点是否在线无关：节点离线时连接被立即关闭，上线后自动恢复。规则变更、节点吊销或删除时，对应监听与已建立的连接立即断开。
+- 受管机程序须支持端口转发（在线节点不支持时返回 `400`）；规则写入 `node-list.yml`，中控重启后自动恢复监听，端口被占用的规则只记录告警。
+- **转发的连接不经过 isrvd 认证，也不进入审计页面**，鉴权完全由目标应用负责；该权限等同于访问节点网络内任意地址，请仅授予创始人，且勿转发无认证的服务。UDP 与 TCP 到达目标时，来源地址均为受管机本机。
+- 并发上限：每条 TCP 规则 512 个连接，每条 UDP 规则 256 个来源地址（空闲 60 秒回收）。
 
 ---
 

@@ -14,11 +14,12 @@
 
 | 模块 | 路由权限点示例 | 说明 |
 | ------ | --------------- | ------ |
-| `node` | `POST /api/node/item` | 创建节点并生成 token（仅创建时返回） |
 | `node` | `GET /api/node/nodes` | 节点列表与切换入口 |
-| `node` | `PUT /api/node/item/:id` | 重命名节点 |
-| `node` | `POST /api/node/item/:id/revoke` | 吊销节点 |
-| `node` | `DELETE /api/node/item/:id` | 删除节点 |
+| `node` | `POST /api/node` | 创建节点并生成 token（仅创建时返回） |
+| `node` | `PUT /api/node/:id` | 重命名节点 |
+| `node` | `POST /api/node/:id/revoke` | 吊销节点 |
+| `node` | `DELETE /api/node/:id` | 删除节点 |
+| `node` | `PUT /api/node/:id/forwards` | 配置节点端口转发（等同于访问节点网络内任意地址，且转发连接不经 isrvd 认证，建议仅创始人） |
 | `overview` | `GET /api/overview/version` | 系统概览（版本信息） |
 | `overview` | `GET /api/overview/monitor` | 系统概览（监控数据） |
 | `overview` | `POST /api/overview/upgrade` | 系统概览（在线升级） |

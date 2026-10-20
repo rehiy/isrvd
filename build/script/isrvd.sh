@@ -132,6 +132,10 @@ prepare_deployment_env() {
     if [ "$DEPLOYMENT_MODE" = agent ]; then
         DEPLOYMENT_ENV+=("ISRVD_CENTER_URL=$ISRVD_CENTER_URL" "ISRVD_NODE_TOKEN=$ISRVD_NODE_TOKEN")
     fi
+    if [ "$DEPLOYMENT_MODE" = center ] && [ -n "${ISRVD_FORWARD_PORTS:-}" ]; then
+        DEPLOYMENT_ENV+=("ISRVD_FORWARD_PORTS=$ISRVD_FORWARD_PORTS")
+        [ -z "${ISRVD_FORWARD_BIND:-}" ] || DEPLOYMENT_ENV+=("ISRVD_FORWARD_BIND=$ISRVD_FORWARD_BIND")
+    fi
 }
 
 # systemd Environment 使用自己的引号与 specifier 规则，不能直接套用 shell 转义。
@@ -369,14 +373,23 @@ run_isrvd_container() {
     local ports=()
     local environment=()
     local mode="server"
+    local forward_ports=""
     local entry
     for entry in "${DEPLOYMENT_ENV[@]}"; do
         environment+=(-e "$entry")
-        case "$entry" in ISRVD_MODE=*) mode="${entry#*=}" ;; esac
+        case "$entry" in
+            ISRVD_MODE=*) mode="${entry#*=}" ;;
+            ISRVD_FORWARD_PORTS=*) forward_ports="${entry#*=}" ;;
+        esac
     done
     mode="${mode,,}"
     if [ "$mode" != "agent" ]; then
         ports+=(-p 8080:8080)
+    fi
+    if [ "$mode" = "center" ] && [ -n "$forward_ports" ]; then
+        # 端口转发的监听范围需要发布到宿主机（TCP 与 UDP）；容器内须同时设置 ISRVD_FORWARD_BIND=0.0.0.0
+        [[ "$forward_ports" =~ ^[0-9]+(-[0-9]+)?$ ]] || fail "ISRVD_FORWARD_PORTS must look like 20000-20999 or 20022"
+        ports+=(-p "$forward_ports:$forward_ports" -p "$forward_ports:$forward_ports/udp")
     fi
 
     case "$variant" in
@@ -428,7 +441,7 @@ update_docker_deployment() {
     old_env=$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$SERVICE_NAME")
     while IFS= read -r entry; do
         case "$entry" in
-            ISRVD_MODE=*|ISRVD_CENTER_URL=*|ISRVD_NODE_TOKEN=*) DEPLOYMENT_ENV+=("$entry") ;;
+            ISRVD_MODE=*|ISRVD_CENTER_URL=*|ISRVD_NODE_TOKEN=*|ISRVD_FORWARD_PORTS=*|ISRVD_FORWARD_BIND=*) DEPLOYMENT_ENV+=("$entry") ;;
         esac
     done <<< "$old_env"
     old_image=$(docker inspect --format '{{.Config.Image}}' "$SERVICE_NAME")
@@ -610,6 +623,8 @@ Install reads and persists exported environment variables:
   ISRVD_MODE          server (default), center, or agent
   ISRVD_CENTER_URL    Required for agent
   ISRVD_NODE_TOKEN    Required for agent
+  ISRVD_FORWARD_PORTS Optional for center: listen port range for port forwarding, e.g. 20000-20999
+  ISRVD_FORWARD_BIND  Optional for center: listen address (default 127.0.0.1; Docker needs 0.0.0.0)
 Docker agents do not publish 8080. Updates preserve the installed role.
 
 Config: $CONFIG_FILE (binary), $DOCKER_DATA_DIR/conf/isrvd.yml (Docker)

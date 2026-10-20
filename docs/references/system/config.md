@@ -136,7 +136,7 @@ isrvd_get "/system/config"
 
 > 配置文件 / etcd 中的 `schema.version` 由系统维护（用于版本化格式转换），不通过该接口返回或修改。
 
-多节点部署参数通过 `ISRVD_MODE`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN` 环境变量设置；配置 API 管理业务配置，详见 [集中管理](../../multi-node.md)。受控模式要求 `tha.enabled=false`。
+多节点部署参数通过 `ISRVD_MODE`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN` 环境变量设置（中控另可选 `ISRVD_FORWARD_PORTS`、`ISRVD_FORWARD_BIND` 启用端口转发）；配置 API 管理业务配置，详见 [集中管理](../../multi-node.md)。受控模式要求 `tha.enabled=false`。
 
 网关没有代理信任开关：审计和节点认证失败限流仅使用连接对端 IP。反向代理后的客户端会共享限流额度，网关审计记录代理 IP。中控模式允许 THA，网关按 `tha.trustedCIDRs` 校验连接来源，拒绝不可信身份头。
 
