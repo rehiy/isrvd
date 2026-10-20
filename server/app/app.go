@@ -136,6 +136,11 @@ func StartApp(listener net.Listener, mode string) {
 		routeIndex: make(map[string]Route),
 	}
 
+	// 审计 IP 一律取连接对端，不采信任何代理转发头（X-Forwarded-For / X-Real-IP 可被伪造）。
+	// 部署在反向代理后时记录代理 IP；中控模式下上游与受管机的审计只见到回环/隧道来源，
+	// 操作的真实客户端 IP 以中控网关的审计记录为准。
+	_ = app.SetTrustedProxies(nil)
+
 	app.initServices(app.servicesCtx)
 	app.initRoutes()
 

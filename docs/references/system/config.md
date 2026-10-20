@@ -256,7 +256,7 @@ isrvd_get "/system/audit/logs?username=<USERNAME>"
 | method | string | HTTP 方法；WebSocket 请求记为 `WS` |
 | uri | string | 请求路径及查询参数，敏感参数值已脱敏 |
 | body | string | 请求体，敏感字段已脱敏 |
-| ip | string | 来源 IP |
+| ip | string | 来源 IP（连接对端，不采信 `X-Forwarded-For` 等转发头；反向代理后为代理 IP） |
 | statusCode | number | 响应状态码 |
 | success | boolean | 是否成功 |
 | duration | number | 耗时（ms） |
