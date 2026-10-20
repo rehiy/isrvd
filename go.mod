@@ -15,12 +15,13 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/moby/docker-image-spec v1.3.1
-	github.com/rehiy/libgo v0.21.0
+	github.com/rehiy/libgo v0.21.1-0.20261020032122-65d365e58b8f
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil/v3 v3.24.5
-	golang.org/x/crypto v0.57.0
 	golang.org/x/oauth2 v0.37.0
 )
+
+require golang.org/x/crypto v0.57.0 // indirect
 
 require (
 	github.com/Microsoft/go-winio v0.6.3 // indirect
