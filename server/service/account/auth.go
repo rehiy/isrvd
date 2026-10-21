@@ -43,19 +43,18 @@ func (s *Service) AuthFromGateway(r *http.Request, allowQueryToken bool) (string
 	return s.Auth(r, allowQueryToken)
 }
 
-// GatewayMember 认证进程内网关已清理的请求，返回成员信息；认证失败返回 nil。
+// GatewayUser 认证进程内网关已清理的请求，返回用户名；认证失败或成员不存在返回空串。
 // 调用方须先移除外部 GatewayUserHeader，校验 THA 来源后再写入内部身份。
-func (s *Service) GatewayMember(r *http.Request, allowQueryToken bool) *MemberInfo {
+func (s *Service) GatewayUser(r *http.Request, allowQueryToken bool) string {
 	snapshot := config.Current()
 	username := r.Header.Get(GatewayUserHeader)
 	if !snapshot.THA.Enabled {
 		username, _ = s.jwtCheck(snapshot, r, allowQueryToken)
 	}
-	member := snapshot.Members[username]
-	if username == "" || member == nil {
-		return nil
+	if username == "" || snapshot.Members[username] == nil {
+		return ""
 	}
-	return s.memberInfoBuild(member)
+	return username
 }
 
 // AuthInfoResponse 认证模式及当前用户信息

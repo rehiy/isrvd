@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -12,14 +13,6 @@ import (
 	"isrvd/server/service/account"
 )
 
-// nodeModules 可按节点转发的业务模块。其余模块（账号、系统、AI 助手、SSH 等）
-// 即使在 /n/<节点ID>/ 下访问，也始终由中控自己的 isrvd 处理。
-var nodeModules = map[string]bool{
-	"overview": true, "filer": true, "shell": true, "local": true,
-	"docker": true, "swarm": true, "compose": true, "cron": true,
-	"apisix": true, "caddy": true,
-}
-
 func (g *gateway) nodePath(w http.ResponseWriter, r *http.Request) {
 	id, rest := r.PathValue("id"), r.PathValue("rest")
 	if !validNodeID(id) {
@@ -27,25 +20,24 @@ func (g *gateway) nodePath(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 去掉 /n/<节点ID> 前缀后，其余处理与直接访问中控一致
-	r2 := r.Clone(r.Context())
-	r2.URL.Path = "/" + rest
-	r2.URL.RawPath = ""
+	r.URL.Path = "/" + rest
+	r.URL.RawPath = ""
 
 	if !strings.HasPrefix(rest, "api/") {
-		g.proxy.ServeHTTP(w, r2) // 页面与静态资源
+		g.proxy.ServeHTTP(w, r) // 页面与静态资源
 		return
 	}
 	module, _, _ := strings.Cut(strings.TrimPrefix(rest, "api/"), "/")
 	switch {
 	case module == "node":
 		// 节点管理属于中控：在节点视角下打开的页面同样要能管理节点，按中控自己的接口处理
-		g.mux.ServeHTTP(w, r2)
-	case !nodeModules[module]:
-		g.proxy.ServeHTTP(w, r2) // 账号、系统、AI 助手、SSH 等始终作用于中控
+		g.mux.ServeHTTP(w, r)
+	case !g.nodeModules[module]:
+		g.proxy.ServeHTTP(w, r) // 账号、系统、AI 助手、SSH 等始终作用于中控
 	case rest == "api/overview/bootstrap":
-		g.nodeBootstrap(w, r2, id)
+		g.nodeBootstrap(w, r, id)
 	default:
-		g.permissionOnly(g.nodeForward)(w, r2)
+		g.permissionOnly(g.nodeForward)(w, r)
 	}
 }
 
@@ -79,49 +71,45 @@ func (g *gateway) originAllowed(r *http.Request) bool {
 }
 
 // nodeBootstrap 以中控的认证信息、节点自身的服务可用性组合启动数据，
-// 让页面在所选节点下按该节点实际可用的服务显示菜单。
+// 让页面在所选节点下按该节点实际可用的服务显示菜单。无法组合时原样返回中控的启动数据。
+// 必须串行：只有中控确认了调用者身份才会去请求节点，未登录的请求不应触发隧道流量。
 func (g *gateway) nodeBootstrap(w http.ResponseWriter, r *http.Request, id string) {
 	status, body, err := g.bootstrapCall(r)
 	if err != nil {
 		fail(w, r, http.StatusBadGateway, "中控 isrvd 不可用")
 		return
 	}
-	if status != http.StatusOK {
-		writeRaw(w, status, body)
-		return
+	if status == http.StatusOK {
+		if merged := g.mergeProbe(r.Context(), id, body); merged != nil {
+			body = merged
+		}
 	}
+	writeRaw(w, status, body)
+}
 
+// mergeProbe 把节点的服务可用性并入中控的启动数据；无法组合（解析失败或未登录）时返回 nil。
+func (g *gateway) mergeProbe(ctx context.Context, id string, body []byte) []byte {
 	var env map[string]any
 	if json.Unmarshal(body, &env) != nil {
-		writeRaw(w, status, body)
-		return
+		return nil
 	}
-
+	// 对 nil map 取值是安全的，缺失层级一律得到零值
 	payload, _ := env["payload"].(map[string]any)
-	if payload == nil {
-		writeRaw(w, status, body)
-		return
-	}
-
-	// 使用 bootstrap 可选认证返回的身份组合节点启动数据。
 	auth, _ := payload["auth"].(map[string]any)
-	username, _ := auth["username"].(string)
-	if username == "" {
-		writeRaw(w, status, body)
-		return
+	if username, _ := auth["username"].(string); username == "" {
+		return nil
 	}
 
 	// 节点管理（node）与 AI 助手（copilot）由中控提供，保留中控的结果；
 	// 其余服务以节点为准，节点不可达时全部视为不可用
 	probe := map[string]any{"node": false, "copilot": false, "apisix": false, "caddy": false, "docker": false, "swarm": false, "compose": false}
-	if local, ok := payload["probe"].(map[string]any); ok {
-		for _, k := range []string{"node", "copilot"} {
-			if v, ok := local[k]; ok {
-				probe[k] = v
-			}
+	local, _ := payload["probe"].(map[string]any)
+	for _, k := range []string{"node", "copilot"} {
+		if v, ok := local[k]; ok {
+			probe[k] = v
 		}
 	}
-	if data, err := g.nodes.Fetch(r.Context(), id, "/api/overview/bootstrap"); err == nil {
+	if data, err := g.nodes.Fetch(ctx, id, "/api/overview/bootstrap"); err == nil {
 		var remote struct {
 			Payload struct {
 				Probe map[string]any `json:"probe"`
@@ -139,10 +127,9 @@ func (g *gateway) nodeBootstrap(w http.ResponseWriter, r *http.Request, id strin
 
 	out, err := json.Marshal(env)
 	if err != nil {
-		writeRaw(w, status, body)
-		return
+		return nil
 	}
-	writeRaw(w, http.StatusOK, out)
+	return out
 }
 
 // bootstrapCall 仅为节点视角的页面加载中控启动数据，不用于业务请求的身份校验。

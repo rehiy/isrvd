@@ -7,8 +7,6 @@ import (
 	"slices"
 	"strings"
 	"time"
-
-	"isrvd/server/service/account"
 )
 
 // Auditor 把网关处理的操作记入 isrvd 的审计日志（实现见 app.Audit）
@@ -20,11 +18,12 @@ type Auditor interface {
 // permissionOnly 统一执行节点管理与业务转发的认证、权限校验和审计。
 func (g *gateway) permissionOnly(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		member, ok := g.authorize(w, r)
-		if !ok {
+		user, status, err := g.authorize(r, g.allowQueryToken(r))
+		if err != nil {
+			fail(w, r, status, err.Error())
 			return
 		}
-		g.audited(w, r, member.Username, h)
+		g.audited(w, r, user, h)
 	}
 }
 
@@ -49,33 +48,6 @@ func (g *gateway) audited(w http.ResponseWriter, r *http.Request, user string, h
 		status = http.StatusOK
 	}
 	g.audit.AuditRecord(r, user, g.clientIP(r), status, start, body)
-}
-
-// authorize 认证调用者并检查请求路由权限；不满足时已写出响应。
-// 中控 isrvd 不可用与令牌无效必须区分：前者返回 502，否则前端会把一次上游抖动当成登录过期而清掉登录态。
-func (g *gateway) authorize(w http.ResponseWriter, r *http.Request) (*account.MemberInfo, bool) {
-	if g.authenticate == nil {
-		fail(w, r, http.StatusBadGateway, "中控 isrvd 不可用")
-		return nil, false
-	}
-	member, err := g.authenticate(r, g.allowQueryToken(r))
-	switch {
-	case err != nil:
-		fail(w, r, http.StatusBadGateway, "中控 isrvd 不可用")
-		return nil, false
-	case member == nil:
-		fail(w, r, http.StatusUnauthorized, "未登录或登录已过期")
-		return nil, false
-	}
-	if g.checkPermission == nil {
-		fail(w, r, http.StatusBadGateway, "中控 isrvd 不可用")
-		return nil, false
-	}
-	if status, err := g.checkPermission(r, member.Username); err != nil {
-		fail(w, r, status, err.Error())
-		return nil, false
-	}
-	return member, true
 }
 
 // allowQueryToken 与 isrvd 一样，根据 Upgrade 头或声明了 QueryToken 的 GET 路由读取 ?token=。
@@ -125,13 +97,6 @@ func (s *statusRecorder) Write(b []byte) (int, error) {
 		s.WriteHeader(http.StatusOK)
 	}
 	return s.ResponseWriter.Write(b)
-}
-
-func (s *statusRecorder) Flush() {
-	if s.status == 0 {
-		s.WriteHeader(http.StatusOK)
-	}
-	_ = http.NewResponseController(s.ResponseWriter).Flush()
 }
 
 func (s *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {

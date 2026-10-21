@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -107,6 +108,7 @@ type Route struct {
 	Access     RouteAccess     `json:"access"`        // 访问级别，0：需要具体权限，-1：匿名，1：登录即可访问
 	Audit      AuditLevel      `json:"-"`             // 审计级别，0：按 Method 审计，-1：忽略，1：强制审计
 	QueryToken bool            `json:"-"`             // 允许从 query ?token= 提取 JWT（用于 SSE/文件下载等无法携带 Header 的场景）
+	Forward    bool            `json:"-"`             // 中控节点视角下转发给受管机；未标记的模块始终由中控自己处理
 }
 
 // StartApp 启动应用并阻塞到收到退出信号。
@@ -210,23 +212,46 @@ func QueryTokenRoutes() []string {
 	return paths
 }
 
-// collectRoutes 收集所有模块的路由定义
+// NodeModules 返回可按节点转发的业务模块（即 /api/<模块>/ 的首段），来自 collectRoutes 里用 forward 标记的路由。
+func NodeModules() []string {
+	var modules []string
+	for _, route := range (&App{}).collectRoutes() {
+		if !route.Forward {
+			continue
+		}
+		module := strings.SplitN(route.Path, "/", 3)[1]
+		if !slices.Contains(modules, module) {
+			modules = append(modules, module)
+		}
+	}
+	return modules
+}
+
+// forward 标记路由在节点视角（/n/<节点ID>/api/...）下转发给受管机。
+func forward(routes []Route) []Route {
+	for i := range routes {
+		routes[i].Forward = true
+	}
+	return routes
+}
+
+// collectRoutes 收集所有模块的路由定义。forward 包裹的模块可在节点视角下转发，其余始终由中控处理。
 func (app *App) collectRoutes() []Route {
 	var routes []Route
-	routes = append(routes, app.defineOverviewRoutes()...)
+	routes = append(routes, forward(app.defineOverviewRoutes())...)
 	routes = append(routes, app.defineSystemRoutes()...)
 	routes = append(routes, app.defineAccountRoutes()...)
-	routes = append(routes, app.defineShellRoutes()...)
-	routes = append(routes, app.defineLocalRoutes()...)
+	routes = append(routes, forward(app.defineShellRoutes())...)
+	routes = append(routes, forward(app.defineLocalRoutes())...)
 	routes = append(routes, app.defineWebSSHRoutes()...)
-	routes = append(routes, app.defineFilerRoutes()...)
+	routes = append(routes, forward(app.defineFilerRoutes())...)
 	routes = append(routes, app.defineCopilotRoutes()...)
-	routes = append(routes, app.defineApisixRoutes()...)
-	routes = append(routes, app.defineCaddyRoutes()...)
-	routes = append(routes, app.defineDockerRoutes()...)
-	routes = append(routes, app.defineSwarmRoutes()...)
-	routes = append(routes, app.defineComposeRoutes()...)
-	routes = append(routes, app.defineCronRoutes()...)
+	routes = append(routes, forward(app.defineApisixRoutes())...)
+	routes = append(routes, forward(app.defineCaddyRoutes())...)
+	routes = append(routes, forward(app.defineDockerRoutes())...)
+	routes = append(routes, forward(app.defineSwarmRoutes())...)
+	routes = append(routes, forward(app.defineComposeRoutes())...)
+	routes = append(routes, forward(app.defineCronRoutes())...)
 	return routes
 }
 

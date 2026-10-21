@@ -22,13 +22,12 @@ type Options struct {
 	Nodes            *node.Service   // 节点服务
 	AllowedOrigins   func() []string // isrvd 配置的跨域白名单，用于校验转发到节点的 WebSocket；每次校验时读取，配置重载后即时生效
 	QueryTokenRoutes []string        // 允许 ?token= 认证的 GET 路由，来自 app.QueryTokenRoutes
+	NodeModules      []string        // 节点视角下转发给受管机的业务模块，来自 app.NodeModules
 	Audit            Auditor         // 审计入口；节点管理与节点上的写操作、终端会话按 isrvd 的审计基线记录
 
-	// Authenticate 复用应用当前账户服务；nil 成员表示未登录，error 表示服务不可用。
-	Authenticate func(*http.Request, bool) (*account.MemberInfo, error)
-
-	// CheckPermission 复用中控当前路由与账户权限；返回 HTTP 状态码及错误。
-	CheckPermission func(*http.Request, string) (int, error)
+	// Authorize 复用应用当前账户服务认证调用者并校验路由权限，返回用户名；
+	// 失败时返回应写出的 HTTP 状态码及错误。
+	Authorize func(r *http.Request, allowQueryToken bool) (string, int, error)
 }
 
 type gateway struct {
@@ -37,28 +36,27 @@ type gateway struct {
 	proxy    *httputil.ReverseProxy // 转发到中控自己的 isrvd
 	client   *http.Client           // 仅用于页面 bootstrap 聚合
 
-	allowedOrigins  func() []string // 额外允许的 WebSocket Origin（isrvd 的 allowedOrigins），默认仅同源
-	audit           Auditor
-	authenticate    func(*http.Request, bool) (*account.MemberInfo, error)
-	checkPermission func(*http.Request, string) (int, error)
+	allowedOrigins func() []string // 额外允许的 WebSocket Origin（isrvd 的 allowedOrigins），默认仅同源
+	audit          Auditor
+	authorize      func(*http.Request, bool) (string, int, error)
 
 	mux *http.ServeMux // 对外路由表；节点视角下的 /api/node/* 也经它分发
 
-	queryRoutes [][]string // 允许 ?token= 的 GET 路由，按路径段拆分
+	queryRoutes [][]string      // 允许 ?token= 的 GET 路由，按路径段拆分
+	nodeModules map[string]bool // 节点视角下转发给受管机的业务模块
 }
 
 // Handler 返回中控网关：节点管理接口与 /n/<节点ID>/ 下的节点转发由它处理，
 // 其余请求（含全部页面）原样转发给 upstream（同进程的 isrvd，只监听回环地址）。
 // 节点切换与节点管理页面由 webview 实现，通过 isrvd 提供。
 func Handler(opt Options) http.Handler {
-	upstream := opt.Upstream
 	g := &gateway{
-		nodes:           opt.Nodes,
-		upstream:        upstream,
-		allowedOrigins:  opt.AllowedOrigins,
-		audit:           opt.Audit,
-		authenticate:    opt.Authenticate,
-		checkPermission: opt.CheckPermission,
+		nodes:          opt.Nodes,
+		upstream:       opt.Upstream,
+		allowedOrigins: opt.AllowedOrigins,
+		audit:          opt.Audit,
+		authorize:      opt.Authorize,
+		nodeModules:    make(map[string]bool, len(opt.NodeModules)),
 		client: &http.Client{
 			Timeout:       15 * time.Second,
 			CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
@@ -67,9 +65,12 @@ func Handler(opt Options) http.Handler {
 	for _, route := range opt.QueryTokenRoutes {
 		g.queryRoutes = append(g.queryRoutes, strings.Split(route, "/"))
 	}
+	for _, module := range opt.NodeModules {
+		g.nodeModules[module] = true
+	}
 	g.proxy = &httputil.ReverseProxy{
 		Rewrite: func(pr *httputil.ProxyRequest) {
-			pr.SetURL(upstream)
+			pr.SetURL(opt.Upstream)
 			pr.SetXForwarded()
 			if user := pr.In.Header.Get(account.GatewayUserHeader); user != "" {
 				pr.Out.Header.Set(account.GatewayUserHeader, user)
@@ -99,9 +100,17 @@ func (g *gateway) routes() http.Handler {
 		"DELETE /api/node/:id":      g.nodeDelete,
 		"PUT /api/node/:id/portmap": g.nodePortMapUpdate,
 	}
-	for _, route := range node.PermissionRoutes() {
-		key := route.Method + " " + route.Path
-		mux.HandleFunc(strings.ReplaceAll(key, ":id", "{id}"), g.permissionOnly(handlers[key]))
+	// 两份清单必须一一对应：缺处理函数会在请求到达时 panic，多出的处理函数则静默不生效，都在启动期暴露。
+	routes := node.PermissionRoutes()
+	if len(routes) != len(handlers) {
+		panic("节点管理路由与处理函数数量不一致")
+	}
+	for _, route := range routes {
+		h := handlers[route.Method+" "+route.Path]
+		if h == nil {
+			panic("节点管理路由缺少处理函数: " + route.Method + " " + route.Path)
+		}
+		mux.HandleFunc(account.MuxPattern(route.Method, route.Path), g.permissionOnly(h))
 	}
 
 	// 受管机接入：凭节点令牌连接，首次连接时待接入的令牌自动激活为节点
@@ -117,7 +126,6 @@ func (g *gateway) routes() http.Handler {
 	g.mux = mux
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		snapshot := config.Current()
-		r = r.Clone(r.Context())
 		r.Header.Del(account.GatewayUserHeader)
 		if snapshot.THA.Enabled {
 			user, _ := account.HeaderAuth(snapshot, r)
