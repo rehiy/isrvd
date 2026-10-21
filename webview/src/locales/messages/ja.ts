@@ -712,8 +712,10 @@ const messages: Record<string, string> = {
     '个': '件',
     // Offline
     '离线': 'オフライン',
-    // Version incompatible
-    '版本不兼容': 'バージョン非対応',
+    // Protocol version too old
+    '协议版本过低': 'プロトコルバージョンが古すぎます',
+    // Some features unavailable: {0}. Please upgrade the node.
+    '部分功能不可用：{0}，请升级节点程序': '一部の機能が利用できません：{0}。ノードをアップグレードしてください',
     // Failed to load
     '加载失败': '読み込みに失敗しました',
     // Search files...

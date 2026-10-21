@@ -114,7 +114,7 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
   `portmap` 与其他业务配置一样保存在配置文件或 etcd 中，也可经 `GET|PUT /api/system/config` 的 `portmap` 分区读取和修改；格式无效时拒绝保存并返回 `400`。注意这里的「端口映射」指中控把端口经隧道映射到节点侧地址，与 Docker 容器的端口映射无关。
 - 同一 `proto` 的监听端口在所有节点间唯一。保存规则时先确认端口可监听，失败则不保存；中控重启后自动恢复监听（端口被占用的规则只记录告警）。
 - 监听与节点是否在线无关：离线时连接被立即关闭，上线后自动恢复；规则变更、节点吊销或删除时，对应监听与已建立的连接立即断开。
-- 隧道里转发流与 HTTP 流共用同一条连接，以首字节区分；UDP 在流上按「2 字节长度 + 数据报」分帧。受管机程序需支持该能力（旧版本不支持，节点在线时保存规则会被拒绝）。
+- 隧道里转发流与 HTTP 流共用同一条连接，以首字节区分；UDP 在流上按「2 字节长度 + 数据报」分帧。受管机程序需支持该能力：协商成功且受管机上报的 `features` 不含 `portmap` 时，保存规则会被拒绝；节点离线或无法协商出能力清单时放行。
 - **转发的连接不经过 isrvd 的认证、权限与审计，鉴权完全由目标应用负责**。该权限等同于访问节点网络内任意地址，请仅授予创始人，且勿转发无认证的服务。目标应用看到的来源地址是受管机本机，不是真实客户端。
 - 并发上限：每条 TCP 规则 512 个连接，每条 UDP 规则 256 个来源（空闲 60 秒回收）。
 - Docker 部署：中控容器需发布监听范围（如 `-p 20000-20999:20000-20999 -p 20000-20999:20000-20999/udp`），并在配置中设置 `portmap.bind: 0.0.0.0`。使用 `isrvd.sh` 时，先在 `/srv/data/conf/isrvd.yml` 写好 `portmap.range` 与 `portmap.bind`，再执行 `update`，脚本会读取 `portmap.range` 并按该范围发布 TCP/UDP 端口；端口范围保存在配置文件里，所以重建容器后不会丢失。受管机在容器内时，`127.0.0.1` 指向容器自身，访问宿主机服务请使用宿主机地址或 host 网络。
@@ -139,7 +139,7 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 - AI 助手在节点页面下仍作用于中控本机。
 - 配置重载（SIGHUP、保存系统配置或 etcd 变更）后，`allowedOrigins` 与 `rootDirectory` 的变化对中控即时生效（节点表随 `rootDirectory` 切换到新位置，与计划任务等业务数据一致）；部署环境变量与 `listenAddr` 仍需重启。
 - 中控为单实例设计；重启时所有节点会短暂断开，受管机按 1 秒起步的指数退避加抖动自动重连。
-- 受管机与中控的版本需一致；协议版本不一致时节点显示「版本不兼容」并拒绝转发。
+- 兼容性以能力协商为准，不要求版本号一致。中控连接后读取受管机的 `/agent/info`：基础 HTTP 转发默认放行，旧版受管机没有该接口、协商失败时同样放行；只有受管机上报的协议版本低于中控的最低支持版本（`MinProtocolVersion`，仅在基础传输格式发生不兼容变更时调高）时，节点显示「协议版本过低」并拒绝转发。可选功能（如端口转发）按受管机上报的 `features` 逐项判断，缺失时仅该功能不可用，节点列表以提示图标标出「部分功能不可用」。
 
 ## 网关接口
 
@@ -147,7 +147,7 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 
 | 方法与路径 | 认证 | 说明 |
 |------------|------|------|
-| `GET /api/node/nodes` | 对应路由权限 | 节点列表，含 `status`（`pending`/`active`/`revoked`）、`online`、`latency`、`agentVersion`、`compatible` 等 |
+| `GET /api/node/nodes` | 对应路由权限 | 节点列表，含 `status`（`pending`/`active`/`revoked`）、`online`、`latency`、`agentVersion`、`compatible`、`negotiated`、`features` 等 |
 | `POST /api/node` | 对应路由权限 | 创建待接入节点，body `{"name":"杭州机房 web-01"}`；仅本次响应包含 `token` |
 | `PUT /api/node/{id}` | 对应路由权限 | 重命名，body `{"name":"…"}`（1–64 个字符） |
 | `POST /api/node/{id}/revoke` | 对应路由权限 | 吊销：令牌立即失效并断开连接，需删除后用新令牌重新接入 |

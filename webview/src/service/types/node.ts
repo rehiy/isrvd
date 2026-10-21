@@ -32,7 +32,9 @@ export interface NodeInfo {
     online: boolean
     latency: number // 隧道往返延迟（毫秒），离线为 0
     agentVersion?: string
-    compatible: boolean // 协议版本是否与中控一致
+    compatible: boolean // 协议版本是否足以通信；无法协商时按兼容处理
+    negotiated: boolean // 是否成功取得节点的版本与能力信息
+    features?: string[] // 节点声明的可选能力，如 portmap；negotiated 为 false 时无从判断
     connectedAt?: string
     remoteAddr?: string
 }

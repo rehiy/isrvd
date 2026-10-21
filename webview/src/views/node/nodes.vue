@@ -7,6 +7,7 @@ import api from '@/service/api'
 import type { NodeInfo } from '@/service/types'
 
 import { POLL_INTERVAL } from '@/helper/format'
+import { nodeMissingFeatures } from '@/helper/node'
 
 import PageSearch from '@/component/page-search.vue'
 
@@ -62,7 +63,14 @@ class NodeManage extends Vue {
         if (node.status === 'pending') return this.$t('待接入')
         if (node.status === 'revoked') return this.$t('已吊销')
         if (!node.online) return this.$t('离线')
-        return node.compatible ? this.$t('在线') : this.$t('版本不兼容')
+        return node.compatible ? this.$t('在线') : this.$t('协议版本过低')
+    }
+
+    // 协商成功但节点程序缺少部分可选能力时的提示；基础转发不受影响
+    featureHint(node: NodeInfo) {
+        if (node.status !== 'active' || !node.online || !node.compatible) return ''
+        const missing = nodeMissingFeatures(node).map(name => this.$t(name))
+        return missing.length ? this.$t('部分功能不可用：{0}，请升级节点程序', missing.join('、')) : ''
     }
 
     statusClass(node: NodeInfo) {
@@ -220,6 +228,7 @@ export default toNative(NodeManage)
               </td>
               <td class="td-text">
                 <span :class="statusClass(node)">{{ statusText(node) }}</span>
+                <i v-if="featureHint(node)" class="fas fa-triangle-exclamation text-amber-500 text-xs ml-1.5" :title="featureHint(node)"></i>
               </td>
               <td class="td-text">{{ platformText(node) }}</td>
               <td class="td-text">{{ node.agentVersion || '-' }}</td>
@@ -248,6 +257,7 @@ export default toNative(NodeManage)
           <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('状态') }}</span>
             <span class="text-xs" :class="statusClass(node)">{{ statusText(node) }}</span>
+            <i v-if="featureHint(node)" class="fas fa-triangle-exclamation text-amber-500 text-xs ml-1.5" :title="featureHint(node)"></i>
           </div>
           <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('系统') }}</span>

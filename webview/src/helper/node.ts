@@ -22,6 +22,15 @@ export const centerUrl = (): string =>
 export const isCenterPage = (path: string): boolean =>
     /^\/(?:node|ssh|system\/config|system\/audit\/logs|account\/members)(?:\/|$)/.test(path)
 
+/** 节点可选能力：key 与受管机上报的 features 一致，value 为界面显示名 */
+const NODE_FEATURES: Record<string, string> = {
+    portmap: '端口转发'
+}
+
+/** 协商成功但缺少的可选能力名称（供界面提示「部分功能不可用」）；未协商成功时无从判断，返回空 */
+export const nodeMissingFeatures = (node: { negotiated: boolean; features?: string[] }): string[] =>
+    node.negotiated ? Object.keys(NODE_FEATURES).filter(key => !node.features?.includes(key)).map(key => NODE_FEATURES[key]) : []
+
 /** 切换到指定节点（空字符串为本机）。整页刷新，使登录态之外的页面状态按新节点重新初始化 */
 export const switchNode = (id: string, hash = '') => {
     window.location.href = nodeLocation().root + (id ? `n/${id}/` : '') + hash

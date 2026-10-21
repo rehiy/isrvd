@@ -103,7 +103,7 @@ export default toNative(NodeSwitcher)
       <i class="fas fa-circle text-[8px]" :class="usable(node) ? 'text-emerald-500' : 'text-slate-300'"></i>
       <span class="truncate max-w-48">{{ node.name }}</span>
       <span v-if="!node.online" class="text-xs ml-auto">{{ $t('离线') }}</span>
-      <span v-else-if="!node.compatible" class="text-xs text-amber-600 ml-auto">{{ $t('版本不兼容') }}</span>
+      <span v-else-if="!node.compatible" class="text-xs text-amber-600 ml-auto">{{ $t('协议版本过低') }}</span>
       <i v-else-if="node.id === portal.currentNodeId" class="fas fa-check text-xs ml-auto"></i>
     </button>
 
