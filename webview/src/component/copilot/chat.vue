@@ -15,7 +15,9 @@ import { systemInstruction, getPageInstruction } from '@/helper/copilot/instruct
 
 import APICard from '@/component/copilot/api-card.vue'
 import InspectorButton from '@/component/copilot/inspector-button.vue'
+import MessageList from '@/component/copilot/message-list.vue'
 import SidebarBridge from '@/component/copilot/sidebar-bridge.vue'
+import ToolProgress from '@/component/copilot/tool-progress.vue'
 
 const t = useLocaleStore().t
 const route = useRoute()
@@ -58,6 +60,7 @@ useFrontendTool({
             return { success: false, message: e instanceof Error ? e.message : t('查阅 API 文档失败') }
         }
     },
+    render: (props: unknown) => h(ToolProgress, { ...(props as Record<string, unknown>), label: '查阅接口文档' }),
 })
 
 const isrvdAPIParameters = [
@@ -108,6 +111,7 @@ useFrontendTool({
     ],
     handler: (p: { blobId?: unknown; path?: unknown; offset?: number; limit?: number }) =>
         blobRead(String(p.blobId ?? ''), { path: p.path ? String(p.path) : undefined, offset: p.offset, limit: p.limit }),
+    render: (props: unknown) => h(ToolProgress, { ...(props as Record<string, unknown>), label: '读取查询结果' }),
 })
 
 // CopilotKit 1.70 将 labels 类型声明为英文字面量，运行时实际接受任意字符串。
@@ -144,6 +148,9 @@ onUnmounted(() => {
 <template>
   <CopilotChatConfigurationProvider :labels="chatLabels">
     <CopilotSidebar :default-open="false">
+      <template #message-view="{ messages, isRunning }">
+        <MessageList :messages="messages" :is-running="isRunning" />
+      </template>
       <template #header="{ title, onClose }">
         <header class="flex items-center justify-between px-4 py-3 border-b border-slate-200">
           <span class="text-sm font-semibold text-slate-700 truncate">{{ title }}</span>
