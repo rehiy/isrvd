@@ -161,7 +161,7 @@ func (s *Service) syncInfo(n *Node, info *AgentInfo) {
 func (s *Service) attach(c *nodeConn, tokenHash string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	n := s.nodes.get(c.nodeID)
+	n := s.nodes.byID(c.nodeID)
 	if s.closed || n == nil || n.Status != StatusActive || n.TokenHash != tokenHash || s.conns[c.nodeID] != nil {
 		return false
 	}
@@ -195,7 +195,7 @@ func (s *Service) connFor(id string) (*nodeConn, error) {
 		}
 		return c, nil
 	}
-	if s.nodes.get(id) == nil {
+	if s.nodes.byID(id) == nil {
 		return nil, ErrNotFound
 	}
 	return nil, errOffline
@@ -221,13 +221,6 @@ func (s *Service) nodeInfo(n *Node) *NodeInfo {
 	info.Negotiated = c.info != nil
 	info.ConnectedAt, info.RemoteAddr = &c.connectedAt, c.remote
 	return info
-}
-
-// disconnectLocked 在 s.mu 持锁期间摘除节点连接；调用方在解锁后关闭会话。
-func (s *Service) disconnectLocked(id string) *nodeConn {
-	c := s.conns[id]
-	delete(s.conns, id)
-	return c
 }
 
 // ─── 辅助函数 ───

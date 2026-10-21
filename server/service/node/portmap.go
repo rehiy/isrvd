@@ -57,7 +57,7 @@ func normalizePortMaps(in []PortMap, allow *config.PortMapConfig) ([]PortMap, er
 	if len(in) > maxPortMaps {
 		return nil, fmt.Errorf("每个节点最多 %d 条转发规则", maxPortMaps)
 	}
-	seen := map[string]bool{}
+	seen := map[portKey]bool{}
 	out := make([]PortMap, 0, len(in))
 	for _, f := range in {
 		f.Name = strings.TrimSpace(f.Name)
@@ -80,7 +80,7 @@ func normalizePortMaps(in []PortMap, allow *config.PortMapConfig) ([]PortMap, er
 			return nil, err
 		}
 		f.Target = target
-		key := portmapKey(f.Proto, f.Listen)
+		key := portKey{f.Proto, f.Listen}
 		if seen[key] {
 			return nil, fmt.Errorf("监听端口 %d/%s 重复", f.Listen, f.Proto)
 		}
@@ -116,8 +116,10 @@ func normalizeTarget(target string) (string, error) {
 	return out, nil
 }
 
-func portmapKey(proto string, port int) string {
-	return proto + "/" + strconv.Itoa(port)
+// portKey 监听端口的唯一标识：同一协议下的端口
+type portKey struct {
+	proto string
+	port  int
 }
 
 // ─── 受管机侧：处理中控发起的转发流 ───

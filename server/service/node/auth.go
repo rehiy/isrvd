@@ -9,8 +9,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/rehiy/libgo/strutil"
 )
 
 var (
@@ -124,11 +122,6 @@ func (l *rateLimiter) prune(key string, now time.Time) []time.Time {
 }
 
 // ─── 辅助函数 ───
-
-// newToken 生成 86 字符的纯字母数字密码学安全令牌，熵约 512 位。
-func newToken() (string, error) {
-	return strutil.Rand(86), nil
-}
 
 func hashToken(token string) string {
 	sum := sha256.Sum256([]byte(token))

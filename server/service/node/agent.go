@@ -101,7 +101,7 @@ func (a *Agent) serve(sess *wstunnel.Session) {
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
-	httpConns := newStreamListener()
+	httpConns := &streamListener{ch: make(chan net.Conn), done: make(chan struct{})}
 	startedAt := time.Now()
 	go func() {
 		if err := srv.Serve(httpConns); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -142,10 +142,6 @@ type streamListener struct {
 	ch   chan net.Conn
 	done chan struct{}
 	once sync.Once
-}
-
-func newStreamListener() *streamListener {
-	return &streamListener{ch: make(chan net.Conn), done: make(chan struct{})}
 }
 
 func (l *streamListener) push(c net.Conn) {

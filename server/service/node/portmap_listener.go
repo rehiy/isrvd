@@ -74,7 +74,7 @@ func (s *Service) NodePortMapUpdate(id string, req *PortMapRequest) (*NodeInfo, 
 	s.listenMu.Lock()
 	defer s.listenMu.Unlock()
 
-	n := s.nodes.get(id)
+	n := s.nodes.byID(id)
 	if n == nil {
 		return nil, ErrNotFound
 	}
@@ -95,15 +95,15 @@ func (s *Service) NodePortMapUpdate(id string, req *PortMapRequest) (*NodeInfo, 
 		}
 	}
 
-	var started []string
+	var started []portKey
 	rollback := func() {
 		for _, key := range started {
 			s.portmapStop(key)
 		}
 	}
-	keep := map[string]bool{}
+	keep := map[portKey]bool{}
 	for _, r := range rules {
-		key := portmapKey(r.Proto, r.Listen)
+		key := portKey{r.Proto, r.Listen}
 		keep[key] = true
 		if l := s.listeners[key]; l != nil {
 			if l.nodeID != id {
@@ -137,7 +137,7 @@ func (s *Service) NodePortMapUpdate(id string, req *PortMapRequest) (*NodeInfo, 
 		}
 	}
 	for _, r := range rules {
-		s.listeners[portmapKey(r.Proto, r.Listen)].target.Store(r.Target)
+		s.listeners[portKey{r.Proto, r.Listen}].target.Store(r.Target)
 	}
 	logger.Info("端口转发已更新", "id", id, "count", len(rules))
 	return s.nodeInfo(updated), nil
@@ -172,23 +172,14 @@ func (s *Service) portmapRestore() {
 	}
 }
 
-// portmapStopNode 撤销某节点的全部监听（吊销、删除时调用）。
-func (s *Service) portmapStopNode(id string) {
+// portmapStopWhere 撤销满足条件的监听：吊销、删除节点时撤销该节点的全部监听，服务关闭时撤销全部。
+func (s *Service) portmapStopWhere(match func(*portListener) bool) {
 	s.listenMu.Lock()
 	defer s.listenMu.Unlock()
 	for key, l := range s.listeners {
-		if l.nodeID == id {
+		if match(l) {
 			s.portmapStop(key)
 		}
-	}
-}
-
-// portmapStopAll 撤销全部监听（服务关闭时调用）。
-func (s *Service) portmapStopAll() {
-	s.listenMu.Lock()
-	defer s.listenMu.Unlock()
-	for key := range s.listeners {
-		s.portmapStop(key)
 	}
 }
 
@@ -215,13 +206,13 @@ func (s *Service) portmapStart(nodeID string, f PortMap) error {
 	default:
 		return errors.New("转发协议只能是 tcp 或 udp")
 	}
-	s.listeners[portmapKey(f.Proto, f.Listen)] = l
+	s.listeners[portKey{f.Proto, f.Listen}] = l
 	logger.Info("端口转发已监听", "node", nodeID, "listen", addr, "proto", f.Proto, "target", f.Target)
 	return nil
 }
 
 // portmapStop 停止监听并断开其连接，调用方须持有 listenMu。
-func (s *Service) portmapStop(key string) {
+func (s *Service) portmapStop(key portKey) {
 	if l := s.listeners[key]; l != nil {
 		delete(s.listeners, key)
 		l.close()

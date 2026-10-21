@@ -26,9 +26,9 @@ type Service struct {
 
 	authLimit *rateLimiter // 令牌认证：按来源 IP 限制失败次数
 
-	portmap   *config.PortMapConfig    // 启动时读取的 portmap 配置，修改配置文件后需重启生效
-	listenMu  sync.Mutex               // 串行化端口转发的监听变更；加锁顺序：listenMu → mu
-	listeners map[string]*portListener // "proto/端口" → 正在监听的转发规则
+	portmap   *config.PortMapConfig     // 启动时读取的 portmap 配置，修改配置文件后需重启生效
+	listenMu  sync.Mutex                // 串行化端口转发的监听变更；加锁顺序：listenMu → mu
+	listeners map[portKey]*portListener // 协议与端口 → 正在监听的转发规则
 }
 
 // NewService 创建中控侧节点服务；节点表保存在业务数据存储中（后端见 config.OpenData）
@@ -43,7 +43,7 @@ func NewService() (*Service, error) {
 		connecting: map[string]*Node{},
 		authLimit:  &rateLimiter{hits: map[string][]time.Time{}},
 		portmap:    config.Current().PortMap,
-		listeners:  map[string]*portListener{},
+		listeners:  map[portKey]*portListener{},
 	}
 	s.portmapRestore()
 	return s, nil
@@ -60,7 +60,9 @@ func (s *Service) Close() {
 	for _, c := range conns {
 		c.close()
 	}
-	s.portmapStopAll()
+	s.portmapStopWhere(func(*portListener) bool {
+		return true
+	})
 }
 
 // NodeList 列出全部节点，附带在线状态
@@ -86,10 +88,7 @@ func (s *Service) NodeCreate(req *NodeRequest) (*NodeCreateResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	token, err := newToken()
-	if err != nil {
-		return nil, fmt.Errorf("生成节点令牌失败: %w", err)
-	}
+	token := strutil.Rand(86) // 86 个字母数字字符，熵约 512 位
 	n := &Node{
 		ID: strutil.NewString(), Name: name, Status: StatusPending,
 		CreatedAt: time.Now(), TokenHash: hashToken(token),
@@ -120,41 +119,47 @@ func (s *Service) NodeUpdate(id string, req *NodeRequest) (*NodeInfo, error) {
 
 // NodeRevoke 吊销节点：令牌立即失效并断开在线会话
 func (s *Service) NodeRevoke(id string) error {
-	s.mu.Lock()
-	_, err := s.nodes.update(id, func(n *Node) error {
-		n.Status = StatusRevoked
-		n.TokenHash = ""
-		n.PortMaps = nil
-		return nil
+	err := s.dropNode(id, func() error {
+		_, err := s.nodes.update(id, func(n *Node) error {
+			n.Status, n.TokenHash, n.PortMaps = StatusRevoked, "", nil
+			return nil
+		})
+		return err
 	})
 	if err != nil {
-		s.mu.Unlock()
 		return fmt.Errorf("吊销节点失败: %w", err)
 	}
-	c := s.disconnectLocked(id)
-	s.mu.Unlock()
-	if c != nil {
-		c.close()
-	}
-	s.portmapStopNode(id)
 	logger.Info("节点已吊销", "id", id)
 	return nil
 }
 
 // NodeDelete 删除节点并断开在线会话
 func (s *Service) NodeDelete(id string) error {
-	s.mu.Lock()
-	err := s.nodes.remove(id)
+	err := s.dropNode(id, func() error {
+		return s.nodes.remove(id)
+	})
 	if err != nil {
-		s.mu.Unlock()
 		return fmt.Errorf("删除节点失败: %w", err)
 	}
-	c := s.disconnectLocked(id)
+	logger.Info("节点已删除", "id", id)
+	return nil
+}
+
+// dropNode 在 s.mu 内执行 change（吊销或删除记录），成功后断开在线会话并撤销该节点的端口转发监听。
+func (s *Service) dropNode(id string, change func() error) error {
+	s.mu.Lock()
+	if err := change(); err != nil {
+		s.mu.Unlock()
+		return err
+	}
+	c := s.conns[id]
+	delete(s.conns, id)
 	s.mu.Unlock()
 	if c != nil {
 		c.close()
 	}
-	s.portmapStopNode(id)
-	logger.Info("节点已删除", "id", id)
+	s.portmapStopWhere(func(l *portListener) bool {
+		return l.nodeID == id
+	})
 	return nil
 }

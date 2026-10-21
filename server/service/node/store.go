@@ -78,9 +78,11 @@ func (s *nodeStore) list() []*Node {
 	return result
 }
 
-// get 返回指定节点副本，不存在返回 nil。
-func (s *nodeStore) get(id string) *Node {
-	return s.find(func(n *Node) bool { return n.ID == id })
+// byID 按 ID 查找节点副本，不存在返回 nil。
+func (s *nodeStore) byID(id string) *Node {
+	return s.find(func(n *Node) bool {
+		return n.ID == id
+	})
 }
 
 // find 在锁内查找并返回节点副本。
@@ -97,55 +99,60 @@ func (s *nodeStore) find(match func(*Node) bool) *Node {
 }
 
 func (s *nodeStore) insert(item *Node) error {
-	s.refresh()
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.commit(append(slices.Clone(s.items), cloneNode(item)))
+	return s.mutate(func(items []*Node) ([]*Node, error) {
+		return append(items, cloneNode(item)), nil
+	})
 }
 
 // update 在锁内读取-修改-写入；fn 返回错误则放弃修改
 func (s *nodeStore) update(id string, fn func(*Node) error) (*Node, error) {
-	s.refresh()
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	i := s.indexOf(id)
-	if i < 0 {
-		return nil, ErrNotFound
-	}
-	next := cloneNode(s.items[i])
-	if err := fn(next); err != nil {
+	var updated *Node
+	err := s.mutate(func(items []*Node) ([]*Node, error) {
+		i := slices.IndexFunc(items, func(item *Node) bool {
+			return item.ID == id
+		})
+		if i < 0 {
+			return nil, ErrNotFound
+		}
+		next := cloneNode(items[i])
+		if err := fn(next); err != nil {
+			return nil, err
+		}
+		items[i], updated = next, cloneNode(next)
+		return items, nil
+	})
+	if err != nil {
 		return nil, err
 	}
-	items := slices.Clone(s.items)
-	items[i] = next
-	if err := s.commit(items); err != nil {
-		return nil, err
-	}
-	return cloneNode(next), nil
+	return updated, nil
 }
 
 func (s *nodeStore) remove(id string) error {
+	return s.mutate(func(items []*Node) ([]*Node, error) {
+		i := slices.IndexFunc(items, func(item *Node) bool {
+			return item.ID == id
+		})
+		if i < 0 {
+			return nil, ErrNotFound
+		}
+		return slices.Delete(items, i, i+1), nil
+	})
+}
+
+// mutate 在锁内基于当前列表的副本生成新列表并持久化；fn 返回错误则放弃修改
+func (s *nodeStore) mutate(fn func(items []*Node) ([]*Node, error)) error {
 	s.refresh()
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	i := s.indexOf(id)
-	if i < 0 {
-		return ErrNotFound
+	items, err := fn(slices.Clone(s.items))
+	if err != nil {
+		return err
 	}
-	return s.commit(slices.Delete(slices.Clone(s.items), i, i+1))
-}
-
-// commit 持久化后替换内存数据（调用方须持锁）
-func (s *nodeStore) commit(items []*Node) error {
 	if err := s.ts.Set(items); err != nil {
 		return err
 	}
 	s.items = items
 	return nil
-}
-
-func (s *nodeStore) indexOf(id string) int {
-	return slices.IndexFunc(s.items, func(item *Node) bool { return item.ID == id })
 }
 
 // ─── 辅助函数 ───
