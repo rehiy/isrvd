@@ -82,7 +82,7 @@ func (s *Service) NodePortMapUpdate(id string, req *PortMapRequest) (*NodeInfo, 
 		return nil, errors.New("已吊销的节点不能配置端口转发")
 	}
 	if len(rules) > 0 && !s.agentSupportsPortMap(id) {
-		return nil, errors.New("节点程序版本过旧，不支持端口转发，请先升级节点")
+		return nil, errors.New("该节点程序不支持端口转发，请先升级节点")
 	}
 	for _, other := range s.nodes.list() {
 		if other.ID == id {
@@ -143,12 +143,13 @@ func (s *Service) NodePortMapUpdate(id string, req *PortMapRequest) (*NodeInfo, 
 	return s.nodeInfo(updated), nil
 }
 
-// agentSupportsPortMap 节点在线时确认其程序支持转发；离线时无法判断，放行。
+// agentSupportsPortMap 判断节点是否明确不支持端口转发：离线或未能协商出能力清单时无法判断，放行；
+// 协商成功但清单里没有该能力，才视为不支持。
 func (s *Service) agentSupportsPortMap(id string) bool {
 	s.mu.RLock()
 	c := s.conns[id]
 	s.mu.RUnlock()
-	return c == nil || (c.info != nil && slices.Contains(c.info.Features, FeaturePortMap))
+	return c == nil || c.info == nil || slices.Contains(c.info.Features, FeaturePortMap)
 }
 
 // portmapRestore 启动时按持久化的规则恢复监听；单条失败只告警，不影响其他规则。

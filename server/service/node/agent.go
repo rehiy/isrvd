@@ -17,8 +17,12 @@ import (
 	"github.com/rehiy/libgo/wstunnel"
 )
 
-// ProtocolVersion 中控与受管机的隧道协议版本。
+// ProtocolVersion 本程序的隧道协议版本。
 const ProtocolVersion = 1
+
+// MinProtocolVersion 中控仍能与之通信的受管机最低协议版本。
+// 只有基础传输格式发生不兼容变更时才调高它；新增的可选能力通过 AgentInfo.Features 声明，不应动这个值。
+const MinProtocolVersion = 1
 
 // AgentInfoPath 仅供隧道内协议协商，不经 /api/ 转发或暴露给页面。
 const AgentInfoPath = "/agent/info"
@@ -27,7 +31,7 @@ const AgentInfoPath = "/agent/info"
 type AgentInfo struct {
 	Mode     string `json:"mode"`     // 运行模式，agent 恒为 agent
 	Version  string `json:"version"`  // 程序版本
-	Protocol int    `json:"protocol"` // 协议版本，须与中控一致
+	Protocol int    `json:"protocol"` // 协议版本，不得低于中控的 MinProtocolVersion
 	Hostname string `json:"hostname"` // 主机名
 	OS       string `json:"os"`       // 操作系统
 	Arch     string `json:"arch"`     // CPU 架构

@@ -37,7 +37,9 @@ type NodeInfo struct {
 	Online       bool       `json:"online"`
 	Latency      int64      `json:"latency"`
 	AgentVersion string     `json:"agentVersion,omitempty"`
-	Compatible   bool       `json:"compatible"`
+	Compatible   bool       `json:"compatible"`         // 协议版本是否足以通信；无法协商时按兼容处理
+	Negotiated   bool       `json:"negotiated"`         // 是否成功取得节点的版本与能力信息
+	Features     []string   `json:"features,omitempty"` // 节点声明的可选能力；Negotiated 为 false 时无从判断
 	ConnectedAt  *time.Time `json:"connectedAt,omitempty"`
 	RemoteAddr   string     `json:"remoteAddr,omitempty"`
 }
