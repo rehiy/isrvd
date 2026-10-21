@@ -329,75 +329,135 @@
             background: linear-gradient(to bottom, #0f172a, #1e293b) !important
         }
 
-        /* Install manager */
-        .step-num {
+        /* 命令生成器 */
+        .wizard {
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            overflow: hidden
+        }
+
+        .dark .wizard {
+            border-color: #334155;
+            background: #1e293b
+        }
+
+        .wizard-row {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            border-top: 1px solid #f1f5f9;
+            align-items: flex-start
+        }
+
+        .wizard-row:first-child {
+            border-top: 0
+        }
+
+        .dark .wizard-row {
+            border-color: #334155
+        }
+
+        .wizard-label {
+            flex: 0 0 5rem;
+            padding-top: .4rem;
+            font-size: .8125rem;
+            font-weight: 600;
+            color: #334155
+        }
+
+        .dark .wizard-label {
+            color: #cbd5e1
+        }
+
+        .wizard-body {
+            flex: 1 1 auto;
+            min-width: 0
+        }
+
+        .chip-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem
+        }
+
+        .chip {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            width: 1.5rem;
-            height: 1.5rem;
-            border-radius: 9999px;
+            gap: .375rem;
+            padding: .375rem .75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: .5rem;
+            background: #fff;
+            color: #475569;
+            font-size: .8125rem;
+            font-weight: 500;
+            line-height: 1.25;
+            cursor: pointer;
+            transition: background .15s, border-color .15s, color .15s
+        }
+
+        .chip:hover {
+            border-color: #93c5fd;
+            color: #1d4ed8
+        }
+
+        .chip[aria-checked="true"] {
             background: #2563eb;
-            color: #fff;
-            font-size: .75rem;
+            border-color: #2563eb;
+            color: #fff
+        }
+
+        .chip-tag {
+            padding: 0 .3rem;
+            border-radius: .25rem;
+            background: rgba(37, 99, 235, .1);
+            color: #2563eb;
+            font-size: .625rem;
             font-weight: 600
         }
 
-        .option-card {
-            text-align: left;
-            border: 1px solid #e2e8f0;
-            background: #fff;
-            border-radius: .75rem;
-            padding: .875rem 1rem;
-            cursor: pointer;
-            transition: border-color .2s, box-shadow .2s
+        .chip[aria-checked="true"] .chip-tag {
+            background: rgba(255, 255, 255, .25);
+            color: #fff
         }
 
-        .option-card:hover {
-            border-color: #93c5fd;
-            box-shadow: 0 2px 12px rgba(37, 99, 235, .12)
+        .dark .chip {
+            background: transparent;
+            border-color: #475569;
+            color: #cbd5e1
         }
 
-        .option-card.selected {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 2px rgba(37, 99, 235, .35)
+        .dark .chip:hover {
+            border-color: #60a5fa;
+            color: #dbeafe
         }
 
-        .dark .option-card {
-            background: #1e293b;
-            border-color: #334155
-        }
-
-        .dark .option-card:hover {
-            border-color: #3b82f6
-        }
-
-        .dark .option-card.selected {
+        .dark .chip[aria-checked="true"] {
+            background: #2563eb;
             border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, .4)
+            color: #fff
         }
 
-        .option-card.disabled,
-        .option-card.disabled:hover {
-            opacity: .45;
-            cursor: not-allowed;
-            border-color: #e2e8f0;
-            box-shadow: none
+        .wizard-hint {
+            margin-top: .5rem;
+            font-size: .75rem;
+            line-height: 1.6;
+            color: #94a3b8
         }
 
-        .dark .option-card.disabled,
-        .dark .option-card.disabled:hover {
-            border-color: #334155
+        .dark .wizard-hint {
+            color: #64748b
         }
 
         .field-input {
             width: 100%;
-            padding: .5rem .75rem;
+            padding: .4rem .65rem;
             border: 1px solid #e2e8f0;
             border-radius: .5rem;
             background: #fff;
             color: #1e293b;
-            font-size: .875rem;
+            font-size: .8125rem;
             transition: border-color .2s, box-shadow .2s
         }
 
@@ -407,10 +467,31 @@
             box-shadow: 0 0 0 2px rgba(37, 99, 235, .25)
         }
 
+        .field-input.invalid {
+            border-color: #f43f5e;
+            box-shadow: 0 0 0 2px rgba(244, 63, 94, .18)
+        }
+
         .dark .field-input {
-            background: #1e293b;
+            background: #0f172a;
             border-color: #475569;
             color: #e2e8f0
+        }
+
+        .copy-btn[disabled] {
+            opacity: .4;
+            cursor: not-allowed
+        }
+
+        @media (max-width: 639px) {
+            .wizard-row {
+                flex-direction: column;
+                gap: .5rem
+            }
+
+            .wizard-label {
+                padding-top: 0
+            }
         }
 
         .code-body.generated {
@@ -543,185 +624,136 @@
                 <span class="text-sm text-slate-400">命令生成器</span>
                 <span class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></span>
             </div>
-            <p class="mt-3 text-center text-xs text-slate-400">按需选择，实时生成一条可直接粘贴执行的命令</p>
+            <p class="mt-3 text-center text-xs text-slate-400">所有选项一屏可见，选完直接复制下方命令执行</p>
 
-            <!-- 部署方式 -->
-            <div class="mt-8" id="sec-method">
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="step-num">1</span>
-                    <span class="font-semibold text-slate-800">部署方式</span>
+            <div class="mt-8 wizard">
+                <!-- 部署方式 -->
+                <div class="wizard-row">
+                    <div class="wizard-label">部署方式</div>
+                    <div class="wizard-body">
+                        <div class="chip-group" role="radiogroup" aria-label="部署方式">
+                            <button type="button" class="chip" role="radio" data-opt="method" data-val="script-binary" onclick="setOpt('method','script-binary')">
+                                脚本 · 二进制<span class="chip-tag">推荐</span>
+                            </button>
+                            <button type="button" class="chip" role="radio" data-opt="method" data-val="script-docker" onclick="setOpt('method','script-docker')">
+                                脚本 · Docker
+                            </button>
+                            <button type="button" class="chip" role="radio" data-opt="method" data-val="docker" onclick="setOpt('method','docker')">
+                                docker run
+                            </button>
+                        </div>
+                        <p class="wizard-hint" id="hint-method"></p>
+                    </div>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <button type="button" class="option-card" data-opt="method" data-val="script-binary" onclick="setOpt('method','script-binary')">
-                        <span class="badge badge-blue">推荐</span>
-                        <p class="font-semibold text-slate-800 mt-1">安装脚本 · 二进制</p>
-                        <p class="text-xs text-slate-500 mt-1">注册 systemd 服务，无需 Docker</p>
-                    </button>
-                    <button type="button" class="option-card" data-opt="method" data-val="script-docker" onclick="setOpt('method','script-docker')">
-                        <span class="badge badge-blue">一体化</span>
-                        <p class="font-semibold text-slate-800 mt-1">安装脚本 · Docker</p>
-                        <p class="text-xs text-slate-500 mt-1">自动安装 Docker、Swarm 与 sdnet 网络</p>
-                    </button>
-                    <button type="button" class="option-card" data-opt="method" data-val="docker" onclick="setOpt('method','docker')">
-                        <p class="font-semibold text-slate-800">docker run</p>
-                        <p class="text-xs text-slate-500 mt-1">自定义容器名、端口、数据目录与网络</p>
-                    </button>
+
+                <!-- 运行角色 -->
+                <div class="wizard-row">
+                    <div class="wizard-label">运行角色</div>
+                    <div class="wizard-body">
+                        <div class="chip-group" role="radiogroup" aria-label="运行角色">
+                            <button type="button" class="chip" role="radio" data-opt="role" data-val="server" onclick="setOpt('role','server')">单机</button>
+                            <button type="button" class="chip" role="radio" data-opt="role" data-val="center" onclick="setOpt('role','center')">中控</button>
+                            <button type="button" class="chip" role="radio" data-opt="role" data-val="agent" onclick="setOpt('role','agent')">受管机</button>
+                        </div>
+                        <p class="wizard-hint" id="hint-role"></p>
+                        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 hidden" id="role-agent-inputs">
+                            <label class="block text-xs text-slate-500 dark:text-slate-400">
+                                <span class="block mb-1">中控地址 <span class="text-rose-500">*</span></span>
+                                <input id="in-center-url" type="text" autocomplete="off" spellcheck="false" placeholder="https://center.example.com" oninput="renderBuilder()" class="field-input">
+                            </label>
+                            <label class="block text-xs text-slate-500 dark:text-slate-400">
+                                <span class="block mb-1">节点令牌 <span class="text-rose-500">*</span></span>
+                                <input id="in-node-token" type="text" autocomplete="off" spellcheck="false" placeholder="在中控「节点管理」页生成" oninput="renderBuilder()" class="field-input">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 集成组件 -->
+                <div class="wizard-row">
+                    <div class="wizard-label">集成组件</div>
+                    <div class="wizard-body">
+                        <div class="chip-group" role="radiogroup" aria-label="集成组件">
+                            <button type="button" class="chip" role="radio" data-opt="variant" data-val="slim" onclick="setOpt('variant','slim')">不集成<span class="chip-tag">默认</span></button>
+                            <button type="button" class="chip" role="radio" data-opt="variant" data-val="caddy" onclick="setOpt('variant','caddy')">Caddy</button>
+                            <button type="button" class="chip" role="radio" data-opt="variant" data-val="apisix" onclick="setOpt('variant','apisix')">APISIX</button>
+                        </div>
+                        <p class="wizard-hint" id="hint-variant"></p>
+                    </div>
+                </div>
+
+                <!-- 软件源 -->
+                <div class="wizard-row">
+                    <div class="wizard-label">软件源</div>
+                    <div class="wizard-body">
+                        <div class="chip-group" role="radiogroup" aria-label="软件源">
+                            <button type="button" class="chip" role="radio" data-opt="source" data-val="auto" onclick="setOpt('source','auto')">自动<span class="chip-tag">默认</span></button>
+                            <button type="button" class="chip" role="radio" data-opt="source" data-val="cn" onclick="setOpt('source','cn')">CNB</button>
+                            <button type="button" class="chip" role="radio" data-opt="source" data-val="global" onclick="setOpt('source','global')">GitHub</button>
+                        </div>
+                        <p class="wizard-hint" id="hint-source"></p>
+                    </div>
+                </div>
+
+                <!-- Docker 参数：仅 docker run -->
+                <div class="wizard-row hidden" id="sec-docker">
+                    <div class="wizard-label">Docker 参数</div>
+                    <div class="wizard-body space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                            <label class="block text-xs text-slate-500 dark:text-slate-400">
+                                <span class="block mb-1">容器名</span>
+                                <input id="in-cname" type="text" autocomplete="off" spellcheck="false" oninput="renderBuilder()" class="field-input">
+                            </label>
+                            <label class="block text-xs text-slate-500 dark:text-slate-400 lg:col-span-2">
+                                <span class="block mb-1">数据目录 <span class="text-slate-400">→ /data</span></span>
+                                <input id="in-data" type="text" autocomplete="off" spellcheck="false" placeholder="/srv/data" oninput="renderBuilder()" class="field-input">
+                            </label>
+                            <label class="block text-xs text-slate-500 dark:text-slate-400" id="f-web">
+                                <span class="block mb-1">Web 端口 <span class="text-slate-400">→ 8080</span></span>
+                                <input id="in-p-web" type="text" inputmode="numeric" autocomplete="off" placeholder="8080" oninput="renderBuilder()" class="field-input">
+                            </label>
+                            <label class="block text-xs text-slate-500 dark:text-slate-400 hidden" id="f-http">
+                                <span class="block mb-1">HTTP 端口 <span class="text-slate-400" id="f-http-to"></span></span>
+                                <input id="in-p-http" type="text" inputmode="numeric" autocomplete="off" placeholder="80" oninput="renderBuilder()" class="field-input">
+                            </label>
+                            <label class="block text-xs text-slate-500 dark:text-slate-400 hidden" id="f-https">
+                                <span class="block mb-1">HTTPS 端口 <span class="text-slate-400" id="f-https-to"></span></span>
+                                <input id="in-p-https" type="text" inputmode="numeric" autocomplete="off" placeholder="443" oninput="renderBuilder()" class="field-input">
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+                            <div>
+                                <span class="block mb-1 text-xs text-slate-500 dark:text-slate-400">容器网络</span>
+                                <div class="chip-group" role="radiogroup" aria-label="容器网络">
+                                    <button type="button" class="chip" role="radio" data-opt="net" data-val="auto" onclick="setOpt('net','auto')">sdnet · 自动创建</button>
+                                    <button type="button" class="chip" role="radio" data-opt="net" data-val="existing" onclick="setOpt('net','existing')">已有网络</button>
+                                    <button type="button" class="chip" role="radio" data-opt="net" data-val="none" onclick="setOpt('net','none')">不指定</button>
+                                </div>
+                            </div>
+                            <label class="hidden block text-xs text-slate-500 dark:text-slate-400" id="f-netname">
+                                <span class="block mb-1">网络名称</span>
+                                <input id="in-netname" type="text" autocomplete="off" spellcheck="false" placeholder="sdnet" oninput="renderBuilder()" class="field-input">
+                            </label>
+                        </div>
+                        <label class="flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400 cursor-pointer">
+                            <input id="in-install-docker" type="checkbox" onchange="renderBuilder()" class="mt-0.5">
+                            <span>未安装 Docker 时自动安装</span>
+                        </label>
+                        <p class="wizard-hint" id="hint-net"></p>
+                    </div>
                 </div>
             </div>
 
-            <!-- 运行角色 -->
-            <div class="mt-8" id="sec-role">
-                <div class="flex flex-wrap items-center gap-2 mb-3">
-                    <span class="step-num">2</span>
-                    <span class="font-semibold text-slate-800">运行角色</span>
-                    <span class="text-xs text-slate-400" id="role-hint">通过 ISRVD_MODE 环境变量设置单机 / 中控 / 受管机模式</span>
+            <!-- 命令 -->
+            <div class="mt-6 code-block shadow-lg shadow-slate-200/60 dark:shadow-none">
+                <div class="code-header">
+                    <span id="build-label">bash</span>
+                    <button type="button" class="copy-btn" id="build-copy" onclick="copyCode(this)" aria-live="polite">复制</button>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <button type="button" class="option-card" data-opt="role" data-val="server" onclick="setOpt('role','server')">
-                        <span class="badge badge-blue">默认</span>
-                        <p class="font-semibold text-slate-800 mt-1">单机</p>
-                        <p class="text-xs text-slate-500 mt-1">ISRVD_MODE=server，独立管理本机</p>
-                    </button>
-                    <button type="button" class="option-card" data-opt="role" data-val="center" onclick="setOpt('role','center')">
-                        <p class="font-semibold text-slate-800">中控</p>
-                        <p class="text-xs text-slate-500 mt-1">ISRVD_MODE=center，一个控制台管理多台服务器</p>
-                    </button>
-                    <button type="button" class="option-card" data-opt="role" data-val="agent" onclick="setOpt('role','agent')">
-                        <p class="font-semibold text-slate-800">受管机</p>
-                        <p class="text-xs text-slate-500 mt-1">ISRVD_MODE=agent，主动出站接入中控，不监听端口</p>
-                    </button>
-                </div>
-                <div id="role-agent-inputs" class="hidden mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <label class="block text-sm text-slate-600 dark:text-slate-300">
-                        <span class="block mb-1">中控地址 <span class="text-rose-500">*</span></span>
-                        <input id="in-center-url" type="text" autocomplete="off" spellcheck="false" placeholder="https://center.example.com" oninput="renderBuilder()" class="field-input">
-                    </label>
-                    <label class="block text-sm text-slate-600 dark:text-slate-300">
-                        <span class="block mb-1">节点令牌 <span class="text-rose-500">*</span></span>
-                        <input id="in-node-token" type="text" autocomplete="off" spellcheck="false" placeholder="在中控「节点管理」页生成" oninput="renderBuilder()" class="field-input">
-                    </label>
-                </div>
+                <div class="code-body generated" id="build-cmd"></div>
             </div>
-
-            <!-- 集成组件 -->
-            <div class="mt-8 hidden" id="sec-variant">
-                <div class="flex flex-wrap items-center gap-2 mb-3">
-                    <span class="step-num">3</span>
-                    <span class="font-semibold text-slate-800">集成组件</span>
-                    <span class="text-xs text-slate-400">需要反向代理或 API 网关时选对应组件，会使用一体化镜像</span>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <button type="button" class="option-card" data-opt="variant" data-val="slim" onclick="setOpt('variant','slim')">
-                        <span class="badge badge-blue">默认</span>
-                        <p class="font-semibold text-slate-800 mt-1">不集成</p>
-                        <p class="text-xs text-slate-500 mt-1">仅 isrvd，体积最小；网关可日后单独部署</p>
-                        <p class="text-xs text-slate-400 mt-1.5">镜像标签 <code class="bg-slate-100 px-1 rounded">slim</code></p>
-                    </button>
-                    <button type="button" class="option-card" data-opt="variant" data-val="caddy" onclick="setOpt('variant','caddy')">
-                        <span class="badge badge-rose">反向代理</span>
-                        <p class="font-semibold text-slate-800 mt-1">Caddy</p>
-                        <p class="text-xs text-slate-500 mt-1">反向代理与自动 HTTPS（ACME）</p>
-                        <p class="text-xs text-slate-400 mt-1.5">镜像标签 <code class="bg-slate-100 px-1 rounded">caddy</code></p>
-                    </button>
-                    <button type="button" class="option-card" data-opt="variant" data-val="apisix" onclick="setOpt('variant','apisix')">
-                        <span class="badge badge-cyan">API 网关</span>
-                        <p class="font-semibold text-slate-800 mt-1">APISIX</p>
-                        <p class="text-xs text-slate-500 mt-1">API 网关（含 etcd），适合 API 场景</p>
-                        <p class="text-xs text-slate-400 mt-1.5">镜像标签 <code class="bg-slate-100 px-1 rounded">apisix</code></p>
-                    </button>
-                </div>
-            </div>
-
-            <!-- 按需展开的高级选项 -->
-            <details id="builder-extra" class="mt-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-4 sm:p-5">
-                <summary class="cursor-pointer text-sm font-medium text-slate-600 dark:text-slate-300">高级选项 · 软件源与 Docker 参数</summary>
-                <div class="mt-5" id="sec-source">
-                    <p class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">软件源</p>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <button type="button" class="option-card" data-opt="source" data-val="auto" onclick="setOpt('source','auto')">
-                        <span class="badge badge-emerald">默认</span>
-                        <p class="font-semibold text-slate-800 mt-1">自动</p>
-                        <p class="text-xs text-slate-500 mt-1" id="source-auto-desc"></p>
-                    </button>
-                    <button type="button" class="option-card" data-opt="source" data-val="cn" onclick="setOpt('source','cn')">
-                        <p class="font-semibold text-slate-800">国内 CNB</p>
-                        <p class="text-xs text-slate-500 mt-1" id="source-cn-desc"></p>
-                    </button>
-                    <button type="button" class="option-card" data-opt="source" data-val="global" onclick="setOpt('source','global')">
-                        <p class="font-semibold text-slate-800">国际</p>
-                        <p class="text-xs text-slate-500 mt-1" id="source-global-desc"></p>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Docker 参数（仅 docker run） -->
-                <div class="mt-6 hidden" id="sec-docker">
-                    <p class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Docker 参数 <span class="text-xs font-normal text-slate-400">留空使用默认值</span></p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                    <label class="block text-sm text-slate-600 dark:text-slate-300">
-                        <span class="block mb-1">容器名</span>
-                        <input id="in-cname" type="text" autocomplete="off" spellcheck="false" oninput="renderBuilder()" class="field-input">
-                    </label>
-                    <label class="block text-sm text-slate-600 dark:text-slate-300 lg:col-span-2">
-                        <span class="block mb-1">数据目录 <span class="text-xs text-slate-400">挂载到容器 /data</span></span>
-                        <input id="in-data" type="text" autocomplete="off" spellcheck="false" placeholder="/srv/data" oninput="renderBuilder()" class="field-input">
-                    </label>
-                    <label class="block text-sm text-slate-600 dark:text-slate-300" id="f-web">
-                        <span class="block mb-1">Web 端口 <span class="text-xs text-slate-400">→ 8080</span></span>
-                        <input id="in-p-web" type="text" inputmode="numeric" autocomplete="off" placeholder="8080" oninput="renderBuilder()" class="field-input">
-                    </label>
-                    <label class="block text-sm text-slate-600 dark:text-slate-300 hidden" id="f-http">
-                        <span class="block mb-1">HTTP 端口 <span class="text-xs text-slate-400" id="f-http-to"></span></span>
-                        <input id="in-p-http" type="text" inputmode="numeric" autocomplete="off" placeholder="80" oninput="renderBuilder()" class="field-input">
-                    </label>
-                    <label class="block text-sm text-slate-600 dark:text-slate-300 hidden" id="f-https">
-                        <span class="block mb-1">HTTPS 端口 <span class="text-xs text-slate-400" id="f-https-to"></span></span>
-                        <input id="in-p-https" type="text" inputmode="numeric" autocomplete="off" placeholder="443" oninput="renderBuilder()" class="field-input">
-                    </label>
-                </div>
-
-                <p class="mt-5 mb-2 text-sm text-slate-600 dark:text-slate-300">容器网络</p>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <button type="button" class="option-card" data-opt="net" data-val="auto" onclick="setOpt('net','auto')">
-                        <span class="badge badge-blue">默认</span>
-                        <p class="font-semibold text-slate-800 mt-1">sdnet · 自动创建</p>
-                        <p class="text-xs text-slate-500 mt-1">不存在时创建单机 bridge 网络</p>
-                    </button>
-                    <button type="button" class="option-card" data-opt="net" data-val="existing" onclick="setOpt('net','existing')">
-                        <p class="font-semibold text-slate-800">使用已有网络</p>
-                        <p class="text-xs text-slate-500 mt-1">如跨主机 overlay，需先自行创建</p>
-                    </button>
-                    <button type="button" class="option-card" data-opt="net" data-val="none" onclick="setOpt('net','none')">
-                        <p class="font-semibold text-slate-800">不指定</p>
-                        <p class="text-xs text-slate-500 mt-1">使用 Docker 默认 bridge，无法按名称访问其它容器</p>
-                    </button>
-                </div>
-                <label class="hidden mt-3 block text-sm text-slate-600 dark:text-slate-300 sm:max-w-xs" id="f-netname">
-                    <span class="block mb-1">网络名称</span>
-                    <input id="in-netname" type="text" autocomplete="off" spellcheck="false" placeholder="sdnet" oninput="renderBuilder()" class="field-input">
-                </label>
-
-                <label class="mt-4 flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
-                    <input id="in-install-docker" type="checkbox" onchange="renderBuilder()" class="mt-1">
-                    <span>未安装 Docker 时自动安装
-                        <span class="block text-xs text-slate-400">命令开头追加检测并通过 get.docker.com 安装，已安装则跳过</span></span>
-                </label>
-                </div>
-            </details>
-
-            <!-- 生成结果 -->
-            <div id="build-error" class="mt-10 hidden rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 px-4 py-3 text-sm text-amber-800 dark:text-amber-200" role="alert">
-                <p class="font-medium">还差几项才能生成命令：</p>
-                <ul id="build-error-list" class="mt-1 list-disc pl-5 space-y-0.5"></ul>
-            </div>
-
-            <div id="build-result" class="mt-10 space-y-6">
-                <div class="code-block shadow-lg shadow-slate-200/60 dark:shadow-none">
-                    <div class="code-header"><span id="build-label">bash</span><button type="button" class="copy-btn" onclick="copyCode(this)" aria-live="polite">复制</button></div>
-                    <div class="code-body generated" id="build-cmd"></div>
-                </div>
-                <ul id="install-notes" class="text-xs text-slate-500 dark:text-slate-400 space-y-1 list-disc pl-5"></ul>
-            </div>
+            <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400" id="install-meta"></div>
+            <ul id="install-notes" class="mt-2 text-xs text-slate-500 dark:text-slate-400 space-y-1 list-disc pl-5"></ul>
 
             <!-- 管理命令 -->
             <details id="install-manage-block" class="mt-8">
@@ -1207,20 +1239,19 @@
                 nav.classList.add('bg-slate-900/80', 'border-slate-700/60');
             }
         })();
-        // Command builder：所有选项实时生成一条 bash / docker run 命令
+        // Command builder：所有选项实时生成一条可直接粘贴执行的命令
         var SCRIPT_URL = 'https://isrvd.rehiy.com/install/';
-        var STEP_SECTIONS = ['sec-method', 'sec-role', 'sec-variant'];
         var buildState = { method: 'script-binary', role: 'server', variant: 'slim', source: 'auto', net: 'auto' };
 
         function byId(id) { return document.getElementById(id); }
         function fieldVal(id) { return byId(id).value.trim(); }
         function setVisible(el, on) { el.classList.toggle('hidden', !on); }
+        function setHint(id, text) { byId(id).innerHTML = text; }
 
         function setOpt(key, val) {
-            // 安装脚本的 Docker 模式固定为单机，不接受角色参数
-            if (key === 'role' && buildState.method === 'script-docker' && val !== 'server') return;
+            // 二进制部署不带网关组件，选择后回落为 slim
+            if (key === 'variant' && buildState.method === 'script-binary' && val !== 'slim') return;
             buildState[key] = val;
-            if (key === 'method' && val === 'script-docker') buildState.role = 'server';
             renderBuilder();
         }
 
@@ -1304,26 +1335,28 @@
             return { v: v, errs: errs };
         }
 
-        // segments：以 && 串联的若干段；每段内的多行以续行符拼接
-        function joinSegments(segments) {
-            var indent = segments.length > 1 ? '    ' : '  ';
-            return segments.map(function (seg) {
-                return seg.join(' \\\n' + indent);
-            }).join(' \\\n  && ');
+        // 运行角色通过环境变量传入，安装脚本会写入 systemd 或 docker run，无需安装后手工改配置
+        function envPrefix(s, v) {
+            var env = ['ISRVD_MODE=' + s.role];
+            if (s.role === 'agent') env.push('ISRVD_CENTER_URL=' + shq(v.centerUrl), 'ISRVD_NODE_TOKEN=' + shq(v.code));
+            return env.join(' ') + ' ';
         }
 
         function installerRun(args, url) {
-            return '(installer=$(curl -fsSL ' + shq(url || SCRIPT_URL) + ') && bash -c "$installer" isrvd-installer ' + args + ')';
+            return 'bash -c "$(curl -fsSL ' + shq(url || SCRIPT_URL) + ')" isrvd-installer ' + args;
         }
 
-        function buildBinary(s) {
-            return [[installerRun('install' + (s.source === 'auto' ? '' : ' --' + s.source))]];
+        function sourceFlag(s) {
+            return s.source === 'auto' ? '' : ' --' + s.source;
+        }
+
+        function buildBinary(s, v) {
+            return [envPrefix(s, v) + installerRun('install' + sourceFlag(s))];
         }
 
         function buildScriptDocker(s, v) {
             var flag = { slim: '--docker', caddy: '--caddy', apisix: '--apisix' }[v.variant];
-            var src = s.source === 'auto' ? '' : ' --' + s.source;
-            return [[installerRun('install ' + flag + src)]];
+            return [envPrefix(s, v) + installerRun('install ' + flag + sourceFlag(s))];
         }
 
         function dockerImage(s, v) {
@@ -1331,21 +1364,21 @@
         }
 
         function buildDockerRun(s, v) {
-            var segments = [];
+            var head = [];
             if (v.installDocker) {
-                segments.push(['(command -v docker >/dev/null 2>&1 || '
-                    + installerRun(s.source === 'cn' ? '--mirror Aliyun' : '', 'https://get.docker.com') + ')']);
+                head.push('command -v docker >/dev/null 2>&1 || '
+                    + installerRun(s.source === 'cn' ? '--mirror Aliyun' : '', 'https://get.docker.com'));
             }
             var netName = '';
             if (s.net === 'auto') {
                 netName = 'sdnet';
-                segments.push(['(docker network inspect sdnet >/dev/null 2>&1 || docker network create sdnet)']);
+                head.push('docker network inspect sdnet >/dev/null 2>&1 || docker network create sdnet');
             } else if (s.net === 'existing') {
                 netName = v.netName;
             }
 
             var run = ['docker run -d', '--name ' + shq(v.cname), '--restart unless-stopped'];
-            run.push('-e ISRVD_MODE=' + shq(s.role));
+            run.push('-e ISRVD_MODE=' + s.role);
             if (s.role === 'agent') {
                 run.push('-e ' + shq('ISRVD_CENTER_URL=' + v.centerUrl), '-e ' + shq('ISRVD_NODE_TOKEN=' + v.code));
             }
@@ -1356,90 +1389,110 @@
                 if (v.variant === 'apisix') run.push('-p ' + v.pHttp + ':9080', '-p ' + v.pHttps + ':9443');
             }
             run.push('-v ' + shq(v.data + ':/data'), '-v /var/run/docker.sock:/var/run/docker.sock', dockerImage(s, v));
-            segments.push(run);
-            return segments;
+            head.push(run.join(' \\\n  '));
+            return head;
         }
 
-        // 二进制安装使用 systemd 环境变量设置运行角色。
-        function buildRoleConfig(s, v) {
-            if (s.method !== 'script-binary' || s.role === 'server') return '';
-            var env = ['ISRVD_MODE=' + s.role];
-            if (s.role === 'agent') env.push('ISRVD_CENTER_URL=' + v.centerUrl, 'ISRVD_NODE_TOKEN=' + v.code);
-            var lines = ['# 安装后执行 systemctl edit isrvd，在 [Service] 中设置：'];
-            env.forEach(function (value) {
-                lines.push('# Environment=' + JSON.stringify(value.replace(/%/g, '%%')));
-            });
-            lines.push('# 保存后执行 systemctl daemon-reload && systemctl restart isrvd');
-            return lines.join('\n');
+        function joinCommands(lines) {
+            return lines.join(' \\\n  && ');
         }
 
         function buildManage(s, v) {
-            var src = s.source === 'auto' ? '' : ' --' + s.source;
             if (s.method === 'docker') {
                 return '# 更新：拉取新镜像并重建容器（重新执行上方 docker run 命令；数据保存在 ' + v.data + '）\n'
-                    + 'docker pull ' + dockerImage(s, v) + ' && docker rm -f ' + shq(v.cname) + '\n\n'
+                    + 'docker pull ' + dockerImage(s, v) + '\n\n'
                     + '# 卸载容器（保留数据目录 ' + v.data + '）\n'
                     + 'docker rm -f ' + shq(v.cname) + '\n\n'
                     + '# 查看日志\n'
                     + 'docker logs -f ' + shq(v.cname);
             }
-            var out = '# 更新（自动识别二进制或 Docker 部署）\n' + installerRun('update' + src) + '\n\n';
+            var out = '# 更新（自动识别二进制或 Docker 部署）\n' + installerRun('update' + sourceFlag(s)) + '\n\n';
             if (s.method === 'script-binary') {
                 out += '# 卸载（删除 /usr/local/isrvd，含其中的 config.yml，请先备份）\n'
                     + installerRun('uninstall') + '\n\n';
             } else {
                 out += '# 卸载（删除容器，保留 /srv/data 数据目录）\n' + installerRun('uninstall') + '\n\n';
             }
-            return out + '# 仅下载二进制包（不安装）\n' + installerRun('download' + src);
+            return out + '# 仅下载二进制包（不安装）\n' + installerRun('download' + sourceFlag(s));
         }
 
         function buildNotes(s, v) {
             var notes = [];
-            if (s.method !== 'docker') notes.push('请以 root 身份在 Bash 中执行；脚本负责安装与后续升级。');
             if (s.method === 'docker') {
-                notes.push('请确认 Docker 已启动；数据目录 ' + '<code>' + esc(v.data) + '</code>' + ' 会挂载到容器 /data。');
-                if (s.net === 'auto') notes.push('自动创建单机 bridge 网络 sdnet；跨主机需在高级选项中选择已有 overlay 网络。');
-                if (v.installDocker) notes.push('自动安装 Docker 需以 root 身份执行整条命令。');
+                notes.push('请确认 Docker 已启动；数据目录 <code>' + esc(v.data) + '</code> 会挂载到容器 /data。');
+                if (s.net === 'auto') notes.push('自动创建单机 bridge 网络 sdnet；跨主机通信请改用已有 overlay 网络。');
+                if (v.installDocker) notes.push('命令开头的自动安装 Docker 需要 root 权限。');
+            } else {
+                notes.push('请以 root 身份在 Bash 中执行；脚本负责安装与后续升级。');
             }
             if (s.method !== 'script-binary') notes.push('挂载 Docker socket 相当于授予宿主机高权限，请勿向不可信用户开放管理界面。');
-            if (s.role === 'agent') notes.push('节点令牌由 ISRVD_NODE_TOKEN 环境变量提供，请勿分享；保存令牌的环境文件应限制为 0600 权限。');
+            if (s.role === 'agent') notes.push('节点令牌只用于接入中控，请勿外泄；吊销后受管机会立即断开。');
             else notes.push('登录后立即修改默认账号 admin 的密码。');
             return notes;
         }
 
-        var SOURCE_DESC = {
-            'script-binary': ['按 IP 自动选择下载源', '二进制包取 CNB Releases', '二进制包取 GitHub Releases'],
-            'script-docker': ['按 IP 自动选择镜像源', '镜像取 docker.cnb.cool/rehiy/isrvd', '镜像取 Docker Hub（rehiy/isrvd）'],
-            'docker': ['默认使用 Docker Hub', '镜像取 docker.cnb.cool/rehiy/isrvd', '镜像取 Docker Hub（rehiy/isrvd）']
+        var METHOD_DESC = {
+            'script-binary': '下载二进制包，注册 systemd 服务（/usr/local/isrvd），不需要 Docker。',
+            'script-docker': '自动准备 Docker、Swarm 与 sdnet overlay 网络，随后拉起容器，适合不想碰命令行的场景。',
+            'docker': '完全手写 docker run 参数，可自定义容器名、端口、数据目录与网络。'
         };
+
+        var ROLE_DESC = {
+            'server': '单机模式，独立管理本机，默认值。',
+            'center': '中控模式，一个控制台管理多台服务器；受管机主动出站接入。',
+            'agent': '受管机模式，主动连接中控，不监听 Web 端口。'
+        };
+
+        var VARIANT_DESC = {
+            'slim': '仅 isrvd，体积最小，网关可日后单独部署。',
+            'caddy': '内置 Caddy，顺带提供反向代理与自动 HTTPS（ACME）。',
+            'apisix': '内置 APISIX（含 etcd），适合 API 网关场景。'
+        };
+
+        var SOURCE_DESC = {
+            'script-binary': ['按出口 IP 自动选择 CNB 或 GitHub', '二进制包取自 CNB Releases', '二进制包取自 GitHub Releases'],
+            'script-docker': ['按出口 IP 自动选择镜像源', '镜像取自 docker.cnb.cool/rehiy/isrvd', '镜像取自 Docker Hub（rehiy/isrvd）'],
+            'docker': ['与脚本模式一致，按出口 IP 选择镜像源', '镜像取自 docker.cnb.cool/rehiy/isrvd', '镜像取自 Docker Hub（rehiy/isrvd）']
+        };
+
+        var NET_DESC = {
+            'auto': '不存在时创建单机 bridge 网络 sdnet，容器间可按名称互访。',
+            'existing': '使用已创建的网络，例如跨主机 attachable overlay。',
+            'none': '沿用 Docker 默认 bridge，无法按容器名互访。'
+        };
+
+        // 标红不合法输入：只标注进入命令且校验失败的字段
+        function markField(id, bad) {
+            var el = byId(id);
+            if (el) el.classList.toggle('invalid', bad);
+        }
 
         function renderBuilder() {
             var s = buildState;
             var isDocker = s.method === 'docker';
             var isAgent = s.role === 'agent';
 
-            // 选中态与禁用态
-            document.querySelectorAll('.option-card[data-opt]').forEach(function (el) {
+            document.querySelectorAll('.chip[data-opt]').forEach(function (el) {
                 var key = el.getAttribute('data-opt'), val = el.getAttribute('data-val');
-                el.classList.toggle('selected', s[key] === val);
-                el.setAttribute('aria-pressed', String(s[key] === val));
-                var disabled = key === 'role' && s.method === 'script-docker' && val !== 'server';
+                var on = s[key] === val;
+                el.setAttribute('aria-checked', String(on));
+                var disabled = key === 'variant' && s.method === 'script-binary';
                 el.classList.toggle('disabled', disabled);
                 el.disabled = disabled;
             });
-            byId('role-hint').textContent = s.method === 'script-docker'
-                ? '安装脚本的 Docker 模式固定为单机；中控 / 受管机请选二进制或 docker run'
-                : '通过 ISRVD_MODE 环境变量设置单机 / 中控 / 受管机模式';
+
+            setHint('hint-method', METHOD_DESC[s.method]);
+            setHint('hint-role', ROLE_DESC[s.role] + (isDocker && isAgent ? ' 容器不发布任何端口。' : ''));
+            setHint('hint-variant', s.method === 'script-binary'
+                ? '二进制部署不带网关组件；需要 Caddy / APISIX 请改用 Docker 部署。'
+                : VARIANT_DESC[s.variant]);
 
             var desc = SOURCE_DESC[s.method];
-            byId('source-auto-desc').textContent = desc[0];
-            byId('source-cn-desc').textContent = desc[1];
-            byId('source-global-desc').textContent = desc[2];
+            setHint('hint-source', desc[{ auto: 0, cn: 1, global: 2 }[s.source]]);
+            setHint('hint-net', NET_DESC[s.net]);
 
-            // 区块与字段可见性
-            setVisible(byId('sec-variant'), s.method !== 'script-binary' && !isAgent);
-            setVisible(byId('sec-docker'), isDocker);
             setVisible(byId('role-agent-inputs'), isAgent);
+            setVisible(byId('sec-docker'), isDocker);
             setVisible(byId('f-web'), !isAgent);
             var gateway = s.variant !== 'slim' && !isAgent;
             setVisible(byId('f-http'), gateway);
@@ -1449,41 +1502,46 @@
             setVisible(byId('f-netname'), s.net === 'existing');
             byId('in-cname').placeholder = { server: 'isrvd', center: 'isrvd-center', agent: 'isrvd-agent' }[s.role];
 
-            // 可见区块按顺序重新编号
-            var n = 0;
-            STEP_SECTIONS.forEach(function (id) {
-                var sec = byId(id);
-                if (sec.classList.contains('hidden')) return;
-                sec.querySelector('.step-num').textContent = ++n;
-            });
-
             var parsed = collectParams();
-            var errs = parsed.errs, v = parsed.v;
-            var ok = errs.length === 0;
-            setVisible(byId('build-error'), !ok);
-            setVisible(byId('build-result'), ok);
-            setVisible(byId('install-manage-block'), ok);
-            if (!ok) {
-                byId('build-error-list').innerHTML = errs.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('');
-                byId('build-cmd').textContent = '';
+            var v = parsed.v, errs = parsed.errs;
+
+            // 输入框就地标红，命令卡保持可见
+            markField('in-center-url', isAgent && !!v.centerUrl && !validCenterUrl(v.centerUrl));
+            markField('in-node-token', isAgent && !!v.code && !CODE_RE.test(v.code));
+            markField('in-p-web', !isAgent && isDocker && /^\d+$/.test(fieldVal('in-p-web')) && (v.pWeb < 1 || v.pWeb > 65535));
+
+            if (errs.length) {
+                byId('build-cmd').innerHTML = '<span style="color:#fbbf24"># 还需补全以下信息，命令会自动出现在这里：</span>\n'
+                    + errs.map(function (e) { return '# - ' + esc(e); }).join('\n');
                 byId('install-manage').textContent = '';
+                byId('install-meta').innerHTML = '';
+                byId('install-notes').innerHTML = '';
+                byId('build-copy').disabled = true;
                 return;
             }
 
-            var segments;
-            if (s.method === 'script-binary') segments = buildBinary(s, v);
-            else if (s.method === 'script-docker') segments = buildScriptDocker(s, v);
-            else segments = buildDockerRun(s, v);
+            var command = isDocker ? joinCommands(buildDockerRun(s, v))
+                : joinCommands(s.method === 'script-binary' ? buildBinary(s, v) : buildScriptDocker(s, v));
 
-            var command = joinSegments(segments);
-            var roleConfig = buildRoleConfig(s, v);
-            if (roleConfig) command += '\n\n' + roleConfig;
             byId('build-label').textContent = isDocker ? 'bash — docker run' : 'bash';
             byId('build-cmd').innerHTML = highlight(command);
             byId('install-manage').innerHTML = highlight(buildManage(s, v));
             byId('install-notes').innerHTML = buildNotes(s, v).map(function (t) { return '<li>' + t + '</li>'; }).join('');
+            byId('build-copy').disabled = false;
+
+            var meta = [];
+            if (isDocker) {
+                meta.push('容器 <code>' + esc(v.cname) + '</code>');
+                meta.push('数据 <code>' + esc(v.data) + '</code>');
+                meta.push('镜像 <code>' + esc(dockerImage(s, v)) + '</code>');
+            } else {
+                meta.push('安装目录 <code>/usr/local/isrvd</code>');
+                meta.push(s.method === 'script-binary' ? '配置 <code>/usr/local/isrvd/config.yml</code>' : '数据 <code>/srv/data</code>');
+            }
+            byId('install-meta').innerHTML = meta.join('<span class="text-slate-300 dark:text-slate-700">·</span>');
         }
         renderBuilder();
+
         // Copy code
         async function copyCode(btn) {
             const codeBody = btn.parentElement.nextElementSibling;
