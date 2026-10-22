@@ -29,6 +29,19 @@ Web 管理页支持“按路由”和“按 Host”两种展示方式；API 响�
 | create_time | number | 创建时间（只读，Unix 秒） |
 | update_time | number | 更新时间（只读，Unix 秒） |
 
+Web 管理页的“高级选项”默认收起，包含 WebSocket 代理，以及内联上游的 HTTPS 回源、Host 传递和超时配置。收起时显示已配置项的摘要；折叠不会清除配置。引用已有上游时，回源参数由该上游对象统一管理。
+
+内联 `upstream` 的 Host 配置：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| pass_host | string | `pass`（默认，透传客户端 Host）、`node`（使用节点 Host）、`rewrite`（指定 Host） |
+| upstream_host | string | `pass_host=rewrite` 时填写；Web 管理页切换到其他模式时不提交该字段 |
+
+```bash
+isrvd_post "/apisix/route" '{"name":"<NAME>","uri":"/*","status":1,"upstream":{"type":"roundrobin","scheme":"https","nodes":{"<HOST>:443":1},"pass_host":"rewrite","upstream_host":"backend.example.com"}}'
+```
+
 ## 查看路由详情
 
 ```bash
