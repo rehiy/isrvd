@@ -23,6 +23,7 @@ export const useSystemStore = defineStore('system', () => {
     // ─── 状态定义 ───
 
     const initialized = ref(false)
+    const title = ref('')
     const serviceAvailability = reactive<ServiceAvailability>({
         copilot: false,
         apisix: false,
@@ -41,6 +42,7 @@ export const useSystemStore = defineStore('system', () => {
     // apply 将 bootstrap 响应中的 probe 和 config 写入 store
     function apply(data: BootstrapData) {
         const { probe, config } = data
+        title.value = config?.title || ''
 
         if (probe) {
             Object.assign(serviceAvailability, {
@@ -85,6 +87,7 @@ export const useSystemStore = defineStore('system', () => {
     return {
         // 状态
         initialized,
+        title,
         serviceAvailability,
         toolbarLinks,
         marketplaceUrl,

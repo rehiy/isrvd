@@ -25,6 +25,7 @@ func ServerNormalize(server *ServerConfig) *ServerConfig {
 	if server == nil {
 		server = &ServerConfig{}
 	}
+	server.Title = strings.TrimSpace(server.Title)
 	if server.ListenAddr == "" {
 		server.ListenAddr = ":8080"
 	}

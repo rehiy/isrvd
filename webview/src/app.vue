@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { useCopilotStore, usePortal } from '@/stores'
 
@@ -23,6 +23,18 @@ class App extends Vue {
     portal = usePortal()
     copilotStore = useCopilotStore()
     sidebarCollapsed = false
+
+    get browserTitle() {
+        if (!this.portal.username || !this.portal.permissionsLoaded) return 'iSrvd'
+        const title = this.portal.title.trim() || 'iSrvd'
+        const page = this.$route.meta.title
+        return typeof page === 'string' && page ? `${title} · ${this.$t(page)}` : title
+    }
+
+    @Watch('browserTitle', { immediate: true })
+    onBrowserTitleChange(title: string) {
+        document.title = title
+    }
 
     get hasCopilot() {
         return this.portal.serviceAvailability.copilot && this.portal.hasPerm('POST /api/copilot/agui')

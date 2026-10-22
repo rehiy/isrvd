@@ -21,6 +21,26 @@ const messages: Record<string, string> = {
     '深色模式': 'Dark mode',
     '跟随系统': 'Follow system',
 
+    // ─── 浏览器标题 ───
+    "浏览器标签页标题": "Browser tab title",
+    "例如：内网机器、外部机器": "Example: Internal server, External server",
+    "仅登录后显示，并自动追加当前页面名称；留空使用 iSrvd。": "Shown only after signing in, followed by the current page name. Leave blank to use iSrvd.",
+    "SSH 客户端": "SSH Client",
+    "APISIX 路由": "APISIX Routes",
+    "APISIX 上游": "APISIX Upstreams",
+    "APISIX 插件配置": "APISIX Plugin Configs",
+    "APISIX SSL 证书": "APISIX SSL Certificates",
+    "APISIX 消费者": "APISIX Consumers",
+    "Caddy 服务": "Caddy Servers",
+    "Caddy 路由": "Caddy Routes",
+    "Caddy SSL 证书": "Caddy SSL Certificates",
+    "容器详情": "Container Details",
+    "容器监控": "Container Monitoring",
+    "Swarm 节点": "Swarm Nodes",
+    "Swarm 节点详情": "Swarm Node Details",
+    "Swarm 服务详情": "Swarm Service Details",
+    "Swarm 任务": "Swarm Tasks",
+
     // ─── 侧边导航 ───
     '概览': 'Overview',
     '本机管理': 'Local',

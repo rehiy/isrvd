@@ -2,6 +2,7 @@ schema:
   version: 2
 
 server:
+  title: ""                  # 浏览器标签页标题，仅登录后显示；留空使用 iSrvd
   listenAddr: :8080
   rootDirectory: /srv/data
   maxUploadSize: 104857600    # 文件上传最大字节数，默认 104857600（100MB）

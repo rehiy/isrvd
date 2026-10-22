@@ -5,6 +5,7 @@ import type { LinkConfig } from './system'
 // ─── 启动聚合 ───
 
 export interface BootstrapConfig {
+    title: string
     maxUploadSize: number
     marketplaceUrl: string
     openapiEnabled: boolean

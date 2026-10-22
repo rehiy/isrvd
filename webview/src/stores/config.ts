@@ -51,7 +51,7 @@ export const configGroups: ConfigGroupMeta[] = [
 /** 默认配置，保证各分区字段完整，避免表单绑定出现 undefined */
 function defaultConfig(): AllConfig {
     return {
-        server: { listenAddr: '', rootDirectory: '', maxUploadSize: 104857600, allowedOrigins: [], jwtSecret: '', jwtExpiration: 86400, openapi: false, debug: false },
+        server: { title: '', listenAddr: '', rootDirectory: '', maxUploadSize: 104857600, allowedOrigins: [], jwtSecret: '', jwtExpiration: 86400, openapi: false, debug: false },
         password: { disabled: false, minLength: 6 },
         passkey: { enabled: false, rpName: '', rpId: '', rpOrigins: [], timeout: 60000 },
         oidc: { enabled: false, issuerUrl: '', clientId: '', clientSecret: '', redirectUrl: '', usernameClaim: 'sub', scopes: ['openid', 'profile', 'email'], loginLabel: '' },
