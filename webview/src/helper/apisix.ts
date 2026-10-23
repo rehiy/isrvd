@@ -4,6 +4,7 @@ import type {
     ApisixRouteUpstreamMode,
     ApisixUpstreamConfig,
     ApisixUpstreamScheme,
+    ApisixUpstreamPassHost,
     ApisixUpstreamType,
     ApisixUpstreamNode
 } from '@/service/types'
@@ -39,6 +40,19 @@ export const UPSTREAM_SCHEME_OPTIONS: Array<{ value: ApisixUpstreamScheme; label
     { value: 'http', label: 'HTTP', desc: '明文回源（默认）' },
     { value: 'https', label: 'HTTPS', desc: '加密回源（TLS）' }
 ]
+
+export const upstreamHostError = (passHost: ApisixUpstreamPassHost, host: string): string =>
+    passHost === 'rewrite' && !host.trim() ? useLocaleStore().t('请填写指定的上游 Host') : ''
+
+export const upstreamAdvancedSummary = (scheme: string, passHost: ApisixUpstreamPassHost, host: string, hasTimeout: boolean): string[] => {
+    const t = useLocaleStore().t
+    const items: string[] = []
+    if (scheme === 'https') items.push(t('HTTPS 回源'))
+    if (passHost === 'node') items.push(t('使用节点 Host'))
+    if (passHost === 'rewrite') items.push(t('指定 Host：{0}', host.trim() || t('未填写')))
+    if (hasTimeout) items.push(t('自定义超时'))
+    return items
+}
 
 export const normalizeUpstreamNodes = (upstream?: ApisixUpstreamConfig): ApisixUpstreamNode[] => {
     const nodes = upstream?.nodes
@@ -123,6 +137,8 @@ interface RouteFormData {
     upstream_id?: string
     upstream_nodes: ApisixRouteUpstreamFormNode[]
     upstream_scheme?: ApisixUpstreamScheme
+    upstream_pass_host: ApisixUpstreamPassHost
+    upstream_host: string
     timeout_connect?: string | number
     timeout_send?: string | number
     timeout_read?: string | number
@@ -132,7 +148,9 @@ const buildInlineUpstream = (
     nodes: ApisixRouteUpstreamFormNode[],
     baseUpstream?: ApisixUpstreamConfig | null,
     timeout?: { connect?: string | number; send?: string | number; read?: string | number },
-    scheme?: ApisixUpstreamScheme
+    scheme?: ApisixUpstreamScheme,
+    passHost: ApisixUpstreamPassHost = 'pass',
+    upstreamHost = ''
 ): ApisixUpstreamConfig | undefined => {
     const node = nodes[0]
     if (!node) return undefined
@@ -148,8 +166,12 @@ const buildInlineUpstream = (
         ...(baseUpstream || {}),
         type: DEFAULT_UPSTREAM_TYPE,
         scheme: scheme || DEFAULT_UPSTREAM_SCHEME,
+        pass_host: passHost,
         nodes: [{ host, port: Number(port), weight: 1 }]
     }
+
+    if (passHost === 'rewrite') result.upstream_host = upstreamHost.trim()
+    else delete result.upstream_host
 
     if (connect > 0 || send > 0 || read > 0) {
         result.timeout = { connect: connect || undefined, send: send || undefined, read: read || undefined }
@@ -186,7 +208,7 @@ export const buildRoutePayload = (formData: RouteFormData, baseUpstream?: Apisix
             connect: formData.timeout_connect,
             send: formData.timeout_send,
             read: formData.timeout_read
-        }, formData.upstream_scheme)
+        }, formData.upstream_scheme, formData.upstream_pass_host, formData.upstream_host)
         if (inlineUpstream) payload.upstream = inlineUpstream
     }
 

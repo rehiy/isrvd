@@ -65,6 +65,20 @@ const messages: Record<string, string> = {
     '快捷链接': 'Quick links',
     '无快捷链接': 'No quick links',
 
+    // ─── APISIX 高级回源配置 ───
+    "请填写指定的上游 Host": "Enter the upstream Host to use",
+    "使用节点 Host": "Use node Host",
+    "指定 Host：{0}": "Host override: {0}",
+    "未填写": "Not set",
+    "自定义超时": "Custom timeouts",
+    "Host 传递方式": "Host forwarding",
+    "透传客户端 Host（默认）": "Pass client Host (default)",
+    "指定上游 Host": "Override upstream Host",
+    "控制转发到后端的 Host 请求头，与路由的 Host 匹配条件无关。": "Controls the Host header sent to the backend, independently of route Host matching.",
+    "上游 Host": "Upstream Host",
+    "例如：backend.example.com": "Example: backend.example.com",
+    "回源协议、Host 传递和超时由引用的上游对象管理。": "The referenced upstream controls the protocol, Host forwarding, and timeouts.",
+
     // ─── 系统配置分组 ───
     '基础服务': 'Services',
     '登录认证': 'Authentication',

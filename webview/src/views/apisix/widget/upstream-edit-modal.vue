@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Component, toNative, Vue } from 'vue-facing-decorator'
+import { Component, Ref, toNative, Vue } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
@@ -9,18 +9,21 @@ import type {
   ApisixUpstream,
   ApisixUpstreamCreate,
   ApisixUpstreamHashOn,
+  ApisixUpstreamPassHost,
   ApisixUpstreamScheme,
   ApisixUpstreamType,
   ApisixUpstreamUpdate,
   DockerContainerInfo
 } from '@/service/types'
 
-import { normalizeUpstreamFormNodes, normalizeUpstreamScheme, normalizeUpstreamType, UPSTREAM_SCHEME_OPTIONS } from '@/helper/apisix'
+import { normalizeUpstreamFormNodes, normalizeUpstreamScheme, normalizeUpstreamType, upstreamAdvancedSummary, upstreamHostError, UPSTREAM_SCHEME_OPTIONS } from '@/helper/apisix'
 
 import BaseModal from '@/component/modal.vue'
 
 import ContainerPortSelect from '@/views/docker/widget/container-port-select.vue'
 import ContainerSelect from '@/views/docker/widget/container-select.vue'
+
+import UpstreamHostFields from './upstream-host-fields.vue'
 
 const UPSTREAM_TYPE_OPTIONS: Array<{ value: ApisixUpstreamType; label: string; desc: string }> = [
     { value: 'roundrobin', label: 'roundrobin', desc: '加权轮询' },
@@ -45,6 +48,8 @@ const defaultFormData = () => ({
     desc: '',
     type: 'roundrobin' as ApisixUpstreamType,
     scheme: 'http' as ApisixUpstreamScheme,
+    pass_host: 'pass' as ApisixUpstreamPassHost,
+    upstream_host: '',
     hash_on: 'vars' as ApisixUpstreamHashOn,
     key: 'remote_addr',
     nodes: [createNode()] as ApisixRouteUpstreamFormNode[],
@@ -55,7 +60,7 @@ const defaultFormData = () => ({
 
 @Component({
     expose: ['show'],
-    components: { BaseModal, ContainerPortSelect, ContainerSelect },
+    components: { BaseModal, ContainerPortSelect, ContainerSelect, UpstreamHostFields },
     emits: ['success']
 })
 class UpstreamEditModal extends Vue {
@@ -63,6 +68,8 @@ class UpstreamEditModal extends Vue {
     isOpen = false
     modalLoading = false
     isEditMode = false
+    showAdvanced = false
+    @Ref readonly upstreamHostRef!: InstanceType<typeof UpstreamHostFields>
     formData = defaultFormData()
     containers: DockerContainerInfo[] = []
 
@@ -78,11 +85,17 @@ class UpstreamEditModal extends Vue {
         return this.hashOnOptions.find(item => item.value === this.formData.hash_on) || this.hashOnOptions[0]
     }
 
+    get advancedSummary() {
+        const f = this.formData
+        return upstreamAdvancedSummary(f.scheme, f.pass_host, f.upstream_host, [f.timeout_connect, f.timeout_send, f.timeout_read].some(v => Number(v) > 0)).join(' · ')
+    }
+
     resetForm() {
         this.formData = defaultFormData()
     }
 
     async show(upstream: ApisixUpstream | null = null) {
+        this.showAdvanced = false
         await this.loadContainers()
         if (upstream) {
             const upstreamType = normalizeUpstreamType(upstream.type)
@@ -93,6 +106,8 @@ class UpstreamEditModal extends Vue {
                 desc: upstream.desc || '',
                 type: upstreamType,
                 scheme: normalizeUpstreamScheme(upstream.scheme),
+                pass_host: upstream.pass_host || 'pass',
+                upstream_host: upstream.upstream_host || '',
                 hash_on: upstream.hash_on || 'vars',
                 key: upstream.key || (upstreamType === 'chash' ? 'remote_addr' : ''),
                 nodes: normalizeUpstreamFormNodes(upstream),
@@ -153,8 +168,11 @@ class UpstreamEditModal extends Vue {
             desc: this.formData.desc.trim(),
             type: this.formData.type,
             scheme: this.formData.scheme,
+            pass_host: this.formData.pass_host,
             nodes
         }
+
+        if (this.formData.pass_host === 'rewrite') payload.upstream_host = this.formData.upstream_host.trim()
 
         const connect = Number(this.formData.timeout_connect) || 0
         const send = Number(this.formData.timeout_send) || 0
@@ -174,6 +192,13 @@ class UpstreamEditModal extends Vue {
     async handleConfirm() {
         if (!this.formData.name.trim()) {
             this.portal.showNotification('error', this.$t('上游名称不能为空'))
+            return
+        }
+        const message = upstreamHostError(this.formData.pass_host, this.formData.upstream_host)
+        if (message) {
+            this.showAdvanced = true
+            this.$nextTick(() => this.upstreamHostRef?.focusHost())
+            this.portal.showNotification('error', message)
             return
         }
         const payload = this.buildPayload()
@@ -204,7 +229,7 @@ export default toNative(UpstreamEditModal)
 <template>
   <BaseModal v-model="isOpen" :title="isEditMode ? $t('编辑上游') : $t('创建上游')" :loading="modalLoading" confirm-class="btn-emerald" @confirm="handleConfirm">
     <div class="space-y-4 p-1">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="form-label">{{ $t('名称') }} <span class="text-red-500">*</span></label>
           <input v-model="formData.name" type="text" class="input" :placeholder="$t('请输入上游名称')" />
@@ -215,12 +240,6 @@ export default toNative(UpstreamEditModal)
             <option v-for="item in upstreamTypeOptions" :key="item.value" :value="item.value">{{ $t(item.label) }} - {{ $t(item.desc) }}</option>
           </select>
         </div>
-        <div>
-          <label class="form-label">{{ $t('回源协议') }}</label>
-          <select v-model="formData.scheme" class="input">
-            <option v-for="item in schemeOptions" :key="item.value" :value="item.value">{{ $t(item.label) }} - {{ $t(item.desc) }}</option>
-          </select>
-        </div>
       </div>
 
       <div>
@@ -228,15 +247,6 @@ export default toNative(UpstreamEditModal)
         <textarea v-model="formData.desc" rows="2" class="input" :placeholder="$t('请输入上游描述（可选）')"></textarea>
       </div>
 
-      <div>
-        <label class="form-label">{{ $t('超时时间（秒）') }}</label>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-          <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" :placeholder="$t('请输入连接超时（可选）')" />
-          <input v-model.number="formData.timeout_send" type="number" min="0" class="input" :placeholder="$t('请输入发送超时（可选）')" />
-          <input v-model.number="formData.timeout_read" type="number" min="0" class="input" :placeholder="$t('请输入读取超时（可选）')" />
-        </div>
-        <p class="text-xs text-slate-400 mt-1">{{ $t('留空或 0 表示使用 APISIX 默认超时（单位：秒）。') }}</p>
-      </div>
 
       <div v-if="formData.type === 'chash'" class="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4">
         <div>
@@ -288,6 +298,31 @@ export default toNative(UpstreamEditModal)
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+      <div class="border-t border-slate-200 pt-4">
+        <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" :aria-expanded="showAdvanced" @click="showAdvanced = !showAdvanced">
+          <i :class="['fas fa-chevron-down text-xs transition-transform', showAdvanced ? 'rotate-180' : '']" aria-hidden="true"></i>
+          {{ $t('高级选项') }}
+        </button>
+        <p v-if="!showAdvanced && advancedSummary" class="text-xs text-slate-400 mt-1 break-all">{{ advancedSummary }}</p>
+        <div v-if="showAdvanced" class="mt-4 space-y-4">
+          <div>
+            <label class="form-label">{{ $t('回源协议') }}</label>
+            <select v-model="formData.scheme" class="input">
+              <option v-for="item in schemeOptions" :key="item.value" :value="item.value">{{ $t(item.label) }} - {{ $t(item.desc) }}</option>
+            </select>
+          </div>
+          <UpstreamHostFields ref="upstreamHostRef" v-model:pass-host="formData.pass_host" v-model:upstream-host="formData.upstream_host" />
+          <div>
+            <label class="form-label">{{ $t('超时时间（秒）') }}</label>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" :placeholder="$t('请输入连接超时（可选）')" />
+              <input v-model.number="formData.timeout_send" type="number" min="0" class="input" :placeholder="$t('请输入发送超时（可选）')" />
+              <input v-model.number="formData.timeout_read" type="number" min="0" class="input" :placeholder="$t('请输入读取超时（可选）')" />
+            </div>
+            <p class="text-xs text-slate-400 mt-1">{{ $t('留空或 0 表示使用 APISIX 默认超时（单位：秒）。') }}</p>
           </div>
         </div>
       </div>

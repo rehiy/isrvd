@@ -8,6 +8,8 @@ export type ApisixUpstreamType = 'roundrobin' | 'chash' | 'ewma' | 'least_conn'
 
 export type ApisixUpstreamScheme = 'http' | 'https'
 
+export type ApisixUpstreamPassHost = 'pass' | 'node' | 'rewrite'
+
 export type ApisixUpstreamHashOn = 'vars' | 'header' | 'cookie' | 'consumer' | 'vars_combinations'
 
 export interface ApisixUpstreamNode {
@@ -22,6 +24,8 @@ export interface ApisixUpstreamConfig {
     hash_on?: ApisixUpstreamHashOn
     key?: string
     scheme?: ApisixUpstreamScheme | string
+    pass_host?: ApisixUpstreamPassHost
+    upstream_host?: string
     timeout?: ApisixRouteTimeout
     [key: string]: unknown
 }
@@ -116,7 +120,7 @@ export interface ApisixUpstream {
     hash_on?: ApisixUpstreamHashOn
     key?: string
     scheme?: string
-    pass_host?: string
+    pass_host?: ApisixUpstreamPassHost
     upstream_host?: string
     retries?: number
     retry_timeout?: number

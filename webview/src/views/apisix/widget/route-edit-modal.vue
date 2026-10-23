@@ -13,6 +13,7 @@ import type {
     ApisixUpstream,
     ApisixUpstreamConfig,
     ApisixUpstreamScheme,
+    ApisixUpstreamPassHost,
     DockerContainerInfo
 } from '@/service/types'
 
@@ -20,7 +21,9 @@ import {
     buildRoutePayload,
     detectRouteUpstreamMode,
     normalizeUpstreamFormNodes,
-    normalizeUpstreamScheme
+    normalizeUpstreamScheme,
+    upstreamAdvancedSummary,
+    upstreamHostError
 } from '@/helper/apisix'
 
 import BaseModal from '@/component/modal.vue'
@@ -30,6 +33,7 @@ import ContainerPortSelect from '@/views/docker/widget/container-port-select.vue
 import ContainerSelect from '@/views/docker/widget/container-select.vue'
 
 import PluginConfigPanel from './plugin-config-panel.vue'
+import UpstreamHostFields from './upstream-host-fields.vue'
 
 // ─── 模块级静态常量 ───
 
@@ -60,6 +64,8 @@ const defaultFormData = () => ({
     upstream_id: '',
     upstream_nodes: [{ host: '', port: '', weight: 1 }] as ApisixRouteUpstreamFormNode[],
     upstream_scheme: 'http' as ApisixUpstreamScheme,
+    upstream_pass_host: 'pass' as ApisixUpstreamPassHost,
+    upstream_host: '',
     timeout_connect: '' as string | number,
     timeout_send: '' as string | number,
     timeout_read: '' as string | number,
@@ -67,7 +73,7 @@ const defaultFormData = () => ({
 
 @Component({
     expose: ['show'],
-    components: { BaseModal, ContainerPortSelect, ContainerSelect, PluginConfigPanel, ToggleCard },
+    components: { BaseModal, ContainerPortSelect, ContainerSelect, PluginConfigPanel, ToggleCard, UpstreamHostFields },
     emits: ['success']
 })
 class RouteEditModal extends Vue {
@@ -77,9 +83,10 @@ class RouteEditModal extends Vue {
     isOpen = false
     modalLoading = false
     isEditMode = false
+    showAdvanced = false
     editingRouteId = ''
     originalUpstream: ApisixUpstreamConfig | null = null
-    declare $refs: { pluginPanel: InstanceType<typeof PluginConfigPanel> }
+    declare $refs: { pluginPanel: InstanceType<typeof PluginConfigPanel>; upstreamHost: InstanceType<typeof UpstreamHostFields> }
 
     pluginConfigs: ApisixPluginConfig[] = []
     upstreams: ApisixUpstream[] = []
@@ -110,6 +117,15 @@ class RouteEditModal extends Vue {
         if (hasPort && !/^\d+$/.test(String(node.port).trim())) return this.$t('上游端口必须为数字')
 
         return ''
+    }
+
+    get advancedSummary() {
+        const f = this.formData
+        const items = f.upstream_mode === 'nodes'
+            ? upstreamAdvancedSummary(f.upstream_scheme, f.upstream_pass_host, f.upstream_host, [f.timeout_connect, f.timeout_send, f.timeout_read].some(v => Number(v) > 0))
+            : []
+        if (f.enable_websocket) items.unshift(this.$t('WebSocket 代理'))
+        return items.join(' · ')
     }
 
     // ─── 模式卡片样式 ───
@@ -148,6 +164,7 @@ class RouteEditModal extends Vue {
         Object.assign(this.formData, defaultFormData())
         this.editingRouteId = ''
         this.originalUpstream = null
+        this.showAdvanced = false
     }
 
     createUpstreamNode(): ApisixRouteUpstreamFormNode {
@@ -230,6 +247,8 @@ class RouteEditModal extends Vue {
                     upstream_id: r.upstream_id || '',
                     upstream_nodes: normalizeUpstreamFormNodes(r.upstream).slice(0, 1),
                     upstream_scheme: normalizeUpstreamScheme(r.upstream?.scheme),
+                    upstream_pass_host: r.upstream?.pass_host || 'pass',
+                    upstream_host: r.upstream?.upstream_host || '',
                     timeout_connect: r.upstream?.timeout?.connect ?? '',
                     timeout_send: r.upstream?.timeout?.send ?? '',
                     timeout_read: r.upstream?.timeout?.read ?? '',
@@ -255,6 +274,15 @@ class RouteEditModal extends Vue {
         if (!this.formData.uris.split('\n').map(s => s.trim()).filter(Boolean).length) return this.portal.showNotification('error', this.$t('URI 不能为空'))
         if (this.$refs.pluginPanel?.pluginsJsonError) return this.portal.showNotification('error', this.$t('请修正 Plugin JSON 格式错误'))
         if (this.routeValidationMessage) return this.portal.showNotification('error', this.routeValidationMessage)
+
+        if (this.formData.upstream_mode === 'nodes') {
+            const message = upstreamHostError(this.formData.upstream_pass_host, this.formData.upstream_host)
+            if (message) {
+                this.showAdvanced = true
+                this.$nextTick(() => this.$refs.upstreamHost?.focusHost())
+                return this.portal.showNotification('error', message)
+            }
+        }
 
         this.modalLoading = true
         try {
@@ -305,8 +333,6 @@ export default toNative(RouteEditModal)
         <p class="text-xs text-slate-400 mt-1">{{ $t('例如：example.com 或 *.example.com') }}</p>
       </div>
 
-      <ToggleCard v-model="formData.enable_websocket" :label="$t('WebSocket 代理')" :desc="$t('启用后支持 WebSocket 协议升级（ws:// / wss://）')" />
-
       <div class="border border-slate-200 rounded-xl p-4">
         <div class="flex items-center justify-between mb-3">
           <div>
@@ -337,17 +363,6 @@ export default toNative(RouteEditModal)
             <p class="text-xs text-slate-400 mt-1">{{ $t('直接输入模式仅提交一个上游节点；如需多节点负载均衡，请先在「上游管理」中创建后再引用。') }}</p>
           </div>
 
-          <ToggleCard :model-value="formData.upstream_scheme === 'https'" :label="$t('HTTPS 回源')" :desc="$t('启用后以 HTTPS 协议转发到该上游节点（默认 HTTP）')" @update:model-value="formData.upstream_scheme = $event ? 'https' : 'http'" />
-
-          <div>
-            <label class="form-label">{{ $t('超时时间（秒）') }}</label>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-              <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" :placeholder="$t('请输入连接超时（可选）')" />
-              <input v-model.number="formData.timeout_send" type="number" min="0" class="input" :placeholder="$t('请输入发送超时（可选）')" />
-              <input v-model.number="formData.timeout_read" type="number" min="0" class="input" :placeholder="$t('请输入读取超时（可选）')" />
-            </div>
-            <p class="text-xs text-slate-400 mt-1">{{ $t('留空或 0 表示使用 APISIX 默认超时（单位：秒）。') }}</p>
-          </div>
           <div v-if="routeValidationMessage" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{{ routeValidationMessage }}</div>
         </div>
 
@@ -357,10 +372,36 @@ export default toNative(RouteEditModal)
               <option value="">{{ $t('请选择已有上游') }}</option>
               <option v-for="upstream in upstreams" :key="upstream.id" :value="upstream.id">{{ upstreamOptionLabel(upstream) }}</option>
             </select>
+            <p class="text-xs text-slate-400 mt-1">{{ $t('回源协议、Host 传递和超时由引用的上游对象管理。') }}</p>
           </div>
           <div v-if="routeValidationMessage" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{{ routeValidationMessage }}</div>
         </div>
         <div v-else class="text-sm text-slate-500 leading-6">{{ $t('当前保存只会提交路由匹配规则、状态和插件配置，不会附带内联节点，也不会引用已有上游。') }}</div>
+      </div>
+      <div class="border-t border-slate-200 pt-4">
+        <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" :aria-expanded="showAdvanced" @click="showAdvanced = !showAdvanced">
+          <i :class="['fas fa-chevron-down text-xs transition-transform', showAdvanced ? 'rotate-180' : '']" aria-hidden="true"></i>
+          {{ $t('高级选项') }}
+        </button>
+        <p v-if="!showAdvanced && advancedSummary" class="text-xs text-slate-400 mt-1 break-all">{{ advancedSummary }}</p>
+        <div v-if="showAdvanced" class="mt-4 space-y-4">
+          <ToggleCard v-model="formData.enable_websocket" :label="$t('WebSocket 代理')" :desc="$t('启用后支持 WebSocket 协议升级（ws:// / wss://）')" />
+          <template v-if="formData.upstream_mode === 'nodes'">
+            <ToggleCard :model-value="formData.upstream_scheme === 'https'" :label="$t('HTTPS 回源')" :desc="$t('启用后以 HTTPS 协议转发到该上游节点（默认 HTTP）')" @update:model-value="formData.upstream_scheme = $event ? 'https' : 'http'" />
+
+            <UpstreamHostFields ref="upstreamHost" v-model:pass-host="formData.upstream_pass_host" v-model:upstream-host="formData.upstream_host" />
+
+            <div>
+              <label class="form-label">{{ $t('超时时间（秒）') }}</label>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" :placeholder="$t('请输入连接超时（可选）')" />
+                <input v-model.number="formData.timeout_send" type="number" min="0" class="input" :placeholder="$t('请输入发送超时（可选）')" />
+                <input v-model.number="formData.timeout_read" type="number" min="0" class="input" :placeholder="$t('请输入读取超时（可选）')" />
+              </div>
+              <p class="text-xs text-slate-400 mt-1">{{ $t('留空或 0 表示使用 APISIX 默认超时（单位：秒）。') }}</p>
+            </div>
+          </template>
+        </div>
       </div>
       <div class="border border-slate-200 rounded-xl p-4">
         <div class="mb-3">
