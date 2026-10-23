@@ -22,6 +22,11 @@ export default toNative(ConfigService)
       </div>
     </div>
     <div>
+      <label class="form-label">{{ $t('浏览器标签页标题') }}</label>
+      <input v-model="config.draft.server.title" type="text" :placeholder="$t('例如：内网机器、外部机器')" class="input" />
+      <p class="mt-1 text-xs text-slate-400">{{ $t('仅登录后显示，并自动追加当前页面名称；留空使用 iSrvd。') }}</p>
+    </div>
+    <div>
       <label class="form-label">{{ $t('监听地址') }}</label>
       <input v-model="config.draft.server.listenAddr" type="text" :placeholder="$t('请输入监听地址')" class="input" />
       <p class="mt-1 text-xs text-slate-400">{{ $t('HTTP 服务监听地址，如 :8080 或 127.0.0.1:8080（重启生效）') }}</p>

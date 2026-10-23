@@ -35,9 +35,7 @@ export const usePortalStore = defineStore('portal', () => {
 
     function applyBootstrap(data: BootstrapData) {
         authStore.apply(data)
-        if (data.probe || data.config) {
-            systemStore.apply(data)
-        }
+        systemStore.apply(data)
         systemStore.initialized = true
     }
 
@@ -89,6 +87,7 @@ export const usePortalStore = defineStore('portal', () => {
 
     function clearAuth() {
         authStore.clearAuth()
+        systemStore.title = ''
         useConfigStore().reset()
         nodeStore.reset()
     }
@@ -138,6 +137,7 @@ export const usePortalStore = defineStore('portal', () => {
 
         // System Store 状态（响应式）
         initialized: systemRefs.initialized,
+        title: systemRefs.title,
         serviceAvailability: systemRefs.serviceAvailability,
         toolbarLinks: systemRefs.toolbarLinks,
         marketplaceUrl: systemRefs.marketplaceUrl,

@@ -21,6 +21,26 @@ const messages: Record<string, string> = {
     '深色模式': '深色模式',
     '跟随系统': '跟隨系統',
 
+    // ─── 浏览器标题 ───
+    '浏览器标签页标题': '瀏覽器標籤頁標題',
+    '例如：内网机器、外部机器': '例如：內網機器、外部機器',
+    '仅登录后显示，并自动追加当前页面名称；留空使用 iSrvd。': '僅登錄後顯示，並自動追加當前頁面名稱；留空使用 iSrvd。',
+    'SSH 客户端': 'SSH 客戶端',
+    'APISIX 路由': 'APISIX 路由',
+    'APISIX 上游': 'APISIX 上游',
+    'APISIX 插件配置': 'APISIX 插件配置',
+    'APISIX SSL 证书': 'APISIX SSL 證書',
+    'APISIX 消费者': 'APISIX 消費者',
+    'Caddy 服务': 'Caddy 服務',
+    'Caddy 路由': 'Caddy 路由',
+    'Caddy SSL 证书': 'Caddy SSL 證書',
+    '容器详情': '容器詳情',
+    '容器监控': '容器監控',
+    'Swarm 节点': 'Swarm 節點',
+    'Swarm 节点详情': 'Swarm 節點詳情',
+    'Swarm 服务详情': 'Swarm 服務詳情',
+    'Swarm 任务': 'Swarm 任務',
+
     // ─── 侧边导航 ───
     '概览': '概覽',
     '本机管理': '本機管理',

@@ -29,6 +29,7 @@ type SchemaConfig struct {
 
 // 服务器配置
 type ServerConfig struct {
+	Title          string   `yaml:"title,omitempty" json:"title"`         // 浏览器标签页标题，仅登录后展示；留空使用 iSrvd
 	ListenAddr     string   `yaml:"listenAddr" json:"listenAddr"`         // 监听地址（如 :8080）
 	RootDirectory  string   `yaml:"rootDirectory" json:"rootDirectory"`   // 根目录路径
 	MaxUploadSize  int64    `yaml:"maxUploadSize" json:"maxUploadSize"`   // 文件上传最大大小（字节），默认 100MB

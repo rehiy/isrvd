@@ -26,6 +26,7 @@ func (app *App) defineOverviewRoutes() []Route {
 
 // BootstrapConfig 启动所需的最小系统配置
 type BootstrapConfig struct {
+	Title          string               `json:"title"`
 	MaxUploadSize  int64                `json:"maxUploadSize"`
 	MarketplaceURL string               `json:"marketplaceUrl"`
 	OpenAPIEnabled bool                 `json:"openapiEnabled"`
@@ -51,6 +52,7 @@ func (app *App) overviewBootstrap(c *gin.Context) {
 	if username != "" {
 		snapshot := config.Current()
 		resp.Config = &BootstrapConfig{
+			Title:          snapshot.Server.Title,
 			MaxUploadSize:  snapshot.Server.MaxUploadSize,
 			MarketplaceURL: snapshot.Marketplace.URL,
 			OpenAPIEnabled: snapshot.Server.OpenAPI,

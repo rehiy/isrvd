@@ -48,7 +48,7 @@ etcd 空字符串值视为已存在，不触发 fallback。使用 libgo v0.21.0 
 | 配置段 | 说明 |
 | -------- | ------ |
 | `schema` | 配置结构版本，用于格式转换 |
-| `server` | 监听地址、数据根目录、上传限制、CORS、JWT 密钥/有效期、OpenAPI 开关和调试模式 |
+| `server` | 浏览器标签页标题、监听地址、数据根目录、上传限制、CORS、JWT 密钥/有效期、OpenAPI 开关和调试模式 |
 | `password` | 密码登录开关与最小密码长度 |
 | `tha` | 代理认证头登录（enabled / headerName / trustedCIDRs；trustedCIDRs 为空时默认填充本机回环地址） |
 | `oidc` | OIDC 认证（enabled / issuerUrl / clientId / clientSecret / redirectUrl / usernameClaim / scopes / loginLabel） |
@@ -121,7 +121,7 @@ isrvd_get "/system/config"
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| server | object | `{listenAddr, rootDirectory, maxUploadSize, allowedOrigins, jwtExpiration, debug, openapi}`（jwtSecret 不返回；`openapi` 默认 false） |
+| server | object | `{title, listenAddr, rootDirectory, maxUploadSize, allowedOrigins, jwtExpiration, debug, openapi}`（jwtSecret 不返回；`openapi` 默认 false） |
 | password | object | `{disabled, minLength}`（密码登录配置；`minLength` 默认 6） |
 | passkey | object | `{enabled, rpName, rpId, rpOrigins, timeout}` |
 | oidc | object | `{enabled, issuerUrl, clientId, redirectUrl, usernameClaim, scopes, loginLabel}`（clientSecret 不返回） |
@@ -169,6 +169,20 @@ isrvd_put "/system/config" '<CURRENT_CONFIG_WITH_CHANGES>'
 - 代理 Header 登录的 `tha.headerName` 默认 `X-Username`；该 Header 的值会作为登录用户名，且必须存在于 `members.username`。`tha.trustedCIDRs` 限制允许传入 Header 的代理来源 IP/CIDR（如 `["10.0.0.0/8"]`）；未配置时默认为本机回环地址（`127.0.0.1/32`、`::1/128`），代理不在本机时需显式配置。
 - `monitor.interval` 合法值为 `5/15/30/60`（秒），其他值（含 `0`、负数）均视为禁用自动采集；保存后自动重载生效；禁用会停止资源阈值告警，不影响独立的应用故障检测。
 - `notify.webhooks` 的每项包含 `name`、`url`、`template`；`template` 留空时由后端生成标准事件 JSON，Web 管理界面会显示其结构预览。管理界面也可套用钉钉、飞书、企业微信、Slack、Discord、Microsoft Teams、Google Chat 和 Telegram Bot 请求体预设；选择预设后仍可编辑模板，Telegram Bot 的 `CHAT_ID` 占位符需替换为实际值。JSON 模板可使用 `json` 函数安全编码动态字段，例如 `{{.Title | json}}`（函数输出已包含 JSON 引号）。`notify.rules` 的每项包含 `metric`（`cpu`、`memory` 或 `disk`）、`threshold` 和 `duration`。Webhook 地址视为管理员可信配置，仅校验格式（必须为带主机名的 `http/https` 地址），不限制内网或回环目标，会跟随重定向，单次请求超时 10 秒。
+
+## 浏览器标签页标题
+
+在“系统配置 → 基础服务”设置 `server.title`，例如“内网机器”或“外部机器”。去除首尾空白后保存，留空使用 `iSrvd`。配置随 YAML／etcd 持久化，适用于访问该实例的所有用户。
+
+登录后按“实例标题 · 当前页面名称”显示，例如 `内网机器 · 容器`、`外部机器 · SSH 客户端`。页面名称随导航及界面语言更新，配置的实例标题保持原文。集中管理的节点视角沿用中控标题。
+
+**登录页始终显示 `iSrvd`**，未登录的启动接口不返回自定义标题；退出登录或登录失效后恢复为 `iSrvd`。保存配置后当前页面更新，其他已打开页面刷新后更新。
+
+```bash
+# 保留 server 分区中的其他配置，只修改标题（需 jq）
+server_config=$(isrvd_get "/system/config" | jq -c '.server | .title = "内网机器" | {server: .}')
+isrvd_put "/system/config" "$server_config"
+```
 
 ## 应用故障告警
 
