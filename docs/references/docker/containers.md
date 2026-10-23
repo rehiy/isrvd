@@ -188,6 +188,8 @@ isrvd_get "/docker/container/<CONTAINER_ID>/stats"
 
 ## 容器终端
 
+浏览器终端的复制、粘贴与中断快捷键见 [Shell 终端说明](../shell.md#浏览器复制与粘贴)。
+
 WebSocket 连接，不通过 harness 调用：
 
 ```bash

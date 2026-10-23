@@ -40,6 +40,17 @@ export class WsTerminal implements TerminalAdapter {
             cursorBlink: true,
             theme: { background: '#0f172a' }
         })
+        const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform)
+        term.attachCustomKeyEventHandler(event => {
+            if (isMac || !event.ctrlKey || event.altKey || event.metaKey || event.shiftKey || event.isComposing) return true
+
+            const key = event.key.toLowerCase()
+            // 仅跳过 xterm 按键处理，不阻止浏览器触发原生 copy/paste 事件。
+            if (key === 'v') return false
+            // 无选区时保留 Ctrl+C 的中断语义；复制后保留选区，避免长按误中断。
+            if (key === 'c' && term.hasSelection()) return false
+            return true
+        })
         term.loadAddon(fitAddon)
         term.open(el)
         fitAddon.fit()
