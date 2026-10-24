@@ -34,6 +34,42 @@ const messages: Record<string, string> = {
     '深色模式': 'ダークモード',
     // Follow system
     '跟随系统': 'システムに合わせる',
+    // Browser tab title
+    '浏览器标签页标题': 'ブラウザのタブタイトル',
+    // Example: Internal server, External server
+    '例如：内网机器、外部机器': '例：社内サーバー、外部サーバー',
+    // Shown only after signing in, followed by the current page name. Leave blank to use iSrvd.
+    '仅登录后显示，并自动追加当前页面名称；留空使用 iSrvd。': 'ログイン後のみ表示され、現在のページ名が自動的に追加されます。空欄の場合は iSrvd を使用します。',
+    // SSH Client
+    'SSH 客户端': 'SSH クライアント',
+    // APISIX Routes
+    'APISIX 路由': 'APISIX ルート',
+    // APISIX Upstreams
+    'APISIX 上游': 'APISIX アップストリーム',
+    // APISIX Plugin Configs
+    'APISIX 插件配置': 'APISIX プラグイン設定',
+    // APISIX SSL Certificates
+    'APISIX SSL 证书': 'APISIX SSL 証明書',
+    // APISIX Consumers
+    'APISIX 消费者': 'APISIX コンシューマー',
+    // Caddy Servers
+    'Caddy 服务': 'Caddy サーバー',
+    // Caddy Routes
+    'Caddy 路由': 'Caddy ルート',
+    // Caddy SSL Certificates
+    'Caddy SSL 证书': 'Caddy SSL 証明書',
+    // Container Details
+    '容器详情': 'コンテナ詳細',
+    // Container Monitoring
+    '容器监控': 'コンテナ監視',
+    // Swarm Nodes
+    'Swarm 节点': 'Swarm ノード',
+    // Swarm Node Details
+    'Swarm 节点详情': 'Swarm ノード詳細',
+    // Swarm Service Details
+    'Swarm 服务详情': 'Swarm サービス詳細',
+    // Swarm Tasks
+    'Swarm 任务': 'Swarm タスク',
     // Overview
     '概览': '概要',
     // Local
@@ -118,6 +154,30 @@ const messages: Record<string, string> = {
     '快捷链接': 'クイックリンク',
     // No quick links
     '无快捷链接': 'クイックリンクはありません',
+    // Enter the upstream Host to use
+    '请填写指定的上游 Host': '指定するアップストリーム Host を入力してください',
+    // Use node Host
+    '使用节点 Host': 'ノードの Host を使用',
+    // Host override: {0}
+    '指定 Host：{0}': 'Host 指定：{0}',
+    // Not set
+    '未填写': '未入力',
+    // Custom timeouts
+    '自定义超时': 'カスタムタイムアウト',
+    // Host forwarding
+    'Host 传递方式': 'Host の転送方式',
+    // Pass client Host (default)
+    '透传客户端 Host（默认）': 'クライアントの Host をそのまま転送（デフォルト）',
+    // Override upstream Host
+    '指定上游 Host': 'アップストリーム Host を指定',
+    // Controls the Host header sent to the backend, independently of route Host matching.
+    '控制转发到后端的 Host 请求头，与路由的 Host 匹配条件无关。': 'バックエンドへ転送する Host ヘッダーを制御します。ルートの Host マッチ条件とは無関係です。',
+    // Upstream Host
+    '上游 Host': 'アップストリーム Host',
+    // Example: backend.example.com
+    '例如：backend.example.com': '例：backend.example.com',
+    // The referenced upstream controls the protocol, Host forwarding, and timeouts.
+    '回源协议、Host 传递和超时由引用的上游对象管理。': 'オリジンへのプロトコル、Host の転送、タイムアウトは参照先のアップストリームで管理されます。',
     // Services
     '基础服务': 'サービス',
     // Authentication
@@ -268,6 +328,22 @@ const messages: Record<string, string> = {
     '你好，我能帮你做什么？': 'こんにちは。何をお手伝いしましょうか？',
     // Failed to look up the API docs
     '查阅 API 文档失败': 'API ドキュメントの参照に失敗しました',
+    // Activity
+    '执行过程': '実行の経過',
+    // {0} tool calls
+    '{0} 次工具调用': 'ツール呼び出し {0} 回',
+    // {0} updates
+    '{0} 条进度': '進捗 {0} 件',
+    // In progress
+    '进行中': '進行中',
+    // Includes failed or cancelled actions
+    '含失败或取消记录': '失敗またはキャンセルを含む',
+    // Finished
+    '已结束': '終了',
+    // Looking up API documentation
+    '查阅接口文档': 'API ドキュメントを参照中',
+    // Reading query results
+    '读取查询结果': 'クエリ結果を読み取り中',
     // Waiting for confirmation
     '等待确认': '確認を待っています',
     // Preparing operation
