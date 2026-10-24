@@ -75,7 +75,8 @@ func (g *gateway) clientIP(r *http.Request) string {
 	return r.RemoteAddr
 }
 
-// statusRecorder 记录响应状态码，同时保持 Flush、Hijack（WebSocket 升级）可用
+// statusRecorder 记录响应状态码；Hijack（WebSocket 升级）由它接管以记录 101，
+// 其余能力（如 Flush）经 Unwrap 交给 http.ResponseController 透传。
 type statusRecorder struct {
 	http.ResponseWriter
 	status int
