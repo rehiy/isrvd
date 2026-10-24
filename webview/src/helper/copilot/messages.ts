@@ -44,7 +44,7 @@ export function toolMessageResults(messages: Message[]): Map<string, ToolMessage
 }
 
 export function toolResultFailed(message: ToolMessage | undefined): boolean {
-    if (!message) return false
+    if (!message || typeof message.content !== 'string') return false
     try {
         return JSON.parse(message.content)?.success === false
     } catch {

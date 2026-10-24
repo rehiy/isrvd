@@ -198,15 +198,15 @@ function formatValue(value: unknown): string {
         :aria-controls="bodyID"
         @click="toggleExpanded"
       >
-        <div class="inline-info min-w-0 flex-1">
-          <div class="card-icon" :class="approval && status === 'executing' ? 'bg-amber-100 text-amber-600' : 'bg-primary-100 text-primary-600'">
+        <span class="inline-info min-w-0 flex-1">
+          <span class="card-icon" :class="approval && status === 'executing' ? 'bg-amber-100 text-amber-600' : 'bg-primary-100 text-primary-600'">
             <i class="fas" :class="approval && status === 'executing' ? 'fa-shield-halved' : 'fa-terminal'"></i>
-          </div>
-          <div class="min-w-0">
+          </span>
+          <span class="min-w-0 block">
             <span class="item-title-sm">{{ cardTitle }}</span>
             <code class="item-subtitle-mono">{{ path || props.args.callRef || $t('等待调用引用') }}</code>
-          </div>
-        </div>
+          </span>
+        </span>
         <span v-if="method" class="badge-sm flex-shrink-0" :class="methodClass">{{ method }}</span>
         <i v-if="status === 'complete'" class="fas flex-shrink-0 text-xs text-slate-400" :class="expanded ? 'fa-chevron-up' : 'fa-chevron-down'" aria-hidden="true"></i>
       </button>
