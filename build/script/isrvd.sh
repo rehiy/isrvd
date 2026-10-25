@@ -1,9 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-# 清理临时下载文件（若存在）
-trap 'rm -f "${DOWNLOAD_TMP_FILE:-}" >/dev/null 2>&1 || true' EXIT
-
 # ------------------------------------------
 # isrvd 服务管理脚本
 # 用法:
@@ -14,7 +11,6 @@ trap 'rm -f "${DOWNLOAD_TMP_FILE:-}" >/dev/null 2>&1 || true' EXIT
 # iSrvd 源: 默认按 IP country_code 自动选择；可用 --cn/--global 手动指定
 # ------------------------------------------
 
-# 配置
 SERVICE_NAME="isrvd"
 INSTALL_DIR="/usr/local/isrvd"
 CONFIG_FILE="$INSTALL_DIR/config.yml"
@@ -24,22 +20,47 @@ ROLE_DIR="/etc/systemd/system/${SERVICE_NAME}.service.d"
 ROLE_FILE="$ROLE_DIR/installer.conf"
 DOCKER_NETWORK="sdnet"
 DOCKER_DATA_DIR="/srv/data"
+
 SERVICE_AREA="auto"
-DOCKER_IMAGE=""
 DOCKER_VARIANT=""
+DOCKER_IMAGE=""
 DEPLOYMENT_ENV=()
+DEPLOYMENT_MODE=""
+DOWNLOAD_TMP_FILE=""
+RELEASE_AREA=""
+RELEASE_COUNTRY=""
+RELEASE_SOURCE=""
+RELEASE_URL=""
+ARCH=""
+
+trap '[ -z "$DOWNLOAD_TMP_FILE" ] || rm -f "$DOWNLOAD_TMP_FILE"' EXIT
 
 # ------------------------------------------
-# 版本信息
+# 通用
 # ------------------------------------------
 
-get_arch() {
+fail() {
+    echo "[error] $*" >&2
+    exit 1
+}
+
+container_exists() {
+    docker container inspect "$1" >/dev/null 2>&1
+}
+
+has_docker() {
+    command -v docker >/dev/null 2>&1
+}
+
+init_arch() {
+    local machine
     case "$(uname -m)" in
-        x86_64|amd64) echo "amd64" ;;
-        aarch64|arm64) echo "arm64" ;;
-        armv7l|armhf) echo "arm" ;;
-        *) uname -m ;;
+        x86_64|amd64) machine=amd64 ;;
+        aarch64|arm64) machine=arm64 ;;
+        armv7l|armhf) machine=arm ;;
+        *) fail "Unsupported architecture: $(uname -m)" ;;
     esac
+    ARCH="$(uname -s | tr '[:upper:]' '[:lower:]')-$machine"
 }
 
 parse_options() {
@@ -61,75 +82,64 @@ parse_options() {
     done
 }
 
-detect_country_code() {
-    local code
-
-    code=$(curl -fsSL --connect-timeout 2 --max-time 5 -A "isrvd-installer" "https://ipip.rehi.org/country_code" 2>/dev/null) || return 1
-    if [ -z "$code" ]; then
-        return 1
+# 解析发布源（国内 CNB / 全球 GitHub 与 Docker Hub），同一次运行只探测一次。
+resolve_release() {
+    if [ -z "$RELEASE_AREA" ]; then
+        RELEASE_AREA="$SERVICE_AREA"
+        if [ "$RELEASE_AREA" = auto ]; then
+            RELEASE_COUNTRY=$(curl -fsSL --connect-timeout 2 --max-time 5 -A "isrvd-installer" \
+                "https://ipip.rehi.org/country_code" 2>/dev/null | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]') || RELEASE_COUNTRY=""
+            [[ "$RELEASE_COUNTRY" =~ ^[A-Z]{2}$ ]] || RELEASE_COUNTRY=""
+            RELEASE_AREA=global
+            [ "$RELEASE_COUNTRY" != CN ] || RELEASE_AREA=cn
+        fi
     fi
 
-    printf '%s' "$code" | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]'
-}
-
-resolve_release_area() {
-    RELEASE_AREA="$SERVICE_AREA"
-    RELEASE_COUNTRY=""
-    if [ "$RELEASE_AREA" = auto ]; then
-        RELEASE_COUNTRY=$(detect_country_code || true)
-        RELEASE_AREA=global
-        [ "$RELEASE_COUNTRY" != CN ] || RELEASE_AREA=cn
-    fi
-}
-
-setup_release() {
-    resolve_release_area
-
-    if [ "$RELEASE_AREA" = "cn" ]; then
+    if [ "$RELEASE_AREA" = cn ]; then
         RELEASE_URL="https://cnb.cool/rehiy/isrvd/-/releases/latest/download/isrvd-$ARCH.tar.gz"
         RELEASE_SOURCE="CNB"
+        DOCKER_IMAGE="docker.cnb.cool/rehiy/isrvd"
     else
         RELEASE_URL="https://github.com/rehiy/isrvd/releases/latest/download/isrvd-$ARCH.tar.gz"
         RELEASE_SOURCE="GitHub"
+        DOCKER_IMAGE="rehiy/isrvd"
     fi
 }
 
-print_release_info() {
+print_banner() {
     local area="$RELEASE_AREA"
-    [ -n "$RELEASE_COUNTRY" ] && area="$area (country: $RELEASE_COUNTRY)"
+    [ -z "$RELEASE_COUNTRY" ] || area="$area (country: $RELEASE_COUNTRY)"
+    echo "=========================================="
+    echo "  isrvd $1"
     echo "  Arch:    $ARCH"
     echo "  Area:    $area"
     echo "  Source:  $RELEASE_SOURCE"
-    if [ -n "${DOCKER_IMAGE:-}" ]; then
-        echo "  Image:   $DOCKER_IMAGE"
-    fi
+    echo "=========================================="
 }
 
-ARCH=$(uname -s | tr '[:upper:]' '[:lower:]')-$(get_arch)
+download_package() {
+    DOWNLOAD_TMP_FILE=$(mktemp)
+    echo "[info] Downloading: $1"
+    curl -fL --retry 3 --retry-delay 2 --connect-timeout 10 --progress-bar -o "$DOWNLOAD_TMP_FILE" "$1"
+}
 
 # ------------------------------------------
-# systemctl 服务管理
+# 二进制部署（systemd）
 # ------------------------------------------
 
-# 安装时读取当前进程环境；更新时沿用已有服务配置。
+# 安装时读取当前进程环境；更新时沿用已有配置。
 prepare_deployment_env() {
-    DEPLOYMENT_MODE="${ISRVD_MODE:-server}"
-    DEPLOYMENT_MODE="${DEPLOYMENT_MODE,,}"
-    case "$DEPLOYMENT_MODE" in
+    local mode="${ISRVD_MODE:-server}"
+    mode="${mode,,}"
+    case "$mode" in
         server|center) ;;
-        agent)
-            if [ -z "${ISRVD_CENTER_URL:-}" ] || [ -z "${ISRVD_NODE_TOKEN:-}" ]; then
-                echo "[error] Agent mode requires ISRVD_CENTER_URL and ISRVD_NODE_TOKEN" >&2
-                return 1
-            fi
-            ;;
-        *)
-            echo "[error] ISRVD_MODE must be server, center, or agent" >&2
-            return 1
-            ;;
+        agent) [ -n "${ISRVD_CENTER_URL:-}" ] && [ -n "${ISRVD_NODE_TOKEN:-}" ] \
+                   || fail "Agent mode requires ISRVD_CENTER_URL and ISRVD_NODE_TOKEN" ;;
+        *) fail "ISRVD_MODE must be server, center, or agent" ;;
     esac
-    DEPLOYMENT_ENV=("ISRVD_MODE=$DEPLOYMENT_MODE")
-    if [ "$DEPLOYMENT_MODE" = agent ]; then
+    DEPLOYMENT_MODE="$mode"
+    DEPLOYMENT_ENV=("ISRVD_MODE=$mode")
+    if [ "$mode" = agent ]; then
         DEPLOYMENT_ENV+=("ISRVD_CENTER_URL=$ISRVD_CENTER_URL" "ISRVD_NODE_TOKEN=$ISRVD_NODE_TOKEN")
     fi
 }
@@ -145,21 +155,15 @@ systemd_environment() {
     printf 'Environment="%s"\n' "$value"
 }
 
-service_role_install() {
-    mkdir -p "$ROLE_DIR"
-    (
-        umask 077
-        echo '[Service]' > "$ROLE_FILE"
-        local entry
-        for entry in "${DEPLOYMENT_ENV[@]}"; do
-            systemd_environment "$entry" >> "$ROLE_FILE"
-        done
-    )
+get_bin_file() {
+    local bin="$INSTALL_DIR/isrvd-$ARCH"
+    [ -x "$bin" ] || fail "No executable found: $bin"
+    printf '%s' "$bin"
 }
 
 service_install() {
-    local bin_file
-    bin_file=$(get_bin_file) || exit 1
+    local bin_file entry
+    bin_file=$(get_bin_file)
 
     cat > "$SERVICE_FILE" << EOF
 [Unit]
@@ -177,12 +181,8 @@ ExecStart=$bin_file
 ExecReload=/bin/kill -HUP \$MAINPID
 Restart=on-failure
 RestartSec=5s
-
-# 安全加固
 NoNewPrivileges=true
 LimitNOFILE=65536
-
-# 日志
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=isrvd
@@ -190,30 +190,17 @@ SyslogIdentifier=isrvd
 [Install]
 WantedBy=multi-user.target
 EOF
-    echo "[info] Installing systemd service"
-    service_role_install
+
+    mkdir -p "$ROLE_DIR"
+    (
+        umask 077
+        echo '[Service]' > "$ROLE_FILE"
+        for entry in "${DEPLOYMENT_ENV[@]}"; do
+            systemd_environment "$entry" >> "$ROLE_FILE"
+        done
+    )
     systemctl daemon-reload
     systemctl enable "$SERVICE_NAME"
-}
-
-service_uninstall() {
-    if [ ! -f "$SERVICE_FILE" ]; then
-        return
-    fi
-    if systemctl is-enabled --quiet "$SERVICE_NAME" 2>/dev/null; then
-        echo "[info] Disabling ${SERVICE_NAME} service..."
-        systemctl disable "$SERVICE_NAME"
-    fi
-    echo "[info] Removing service file"
-    rm -f "$SERVICE_FILE"
-    rm -f "$ROLE_FILE"
-    rmdir "$ROLE_DIR" 2>/dev/null || true
-    systemctl daemon-reload
-}
-
-service_start() {
-    echo "[info] Starting ${SERVICE_NAME} service..."
-    systemctl start "$SERVICE_NAME"
 }
 
 service_stop() {
@@ -223,144 +210,106 @@ service_stop() {
     fi
 }
 
-# ------------------------------------------
-# 文件管理
-# ------------------------------------------
-
-get_bin_file() {
-    local bin="$INSTALL_DIR/isrvd-$ARCH"
-    [ -x "$bin" ] || fail "No executable found: $bin"
-    printf '%s' "$bin"
+service_start() {
+    echo "[info] Starting ${SERVICE_NAME} service..."
+    systemctl start "$SERVICE_NAME"
 }
 
+# $1=update 时保留已有 config.yml
 files_install() {
     local options=()
-    [ "${1:-install}" != update ] || options+=(--exclude=config.yml)
-    mkdir -p "$INSTALL_DIR" || return 1
+    [ "${1:-}" != update ] || options+=(--exclude=config.yml)
+    mkdir -p "$INSTALL_DIR"
     echo "[info] Extracting to: $INSTALL_DIR"
-    tar xzf "$DOWNLOAD_TMP_FILE" "${options[@]}" -C "$INSTALL_DIR" || return 1
-    local bin_file
-    bin_file=$(get_bin_file) || return 1
-    ln -sf "$bin_file" "$BIN_LINK"
+    tar xzf "$DOWNLOAD_TMP_FILE" "${options[@]+"${options[@]}"}" -C "$INSTALL_DIR" || return 1
+    ln -sf "$(get_bin_file)" "$BIN_LINK"
 }
 
-files_uninstall() {
-    if [ -L "$BIN_LINK" ]; then
-        echo "[info] Removing symlink: $BIN_LINK"
-        rm -f "$BIN_LINK"
+print_binary_info() {
+    cat <<EOF
+  Install: $INSTALL_DIR
+  Binary:  $(get_bin_file)
+  Config:  $CONFIG_FILE
+EOF
+}
+
+install_binary() {
+    [ ! -e "$INSTALL_DIR" ] && [ ! -e "$SERVICE_FILE" ] || fail "Already installed; use update"
+    if [ -e "$ROLE_FILE" ] || [ -L "$ROLE_FILE" ] || [ -e "$ROLE_DIR/role.conf" ] || [ -L "$ROLE_DIR/role.conf" ]; then
+        fail "Existing role configuration found; refusing to overwrite it"
     fi
+    resolve_release
+    print_banner Installer
+    download_package "$RELEASE_URL"
+    files_install
+    service_install
+    service_start
+    echo "[info] Installation complete (mode: $DEPLOYMENT_MODE)"
+    print_binary_info
+    echo "  Manage: systemctl {start|stop|status|edit} $SERVICE_NAME"
+    echo "  Logs:   journalctl -u $SERVICE_NAME -f"
+}
 
-    if [ -d "$INSTALL_DIR" ]; then
-        echo "[info] Removing directory: $INSTALL_DIR"
-        rm -rf "$INSTALL_DIR"
+update_binary() {
+    [ -d "$INSTALL_DIR" ] || fail "Not installed; use install first"
+    resolve_release
+    print_banner Updater
+    # 下载与归档检查在停服之前完成，失败不影响正在运行的服务。
+    download_package "$RELEASE_URL"
+    tar tzf "$DOWNLOAD_TMP_FILE" >/dev/null 2>&1 || fail "Downloaded package is corrupted"
+    service_stop
+    if ! files_install update; then
+        service_start
+        fail "Failed to extract update"
     fi
+    service_start
+    echo "[info] Update complete (configuration preserved)"
+    print_binary_info
 }
 
 # ------------------------------------------
-# 下载
+# Docker 部署
 # ------------------------------------------
-
-download_package() {
-    DOWNLOAD_TMP_FILE=$(mktemp)
-    echo "[info] Downloading: $1"
-    curl -fL --progress-bar -o "$DOWNLOAD_TMP_FILE" "$1"
-}
-
-# ------------------------------------------
-# Docker 版部署
-# ------------------------------------------
-
-install_docker() {
-    if command -v docker >/dev/null 2>&1; then
-        return
-    fi
-    echo "[info] Installing Docker..."
-    download_package https://get.docker.com
-    sh "$DOWNLOAD_TMP_FILE" --mirror Aliyun
-    mkdir -p /etc/docker
-    echo '{"registry-mirrors":["https://docker.1ms.run"]}' > /etc/docker/daemon.json
-    systemctl restart docker
-}
 
 ensure_docker_ready() {
-    install_docker
-
-    if ! docker info >/dev/null 2>&1; then
-        echo "[error] Docker is not running or current environment cannot access Docker"
-        exit 1
+    if ! has_docker; then
+        resolve_release
+        echo "[info] Installing Docker..."
+        download_package https://get.docker.com
+        if [ "$RELEASE_AREA" = cn ]; then
+            sh "$DOWNLOAD_TMP_FILE" --mirror Aliyun
+            mkdir -p /etc/docker
+            echo '{"registry-mirrors":["https://docker.1ms.run"]}' > /etc/docker/daemon.json
+            systemctl restart docker
+        else
+            sh "$DOWNLOAD_TMP_FILE"
+        fi
     fi
+    docker info >/dev/null 2>&1 || fail "Docker is not running or current environment cannot access Docker"
 }
 
-ensure_swarm_ready() {
-    local state
-    local advertise_addr
+ensure_swarm_and_network() {
+    local state addr driver attachable
 
     state=$(docker info --format '{{.Swarm.LocalNodeState}}')
-    if [ "$state" = "active" ]; then
-        echo "[info] Docker Swarm already active"
-        return
-    fi
-    if [ "$state" != "inactive" ]; then
-        echo "[error] Docker Swarm state is $state; cannot initialize automatically"
-        exit 1
-    fi
-
-    advertise_addr=$(ip route get 1.1.1.1 2>/dev/null | awk '{ for (i = 1; i <= NF; i++) if ($i == "src") { print $(i + 1); exit } }') || advertise_addr=""
-    echo "[info] Initializing Docker Swarm..."
-    if [ -n "$advertise_addr" ]; then
-        docker swarm init --advertise-addr "$advertise_addr"
-    else
-        docker swarm init
-    fi
-}
-
-ensure_docker_network() {
-    local driver
-    local attachable
+    case "$state" in
+        active) ;;
+        inactive)
+            addr=$(ip route get 1.1.1.1 2>/dev/null | awk '{ for (i = 1; i <= NF; i++) if ($i == "src") { print $(i + 1); exit } }') || addr=""
+            echo "[info] Initializing Docker Swarm..."
+            docker swarm init ${addr:+--advertise-addr "$addr"}
+            ;;
+        *) fail "Docker Swarm state is $state; cannot initialize automatically" ;;
+    esac
 
     if docker network inspect "$DOCKER_NETWORK" >/dev/null 2>&1; then
         read -r driver attachable <<< "$(docker network inspect --format '{{.Driver}} {{.Attachable}}' "$DOCKER_NETWORK")"
-        if [ "$driver" != "overlay" ] || [ "$attachable" != "true" ]; then
-            echo "[error] Docker network $DOCKER_NETWORK must be an attachable overlay network"
-            exit 1
-        fi
-        echo "[info] Docker network exists: $DOCKER_NETWORK"
-        return
-    fi
-
-    echo "[info] Creating attachable overlay network: $DOCKER_NETWORK"
-    docker network create --driver=overlay --attachable "$DOCKER_NETWORK"
-}
-
-setup_docker_image() {
-    local variant="$1"
-    local repository
-
-    resolve_release_area
-
-    if [ "$RELEASE_AREA" = "cn" ]; then
-        repository="docker.cnb.cool/rehiy/isrvd"
-        RELEASE_SOURCE="CNB Docker"
+        [ "$driver" = overlay ] && [ "$attachable" = true ] \
+            || fail "Docker network $DOCKER_NETWORK must be an attachable overlay network"
     else
-        repository="rehiy/isrvd"
-        RELEASE_SOURCE="Docker Hub"
+        echo "[info] Creating attachable overlay network: $DOCKER_NETWORK"
+        docker network create --driver=overlay --attachable "$DOCKER_NETWORK"
     fi
-    DOCKER_IMAGE="$repository:$variant"
-}
-
-docker_variant_from_image() {
-    local image="$1"
-    local tag="${image##*:}"
-
-    case "$tag" in
-        slim|latest) echo "slim" ;;
-        caddy)       echo "caddy" ;;
-        apisix)      echo "apisix" ;;
-        *)
-            echo "[error] Cannot determine isrvd image variant from: $image" >&2
-            return 1
-            ;;
-    esac
 }
 
 # 读取配置文件 portmap.range 给出的监听端口范围；未配置返回空，格式无效时终止。
@@ -377,29 +326,19 @@ portmap_range() {
 }
 
 run_isrvd_container() {
-    local variant="$1"
-    local image="$2"
-    local ports=()
-    local environment=()
-    local mode="server"
-    local entry
+    local variant="$1" image="$2" mode=server entry range
+    local ports=() environment=()
+
     for entry in "${DEPLOYMENT_ENV[@]}"; do
         environment+=(-e "$entry")
         case "$entry" in ISRVD_MODE=*) mode="${entry#*=}" ;; esac
     done
-    mode="${mode,,}"
-    if [ "$mode" != "agent" ]; then
-        ports+=(-p 8080:8080)
-    fi
-    if [ "$mode" = "center" ]; then
-        # 端口转发的监听范围（配置文件 portmap.range）需要发布到宿主机（TCP 与 UDP）；容器内须同时设置 portmap.bind: 0.0.0.0
-        local range
+    [ "$mode" = agent ] || ports+=(-p 8080:8080)
+    if [ "$mode" = center ]; then
+        # 端口转发监听范围需发布到宿主机（TCP 与 UDP）；容器内须同时设置 portmap.bind: 0.0.0.0
         range=$(portmap_range)
-        if [ -n "$range" ]; then
-            ports+=(-p "$range:$range" -p "$range:$range/udp")
-        fi
+        [ -z "$range" ] || ports+=(-p "$range:$range" -p "$range:$range/udp")
     fi
-
     case "$variant" in
         caddy)  ports+=(-p 80:80 -p 443:443) ;;
         apisix) ports+=(-p 80:9080 -p 443:9443) ;;
@@ -409,21 +348,29 @@ run_isrvd_container() {
         --name "$SERVICE_NAME" \
         --restart unless-stopped \
         --network "$DOCKER_NETWORK" \
-        "${ports[@]}" \
+        "${ports[@]+"${ports[@]}"}" \
         -v "$DOCKER_DATA_DIR:/data" \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "${environment[@]}" \
+        "${environment[@]+"${environment[@]}"}" \
         "$image"
+}
+
+container_started() {
+    sleep 3
+    [ "$(docker inspect --format '{{.State.Running}}' "$SERVICE_NAME")" = true ] && return 0
+    docker logs "$SERVICE_NAME" >&2 || true
+    return 1
 }
 
 install_docker_deployment() {
     [ ! -f "$SERVICE_FILE" ] || fail "Binary service already installed; uninstall before switching deployments"
     ensure_docker_ready
     ! container_exists "$SERVICE_NAME" || fail "Container already exists; use update"
-    ensure_swarm_ready
-    ensure_docker_network
-    setup_docker_image "$DOCKER_VARIANT"
+    ensure_swarm_and_network
+    resolve_release
+    DOCKER_IMAGE="$DOCKER_IMAGE:$DOCKER_VARIANT"
     print_banner "Docker Installer"
+    echo "  Image:   $DOCKER_IMAGE"
     mkdir -p "$DOCKER_DATA_DIR"
     docker pull "$DOCKER_IMAGE"
     run_isrvd_container "$DOCKER_VARIANT" "$DOCKER_IMAGE"
@@ -446,21 +393,28 @@ EOF
 }
 
 update_docker_deployment() {
-    local old_image variant old_env entry
+    local old_image variant entry
     local backup="$SERVICE_NAME-update-backup"
     ! container_exists "$backup" || fail "Container $backup already exists; resolve it before updating"
-    old_env=$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$SERVICE_NAME")
+
     while IFS= read -r entry; do
         case "$entry" in
             ISRVD_MODE=*|ISRVD_CENTER_URL=*|ISRVD_NODE_TOKEN=*) DEPLOYMENT_ENV+=("$entry") ;;
         esac
-    done <<< "$old_env"
+    done < <(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$SERVICE_NAME")
+
     old_image=$(docker inspect --format '{{.Config.Image}}' "$SERVICE_NAME")
-    variant=$(docker_variant_from_image "$old_image")
-    ensure_swarm_ready
-    ensure_docker_network
-    setup_docker_image "$variant"
+    case "${old_image##*:}" in
+        slim|latest) variant=slim ;;
+        caddy|apisix) variant="${old_image##*:}" ;;
+        *) fail "Cannot determine isrvd image variant from: $old_image" ;;
+    esac
+
+    ensure_swarm_and_network
+    resolve_release
+    DOCKER_IMAGE="$DOCKER_IMAGE:$variant"
     print_banner "Docker Updater"
+    echo "  Image:   $DOCKER_IMAGE"
     docker pull "$DOCKER_IMAGE"
 
     # 保留旧容器本身，失败时恢复原有镜像、环境、挂载与端口。
@@ -482,62 +436,8 @@ update_docker_deployment() {
 }
 
 # ------------------------------------------
-# 主流程
+# 命令
 # ------------------------------------------
-
-fail() {
-    echo "[error] $*" >&2
-    exit 1
-}
-
-check_root() {
-    [ "$EUID" -eq 0 ] || fail "Please run as root"
-}
-
-print_banner() {
-    echo "=========================================="
-    echo "  isrvd $1"
-    print_release_info
-    echo "=========================================="
-}
-
-container_exists() {
-    docker container inspect "$1" >/dev/null 2>&1
-}
-
-container_started() {
-    sleep 3
-    if [ "$(docker inspect --format '{{.State.Running}}' "$SERVICE_NAME")" = true ]; then
-        return 0
-    fi
-    docker logs "$SERVICE_NAME" >&2 || true
-    return 1
-}
-
-print_binary_info() {
-    cat <<EOF
-  Install: $INSTALL_DIR
-  Binary:  $(get_bin_file)
-  Config:  $CONFIG_FILE
-EOF
-}
-
-install_binary() {
-    [ ! -e "$INSTALL_DIR" ] && [ ! -e "$SERVICE_FILE" ] || fail "Already installed; use update"
-    if [ -e "$ROLE_FILE" ] || [ -L "$ROLE_FILE" ] || [ -e "$ROLE_DIR/role.conf" ] || [ -L "$ROLE_DIR/role.conf" ]; then
-        fail "Existing role configuration found; refusing to overwrite it"
-    fi
-    setup_release
-    print_banner Installer
-    download_package "$RELEASE_URL"
-    files_install
-    service_install
-    service_start
-    echo "[info] Installation complete (mode: $DEPLOYMENT_MODE)"
-    print_binary_info
-    echo "  Manage: systemctl {start|stop|status|edit} $SERVICE_NAME"
-    echo "  Logs:   journalctl -u $SERVICE_NAME -f"
-}
 
 install() {
     prepare_deployment_env
@@ -549,35 +449,19 @@ install() {
 }
 
 update() {
-    if command -v docker >/dev/null 2>&1 && container_exists "$SERVICE_NAME"; then
+    if has_docker && container_exists "$SERVICE_NAME"; then
         update_docker_deployment
-        return
+    else
+        update_binary
     fi
-    [ -d "$INSTALL_DIR" ] || fail "Not installed; use install first"
-    setup_release
-    print_banner Updater
-    # 下载与归档检查在停服之前完成，下载失败不影响正在运行的服务。
-    download_package "$RELEASE_URL"
-    tar tzf "$DOWNLOAD_TMP_FILE" >/dev/null
-    service_stop
-    if ! files_install update; then
-        service_start
-        fail "Failed to extract update"
-    fi
-    service_start
-    echo "[info] Update complete (configuration preserved)"
-    print_binary_info
 }
 
 uninstall() {
-    local container
-    local removed=0
+    local container removed=0
 
-    echo "=========================================="
-    echo "  isrvd Uninstaller"
-    echo "=========================================="
+    echo "[info] Uninstalling isrvd"
 
-    if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    if has_docker && docker info >/dev/null 2>&1; then
         for container in "$SERVICE_NAME" isrvd-caddy isrvd-apisix isrvd-apisix-etcd; do
             if container_exists "$container"; then
                 echo "[info] Removing Docker container: $container"
@@ -585,32 +469,38 @@ uninstall() {
                 removed=1
             fi
         done
-        [ "$removed" -eq 1 ] && echo "[info] Docker data preserved: $DOCKER_DATA_DIR"
+        [ "$removed" -eq 0 ] || echo "[info] Docker data preserved: $DOCKER_DATA_DIR"
     fi
 
     if [ -f "$SERVICE_FILE" ] || [ -d "$INSTALL_DIR" ]; then
         service_stop
-        service_uninstall
-        files_uninstall
+        if [ -f "$SERVICE_FILE" ]; then
+            systemctl disable "$SERVICE_NAME" 2>/dev/null || true
+            rm -f "$SERVICE_FILE" "$ROLE_FILE"
+            rmdir "$ROLE_DIR" 2>/dev/null || true
+            systemctl daemon-reload
+        fi
+        [ ! -L "$BIN_LINK" ] || rm -f "$BIN_LINK"
+        rm -rf "$INSTALL_DIR"
         removed=1
     fi
 
     if [ "$removed" -eq 0 ]; then
         echo "[info] isrvd is not installed"
+    else
+        echo "[info] Uninstallation complete"
     fi
-
-    echo ""
-    echo "=========================================="
-    echo "  Uninstallation Complete!"
-    echo "=========================================="
 }
 
 download() {
-    setup_release
+    local output="isrvd-$ARCH.tar.gz"
+    resolve_release
     print_banner Downloader
     download_package "$RELEASE_URL"
-    mv "$DOWNLOAD_TMP_FILE" "isrvd-$ARCH.tar.gz"
-    echo "[info] Downloaded: isrvd-$ARCH.tar.gz"
+    mv "$DOWNLOAD_TMP_FILE" "$output"
+    DOWNLOAD_TMP_FILE=""
+    chmod 644 "$output"
+    echo "[info] Downloaded: $output"
 }
 
 print_usage() {
@@ -641,10 +531,6 @@ Config: $CONFIG_FILE (binary), $DOCKER_DATA_DIR/conf/isrvd.yml (Docker)
 EOF
 }
 
-# ------------------------------------------
-# 入口
-# ------------------------------------------
-
 main() {
     local command="${1:-}"
     case "$command" in
@@ -657,7 +543,8 @@ main() {
         fail "Uninstall does not accept options"
     fi
     parse_options "$command" "$@"
-    [ "$command" = download ] || check_root
+    [ "$command" = download ] || [ "$EUID" -eq 0 ] || fail "Please run as root"
+    [ "$command" = uninstall ] || init_arch
     "$command"
 }
 
