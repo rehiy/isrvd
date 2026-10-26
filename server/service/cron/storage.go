@@ -32,7 +32,7 @@ type JobLog struct {
 	EndTime   time.Time `json:"endTime"`         // 结束时间
 	Duration  int64     `json:"duration"`        // 耗时（毫秒）
 	Success   bool      `json:"success"`         // 是否执行成功
-	Output    string    `json:"output"`          // 标准输出
+	Output    string    `json:"output"`          // 标准输出与标准错误合并
 	Error     string    `json:"error,omitempty"` // 错误信息（失败时非空）
 }
 

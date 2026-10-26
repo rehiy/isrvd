@@ -19,7 +19,7 @@ type OpenAPIQuery struct {
 	Tag    string `form:"tag" json:"tag"`       // 模块标签，如 docker、apisix
 	Path   string `form:"path" json:"path"`     // API 路径，如 /docker/containers
 	Method string `form:"method" json:"method"` // HTTP 方法：get / post / put / patch / delete
-	Q      string `form:"q" json:"q"`           // 关键词，匹配路径、摘要、operationId
+	Q      string `form:"q" json:"q"`           // 关键词，匹配路径、摘要、operationId、tag
 }
 
 type openAPISpec struct {

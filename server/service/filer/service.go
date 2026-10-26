@@ -30,14 +30,14 @@ func NewService() *Service {
 
 // FileInfo 文件信息
 type FileInfo struct {
-	Path       string    `json:"path"`                 // 文件完整路径
+	Path       string    `json:"path"`                 // 相对成员主目录的路径
 	Name       string    `json:"name"`                 // 文件名
 	Size       int64     `json:"size"`                 // 文件大小（字节）
 	IsDir      bool      `json:"isDir"`                // 是否为目录
 	IsLink     bool      `json:"isLink"`               // 是否为符号链接
 	LinkTarget string    `json:"linkTarget,omitempty"` // 符号链接目标
 	Mode       string    `json:"mode"`                 // 权限字符串（如 -rwxr-xr-x）
-	ModeO      string    `json:"modeO"`                // 权限八进制表示（如 0755）
+	ModeO      string    `json:"modeO"`                // 权限八进制表示（如 755）
 	ModTime    time.Time `json:"modTime"`              // 最后修改时间
 }
 
@@ -184,7 +184,7 @@ func (s *Service) FileWriteFrom(absPath string, r io.Reader) error {
 	return errors.Join(err, f.Close())
 }
 
-// FileCreate 创建文件（使用 pango/filer）
+// FileCreate 创建文件（使用 libgo/filer）
 func (s *Service) FileCreate(absPath string, content []byte) error {
 	return filer.Write(absPath, content)
 }

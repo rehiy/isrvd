@@ -26,7 +26,7 @@ import (
 //   - automate：automation.policies[].subjects，Subject 为域名
 //   - cached：运行时文件缓存（只读），Subject 为域名，含有效期字段
 type CertForm struct {
-	Key         string   `json:"key,omitempty"`         // 复合主键 <source>-<index>，仅响应使用（cached 无此字段）
+	Key         string   `json:"key,omitempty"`         // 复合主键 <source>-<index>，cached 为 cached-<相对路径>；仅响应使用，请求中被忽略
 	Source      string   `json:"source"`                // file / pem / automate / cached
 	Subject     string   `json:"subject,omitempty"`     // automate/cached：目标域名；file/pem：解析自证书 CN
 	Certificate string   `json:"certificate,omitempty"` // file：证书文件路径；pem：证书 PEM 文本

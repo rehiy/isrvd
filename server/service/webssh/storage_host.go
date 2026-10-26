@@ -10,10 +10,10 @@ import (
 type Host struct {
 	ID             string `yaml:"id" json:"id"`                                         // 主机 ID（自动生成）
 	Name           string `yaml:"name" json:"name"`                                     // 主机名称
-	Addr           string `yaml:"addr" json:"addr"`                                     // 主机地址（host:port）
+	Addr           string `yaml:"addr" json:"addr"`                                     // 主机地址（host 或 host:port，端口缺省 22）
 	CredentialID   string `yaml:"credentialId,omitempty" json:"credentialId,omitempty"` // 引用的凭据 ID
 	CredentialName string `yaml:"-" json:"credentialName,omitempty"`                    // 凭据名称（只读，展示用）
-	User           string `yaml:"user" json:"user"`                                     // 用户名（独立认证模式）
+	User           string `yaml:"user" json:"user"`                                     // 用户名（绑定凭据时为保存时的凭据用户名快照）
 	Password       string `yaml:"password,omitempty" json:"-"`                          // 密码（仅独立认证模式，不序列化到 JSON）
 	PrivateKey     string `yaml:"privateKey,omitempty" json:"-"`                        // 私钥（仅独立认证模式，不序列化到 JSON）
 	Description    string `yaml:"description" json:"description"`                       // 主机描述

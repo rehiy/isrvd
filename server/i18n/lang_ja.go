@@ -1,6 +1,6 @@
 package i18n
 
-// 日文：目前只登记了常用提示（112/985），未登记的文案回落中文原文。
+// 日文：词条基本完整，未登记的文案回落中文原文。覆盖率以 node scripts/check-locales.mjs --go 为准。
 //
 // 补齐时先导出未译清单：node scripts/check-locales.mjs --go --worklist ja
 // 填好译文后用 scripts/apply-translations.mjs 导入，可保持格式与 gofmt 一致。

@@ -51,6 +51,7 @@ func (app *App) defineCaddyRoutes() []Route {
 
 // ─── HTTP server CRUD ───
 
+// caddyServerURI 的 :name 实为服务 id（`~` + base64url(name)，也兼容原始名称）
 type caddyServerURI struct {
 	Name string `uri:"name" binding:"required"`
 }
@@ -274,7 +275,7 @@ func (app *App) caddyBasicAuthUserCreate(c *gin.Context) {
 	var req struct {
 		Username      string `json:"username"      binding:"required"` // basic_auth 登录用户名
 		Password      string `json:"password"      binding:"required"` // 明文密码，由后端转换为 bcrypt hash
-		Realm         string `json:"realm"`                            // HTTP Basic realm；留空使用 Caddy 默认值
+		Realm         string `json:"realm"`                            // HTTP Basic realm；留空：已有 handler 沿用原 realm，新建使用 Caddy 默认值
 		ForwardHeader string `json:"forwardHeader"`                    // 认证成功后传递用户名的请求头；留空不转发
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {

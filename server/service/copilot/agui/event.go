@@ -92,7 +92,7 @@ type RunAgentInput struct {
 	Tools    []Tool    `json:"tools"`
 	// Context 前端通过 useCopilotReadable 注入的页面上下文
 	Context []ContextEntry `json:"context"`
-	// State 前端共享状态，透传给 LLM 的 forwardedProps
+	// State 前端共享状态，接收但不转发给上游
 	State          map[string]any `json:"state"`
 	ForwardedProps map[string]any `json:"forwardedProps"`
 }

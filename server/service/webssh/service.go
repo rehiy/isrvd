@@ -126,7 +126,7 @@ func (s *Service) HostInspect(id string) *Host {
 // HostUpsertRequest 主机新建/更新请求
 type HostUpsertRequest struct {
 	Name         string `json:"name" binding:"required"` // 主机名称
-	Addr         string `json:"addr" binding:"required"` // 主机地址（host:port）
+	Addr         string `json:"addr" binding:"required"` // 主机地址（host 或 host:port，端口缺省 22）
 	CredentialID string `json:"credentialId"`            // 引用的凭据 ID（优先于下方认证字段）
 	User         string `json:"user"`                    // 用户名（credentialId 为空时使用）
 	Password     string `json:"password"`                // 密码（credentialId 为空时使用）

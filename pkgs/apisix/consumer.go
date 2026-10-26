@@ -68,7 +68,7 @@ func (c *Client) ConsumerUpdate(ctx context.Context, username, desc string, plug
 }
 
 // ConsumerCreate 创建 Consumer，支持传入完整 plugins。
-// 若 plugins 为空，自动生成 key-auth 插件并返回明文 API Key。
+// 若 plugins 为空，自动生成 32 位随机 key 的 key-auth；返回值中的敏感字段已脱敏。
 func (c *Client) ConsumerCreate(ctx context.Context, username, desc string, plugins map[string]any) (*Consumer, error) {
 	if len(plugins) == 0 {
 		apiKey := strutil.Rand(32)
@@ -126,6 +126,7 @@ func unmaskPlugins(plugins, rawPlugins map[string]any) {
 
 // maskConsumerPlugins 对 plugins 中的敏感字段（key、password 等）进行脱敏：
 // - 长度 > 10：保留前 5 位 + ****** + 后 3 位
+// - 长度 <= 2：整体替换为 ******
 // - 长度 <= 10：保留首尾各 1 位，中间替换为 ******
 // 按 rune 处理，正确支持 UTF-8 多字节字符。
 func maskConsumerPlugins(plugins map[string]any) {

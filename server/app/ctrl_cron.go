@@ -115,7 +115,7 @@ func (app *App) cronJobStatusPatch(c *gin.Context) {
 
 // cronJobLogsReq 日志查询请求
 type cronJobLogsReq struct {
-	Limit int `form:"limit"` // 返回记录数上限（默认 50，最大 100）
+	Limit int `form:"limit"` // 返回记录数上限（默认 50；<=0 或 >100 按 50）
 }
 
 func (app *App) cronJobLogs(c *gin.Context) {

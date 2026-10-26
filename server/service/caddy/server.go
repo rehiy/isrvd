@@ -48,7 +48,7 @@ type ServerForm struct {
 
 // ServerView 是不会暴露路由等子资源的服务视图。
 type ServerView struct {
-	ID   string `json:"id"`   // 服务视图标识（与名称相同）
+	ID   string `json:"id"`   // 服务不透明标识：`~` + base64url(name)，用于详情、更新、删除
 	Name string `json:"name"` // Caddy server 名称
 	ServerForm
 	RouteCount int `json:"routeCount"` // 该服务下的路由数量

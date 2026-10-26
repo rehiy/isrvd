@@ -105,7 +105,7 @@ type RunOptions struct {
 
 // Run 执行一次 AG-UI 运行：将输入转换为 OpenAI 请求，并把流式响应翻译为 AG-UI 事件。
 //
-// 事件写入 enc；heartbeat 非零时按该间隔写出注释行以保持连接活跃。
+// 事件写入 enc。
 func Run(ctx context.Context, enc *Encoder, input RunAgentInput, opt RunOptions) error {
 	body, err := json.Marshal(buildChatRequest(input, opt.Model))
 	if err != nil {
@@ -144,7 +144,7 @@ func Run(ctx context.Context, enc *Encoder, input RunAgentInput, opt RunOptions)
 }
 
 // buildChatRequest 将 AG-UI 输入映射为 OpenAI 请求。
-// Context 条目与工具结果以 system 消息注入，使页面上下文与工具返回对模型可见。
+// Context 条目以 system 消息注入，使页面上下文对模型可见。
 func buildChatRequest(input RunAgentInput, model string) ChatRequest {
 	req := ChatRequest{Stream: true}
 	if model != "" {

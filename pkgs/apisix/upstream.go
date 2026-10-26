@@ -12,7 +12,7 @@ type Upstream struct {
 	Name         string         `json:"name"`                    // Upstream 名称
 	Desc         string         `json:"desc,omitempty"`          // Upstream 描述
 	Type         string         `json:"type"`                    // 负载均衡算法：roundrobin | chash | ewma | least_conn
-	Nodes        any            `json:"nodes,omitempty"`         // 节点配置：map[string]int 格式，如 {"host:port": weight}
+	Nodes        any            `json:"nodes,omitempty"`         // 节点配置：{"host:port": weight} 或 APISIX 数组格式
 	HashOn       string         `json:"hash_on,omitempty"`       // chash 模式的哈希源：vars | header | cookie
 	Key          string         `json:"key,omitempty"`           // chash 模式的哈希键（配合 hash_on 使用）
 	Scheme       string         `json:"scheme,omitempty"`        // 转发协议：http | https | grpc | grpcs
