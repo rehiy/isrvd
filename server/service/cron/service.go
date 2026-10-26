@@ -37,7 +37,7 @@ type Job struct {
 	Schedule    string `yaml:"schedule" json:"schedule"`                       // cron 表达式（如 "0 3 * * *"）
 	Type        string `yaml:"type" json:"type"`                               // 脚本类型：SHELL | EXEC | BAT | POWERSHELL | DOCKER_TMP | DOCKER_CTR
 	Content     string `yaml:"content" json:"content"`                         // 脚本内容或命令
-	WorkDir     string `yaml:"workDir" json:"workDir"`                         // 工作目录（SHELL/EXEC 类型）
+	WorkDir     string `yaml:"workDir" json:"workDir"`                         // 工作目录（非 Docker 类型）
 	Image       string `yaml:"image,omitempty" json:"image,omitempty"`         // DOCKER_TMP：镜像名
 	Container   string `yaml:"container,omitempty" json:"container,omitempty"` // DOCKER_CTR：目标容器名
 	Volumes     string `yaml:"volumes,omitempty" json:"volumes,omitempty"`     // DOCKER_TMP：额外挂载，格式：/host:/container[:ro]，换行分隔
@@ -52,6 +52,7 @@ type Service struct {
 	store         *Store                  // 任务持久化存储
 	docker        *docker.DockerService   // 可选，DOCKER 类型任务需要
 	jobs          map[string]*Job         // jobID → Job 映射
+	skipped       []*Job                  // 加载时校验失败而未启用的任务，原样保留并随保存写回
 	entries       map[string]cron.EntryID // jobID → cron entry ID 映射
 	ctx           context.Context
 	cancel        context.CancelFunc
@@ -127,6 +128,9 @@ func NewService(parent context.Context, dockerRaw *docker.DockerService) *Servic
 		}
 		if err := s.validateJob(job); err != nil {
 			logger.Warn("Skip invalid cron job", "error", err)
+			if job != nil {
+				s.skipped = append(s.skipped, job)
+			}
 			continue
 		}
 		if _, exists := s.jobs[job.ID]; exists {
@@ -381,7 +385,7 @@ func (s *Service) JobRun(id string) error {
 }
 
 // JobLogs 返回指定任务的执行历史（最近 limit 条，倒序）
-// limit <= 0 时默认 50，超过 100 时截断为 100
+// limit <= 0 或超过 100 时按 50 处理
 func (s *Service) JobLogs(id string, limit int) []*JobLog {
 	if limit <= 0 || limit > 100 {
 		limit = 50
@@ -445,12 +449,13 @@ func (s *Service) unregister(id string) {
 	}
 }
 
-// persist 将当前 jobs 持久化到 cron.yml（调用前须持有锁）
+// persist 将当前 jobs 及加载时被跳过的任务持久化到 cron.yml（调用前须持有锁）
 func (s *Service) persist() error {
-	jobs := make([]*Job, 0, len(s.jobs))
+	jobs := make([]*Job, 0, len(s.jobs)+len(s.skipped))
 	for _, j := range s.jobs {
 		jobs = append(jobs, j)
 	}
+	jobs = append(jobs, s.skipped...)
 	return s.store.SaveJobs(jobs)
 }
 

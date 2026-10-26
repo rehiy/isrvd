@@ -2,7 +2,7 @@
 
 模块名：`cron`。除 `GET /api/cron/types` 仅需登录外，其余路由需在成员 `permissions` 中逐条授予对应的 `METHOD /api/cron/...` 路由权限（创始人除外）。
 
-保存前会检查持久化内容是否与加载基线一致，变化时拒绝覆盖；需重载服务后重试。存储机制及进程内保障范围见[配置存储说明](config.md#保存一致性)。
+保存前会检查持久化内容是否与加载基线一致，变化时拒绝覆盖，需重载服务后重试，详见[保存一致性](config.md#保存一致性)。
 
 ---
 
@@ -16,7 +16,7 @@
 | `name` | string | 任务名称 |
 | `schedule` | string | Cron 表达式（5字段标准格式，如 `0 2 * * *`） |
 | `type` | string | 脚本类型；以 `/api/cron/types` 返回为准；Docker 可用时额外包含 `DOCKER_TMP`（临时容器）与 `DOCKER_CTR`（exec 进现有容器） |
-| `content` | string | 脚本内容 |
+| `content` | string | 脚本内容。`SHELL`：以 `#!/` 开头按脚本文件执行，否则 `sh -c`；`EXEC`：按空白切分为命令与参数，不支持引号和重定向；Docker 类型使用 `/bin/sh` |
 | `workDir` | string | 工作目录（绝对路径；Docker 类型无效） |
 | `container` | string? | 目标容器名（`DOCKER_CTR` 必填） |
 | `image` | string? | 镜像名（`DOCKER_TMP` 必填，创建临时容器运行脚本） |
@@ -30,11 +30,11 @@
 | `nextRun` | string? | 下次预计执行时间（RFC3339，运行时字段，只读，仅已注册任务存在） |
 | `lastRun` | string? | 上次计划调度时间（RFC3339，运行时字段，只读） |
 
-计划任务配置存储在 `server.rootDirectory/cron.yml`；配置位于 etcd 时使用 `<配置 key>/<文件名>`，key 缺失时自动导入本地同名文件，由服务自动读写；`registered`、`entryId`、`runtimeStatus`、`nextRun`、`lastRun` 来自当前内存调度器状态，不写入存储文件。执行历史所有任务合并写入按天滚动的 JSONL 文件 `server.rootDirectory/cron/YYYY-MM-DD.jsonl`，每次执行追加一行结构化记录（含 `jobId` 字段用于过滤）；保留最近 3 天，过期文件每日凌晨自动清理。
+计划任务配置存储在 `cron.yml`（位置见[业务数据存储](config.md#业务数据存储)）；`registered`、`entryId`、`runtimeStatus`、`nextRun`、`lastRun` 来自内存调度器，不写入存储。执行历史所有任务合并写入按天滚动的 JSONL 文件 `server.rootDirectory/cron/YYYY-MM-DD.jsonl`，每次执行追加一行（含 `jobId` 用于过滤）；保留最近 3 天，过期文件每日凌晨自动清理。
 
 加载 `DOCKER` 类型任务时，按执行目标规范化类型：包含 `container` 的使用 `DOCKER_CTR`，包含 `image` 的使用 `DOCKER_TMP`。
 
-Docker 不可用时，`/api/cron/types` 不返回 Docker 类型；已有的 `DOCKER_TMP` / `DOCKER_CTR` 任务在加载时校验失败会被**跳过**，不出现在 `GET /cron/jobs` 列表中（对其操作返回 404）。⚠️ 此时对其他任务的任何增删改都会把这些被跳过的任务从存储中移除。
+Docker 不可用时，`/api/cron/types` 不返回 Docker 类型；已有的 `DOCKER_TMP` / `DOCKER_CTR` 任务加载时校验失败会被跳过：不调度，不出现在 `GET /cron/jobs` 列表中（删除、立即执行返回 404，更新、启停返回 400），但仍保留在 `cron.yml` 中，Docker 恢复并重载后重新生效。
 
 ### JobLog
 
@@ -132,7 +132,7 @@ Docker 不可用时，`/api/cron/types` 不返回 Docker 类型；已有的 `DOC
 
 **PUT** `/api/cron/jobs/:id`
 
-请求体同创建，响应 `payload`：`{ "job": <Job> }`（同上，仅存储字段）
+请求体同创建，为整体覆盖：未传的 `enabled`、`timeout` 等按零值处理（漏传 `enabled` 会禁用任务）。响应 `payload`：`{ "job": <Job> }`（仅存储字段）
 
 ---
 
@@ -140,7 +140,7 @@ Docker 不可用时，`/api/cron/types` 不返回 Docker 类型；已有的 `DOC
 
 **DELETE** `/api/cron/jobs/:id`
 
-无请求体，删除成功返回 200。
+无请求体，删除成功返回 200；任务不存在、调度器已停止或保存失败均返回 404。
 
 ---
 
@@ -176,7 +176,7 @@ Query 参数：
 
 | 参数 | 说明 |
 |------|------|
-| `limit` | 返回最近 N 条，默认 50；取值 1–100，≤0 或 >100 时按 50 处理 |
+| `limit` | 返回最近 N 条，默认 50；取值 1–100，≤0 或 >100 时按 50 处理；非整数返回 400 |
 
 响应 `payload`：
 
@@ -229,6 +229,6 @@ isrvd_delete "/cron/jobs/<JOB_ID>"
 isrvd_get "/cron/jobs/<id>/logs?limit=20"
 ```
 
-配置重载会停止旧调度器，防止重复调度；已经接受的手动执行和已经开始的定时任务继续执行，并按其调度器创建时的通知配置发送失败通知。旧实例停止后拒绝新增、修改、删除、启停和手动执行操作。
+配置重载会停止旧调度器，防止重复调度；已接受的手动执行和已开始的定时任务继续执行，并按其调度器创建时的通知配置发送失败通知。旧实例停止后拒绝新增、修改、删除、启停和手动执行。
 
-收到 SIGTERM/SIGINT 退出信号后分段等待：HTTP 请求最多 5 秒；随后当前及重载前仍在运行的计划任务最多 5 秒，超时后取消任务并额外等待 1 秒清理；已发出的 Webhook 最后再等待最多 1 秒。因进程退出而取消的任务不发送失败通知；超过宽限时间仍未完成的任务不保证执行日志。
+退出时的分段等待与取消规则见[应用故障告警](config.md#应用故障告警)；因进程退出而取消的任务不发送失败通知。
