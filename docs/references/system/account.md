@@ -20,11 +20,13 @@ isrvd_post "/account/login" '{"username":"<USER>","password":"<PASS>"}'
 isrvd_post "/account/login" '{"username":"<USER>","password":"<PASS>","totpCode":"123456"}'
 ```
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| username | string | 用户名 |
-| password | string | 密码 |
-| totpCode | string | TOTP 二次验证码；仅账号启用 TOTP 且密码登录时需要 |
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| username | string | 是 | 用户名 |
+| password | string | 是 | 密码 |
+| totpCode | string | | TOTP 二次验证码；仅账号启用 TOTP 且密码登录时需要 |
+
+缺少必填字段返回 400；用户名/密码错误、TOTP 无效、`password.disabled=true`（"密码登录已禁用"）返回 401。
 
 > 通常使用 `isrvd_login` 命令而非直接调用此接口。启用 TOTP 后可使用 `isrvd_login <base_url> <username> <password> <totpCode>`，或使用已创建的 API Token。
 
@@ -35,9 +37,9 @@ isrvd_post "/account/login" '{"username":"<USER>","password":"<PASS>","totpCode"
 GET /api/account/oidc/login
 ```
 
-回调路径：`GET /api/account/oidc/callback`。登录成功后重定向到 `/?oidc_code=<CODE>`；失败重定向到 `/?oidc_error=<ERROR>`。
+正常返回 302；OIDC 未启用或配置不全返回 400。回调路径：`GET /api/account/oidc/callback`，登录成功后重定向到 `/?oidc_code=<CODE>`；失败重定向到 `/?oidc_error=<ERROR>`。
 
-用一次性登录码换取系统 JWT：
+用一次性登录码换取系统 JWT（`oidc_code` 有效期 2 分钟、一次性、每成员最多 10 个）：
 
 ```bash
 isrvd_post "/account/oidc/exchange" '{"code":"<OIDC_CODE>"}'
@@ -45,7 +47,7 @@ isrvd_post "/account/oidc/exchange" '{"code":"<OIDC_CODE>"}'
 
 返回：`{"token": "eyJ...", "username": "<USER>"}`
 
-> OIDC 提取的用户名由 `oidc.usernameClaim` 指定，默认 `sub`，必须存在于 `members.username`；不存在时与代理 Header 登录一致，登录失败且不会自动创建成员。一次性 `oidc_code` 是短期凭证，勿复制或写入外部日志；代理 Header 登录模式下不显示 OIDC 登录入口。
+> OIDC 用户名取自 `oidc.usernameClaim`（默认 `sub`；id_token 中缺失时回落到 UserInfo 端点），必须存在于 `members.username`；不存在时登录失败，不会自动创建成员。`oidc_code` 是短期凭证，勿写入外部日志；代理 Header 登录模式下不显示 OIDC 登录入口。
 
 ## 列出路由权限
 
@@ -53,7 +55,7 @@ isrvd_post "/account/oidc/exchange" '{"code":"<OIDC_CODE>"}'
 isrvd_get "/account/routes"
 ```
 
-返回按 `module`、`key` 排序的路由列表。
+登录即可访问（`AccessAuth`）。返回按 `module`、`key` 排序的路由列表。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -82,6 +84,8 @@ isrvd_post "/account/token" '{"name":"<TOKEN_NAME>","expiresIn":2592000}'
 ```bash
 isrvd_put "/account/password" '{"oldPassword":"<OLD>","newPassword":"<NEW>"}'
 ```
+
+登录即可访问（`AccessAuth`）。`oldPassword` 必填（空返回 400"请输入原密码"），`newPassword` 必填且长度 ≥ `password.minLength`。改密后所有已签发的 JWT 和 API Token 失效。
 
 ## TOTP 二次验证
 
@@ -121,11 +125,11 @@ isrvd_get "/account/members"
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | username | string | 用户名 |
-| homeDirectory | string | 主目录 |
-| founder | boolean | 是否为创建者 |
+| homeDirectory | string | 主目录（绝对路径） |
+| founder | boolean | 是否为创始人 |
 | description | string | 描述 |
 | permissions | string[] | 权限列表 |
-| twoFactor | object | 二次验证配置；`totp.secret` 不返回 |
+| twoFactor | object | `{"totp":{"enabled":bool}}`；密钥不返回 |
 
 ## 创建成员
 
@@ -133,13 +137,15 @@ isrvd_get "/account/members"
 isrvd_post "/account/member" '{"username":"<USER>","password":"<PASS>","homeDirectory":"<HOME_DIR>","description":"<DESC>","permissions":["GET /api/docker/containers","GET /api/docker/images"]}'
 ```
 
+`username`、`password` 必填；`username` 为空或已存在返回 400；`password` 须 ≥ `password.minLength`（不足时返回 500）。`homeDirectory` 缺省为 `<rootDirectory>/<username>`，相对路径基于 `rootDirectory`，目录自动创建（0755），路径存在但不是目录返回 500。
+
 ## 更新成员
 
 ```bash
 isrvd_put "/account/member/<USER>" '{"homeDirectory":"<HOME_DIR>","description":"<DESC>","permissions":["GET /api/docker/containers","GET /api/docker/images","GET /api/swarm/services"]}'
 ```
 
-> 更新会**整体覆盖** `homeDirectory`、`description`、`permissions`：不传 `homeDirectory` 会重置为 `<rootDirectory>/<username>` 并自动创建目录；不传 `permissions` 会清空权限。请先 `GET /account/members` 取得当前值再修改提交。`password` 为空则不修改。创始人不能被修改或删除。
+> 更新会**整体覆盖** `homeDirectory`、`description`、`permissions`：不传 `homeDirectory` 会重置为 `<rootDirectory>/<username>` 并自动创建目录；不传 `permissions` 会清空权限。请先 `GET /account/members` 取得当前值再修改提交。`password` 为空则不修改。创始人不能被修改或删除（返回 500）；成员不存在返回 404。
 
 ## 删除成员
 
@@ -159,6 +165,8 @@ isrvd_post "/account/passkey/login/finish?sessionId=<SESSION_ID>" '<CREDENTIAL_J
 # 返回：{"token":"eyJ...","username":"<USER>"}
 ```
 
+Passkey 未启用返回 400；`username` 不存在返回 400"用户验证失败"；`sessionId` 5 分钟有效且一次性，全局最多 100 个、每用户最多 5 个。
+
 ## Passkey 管理（需权限）
 
 > 以下管理接口均为 `AccessPerm`（需具体路由权限），可按成员授权/撤销：`POST /api/account/passkey/register/begin`、`POST /api/account/passkey/register/finish`、`GET /api/account/passkey/credentials`、`PUT /api/account/passkey/credential/:id`、`DELETE /api/account/passkey/credential/:id`。非 founder 成员需在 `permissions` 中显式包含对应 key；founder 始终有权。Passkey **登录**（`/account/passkey/login/*`）仍为匿名访问，不受此限制。
@@ -174,9 +182,9 @@ isrvd_post "/account/passkey/register/finish?sessionId=<SESSION_ID>" '<CREDENTIA
 # 列出当前用户的凭证
 isrvd_get "/account/passkey/credentials"
 # 返回：[{"idBase64":"...","publicKeyBase64":"...","aaguidBase64":"...","signCount":0,"backupEligible":false,"backupState":false,"displayName":"...","addedAt":"..."}]
-# signCount 为配置中保存的初始值，运行时计数仅在内存维护
+# signCount、backupState 在登录成功后更新到配置
 
-# 重命名凭证
+# 重命名凭证（displayName 必填；凭证不存在返回 404）
 isrvd_put "/account/passkey/credential/<CREDENTIAL_ID>" '{"displayName":"<NEW_NAME>"}'
 
 # 删除凭证

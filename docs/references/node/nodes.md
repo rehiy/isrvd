@@ -26,15 +26,15 @@ isrvd_get "/node/nodes"
 | `id` | string | 节点 ID（UUID，只读） |
 | `name` | string | 节点名称 |
 | `status` | string | `pending` 待接入 \| `active` 已激活 \| `revoked` 已吊销 |
-| `hostname` | string | 注册时上报的主机名 |
-| `os` | string | 注册时上报的操作系统 |
-| `arch` | string | 注册时上报的 CPU 架构 |
+| `hostname` | string | 最近一次连接时上报的主机名，首次连接前为空 |
+| `os` | string | 最近一次连接时上报的操作系统 |
+| `arch` | string | 最近一次连接时上报的 CPU 架构 |
 | `createdAt` | string | 节点创建时间（只读） |
 | `portmaps` | array | 端口转发规则，未配置时不返回；字段见下文「配置端口转发」 |
 | `online` | bool | 当前是否在线 |
 | `latency` | number | 隧道往返延迟（毫秒），离线为 `0` |
 | `agentVersion` | string | 受管机程序版本，离线时不返回 |
-| `compatible` | bool | 协议版本是否不低于中控的最低支持版本；无法协商（如旧版受管机）时按兼容处理，为 `false` 时拒绝转发 |
+| `compatible` | bool | 协议版本是否不低于中控的最低支持版本；无法协商（如旧版受管机）时按兼容处理，为 `false` 时拒绝转发；离线时恒为 `false`，仅在线时有意义 |
 | `negotiated` | bool | 是否已成功协商出受管机的能力信息 |
 | `features` | string[] | 受管机上报的可选能力（如 `portmap`），未协商成功时不返回 |
 | `connectedAt` | string | 本次连接时间，离线时不返回 |
@@ -57,21 +57,19 @@ isrvd_post "/node" '{"name":"杭州机房 web-01"}'
 | `node` | object | 上表中的节点对象，初始 `status` 为 `pending` |
 | `token` | string | 86 字符的纯字母数字随机 token，无时效限制，仅在创建时返回 |
 
-中控在 `node-list.yml` 中只保存 token 的 SHA-256 哈希（`tokenHash`），不保存明文或可解密密文。列表和更新响应均不返回 token；遗失后删除节点并重新创建。JWT 密钥变更不影响节点 token。
+中控在 `node-list.yml` 中只保存 token 的 SHA-256 哈希，不保存明文；列表和更新响应均不返回 token，遗失后删除节点并重新创建。
 
-创建后在受管机以 root 身份任选一种方式安装：
+创建后在受管机以 root 身份安装：
 
 ```bash
 export ISRVD_MODE=agent
 export ISRVD_CENTER_URL=https://center.example.com
 export ISRVD_NODE_TOKEN="<创建时返回的 token>"
-# 裸机安装（systemd）
-bash <(curl -sL https://isrvd.rehiy.com/install/) install
-# 或使用 Docker 安装
-bash <(curl -sL https://isrvd.rehiy.com/install/) install --docker
+bash <(curl -sL https://isrvd.rehiy.com/install/) install          # 裸机（systemd）
+bash <(curl -sL https://isrvd.rehiy.com/install/) install --docker  # 或 Docker
 ```
 
-安装脚本会保存这些环境变量。已有服务需更新启动环境并重启。首次认证通过后节点状态变为 `active`，重启和重连继续使用同一 token。
+安装脚本会保存这些环境变量；已有服务需更新启动环境并重启。首次认证通过后节点状态变为 `active`，重启和重连继续使用同一 token。
 
 ### 重命名节点
 
@@ -87,9 +85,7 @@ isrvd_put "/node/<ID>" '{"name":"杭州机房 web-01"}'
 isrvd_post "/node/<ID>/revoke"
 ```
 
-令牌立即失效并断开在线连接，之后经隧道的请求返回 `503 节点离线`；该节点的端口转发规则一并清除。已吊销的节点需删除后用新令牌重新接入。
-
-> 受管机被拒绝后每分钟重试一次并记录错误日志；需要重新接入时，创建新节点并更新受管机 token 后重启即可。
+令牌立即失效并断开在线连接，之后经隧道的请求返回 `503 节点离线`；该节点的端口转发规则一并清除。已吊销的节点需删除后用新令牌重新接入（受管机被拒绝后每分钟重试，见 [集中管理](../../multi-node.md)）。
 
 ### 删除节点
 
@@ -114,13 +110,13 @@ isrvd_put "/node/<ID>/portmap" '{"portmaps":[{"name":"SSH","proto":"tcp","listen
 | `name` | string | 备注，可选，最多 64 个字符 |
 | `proto` | string | `tcp` 或 `udp` |
 | `listen` | number | 中控监听端口，须在配置 `portmap.range` 范围内；同一 `proto` 下全局唯一（跨节点） |
-| `target` | string | 节点侧目标 `host:port`；`host` 缺省为 `127.0.0.1`，可为 IP 或主机名 |
+| `target` | string | 节点侧目标 `host:port`；`host` 缺省为 `127.0.0.1`，可为 IP 或主机名；端口 1–65535，整串 ≤200 字符 |
 
-- 每个节点最多 32 条规则；已吊销的节点不能配置。
-- 监听地址由中控配置 `portmap.bind` 决定，默认 `127.0.0.1`；对外开放须显式设为 `0.0.0.0` 等地址。
-- 监听与节点是否在线无关：节点离线时连接被立即关闭，上线后自动恢复。规则变更、节点吊销或删除时，对应监听与已建立的连接立即断开。
-- 受管机程序须支持端口转发（在线节点不支持时返回 `400`）；规则写入 `node-list.yml`，中控重启后自动恢复监听，端口被占用的规则只记录告警。
-- **转发的连接不经过 isrvd 认证，也不进入审计页面**，鉴权完全由目标应用负责；该权限等同于访问节点网络内任意地址，请仅授予创始人，且勿转发无认证的服务。UDP 与 TCP 到达目标时，来源地址均为受管机本机。
+- 每个节点最多 32 条规则；已吊销的节点不能配置；同一请求内 (`proto`, `listen`) 不能重复；`proto` 大小写不敏感。
+- 监听地址由 `portmap.bind` 决定，默认 `127.0.0.1`。
+- 规则变更、节点吊销或删除时，对应监听与已建立的连接立即断开；节点离线时连接被立即关闭，上线后自动恢复。
+- 保存非空规则时，在线节点不支持端口转发则返回 `400`；规则写入 `node-list.yml`，中控重启后自动恢复监听，端口被占用或超出当前 `portmap.range` 的规则只记录告警。
+- **转发的连接不经过 isrvd 认证，也不进入审计**，鉴权完全由目标应用负责；该权限等同于访问节点网络内任意地址，请仅授予创始人。到达目标时来源地址均为受管机本机。
 - 并发上限：每条 TCP 规则 512 个连接，每条 UDP 规则 256 个来源地址（空闲 60 秒回收）。
 
 ---
@@ -131,14 +127,14 @@ isrvd_put "/node/<ID>/portmap" '{"portmaps":[{"name":"SSH","proto":"tcp","listen
 
 ```bash
 # API_ROOT 形如 https://center.example.com/n/<节点ID>/api
-python3 ./scripts/api.py token "$API_ROOT" "$TOKEN"
-python3 ./scripts/api.py get "/docker/containers"
+isrvd_login "$API_ROOT" "$USERNAME" "$PASSWORD"
+isrvd_get "/docker/containers"
 ```
 
 | 类别 | 模块 | 处理位置 |
 |------|------|----------|
 | 经隧道转发到节点 | `overview`、`filer`、`shell`、`local`、`docker`、`swarm`、`compose`、`cron`、`apisix`、`caddy` | 受管机 |
-| 始终由中控处理 | `account`、`system`、`copilot`、`ssh`、`node` | 中控 |
+| 始终由中控处理 | `account`、`system`、`copilot`、`ssh`、`sftp`、`node` | 中控 |
 | 页面与静态资源 | 其余路径 | 中控 |
 
 - `GET /n/<ID>/api/overview/bootstrap` 的认证信息取自中控，`probe` 中的 `docker`、`swarm`、`compose`、`apisix`、`caddy` 取自节点，`node`、`copilot` 取自中控；节点不可达时这几项全部为 `false`。
@@ -157,4 +153,16 @@ python3 ./scripts/api.py get "/docker/containers"
 
 ### 建立隧道
 
-`GET /node/connect` 是 WebSocket 升级请求，无法用 `isrvd_*` 调用。令牌只经 `Authorization: Bearer <token>` 头传递，不放在 URL 中；中控按完整 token 的 SHA-256 哈希查找节点，待接入节点在首次认证通过时更新为 `active`；认证失败按连接对端 IP 限流（10 次/分钟），忽略 `X-Forwarded-For` 等转发头；通过反向代理接入时，同一代理后的客户端共享限流额度；带 `Origin` 的浏览器请求一律拒绝。同一 token 已在线或握手中时返回 `409`，不会断开旧连接；升级失败会释放握手占用，断线后相同 token 可再次连接。
+`GET /node/connect` 是 WebSocket 升级请求，无法用 `isrvd_*` 调用。令牌只经 `Authorization: Bearer <token>` 头传递，中控按完整 token 的 SHA-256 哈希查找节点，待接入节点首次认证通过时更新为 `active`。
+
+| 状态码 | 场景 |
+|---|---|
+| 403 | 令牌无效、不存在、已吊销，服务已关闭，或请求带 `Origin` |
+| 409 | 同一 token 已在线或握手中（不断开旧连接；升级失败会释放握手占用，断线后可再次连接） |
+| 429 | 认证失败超限（按连接对端 IP 限流，10 次/分钟，忽略 `X-Forwarded-For` 等转发头；同一反向代理后的客户端共享额度） |
+
+受管机收到 401/403 时每分钟重试，其余状态码走指数退避重连。
+
+### 协商接口
+
+`GET /agent/info` 只在隧道内可达（不经 `/api/`），中控连接后调用。响应 `{success, payload:{mode, version, protocol, hostname, os, arch, features}}`；当前 `protocol` 与中控最低支持版本 `MinProtocolVersion` 均为 `1`。旧版受管机没有该接口时按兼容处理。

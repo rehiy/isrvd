@@ -10,6 +10,17 @@
 >
 > 集中管理的节点接口由中控网关提供。中控模式下，节点管理权限会列入 `/account/routes`，可授予普通成员；`/n/<节点ID>/api/...` 转发请求按去掉节点前缀后的业务路由权限检查。权限对所有节点生效，节点列表权限不授予业务操作权限，当前不支持按节点 ID 分配权限。
 
+## 无需权限点的路由
+
+不进入权限列表，也不受服务可用性检查影响。
+
+| 级别 | 路由 |
+| ------ | ------ |
+| 匿名（`AccessAnon`） | `GET /api/overview/bootstrap`、`POST /api/account/login`、`POST /api/account/passkey/login/begin`、`POST /api/account/passkey/login/finish`、`GET /api/account/oidc/login`、`GET /api/account/oidc/callback`、`POST /api/account/oidc/exchange` |
+| 登录即可（`AccessAuth`） | `PUT /api/account/password`、`GET /api/account/routes`、`GET /api/copilot/catalog`、`GET /api/cron/types` |
+
+可用 `?token=` 认证的路由：WebSocket 升级请求，以及声明了 `QueryToken` 的 `GET` 路由（`/api/filer/download`、`/api/docker/container/:id/logs/stream`、`/api/docker/container/:id/file/download`、`/api/swarm/service/:id/logs/stream`、`/api/sftp/:id/download`）；其余请求必须使用 `Authorization` 头。
+
 ## 权限点参考
 
 | 模块 | 路由权限点示例 | 说明 |

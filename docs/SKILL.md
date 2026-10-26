@@ -9,7 +9,7 @@ description: 通过 isrvd API 进行容器部署、服务管理、镜像操作�
 
 推荐按 **Python → Node.js** 的顺序选择脚本；仅当 Python 和 Node.js 都不可用时，才使用 Bash 版兜底。三者共用 `~/.config/isrvd/profile.json`。
 
-脚本的 URL 参数必须填写从域名到 API 根路径的完整地址，例如 `https://gateway.example.invalid/isrvd/api` 或 `https://gateway.example.invalid/isrvd/api/automation`。不要只填写域名；业务路径仍使用 `/docker/containers` 这类以 `/` 开头的相对路径。默认认证方式是 `Authorization: Bearer <API_TOKEN>`；如果前置网关要求使用其他请求头，可设置 `ISRVD_AUTH_HEADER`，例如 `ISRVD_AUTH_HEADER=token` 会发送 `token: <API_TOKEN>`。
+脚本的 URL 参数必须填写从域名到 API 根路径的完整地址（`<api_root>`），例如 `https://gateway.example.invalid/isrvd/api`，不要只填域名；业务路径仍使用 `/docker/containers` 这类以 `/` 开头的相对路径。默认认证方式是 `Authorization: Bearer <API_TOKEN>`；前置网关要求其他请求头时可设置 `ISRVD_AUTH_HEADER`（如 `token` 会发送 `token: <API_TOKEN>`），但 isrvd 本身只识别 `Authorization: Bearer`，自定义头需由前置网关转换。
 
 **首选：Python 标准库版**（无 `curl`/`jq` 依赖）
 
@@ -41,7 +41,9 @@ isrvd_get "/docker/containers"
 isrvd_post "/docker/container" '{"image":"...","name":"..."}'
 ```
 
-脚本默认提取统一响应中的 `.payload`；数组对象会自动转为紧凑表格，降低输出噪音。Python/Node 版支持简单 selector（如 `.content`、`.username`）。Python/Node 都不可用时可使用 Bash 版。
+脚本默认提取统一响应中的 `.payload`（`upload` 输出完整响应）；数组对象会自动转为紧凑表格。Python/Node 版支持简单 selector（如 `.content`、`.a.b.0`），字符串结果带引号；另有 `login`、`whoami`、`status`、`logout`、`upload` 等子命令，见脚本 `--help`。
+
+后文工作流示例使用 Bash 函数写法（`isrvd_get` 等），对应 Python/Node 的 `get` / `post` / `put` / `patch` / `delete` / `upload` 子命令；含 `jq` 的 Compose 示例需安装 `jq`，Python/Node 可直接传 JSON。
 
 Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '<RunAgentInput JSON>' --raw`），直接输出 SSE/文本，不经过 JSON 解析，需 curl 7.76.0+。
 
@@ -72,7 +74,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 | APISIX | [references/apisix/routes.md](references/apisix/routes.md) | 路由 CRUD、启用/禁用 |
 | APISIX | [references/apisix/upstreams.md](references/apisix/upstreams.md) | 上游、负载均衡 |
 | APISIX | [references/apisix/consumers.md](references/apisix/consumers.md) | Consumer、访问授权 |
-| APISIX | [references/apisix/ssl.md](references/apisix/ssl.md) | SSL 证书、PluginConfig |
+| APISIX | [references/apisix/ssl.md](references/apisix/ssl.md) | SSL 证书、PluginConfig、插件列表 |
 | Caddy | [references/caddy/routes.md](references/caddy/routes.md) | 路由 CRUD（反向代理/静态文件） |
 | Caddy | [references/caddy/servers.md](references/caddy/servers.md) | 服务（srv0 等）增删改查 |
 | Caddy | [references/caddy/certs.md](references/caddy/certs.md) | SSL 证书管理 |
@@ -99,8 +101,8 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 用户需求
 ├── 部署/创建
 │   ├── 单个容器        → references/docker/containers.md
-│   ├── 多容器应用(单机) → references/compose.md §1
-│   ├── 集群服务(Stack)  → references/compose.md §2
+│   ├── 多容器应用(单机) → references/compose.md §Docker Compose
+│   ├── 集群服务(Stack)  → references/compose.md §Swarm Compose
 │   ├── 集群服务(单服务) → references/swarm/services.md
 │   ├── 配置 APISIX 路由 → references/apisix/routes.md
 │   ├── 配置 Caddy 路由  → references/caddy/routes.md
@@ -138,7 +140,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 │   ├── Swarm 服务        → references/swarm/services.md（action=remove）
 │   ├── 路由/消费者       → references/apisix/routes.md 或 references/apisix/consumers.md
 │   ├── Caddy 路由        → references/caddy/routes.md (DELETE /caddy/route/:index)
-│   ├── Caddy 服务        → references/caddy/servers.md (DELETE /caddy/server/:name)
+│   ├── Caddy 服务        → references/caddy/servers.md (DELETE /caddy/server/<ID>)
 │   └── 终止进程          → references/local.md (POST /local/process/:pid/kill)
 │
 └── 管理
@@ -151,6 +153,9 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
     ├── 创建/接入/吊销受管节点 → references/node/nodes.md
     ├── 把节点端口转发到中控（TCP/UDP）→ references/node/nodes.md §配置端口转发
     ├── 操作某个受管节点 → references/node/nodes.md §以节点视角访问（API 根路径加 /n/<节点ID>）
+    ├── 部署中控/受管机   → multi-node.md
+    ├── 路由权限点/匿名路由 → permissions.md
+    ├── GPU 监控         → gpu-monitoring.md
     ├── Shell 终端       → references/shell.md (GET /shell WebSocket)
     └── WebSSH 终端     → references/ssh/hosts.md (GET /ssh/to/:id WebSocket)
 ```

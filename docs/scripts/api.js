@@ -71,8 +71,8 @@ function requireAuth() {
   const cfg = loadConfig();
   if (!cfg.base_url || !cfg.token) {
     red('✗ 未认证。请先执行:');
-    red('  api.js login <base_url> <username> <password> [totpCode]');
-    red('  api.js token <base_url> <token>');
+    red('  api.js login <api_root> <username> <password> [totpCode]');
+    red('  api.js token <api_root> <token>');
     process.exit(1);
   }
   return cfg;
@@ -200,8 +200,8 @@ function usage() {
   console.log(`isrvd API Harness (Node.js built-in edition)
 
   Auth:
-    api.js login  <url> <user> <pass> [totp]
-    api.js token  <url> <token>
+    api.js login  <api_root> <user> <pass> [totp]
+    api.js token  <api_root> <token>
     api.js logout
     api.js status
     api.js whoami
