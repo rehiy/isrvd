@@ -65,8 +65,8 @@ isrvd_post "/node" '{"name":"杭州机房 web-01"}'
 export ISRVD_MODE=agent
 export ISRVD_CENTER_URL=https://center.example.com
 export ISRVD_NODE_TOKEN="<创建时返回的 token>"
-bash <(curl -sL https://isrvd.rehiy.com/install/) install          # 裸机（systemd）
-bash <(curl -sL https://isrvd.rehiy.com/install/) install --docker  # 或 Docker
+bash <(curl -fsSL https://isrvd.rehiy.com/install/) install                 # 系统服务
+bash <(curl -fsSL 'https://isrvd.rehiy.com/install/?script=docker') install  # 或全容器化
 ```
 
 安装脚本会保存这些环境变量；已有服务需更新启动环境并重启。首次认证通过后节点状态变为 `active`，重启和重连继续使用同一 token。

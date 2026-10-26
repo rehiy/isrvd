@@ -55,13 +55,13 @@ isrvd
 
 **systemd**：`systemctl edit isrvd` 在 `[Service]` 中设置 `Environment="ISRVD_MODE=center"`（受管机另设 `ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN`），再执行 `systemctl daemon-reload` 与 `systemctl restart isrvd`。
 
-**安装脚本**（`bash <(curl -sL https://isrvd.rehiy.com/install/)`，或本地 `isrvd.sh`）：默认以单机模式启动；在 `install` 前导出上述环境变量，脚本会写入仅 root 可读的 systemd drop-in（`installer.conf`），Docker 安装则传入容器环境。`install --docker` 的 agent 模式不发布 8080（Caddy/APISIX 业务端口仍按镜像发布）。`update` 保留现有角色，不读取安装器环境来切换角色。
+**安装脚本**：系统服务使用 `/install/` 或本地 `isrvd-system.sh`，全容器化使用 `/install/?script=docker` 或本地 `isrvd-docker.sh`。在 `install` 前导出上述环境变量；默认角色为单机，系统服务写入仅 root 可读的 systemd drop-in（`installer.conf`），Docker 脚本传入容器环境。Docker 的 agent 模式不发布 8080（Caddy/APISIX 业务端口仍按镜像发布）。更新及卸载使用对应脚本，`update` 保留现有角色，不读取安装器环境来切换角色。
 
 ```bash
 export ISRVD_MODE=agent
 export ISRVD_CENTER_URL=https://center.example.com
 export ISRVD_NODE_TOKEN="<创建节点时生成的 token>"
-bash isrvd.sh install --docker
+bash isrvd-docker.sh install
 ```
 
 Docker `update` 将旧容器临时更名为 `isrvd-update-backup`，新容器通过启动检查（仅确认容器仍在运行，不代表已连上中控）后才删除旧容器；创建或启动检查失败时恢复旧容器。更新中断后遗留备份容器时，需先处理再重试。
@@ -116,7 +116,7 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 - 隧道里转发流与 HTTP 流共用同一条连接，以首字节区分；UDP 按「2 字节长度 + 数据报」分帧。协商成功且受管机 `features` 不含 `portmap` 时，保存规则会被拒绝（清空规则不受限）；节点离线或无法协商时放行。
 - **转发的连接不经过 isrvd 的认证、权限与审计，鉴权完全由目标应用负责**。该权限等同于访问节点网络内任意地址，请仅授予创始人，且勿转发无认证的服务。目标应用看到的来源地址是受管机本机。
 - 并发上限：每条 TCP 规则 512 个连接，每条 UDP 规则 256 个来源（空闲 60 秒回收）。
-- Docker 部署：中控容器需发布监听范围（如 `-p 20000-20999:20000-20999 -p 20000-20999:20000-20999/udp`），并设置 `portmap.bind: 0.0.0.0`。使用 `isrvd.sh` 时先在 `/srv/data/conf/isrvd.yml` 写好 `portmap.range` 与 `portmap.bind` 再执行 `update`，脚本按该范围发布 TCP/UDP 端口。受管机在容器内时，`127.0.0.1` 指向容器自身，访问宿主机服务请使用宿主机地址或 host 网络。
+- Docker 部署：中控容器需发布监听范围（如 `-p 20000-20999:20000-20999 -p 20000-20999:20000-20999/udp`），并设置 `portmap.bind: 0.0.0.0`。使用 `isrvd-docker.sh` 时先在 `/srv/data/conf/isrvd.yml` 写好 `portmap.range` 与 `portmap.bind` 再执行 `update`，脚本按该范围发布 TCP/UDP 端口。受管机在容器内时，`127.0.0.1` 指向容器自身，访问宿主机服务请使用宿主机地址或 host 网络。
 
 ## 权限与边界
 

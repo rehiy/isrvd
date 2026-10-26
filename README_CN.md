@@ -70,16 +70,34 @@ Docker 版默认管理员账号为 `admin` / `admin`，首次登录成功后会�
 
 ### 脚本安装（推荐）
 
-安装脚本会自动安装 Docker、初始化单节点 Swarm、创建可挂载的 overlay 网络 `sdnet`，并根据参数启动对应的一体化镜像：
+安装拆为两个独立脚本，无需互相下载或加载；均可使用 `--auto`（默认）、`--cn`、`--global` 选择软件源：
+
+- **系统服务 + 组件容器（`isrvd-system.sh`）**：isrvd 以 systemd 服务运行；使用 `--components` 按需安装独立 Caddy、APISIX、etcd 容器。APISIX 自动包含 etcd，`caddy,etcd` 可组合；Caddy 与 APISIX 共用 80/443，不能同时选择。组件使用 host 网络，管理接口和 etcd 仅监听 `127.0.0.1`，数据保存在 `/srv/data`。不选择组件时无需 Docker。
+- **全容器化（`isrvd-docker.sh`）**：自动准备 Docker、单节点 Swarm 和可挂载的 overlay 网络 `sdnet`，运行所选 `isrvd:tag` 一体化镜像。默认 tag 为 `slim`；内置 `caddy`、`apisix` 标签自动匹配端口布局，自定义标签用 `--variant slim|caddy|apisix` 指定布局。
 
 ```bash
-# slim / caddy / apisix 三选一
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --docker
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --caddy
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --apisix
+# 系统服务 + Caddy；或系统服务 + APISIX / etcd
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --components caddy
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --components apisix
+
+# 全容器化：slim / caddy / apisix 按需选择
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh) install --tag slim
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh) install --tag caddy
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh) install --tag apisix
+
+# 自定义 tag：将 YOUR_PUBLISHED_TAG 替换为所选仓库中已经发布的标签
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh) install --tag YOUR_PUBLISHED_TAG --variant apisix
 ```
 
-Docker 版统一使用容器名 `isrvd`，数据保存在 `/srv/data`；`update` 会按当前镜像类型重建容器，并保留 `ISRVD_MODE`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN`，`uninstall` 删除容器但保留数据目录。
+`isrvd-system.sh install --caddy` / `--apisix` 现在选择独立组件；需要一体化容器请使用 `isrvd-docker.sh install --caddy` / `--apisix`。`--systemd`、`--docker` 在各自脚本中可省略。Docker 版容器名为 `isrvd`，独立组件名为 `isrvd-caddy`、`isrvd-apisix`、`isrvd-etcd`。
+
+更新和卸载必须使用对应脚本，不再自动切换部署方式：`isrvd-system.sh update` 更新二进制及所属组件，`isrvd-docker.sh update` 重建主容器。保留已有配置和角色；Docker 更新保留镜像 tag，也可用 `isrvd-docker.sh update --tag YOUR_PUBLISHED_TAG --variant apisix` 更换标签；容器替换失败时恢复旧容器。组件沿用安装时固定的镜像版本，不自动跨版本升级。`isrvd-system.sh uninstall` 删除系统服务及所属组件，`isrvd-docker.sh uninstall` 只删除主容器，两者均保留 `/srv/data`；请先备份 `/usr/local/isrvd/config.yml`。
+
+在线入口 `/install/`（或 `?script=systemd`）提供系统服务脚本，`/install/?script=docker` 提供全容器化脚本，二者独立缓存。发布包包含两份脚本；旧的本地安装器可能不识别新包内的脚本文件，请使用最新在线脚本执行更新。
+
+系统服务 + APISIX 可通过环境变量 `ISRVD_APISIX_ADMIN_KEY` 提供 32-128 个字母、数字、`_` 或 `-` 组成的非纯数字密钥；未设置时随机生成。脚本把同一密钥通过环境传入 APISIX 容器，并写入仅 root 可读的 `/usr/local/isrvd/config.yml`（0600）中 `apisix.adminKey`，管理地址为 `http://127.0.0.1:9180/apisix/admin`；不会打印密钥或依赖 Go 环境变量覆盖。更新沿用已有组件密钥，修复此前遗漏的管理路径和密钥配置，不读取安装器环境来轮换密钥。请保护配置文件及其备份。组件启动配置位于 `/srv/data/conf/components`；APISIX 就绪检查会验证带密钥的 Admin API，保留配置与传入密钥不匹配时安装会失败并回滚。
+
+系统服务安装在解压前完成密钥、组件镜像和归档预检；后续失败或可捕获中断会回滚本次创建的二进制、链接、服务及所属容器，保留组件数据，允许重新安装。组件更新若因强制终止留下 `isrvd-组件-update-backup`，后续更新会在停服前中止；请确认备份归属并手动恢复，或运行 `isrvd-system.sh uninstall` 清理所属正常及备份容器后重装。内置 `slim` / `latest` / `caddy` / `apisix` 标签必须匹配对应的端口布局；安装及更新都会拒绝不一致的 `--variant`，自定义标签可显式指定布局。
 
 脚本从安装器环境读取 `ISRVD_MODE`（默认 `server`，可选 `center`、`agent`），请在执行 `install` 前导出；受管机还需导出 `ISRVD_CENTER_URL` 和 `ISRVD_NODE_TOKEN`。安装时这些值会写入仅 root 可读的 systemd drop-in（`installer.conf`）或传入 Docker 容器。中控在配置文件中启用端口转发（`portmap.range`，如 `20000-20999`，以及 `portmap.bind`）；Docker 中控需设置 `portmap.bind: 0.0.0.0` 并执行 `update`，脚本会发布 `portmap.range` 范围的 TCP 与 UDP 端口（范围宜小）。Docker 受管机不发布 8080 端口。更新时保留已安装的角色；如需更换角色，请重建 Docker 容器，或修改 systemd 环境后重启。
 
@@ -181,17 +199,17 @@ networks:
 
 ```bash
 # 一键安装（默认自动按 IP 选择 CNB/GitHub 源，可用 --cn / --global 手动指定）
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --cn
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --cn
 
 # 更新/卸载/仅下载
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) update
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) update --global
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) uninstall
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) download
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) update
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) update --global
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) uninstall
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) download
 ```
 
-二进制更新会先下载并校验安装包，再停止服务，并保留 `config.yml`。Docker 更新会保留旧容器，直到新容器通过启动检查；失败时恢复旧容器。若更新中断后遗留 `isrvd-update-backup` 容器，需先处理该容器再重试。执行 `bash isrvd.sh --help` 查看可用命令与选项。
+二进制更新会先下载并校验安装包，再停止服务，并保留 `config.yml`。Docker 更新会保留旧容器，直到新容器通过启动检查；失败时恢复旧容器。若更新中断后遗留 `isrvd-update-backup` 容器，需先处理该容器再重试。执行 `bash isrvd-system.sh --help` 查看可用命令与选项。
 
 配置文件位置通过 `ISRVD_CONFIG` 指定，详见 [配置](#配置)。
 

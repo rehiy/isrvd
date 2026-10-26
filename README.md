@@ -70,16 +70,34 @@ The Docker edition ships with the default admin account `admin` / `admin`; the f
 
 ### Script Install (recommended)
 
-The install script installs Docker, initializes a single-node Swarm, creates the attachable overlay network `sdnet`, and starts the matching all-in-one image:
+Two standalone scripts are provided; neither downloads or loads the other. Both accept `--auto` (default), `--cn`, or `--global` to select the source:
+
+- **System service + component containers (`isrvd-system.sh`)**: isrvd runs as a systemd service. Select separate Caddy, APISIX, or etcd containers with `--components`. APISIX includes etcd; `caddy,etcd` is also supported. Caddy and APISIX cannot be selected together because both use ports 80/443. Components use host networking, with admin APIs and etcd bound to `127.0.0.1`, and persist data in `/srv/data`. Docker is not required when no components are selected.
+- **Fully containerized (`isrvd-docker.sh`)**: prepares Docker, a single-node Swarm and the attachable overlay network `sdnet`, then starts the selected all-in-one `isrvd:tag` image. The default tag is `slim`. Built-in `caddy` and `apisix` tags select their port layouts automatically; use `--variant slim|caddy|apisix` for a custom tag.
 
 ```bash
-# pick one: slim / caddy / apisix
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --docker
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --caddy
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --apisix
+# System service + Caddy, or system service + APISIX / etcd
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --components caddy
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --components apisix
+
+# Fully containerized: select slim / caddy / apisix as needed
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh) install --tag slim
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh) install --tag caddy
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh) install --tag apisix
+
+# Replace YOUR_PUBLISHED_TAG with a tag already published in the selected registry
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh) install --tag YOUR_PUBLISHED_TAG --variant apisix
 ```
 
-The Docker edition always uses the container name `isrvd` and stores data in `/srv/data`; `update` rebuilds the container with the current image variant and preserves `ISRVD_MODE`, `ISRVD_CENTER_URL` and `ISRVD_NODE_TOKEN`, and `uninstall` removes the container while keeping the data directory.
+`isrvd-system.sh install --caddy` / `--apisix` now select separate components. For all-in-one containers, use `isrvd-docker.sh install --caddy` / `--apisix`. The `--systemd` and `--docker` flags are optional in their respective scripts. The main container is named `isrvd`; separate components are named `isrvd-caddy`, `isrvd-apisix` and `isrvd-etcd`.
+
+Use the matching script for updates and uninstall; deployment methods are no longer detected automatically. `isrvd-system.sh update` updates the binary and owned components; `isrvd-docker.sh update` rebuilds the main container. Existing configuration and role are preserved. Docker updates preserve the image tag; use `isrvd-docker.sh update --tag YOUR_PUBLISHED_TAG --variant apisix` to change it. Failed container replacements restore the previous container. Components retain their pinned image versions rather than automatically upgrading across versions. `isrvd-system.sh uninstall` removes the system service and owned components; `isrvd-docker.sh uninstall` removes only the main container. Both preserve `/srv/data`; back up `/usr/local/isrvd/config.yml` first.
+
+The online endpoint `/install/` (or `?script=systemd`) serves the system-service script; `/install/?script=docker` serves the Docker script. They use separate caches. Release packages contain both scripts; older local installers may reject the new package entries, so use the latest online script for updates.
+
+For systemd + APISIX, optionally provide `ISRVD_APISIX_ADMIN_KEY` through the environment (32-128 letters, digits, `_` or `-`, not numeric-only); otherwise the installer generates it. The script passes the same key to the APISIX container through its environment and writes `apisix.adminKey` in root-only `/usr/local/isrvd/config.yml` (0600), with the Admin URL `http://127.0.0.1:9180/apisix/admin`. It never prints the key or relies on a Go environment override. Updates retain the existing component key and repair the previously missing Admin path and credential without rotating keys from the installer environment. Protect the config file and its backups. Component startup configuration is in `/srv/data/conf/components`; APISIX readiness also verifies its authenticated Admin API, so installation fails and rolls back if a preserved configuration does not match the supplied key.
+
+System-service installation validates credentials, component images and the archive before extraction. Later failures or catchable interruptions roll back newly created binaries, links, service files and owned containers while preserving component data, allowing a retry. If a forced termination leaves `isrvd-COMPONENT-update-backup`, subsequent updates stop before stopping the service; verify ownership and restore the backup manually, or use `isrvd-system.sh uninstall` to remove owned normal and backup containers before reinstalling. Built-in `slim` / `latest` / `caddy` / `apisix` tags must match their port layouts: both installation and updates reject a conflicting `--variant`. Custom tags may specify their layout explicitly.
 
 The script reads `ISRVD_MODE` (`server` by default, `center`, or `agent`) from the installer environment. Export it before running `install`; managed nodes also require exported `ISRVD_CENTER_URL` and `ISRVD_NODE_TOKEN`. Installation saves these values in a root-only systemd drop-in (`installer.conf`) or passes them to Docker. A center enables port forwarding in the config file (`portmap.range`, for example `20000-20999`, and `portmap.bind`); for Docker centers set `portmap.bind: 0.0.0.0` and run `update`, which publishes the `portmap.range` range (TCP and UDP, keep it small). Docker agent installations do not publish port 8080. Updates preserve the installed role. To change roles later, recreate the Docker container or edit the systemd environment and restart.
 
@@ -181,17 +199,17 @@ networks:
 
 ```bash
 # one-line install (picks the CNB or GitHub source by IP; use --cn / --global to force)
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --cn
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --cn
 
 # update / uninstall / download only
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) update
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) update --global
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) uninstall
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) download
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) update
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) update --global
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) uninstall
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) download
 ```
 
-Binary updates download and check the archive before stopping the service, and preserve `config.yml`. Docker updates keep the previous container until the replacement stays running through the initial startup check; on failure, the previous container is restored. If an interrupted update leaves `isrvd-update-backup`, resolve that container before retrying. Use `bash isrvd.sh --help` for available commands and options.
+Binary updates download and check the archive before stopping the service, and preserve `config.yml`. Docker updates keep the previous container until the replacement stays running through the initial startup check; on failure, the previous container is restored. If an interrupted update leaves `isrvd-update-backup`, resolve that container before retrying. Use `bash isrvd-system.sh --help` for available commands and options.
 
 The config file location is set via `ISRVD_CONFIG`, see [Configuration](#configuration).
 
