@@ -633,10 +633,10 @@
                     <div class="wizard-body">
                         <div class="chip-group" role="radiogroup" aria-label="部署方式">
                             <button type="button" class="chip" role="radio" data-opt="method" data-val="script-binary" onclick="setOpt('method','script-binary')">
-                                脚本 · 二进制<span class="chip-tag">推荐</span>
+                                系统服务 + 组件容器<span class="chip-tag">推荐</span>
                             </button>
                             <button type="button" class="chip" role="radio" data-opt="method" data-val="script-docker" onclick="setOpt('method','script-docker')">
-                                脚本 · Docker
+                                全容器化
                             </button>
                             <button type="button" class="chip" role="radio" data-opt="method" data-val="docker" onclick="setOpt('method','docker')">
                                 docker run
@@ -679,6 +679,11 @@
                             <button type="button" class="chip" role="radio" data-opt="variant" data-val="apisix" onclick="setOpt('variant','apisix')">APISIX</button>
                         </div>
                         <p class="wizard-hint" id="hint-variant"></p>
+                        <label class="block mt-3 text-xs text-slate-500 dark:text-slate-400 hidden" id="f-tag">
+                            <span class="block mb-1">isrvd 镜像标签（可选）</span>
+                            <input id="in-tag" type="text" autocomplete="off" spellcheck="false" maxlength="128" placeholder="留空使用所选组件的标签" oninput="renderBuilder()" class="field-input" aria-describedby="hint-tag">
+                            <span class="block mt-1" id="hint-tag">自定义 tag 必须已发布；端口映射按上方组件选择生成。</span>
+                        </label>
                     </div>
                 </div>
 
@@ -1241,6 +1246,7 @@
         })();
         // Command builder：所有选项实时生成一条可直接粘贴执行的命令
         var SCRIPT_URL = 'https://isrvd.rehiy.com/install/';
+        var DOCKER_SCRIPT_URL = SCRIPT_URL + '?script=docker';
         var buildState = { method: 'script-binary', role: 'server', variant: 'slim', source: 'auto', net: 'auto' };
 
         function byId(id) { return document.getElementById(id); }
@@ -1249,8 +1255,6 @@
         function setHint(id, text) { byId(id).innerHTML = text; }
 
         function setOpt(key, val) {
-            // 二进制部署不带网关组件，选择后回落为 slim
-            if (key === 'variant' && buildState.method === 'script-binary' && val !== 'slim') return;
             buildState[key] = val;
             renderBuilder();
         }
@@ -1293,7 +1297,13 @@
             var isDocker = s.method === 'docker';
             var isAgent = s.role === 'agent';
 
-            v.variant = (s.method === 'script-binary' || isAgent) ? 'slim' : s.variant;
+            v.variant = (isDocker && isAgent) ? 'slim' : s.variant;
+            if (s.method !== 'script-binary') {
+                v.tag = fieldVal('in-tag') || v.variant;
+                if (!/^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(v.tag)) errs.push('镜像标签须为 1-128 个字母、数字或 _ . -，且不能以 . 或 - 开头');
+                var knownVariant = { slim: 'slim', latest: 'slim', caddy: 'caddy', apisix: 'apisix' }[v.tag];
+                if (knownVariant && knownVariant !== v.variant) errs.push('镜像标签与组件选择不一致，请选择对应组件或清空标签');
+            }
 
             if (isAgent) {
                 v.centerUrl = fieldVal('in-center-url').replace(/\/+$/, '');
@@ -1351,16 +1361,16 @@
         }
 
         function buildBinary(s, v) {
-            return [envPrefix(s, v) + installerRun('install' + sourceFlag(s))];
+            var components = v.variant === 'slim' ? 'none' : v.variant;
+            return [envPrefix(s, v) + installerRun('install --components ' + components + sourceFlag(s))];
         }
 
         function buildScriptDocker(s, v) {
-            var flag = { slim: '--docker', caddy: '--caddy', apisix: '--apisix' }[v.variant];
-            return [envPrefix(s, v) + installerRun('install ' + flag + sourceFlag(s))];
+            return [envPrefix(s, v) + installerRun('install --variant ' + v.variant + ' --tag ' + shq(v.tag) + sourceFlag(s), DOCKER_SCRIPT_URL)];
         }
 
         function dockerImage(s, v) {
-            return (s.source === 'cn' ? 'docker.cnb.cool/rehiy/isrvd' : 'rehiy/isrvd') + ':' + v.variant;
+            return (s.source === 'cn' ? 'docker.cnb.cool/rehiy/isrvd' : 'rehiy/isrvd') + ':' + v.tag;
         }
 
         function buildDockerRun(s, v) {
@@ -1406,12 +1416,14 @@
                     + '# 查看日志\n'
                     + 'docker logs -f ' + shq(v.cname);
             }
-            var out = '# 更新（自动识别二进制或 Docker 部署）\n' + installerRun('update' + sourceFlag(s)) + '\n\n';
+            var imageFlags = s.method === 'script-docker' ? ' --tag ' + shq(v.tag) + ' --variant ' + v.variant : '';
+            var scriptUrl = s.method === 'script-docker' ? DOCKER_SCRIPT_URL : SCRIPT_URL;
+            var out = '# 更新（使用当前部署方式对应的脚本）\n' + installerRun('update' + imageFlags + sourceFlag(s), scriptUrl) + '\n\n';
             if (s.method === 'script-binary') {
-                out += '# 卸载（删除 /usr/local/isrvd，含其中的 config.yml，请先备份）\n'
-                    + installerRun('uninstall') + '\n\n';
+                out += '# 卸载（删除系统服务与组件容器；请先备份 /usr/local/isrvd/config.yml）\n'
+                    + installerRun('uninstall', scriptUrl) + '\n\n';
             } else {
-                out += '# 卸载（删除容器，保留 /srv/data 数据目录）\n' + installerRun('uninstall') + '\n\n';
+                out += '# 卸载（只删除 isrvd 容器，保留 /srv/data 数据目录）\n' + installerRun('uninstall', scriptUrl) + '\n\n';
             }
             return out + '# 仅下载二进制包（不安装）\n' + installerRun('download' + sourceFlag(s));
         }
@@ -1432,8 +1444,8 @@
         }
 
         var METHOD_DESC = {
-            'script-binary': '下载二进制包，注册 systemd 服务（/usr/local/isrvd），不需要 Docker。',
-            'script-docker': '自动准备 Docker、Swarm 与 sdnet overlay 网络，随后拉起容器，适合不想碰命令行的场景。',
+            'script-binary': 'isrvd 注册为 systemd 服务（/usr/local/isrvd）；所选 Caddy / APISIX / etcd 组件由独立容器运行。',
+            'script-docker': '自动准备 Docker、Swarm 与 sdnet overlay 网络，使用所选 isrvd:tag 一体化镜像。',
             'docker': '完全手写 docker run 参数，可自定义容器名、端口、数据目录与网络。'
         };
 
@@ -1476,16 +1488,16 @@
                 var key = el.getAttribute('data-opt'), val = el.getAttribute('data-val');
                 var on = s[key] === val;
                 el.setAttribute('aria-checked', String(on));
-                var disabled = key === 'variant' && s.method === 'script-binary';
-                el.classList.toggle('disabled', disabled);
-                el.disabled = disabled;
+                el.classList.remove('disabled');
+                el.disabled = false;
             });
 
             setHint('hint-method', METHOD_DESC[s.method]);
             setHint('hint-role', ROLE_DESC[s.role] + (isDocker && isAgent ? ' 容器不发布任何端口。' : ''));
             setHint('hint-variant', s.method === 'script-binary'
-                ? '二进制部署不带网关组件；需要 Caddy / APISIX 请改用 Docker 部署。'
+                ? ({ slim: '仅安装 isrvd 系统服务，无需 Docker。', caddy: '独立 Caddy 容器，管理接口仅监听本机；网关监听 80/443。', apisix: '独立 APISIX + etcd 容器；自动生成管理密钥，管理接口仅监听本机。' }[s.variant])
                 : VARIANT_DESC[s.variant]);
+            setVisible(byId('f-tag'), s.method !== 'script-binary');
 
             var desc = SOURCE_DESC[s.method];
             setHint('hint-source', desc[{ auto: 0, cn: 1, global: 2 }[s.source]]);
@@ -1508,6 +1520,7 @@
             // 输入框就地标红，命令卡保持可见
             markField('in-center-url', isAgent && !!v.centerUrl && !validCenterUrl(v.centerUrl));
             markField('in-node-token', isAgent && !!v.code && !CODE_RE.test(v.code));
+            markField('in-tag', s.method !== 'script-binary' && !/^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(v.tag));
             markField('in-p-web', !isAgent && isDocker && /^\d+$/.test(fieldVal('in-p-web')) && (v.pWeb < 1 || v.pWeb > 65535));
 
             if (errs.length) {

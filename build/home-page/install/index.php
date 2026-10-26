@@ -3,24 +3,32 @@
  * iSrvd 安装脚本代理
  * 部署于 https://isrvd.rehiy.com/install/
  *
- * 用于代理 GitHub 上的 isrvd.sh 安装脚本，提供缓存加速。
- * 缓存 5 分钟，过期后重新拉取（安装参数需与主页保持同步）。
+ * 默认代理 isrvd-system.sh（系统服务），?script=docker 代理 isrvd-docker.sh。
+ * 两种脚本分别缓存 5 分钟；反向代理/CDN 缓存键须包含 script 查询参数。
  */
 
 header('Content-Type: text/plain; charset=utf-8');
 
 // ── 常量配置 ──────────────────────────────────────────────
 
-const CACHE_FILE    = __DIR__ . '/isrvd-v2.sh';
-const CACHE_TTL     = 5 * 60; // 5 分钟；换缓存文件避免旧脚本不识别新参数
-
-const SCRIPT_URL    = 'https://raw.githubusercontent.com/rehiy/isrvd/refs/heads/master/build/script/isrvd.sh';
+const CACHE_TTL = 5 * 60;
+const SCRIPT_FILES = [
+    'systemd' => 'isrvd-system.sh',
+    'docker'  => 'isrvd-docker.sh',
+];
+const SCRIPT_BASE_URL = 'https://raw.githubusercontent.com/rehiy/isrvd/refs/heads/master/build/script/';
 
 // ── 入口 ──────────────────────────────────────────────────
 
 function main(): void
 {
-    $content = fetchScript();
+    $script = $_GET['script'] ?? 'systemd';
+    if (!is_string($script) || !array_key_exists($script, SCRIPT_FILES)) {
+        http_response_code(400);
+        header('Cache-Control: no-store');
+        die("Error: script must be systemd or docker.\n");
+    }
+    $content = fetchScript($script);
 
     if (!$content) {
         http_response_code(502);
@@ -46,13 +54,18 @@ function respond(string $content): void
  * 从 GitHub 获取安装脚本，结果缓存 CACHE_TTL 秒
  * 拉取失败时返回旧缓存（若有），确保用户始终能获取到脚本
  */
-function fetchScript(): ?string
+function fetchScript(string $script): ?string
 {
     $cached = null;
+    $cacheFile = __DIR__ . '/isrvd-v4-' . $script . '.sh';
+    $scriptUrl = SCRIPT_BASE_URL . SCRIPT_FILES[$script];
 
-    if (file_exists(CACHE_FILE)) {
-        $cached = file_get_contents(CACHE_FILE);
-        if ($cached !== false && (time() - filemtime(CACHE_FILE)) < CACHE_TTL) {
+    if (file_exists($cacheFile)) {
+        $cached = file_get_contents($cacheFile);
+        if ($cached === false) {
+            $cached = null;
+        }
+        if ($cached !== null && (time() - filemtime($cacheFile)) < CACHE_TTL) {
             return $cached;
         }
     }
@@ -66,7 +79,7 @@ function fetchScript(): ?string
         ],
     ]);
 
-    $body = @file_get_contents(SCRIPT_URL, false, $ctx);
+    $body = @file_get_contents($scriptUrl, false, $ctx);
 
     $status = 0;
     foreach ($http_response_header ?? [] as $h) {
@@ -79,11 +92,7 @@ function fetchScript(): ?string
         return $cached;
     }
 
-    $cacheDir = dirname(CACHE_FILE);
-    if (!is_dir($cacheDir)) {
-        mkdir($cacheDir, 0755, true);
-    }
-    file_put_contents(CACHE_FILE, $body, LOCK_EX);
+    file_put_contents($cacheFile, $body, LOCK_EX);
 
     return $body;
 }
