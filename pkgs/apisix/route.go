@@ -30,13 +30,13 @@ type Route struct {
 	UpstreamID      string         `json:"upstream_id,omitempty"`      // 引用的 Upstream ID
 	Upstream        map[string]any `json:"upstream,omitempty"`         // 内联 Upstream 配置（与 UpstreamID 二选一）
 	Plugins         map[string]any `json:"plugins,omitempty"`          // 插件配置
-	Consumers       []string       `json:"consumers,omitempty"`        // 白名单 Consumer 列表
+	Consumers       []string       `json:"consumers,omitempty"`        // 白名单 Consumer 列表（只读，仅访问授权列表接口填充，请求中被忽略）
 	Timeout         *RouteTimeout  `json:"timeout,omitempty"`          // 超时配置
 	CreateTime      int64          `json:"create_time"`                // 创建时间（Unix 时间戳，只读）
 	UpdateTime      int64          `json:"update_time"`                // 更新时间（Unix 时间戳，只读）
 }
 
-// RouteList 获取所有路由列表（不过滤插件，用于路由管理页面展示）
+// RouteList 获取所有路由列表
 func (c *Client) RouteList(ctx context.Context) ([]Route, error) {
 	return requestResourceList[Route](ctx, c, "/routes", "解析路由列表失败")
 }
@@ -67,6 +67,14 @@ func (c *Client) RouteStatusPatch(ctx context.Context, routeID string, status in
 func (c *Client) RouteDelete(ctx context.Context, routeID string) error {
 	_, err := c.doRequest(ctx, http.MethodDelete, "/routes/"+url.PathEscape(routeID), nil)
 	return err
+}
+
+// RouteWhitelist 返回路由 consumer-restriction 插件中的当前白名单
+func RouteWhitelist(route *Route) []string {
+	if route == nil {
+		return []string{}
+	}
+	return pluginConsumerRestrictionWhitelist(route.Plugins)
 }
 
 // RouteWhitelistInspect 获取所有路由的 consumer-restriction 白名单

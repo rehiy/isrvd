@@ -10,7 +10,7 @@
 | create_time | number | 创建时间（只读，Unix 秒；创建接口响应中为 0） |
 | update_time | number | 更新时间（只读，Unix 秒；创建接口响应中为 0） |
 
-> 列表与创建响应中，认证插件的敏感字段（`key`、`username`、`password`、`secret`、`public_key`、`key_id`、`secret_key`）会脱敏；更新时原样回传脱敏值（含 `******`）即保留原值。
+> 列表与创建响应中，认证插件的敏感字段（`key`、`username`、`password`、`secret`、`public_key`、`key_id`、`secret_key`）会脱敏（长度 ≤ 2 整体替换为 `******`，3–10 位保留首尾各 1 位）；更新时原样回传脱敏值（含 `******`）即保留原值。
 
 ## 列出消费者
 
@@ -32,7 +32,7 @@ isrvd_post "/apisix/consumer" '{"username":"<USERNAME>","desc":"<DESC>","plugins
 isrvd_put "/apisix/consumer/<USERNAME>" '{"desc":"<DESC>","plugins":{"key-auth":{"key":"<AUTH_KEY>"}}}'
 ```
 
-更新为**全量替换** `desc` 与 `plugins`，`plugins` 需完整提交（不传会被清空）。响应 payload 仅含 `{username, desc}`。
+全量替换 `desc` 与 `plugins`（`plugins` 不传即清空）。Consumer 不存在返回 500。响应 payload 仅含 `{username, desc}`。
 
 ## 删除消费者
 
@@ -40,11 +40,13 @@ isrvd_put "/apisix/consumer/<USERNAME>" '{"desc":"<DESC>","plugins":{"key-auth":
 isrvd_delete "/apisix/consumer/<USERNAME>"
 ```
 
+不会清理路由白名单中对该 Consumer 的引用。
+
 ---
 
 ## 访问授权
 
-以下写操作读取路由详情时，如果 APISIX 成功响应缺少 `value` 或其为 `null`，接口返回 HTTP 500 的错误 JSON，并停止本次路由更新。
+写操作读取路由详情时，若 APISIX 响应缺少有效 `value`，返回 500 并中止更新。
 
 ### 获取访问授权
 
@@ -56,27 +58,17 @@ isrvd_get "/apisix/whitelist"
 
 ### 配置/更新路由访问授权
 
-该接口既用于首次配置路由访问授权，也用于更新已有授权的用户列表和路由侧 `key-auth` 参数。
-
-如需加入不存在的 Consumer，请先创建 Consumer：
-
-```bash
-isrvd_post "/apisix/consumer" '{"username":"<NEW_USERNAME>","plugins":{"key-auth":{"key":"<AUTH_KEY>"}}}'
-```
-
-再配置路由访问授权：
-
 ```bash
 isrvd_post "/apisix/whitelist" '{"route_id":"<ROUTE_ID>","consumers":["<USERNAME>","<NEW_USERNAME>"],"key_auth":{"header":"token","query":"token","hide_credentials":false}}'
 ```
 
-请求体字段：
+用于首次配置或更新路由访问授权：写入路由侧 `key-auth` 插件，并用 `consumers` 覆盖 `consumer-restriction.whitelist`。不会创建 Consumer，`consumers` 中的用户必须已存在（先用 `POST /apisix/consumer` 创建）。响应 payload 为更新后的路由详情（不含 `consumers`）。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | route_id | string | 已存在的 APISIX Route ID，不能为空 |
-| consumers | string[] | 已存在的授权 Consumer 用户名列表；为空数组、`null` 或不传时视为删除授权。用户名会 trim 并去重，全部为空时报"授权用户不能为空" |
-| key_auth | object | 写入路由的 `key-auth` 插件配置；`consumers` 非空时必填 |
+| consumers | string[] | 授权 Consumer 用户名列表（trim 并去重）；为空数组、`null` 或不传时视为删除授权，移除路由上的 consumer-restriction 和 key-auth，此时无需 `key_auth` |
+| key_auth | object | 写入路由的 `key-auth` 插件配置；`consumers` 非空时必填（先校验 `key_auth`，后校验用户名） |
 
 `key_auth` 字段：
 
@@ -86,21 +78,13 @@ isrvd_post "/apisix/whitelist" '{"route_id":"<ROUTE_ID>","consumers":["<USERNAME
 | query | string | URL 查询认证参数名，可选 |
 | hide_credentials | boolean | 是否在转发到上游前隐藏认证凭据 |
 
-该接口会按请求体中的 `key_auth` 写入路由侧 `key-auth` 插件，并用 `consumers` 覆盖写入 `consumer-restriction.whitelist`，用于把已有路由纳入 Consumer 访问授权管控或更新已有授权配置。接口只负责配置路由访问授权，不会创建 Consumer；`consumers` 中的用户必须已存在，如需新增用户应先调用 `/apisix/consumer` 创建并配置 `key-auth.key`。
-
-编辑场景下 `consumers` 传空数组（或不传）则视为删除授权，将移除路由上的 consumer-restriction 和 key-auth 插件配置，此时无需 `key_auth`。
-
 ### 新建用户并加入访问授权
 
-一次调用完成「创建 Consumer + 配置 key-auth + 加入路由访问授权」。执行顺序为先创建 Consumer 再更新路由，**非原子**：路由更新失败时已创建的 Consumer 不会回滚。Consumer 已存在时直接复用，且不会更新其 `key`。
-
-> ⚠️ 当前实现读取已有授权名单时取的是路由详情的 `consumers` 字段（详情接口不填充该字段），因此会把路由白名单**覆盖为仅含 `<USERNAME>`**。需要保留已有授权用户时，请改用 `POST /apisix/whitelist` 显式提交完整 `consumers` 列表。
+一次调用完成「创建 Consumer + 配置 key-auth + 加入路由访问授权」。先创建 Consumer 再更新路由，**非原子**：路由更新失败时不回滚已创建的 Consumer。Consumer 已存在时直接复用，不更新其 `key`；用户追加到路由现有白名单（已在白名单中则直接返回当前路由，不改动路由）。`key_auth` 会覆盖路由现有 key-auth 配置。响应 payload 为更新后的路由详情。
 
 ```bash
 isrvd_post "/apisix/whitelist/user" '{"route_id":"<ROUTE_ID>","username":"<USERNAME>","key":"<AUTH_KEY>","key_auth":{"header":"token","query":"token","hide_credentials":false}}'
 ```
-
-请求体字段：
 
 | 字段 | 类型 | 说明 |
 |------|------|------|

@@ -84,8 +84,7 @@ type WhitelistUserCreateRequest struct {
 	KeyAuth  map[string]any `json:"key_auth"` // key-auth 插件的附加配置
 }
 
-// WhitelistUserCreate 原子操作：创建 Consumer（含 key-auth）并加入路由访问授权。
-// 若 Consumer 已存在则直接复用，不报错，保证接口幂等。
+// WhitelistUserCreate 依次创建 Consumer（已存在则复用）并追加到路由白名单，非原子。
 func (s *Service) WhitelistUserCreate(ctx context.Context, req WhitelistUserCreateRequest) (*apisix.Route, error) {
 	routeID := strings.TrimSpace(req.RouteID)
 	username := strings.TrimSpace(req.Username)
@@ -134,7 +133,7 @@ func (s *Service) WhitelistUserCreate(ctx context.Context, req WhitelistUserCrea
 	if err != nil {
 		return nil, fmt.Errorf("获取路由详情失败: %w", err)
 	}
-	consumers := route.Consumers
+	consumers := apisix.RouteWhitelist(route)
 	for _, c := range consumers {
 		if c == username {
 			// 已在授权列表中，直接返回当前路由
