@@ -342,6 +342,10 @@
             background: #1e293b
         }
 
+        .wizard [hidden] {
+            display: none
+        }
+
         .wizard-row {
             display: flex;
             gap: 1rem;
@@ -671,18 +675,20 @@
 
                 <!-- 集成组件 -->
                 <div class="wizard-row">
-                    <div class="wizard-label">集成组件</div>
+                    <div class="wizard-label" id="variant-label">组件容器</div>
                     <div class="wizard-body">
-                        <div class="chip-group" role="radiogroup" aria-label="集成组件">
-                            <button type="button" class="chip" role="radio" data-opt="variant" data-val="slim" onclick="setOpt('variant','slim')">不集成<span class="chip-tag">默认</span></button>
+                        <div class="chip-group" role="radiogroup" aria-labelledby="variant-label">
+                            <button type="button" class="chip" role="radio" data-opt="variant" data-val="slim" onclick="setOpt('variant','slim')"><span id="variant-slim-label">不安装组件</span><span class="chip-tag">默认</span></button>
                             <button type="button" class="chip" role="radio" data-opt="variant" data-val="caddy" onclick="setOpt('variant','caddy')">Caddy</button>
-                            <button type="button" class="chip" role="radio" data-opt="variant" data-val="apisix" onclick="setOpt('variant','apisix')">APISIX</button>
+                            <button type="button" class="chip" role="radio" data-opt="variant" data-val="apisix" onclick="setOpt('variant','apisix')">APISIX + etcd</button>
+                            <button type="button" class="chip" role="radio" data-opt="variant" data-val="etcd" data-system-only="true" onclick="setOpt('variant','etcd')">etcd</button>
+                            <button type="button" class="chip" role="radio" data-opt="variant" data-val="caddy,etcd" data-system-only="true" onclick="setOpt('variant','caddy,etcd')">Caddy + etcd</button>
                         </div>
                         <p class="wizard-hint" id="hint-variant"></p>
                         <label class="block mt-3 text-xs text-slate-500 dark:text-slate-400 hidden" id="f-tag">
                             <span class="block mb-1">isrvd 镜像标签（可选）</span>
                             <input id="in-tag" type="text" autocomplete="off" spellcheck="false" maxlength="128" placeholder="留空使用所选组件的标签" oninput="renderBuilder()" class="field-input" aria-describedby="hint-tag">
-                            <span class="block mt-1" id="hint-tag">自定义 tag 必须已发布；端口映射按上方组件选择生成。</span>
+                            <span class="block mt-1" id="hint-tag">自定义 tag 必须已发布；上方选择决定端口布局，内置标签必须与布局匹配。</span>
                         </label>
                     </div>
                 </div>
@@ -692,9 +698,9 @@
                     <div class="wizard-label">软件源</div>
                     <div class="wizard-body">
                         <div class="chip-group" role="radiogroup" aria-label="软件源">
-                            <button type="button" class="chip" role="radio" data-opt="source" data-val="auto" onclick="setOpt('source','auto')">自动<span class="chip-tag">默认</span></button>
+                            <button type="button" class="chip" role="radio" data-opt="source" data-val="auto" onclick="setOpt('source','auto')"><span id="source-auto-label">自动</span><span class="chip-tag">默认</span></button>
                             <button type="button" class="chip" role="radio" data-opt="source" data-val="cn" onclick="setOpt('source','cn')">CNB</button>
-                            <button type="button" class="chip" role="radio" data-opt="source" data-val="global" onclick="setOpt('source','global')">GitHub</button>
+                            <button type="button" class="chip" role="radio" data-opt="source" data-val="global" onclick="setOpt('source','global')"><span id="source-global-label">GitHub</span></button>
                         </div>
                         <p class="wizard-hint" id="hint-source"></p>
                     </div>
@@ -763,10 +769,8 @@
             <!-- 管理命令 -->
             <details id="install-manage-block" class="mt-8">
                 <summary class="cursor-pointer text-sm font-medium text-slate-600 dark:text-slate-300">管理：查看当前部署方式的更新 / 卸载命令</summary>
-                <div class="code-block mt-3">
-                    <div class="code-header"><span>bash</span><button type="button" class="copy-btn" onclick="copyCode(this)" aria-live="polite">复制</button></div>
-                    <div class="code-body generated" id="install-manage"></div>
-                </div>
+                <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">每张卡片只复制一项操作；更新、换标签与卸载相互独立，请勿连续执行全部操作。</p>
+                <div id="install-manage"></div>
             </details>
 
             <p class="mt-5 text-xs text-slate-400">需要本地 YAML / etcd 配置？查看 <a href="https://github.com/rehiy/isrvd/blob/master/docs/references/system/config.md" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">配置文档</a>。</p>
@@ -1251,11 +1255,21 @@
 
         function byId(id) { return document.getElementById(id); }
         function fieldVal(id) { return byId(id).value.trim(); }
-        function setVisible(el, on) { el.classList.toggle('hidden', !on); }
+        function setVisible(el, on) { el.hidden = !on; el.classList.toggle('hidden', !on); }
         function setHint(id, text) { byId(id).innerHTML = text; }
+
+        function selectedVariant(s) {
+            if (s.method === 'docker' && s.role === 'agent') return 'slim';
+            if (s.method !== 'script-binary') {
+                if (s.variant === 'caddy,etcd') return 'caddy';
+                if (s.variant === 'etcd') return 'slim';
+            }
+            return s.variant;
+        }
 
         function setOpt(key, val) {
             buildState[key] = val;
+            buildState.variant = selectedVariant(buildState);
             renderBuilder();
         }
 
@@ -1297,12 +1311,13 @@
             var isDocker = s.method === 'docker';
             var isAgent = s.role === 'agent';
 
-            v.variant = (isDocker && isAgent) ? 'slim' : s.variant;
+            v.variant = selectedVariant(s);
             if (s.method !== 'script-binary') {
                 v.tag = fieldVal('in-tag') || v.variant;
                 if (!/^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(v.tag)) errs.push('镜像标签须为 1-128 个字母、数字或 _ . -，且不能以 . 或 - 开头');
-                var knownVariant = { slim: 'slim', latest: 'slim', caddy: 'caddy', apisix: 'apisix' }[v.tag];
-                if (knownVariant && knownVariant !== v.variant) errs.push('镜像标签与组件选择不一致，请选择对应组件或清空标签');
+                var layouts = { slim: 'slim', latest: 'slim', caddy: 'caddy', apisix: 'apisix' };
+                var knownVariant = Object.prototype.hasOwnProperty.call(layouts, v.tag) ? layouts[v.tag] : '';
+                if (knownVariant && knownVariant !== v.variant) errs.push('镜像标签与端口布局不一致，请选择对应布局或清空标签');
             }
 
             if (isAgent) {
@@ -1407,37 +1422,80 @@
             return lines.join(' \\\n  && ');
         }
 
+        function sameLayoutGuard(name, variant) {
+            return '(\n'
+                + '  isrvd_current_layout=$(docker inspect --format ' + shq('{{index .Config.Labels "io.isrvd.variant"}}') + ' ' + shq(name) + ') || exit 1\n'
+                + '  case "$isrvd_current_layout" in\n'
+                + '    slim|caddy|apisix) ;;\n'
+                + '    *)\n'
+                + '      isrvd_current_image=$(docker inspect --format ' + shq('{{.Config.Image}}') + ' ' + shq(name) + ') || exit 1\n'
+                + '      case "${isrvd_current_image##*:}" in\n'
+                + '        slim|latest) isrvd_current_layout=slim ;;\n'
+                + '        caddy|apisix) isrvd_current_layout="${isrvd_current_image##*:}" ;;\n'
+                + '        *) printf "%s\\n" ' + shq('无法确认现有镜像布局，已中止。请先核对现有镜像及配置。') + ' >&2; exit 1 ;;\n'
+                + '      esac\n'
+                + '      ;;\n'
+                + '  esac\n'
+                + '  [ "$isrvd_current_layout" = ' + shq(variant) + ' ] || { printf "%s\\n" ' + shq('仅支持同布局更新；跨布局请先迁移网关管理地址、密钥并验证 Admin API，不能仅修改 --variant。') + ' >&2; exit 1; }\n'
+                + ')';
+        }
+
         function buildManage(s, v) {
+            var migrationNote = '仅支持同布局换标签，命令先检查现有布局，不匹配或无法确认时中止。跨布局需另行迁移网关地址、密钥并验证管理接口。';
             if (s.method === 'docker') {
-                return '# 更新：拉取新镜像并重建容器（重新执行上方 docker run 命令；数据保存在 ' + v.data + '）\n'
-                    + 'docker pull ' + dockerImage(s, v) + '\n\n'
-                    + '# 卸载容器（保留数据目录 ' + v.data + '）\n'
-                    + 'docker rm -f ' + shq(v.cname) + '\n\n'
-                    + '# 查看日志\n'
-                    + 'docker logs -f ' + shq(v.cname);
+                var run = buildDockerRun(s, v).slice(-1)[0];
+                return [
+                    { id: 'update', title: '同布局更新 / 重建', note: migrationNote + ' 先备份并核对容器名、角色和挂载；重建保留数据，不提供自动回滚。', command: joinCommands([sameLayoutGuard(v.cname, v.variant), 'docker pull ' + dockerImage(s, v), 'docker stop ' + shq(v.cname), 'docker rm ' + shq(v.cname), run]) },
+                    { id: 'uninstall', title: '卸载容器', note: '只执行卸载，保留数据目录 ' + v.data + '。', command: 'docker rm -f ' + shq(v.cname), danger: true },
+                    { id: 'logs', title: '查看日志', note: '不会更新或删除容器。', command: 'docker logs -f ' + shq(v.cname) }
+                ];
             }
-            var imageFlags = s.method === 'script-docker' ? ' --tag ' + shq(v.tag) + ' --variant ' + v.variant : '';
-            var scriptUrl = s.method === 'script-docker' ? DOCKER_SCRIPT_URL : SCRIPT_URL;
-            var out = '# 更新（使用当前部署方式对应的脚本）\n' + installerRun('update' + imageFlags + sourceFlag(s), scriptUrl) + '\n\n';
-            if (s.method === 'script-binary') {
-                out += '# 卸载（删除系统服务与组件容器；请先备份 /usr/local/isrvd/config.yml）\n'
-                    + installerRun('uninstall', scriptUrl) + '\n\n';
-            } else {
-                out += '# 卸载（只删除 isrvd 容器，保留 /srv/data 数据目录）\n' + installerRun('uninstall', scriptUrl) + '\n\n';
+            var isSystem = s.method === 'script-binary';
+            var scriptUrl = isSystem ? SCRIPT_URL : DOCKER_SCRIPT_URL;
+            var actions = [{ id: 'update', title: '更新现有部署', note: isSystem ? 'isrvd-system.sh：保留配置、密钥及角色，更新二进制与所属组件。' : 'isrvd-docker.sh：保留已安装镜像标签、布局及角色，不使用上方选择切换标签。', command: installerRun('update' + sourceFlag(s), scriptUrl) }];
+            if (!isSystem) {
+                actions.push({ id: 'change-tag', title: '同布局换标签（可选）', note: migrationNote, command: joinCommands([sameLayoutGuard('isrvd', v.variant), installerRun('update --tag ' + shq(v.tag) + ' --variant ' + v.variant + sourceFlag(s), scriptUrl)]) });
             }
-            return out + '# 仅下载二进制包（不安装）\n' + installerRun('download' + sourceFlag(s));
+            actions.push({ id: 'uninstall', title: '卸载部署', note: isSystem ? '删除系统服务与所属组件及备份容器。先备份 /usr/local/isrvd/config.yml；保留 /srv/data。' : '只删除 isrvd 主容器，保留 /srv/data。', command: installerRun('uninstall', scriptUrl), danger: true });
+            actions.push({ id: 'download', title: '仅下载二进制', note: '使用 isrvd-system.sh 下载到当前目录，不安装、不更新、不卸载。', command: installerRun('download' + sourceFlag(s), SCRIPT_URL) });
+            return actions;
+        }
+
+        function renderManage(actions) {
+            byId('install-manage').innerHTML = actions.map(function (action) {
+                var headingClass = action.danger ? 'text-red-600 dark:text-red-400' : 'text-slate-600 dark:text-slate-300';
+                return '<section class="mt-4" data-manage-action="' + esc(action.id) + '">'
+                    + '<h3 class="text-sm font-medium ' + headingClass + '">' + esc(action.title) + '</h3>'
+                    + '<p class="mt-1 mb-2 text-xs text-slate-500 dark:text-slate-400">' + esc(action.note) + '</p>'
+                    + '<div class="code-block"><div class="code-header"><span>bash</span>'
+                    + '<button type="button" class="copy-btn" onclick="copyCode(this)" aria-live="polite" aria-label="复制' + esc(action.title) + '命令">复制</button></div>'
+                    + '<div class="code-body generated">' + highlight(action.command) + '</div></div></section>';
+            }).join('');
         }
 
         function buildNotes(s, v) {
             var notes = [];
             if (s.method === 'docker') {
                 notes.push('请确认 Docker 已启动；数据目录 <code>' + esc(v.data) + '</code> 会挂载到容器 /data。');
-                if (s.net === 'auto') notes.push('自动创建单机 bridge 网络 sdnet；跨主机通信请改用已有 overlay 网络。');
+                if (s.net === 'auto') notes.push('自动创建单机 bridge 网络 sdnet；脚本模式要求同名网络为 attachable overlay，不兼容时请先处理网络。');
                 if (v.installDocker) notes.push('命令开头的自动安装 Docker 需要 root 权限。');
+                notes.push('手写更新按当前表单重建容器，不自动保留旧角色或回滚；执行前核对配置并备份。');
             } else {
-                notes.push('请以 root 身份在 Bash 中执行；脚本负责安装与后续升级。');
+                notes.push('请以 root 身份在 Bash 中执行；安装与更新、卸载必须使用同一种部署脚本。');
+                if (s.method === 'script-binary') {
+                    notes.push('安装失败或可捕获中断会回滚本次新建资源，保留组件数据；卸载前备份 <code>/usr/local/isrvd/config.yml</code>，<code>/srv/data</code> 不删除。');
+                    if (v.variant !== 'slim') notes.push('组件使用 host 网络；管理接口与 etcd 仅监听本机。更新遗留 <code>isrvd-组件-update-backup</code> 时会在停服前中止，请恢复备份或用系统脚本卸载清理。');
+                    if (v.variant === 'apisix') {
+                        notes.push('APISIX 密钥随机生成，或在执行前通过环境变量 <code>ISRVD_APISIX_ADMIN_KEY</code> 提供；脚本保存至 <code>config.yml</code>（root 可读，0600），更新沿用原密钥。请保护配置及备份。');
+                        notes.push('APISIX 管理地址为 <code>http://127.0.0.1:9180/apisix/admin</code>；安装会验证 Admin API 鉴权，不能仅凭容器运行判断可用。');
+                    }
+                } else {
+                    notes.push('脚本自动准备 Swarm 与 <code>sdnet</code>；已有同名网络必须为 attachable overlay。卸载只删除主容器，保留 <code>/srv/data</code>。');
+                    notes.push('更新默认保留已安装标签与角色；下方另有同布局换标签命令，跨布局需先迁移网关配置。替换失败会恢复旧容器，中断遗留 <code>isrvd-update-backup</code> 时请先处理备份。');
+                }
             }
             if (s.method !== 'script-binary') notes.push('挂载 Docker socket 相当于授予宿主机高权限，请勿向不可信用户开放管理界面。');
+            if (s.role === 'center') notes.push('端口转发需在配置中设置 <code>portmap.range</code> 和 <code>portmap.bind</code>；容器内使用 <code>0.0.0.0</code>。Docker 脚本更新会发布 TCP/UDP 范围，手写容器须自行添加对应端口映射。');
             if (s.role === 'agent') notes.push('节点令牌只用于接入中控，请勿外泄；吊销后受管机会立即断开。');
             else notes.push('登录后立即修改默认账号 admin 的密码。');
             return notes;
@@ -1455,16 +1513,24 @@
             'agent': '受管机模式，主动连接中控，不监听 Web 端口。'
         };
 
+        var SYSTEM_COMPONENT_DESC = {
+            'slim': '仅安装 isrvd 系统服务，无需 Docker。',
+            'caddy': '独立 Caddy 容器；管理接口仅监听本机，网关监听 80/443。',
+            'apisix': '独立 APISIX + etcd 容器；自动配置管理密钥，管理接口仅监听本机。',
+            'etcd': '独立 etcd 容器，客户端端口 2379 仅监听本机；不会自动切换 isrvd 的配置存储。',
+            'caddy,etcd': '独立 Caddy 和 etcd 容器；网关监听 80/443，管理接口与 etcd 仅监听本机。'
+        };
+
         var VARIANT_DESC = {
-            'slim': '仅 isrvd，体积最小，网关可日后单独部署。',
-            'caddy': '内置 Caddy，顺带提供反向代理与自动 HTTPS（ACME）。',
-            'apisix': '内置 APISIX（含 etcd），适合 API 网关场景。'
+            'slim': 'slim 布局：仅 isrvd，体积最小，网关可日后单独部署。',
+            'caddy': 'caddy 布局：一体化镜像内含 Caddy，业务端口为 80/443。',
+            'apisix': 'apisix 布局：一体化镜像内含 APISIX + etcd，业务端口映射至 9080/9443。'
         };
 
         var SOURCE_DESC = {
-            'script-binary': ['按出口 IP 自动选择 CNB 或 GitHub', '二进制包取自 CNB Releases', '二进制包取自 GitHub Releases'],
-            'script-docker': ['按出口 IP 自动选择镜像源', '镜像取自 docker.cnb.cool/rehiy/isrvd', '镜像取自 Docker Hub（rehiy/isrvd）'],
-            'docker': ['与脚本模式一致，按出口 IP 选择镜像源', '镜像取自 docker.cnb.cool/rehiy/isrvd', '镜像取自 Docker Hub（rehiy/isrvd）']
+            'script-binary': ['二进制按出口 IP 自动选择 CNB 或 GitHub；组件使用各自固定镜像源', '二进制包取自 CNB Releases；组件使用各自固定镜像源', '二进制包取自 GitHub Releases；组件使用各自固定镜像源'],
+            'script-docker': ['按出口 IP 自动选择 CNB 或 Docker Hub 镜像源', '镜像取自 docker.cnb.cool/rehiy/isrvd', '镜像取自 Docker Hub（rehiy/isrvd）'],
+            'docker': ['默认使用 Docker Hub；需要国内镜像源请选 CNB，不进行 IP 探测', '镜像取自 docker.cnb.cool/rehiy/isrvd', '镜像取自 Docker Hub（rehiy/isrvd）']
         };
 
         var NET_DESC = {
@@ -1483,21 +1549,28 @@
             var s = buildState;
             var isDocker = s.method === 'docker';
             var isAgent = s.role === 'agent';
+            var isSystem = s.method === 'script-binary';
+            s.variant = selectedVariant(s);
 
             document.querySelectorAll('.chip[data-opt]').forEach(function (el) {
                 var key = el.getAttribute('data-opt'), val = el.getAttribute('data-val');
-                var on = s[key] === val;
-                el.setAttribute('aria-checked', String(on));
-                el.classList.remove('disabled');
-                el.disabled = false;
+                var systemOnly = el.getAttribute('data-system-only') === 'true';
+                var disabled = key === 'variant' && ((!isSystem && systemOnly) || (isDocker && isAgent && val !== 'slim'));
+                el.setAttribute('aria-checked', String(s[key] === val));
+                el.setAttribute('aria-disabled', String(disabled));
+                el.classList.toggle('disabled', disabled);
+                el.disabled = disabled;
+                if (systemOnly) setVisible(el, isSystem);
             });
 
+            byId('variant-label').textContent = isSystem ? '组件容器' : '镜像布局';
+            byId('variant-slim-label').textContent = isSystem ? '不安装组件' : 'slim';
+            byId('source-auto-label').textContent = isDocker ? '默认' : '自动';
+            byId('source-global-label').textContent = isSystem ? 'GitHub' : 'Docker Hub';
             setHint('hint-method', METHOD_DESC[s.method]);
-            setHint('hint-role', ROLE_DESC[s.role] + (isDocker && isAgent ? ' 容器不发布任何端口。' : ''));
-            setHint('hint-variant', s.method === 'script-binary'
-                ? ({ slim: '仅安装 isrvd 系统服务，无需 Docker。', caddy: '独立 Caddy 容器，管理接口仅监听本机；网关监听 80/443。', apisix: '独立 APISIX + etcd 容器；自动生成管理密钥，管理接口仅监听本机。' }[s.variant])
-                : VARIANT_DESC[s.variant]);
-            setVisible(byId('f-tag'), s.method !== 'script-binary');
+            setHint('hint-role', ROLE_DESC[s.role] + (isDocker && isAgent ? ' 手写容器使用 slim，不发布任何端口。' : ''));
+            setHint('hint-variant', isSystem ? SYSTEM_COMPONENT_DESC[s.variant] : VARIANT_DESC[s.variant]);
+            setVisible(byId('f-tag'), !isSystem);
 
             var desc = SOURCE_DESC[s.method];
             setHint('hint-source', desc[{ auto: 0, cn: 1, global: 2 }[s.source]]);
@@ -1520,7 +1593,7 @@
             // 输入框就地标红，命令卡保持可见
             markField('in-center-url', isAgent && !!v.centerUrl && !validCenterUrl(v.centerUrl));
             markField('in-node-token', isAgent && !!v.code && !CODE_RE.test(v.code));
-            markField('in-tag', s.method !== 'script-binary' && !/^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(v.tag));
+            markField('in-tag', !isSystem && errs.some(function (err) { return /^镜像标签/.test(err); }));
             markField('in-p-web', !isAgent && isDocker && /^\d+$/.test(fieldVal('in-p-web')) && (v.pWeb < 1 || v.pWeb > 65535));
 
             if (errs.length) {
@@ -1536,9 +1609,9 @@
             var command = isDocker ? joinCommands(buildDockerRun(s, v))
                 : joinCommands(s.method === 'script-binary' ? buildBinary(s, v) : buildScriptDocker(s, v));
 
-            byId('build-label').textContent = isDocker ? 'bash — docker run' : 'bash';
+            byId('build-label').textContent = isDocker ? 'bash — docker run' : 'bash — ' + (isSystem ? 'isrvd-system.sh' : 'isrvd-docker.sh');
             byId('build-cmd').innerHTML = highlight(command);
-            byId('install-manage').innerHTML = highlight(buildManage(s, v));
+            renderManage(buildManage(s, v));
             byId('install-notes').innerHTML = buildNotes(s, v).map(function (t) { return '<li>' + t + '</li>'; }).join('');
             byId('build-copy').disabled = false;
 
@@ -1547,9 +1620,17 @@
                 meta.push('容器 <code>' + esc(v.cname) + '</code>');
                 meta.push('数据 <code>' + esc(v.data) + '</code>');
                 meta.push('镜像 <code>' + esc(dockerImage(s, v)) + '</code>');
-            } else {
+            } else if (isSystem) {
+                meta.push('脚本 <code>isrvd-system.sh</code>');
                 meta.push('安装目录 <code>/usr/local/isrvd</code>');
-                meta.push(s.method === 'script-binary' ? '配置 <code>/usr/local/isrvd/config.yml</code>' : '数据 <code>/srv/data</code>');
+                meta.push('配置 <code>/usr/local/isrvd/config.yml</code>');
+                if (v.variant !== 'slim') meta.push('组件数据 <code>/srv/data</code>');
+            } else {
+                meta.push('脚本 <code>isrvd-docker.sh</code>');
+                meta.push('容器 <code>isrvd</code>');
+                meta.push('数据 <code>/srv/data</code>');
+                meta.push('配置 <code>/srv/data/conf/isrvd.yml</code>');
+                meta.push('镜像 <code>isrvd:' + esc(v.tag) + '</code>');
             }
             byId('install-meta').innerHTML = meta.join('<span class="text-slate-300 dark:text-slate-700">·</span>');
         }
