@@ -84,15 +84,17 @@ build windows arm64
 ###########################################
 
 cp config.yml dist/
-cp build/script/isrvd.sh dist/isrvd.sh
+cp build/script/isrvd-system.sh build/script/isrvd-docker.sh dist/
 
 cd dist/
-for app in isrvd-*; do
+for app in isrvd-linux-* isrvd-darwin-* isrvd-windows-*.exe; do
+    [ -f "$app" ] || continue
+    case "$app" in *.tar.gz) continue ;; esac
     archive="${app%.exe}.tar.gz"
     echo "==> packing $archive"
-    tar czf "$archive" "$app" config.yml isrvd.sh
+    tar czf "$archive" "$app" config.yml isrvd-system.sh isrvd-docker.sh
     rm -f "$app"
 done
 
-rm -f config.yml isrvd.sh
+rm -f config.yml isrvd-system.sh isrvd-docker.sh
 cd ../
