@@ -81,6 +81,8 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) ins
 
 Docker 版统一使用容器名 `isrvd`，数据保存在 `/srv/data`；`update` 会按当前镜像类型重建容器，并保留 `ISRVD_MODE`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN`，`uninstall` 删除容器但保留数据目录。
 
+脚本从安装器环境读取 `ISRVD_MODE`（默认 `server`，可选 `center`、`agent`），请在执行 `install` 前导出；受管机还需导出 `ISRVD_CENTER_URL` 和 `ISRVD_NODE_TOKEN`。安装时这些值会写入仅 root 可读的 systemd drop-in（`installer.conf`）或传入 Docker 容器。中控在配置文件中启用端口转发（`portmap.range`，如 `20000-20999`，以及 `portmap.bind`）；Docker 中控需设置 `portmap.bind: 0.0.0.0` 并执行 `update`，脚本会发布 `portmap.range` 范围的 TCP 与 UDP 端口（范围宜小）。Docker 受管机不发布 8080 端口。更新时保留已安装的角色；如需更换角色，请重建 Docker 容器，或修改 systemd 环境后重启。
+
 ### 准备网络
 
 使用安装脚本时无需手动操作。手动部署 Docker 版时，推荐先初始化 Swarm，再创建可挂载的 overlay 网络：
@@ -189,6 +191,8 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) uni
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) download
 ```
 
+二进制更新会先下载并校验安装包，再停止服务，并保留 `config.yml`。Docker 更新会保留旧容器，直到新容器通过启动检查；失败时恢复旧容器。若更新中断后遗留 `isrvd-update-backup` 容器，需先处理该容器再重试。执行 `bash isrvd.sh --help` 查看可用命令与选项。
+
 配置文件位置通过 `ISRVD_CONFIG` 指定，详见 [配置](#配置)。
 
 ## 集中管理
@@ -215,8 +219,8 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) dow
 ### 接入节点
 
 1. 在中控进程环境中设置 `ISRVD_MODE=center`，重启服务。
-2. 在中控「接入节点」生成 token，弹窗可复制受控机环境变量；未接入的 token 显示为「待接入」。
-3. 在受控机进程环境中设置：
+2. 在中控的节点管理页点击「接入节点」，填写必填名称并创建节点。保存 token，并复制弹窗中的安装命令；节点此时为「待接入」状态。
+3. 在受管机进程环境中设置：
 
 ```bash
 export ISRVD_MODE=agent
@@ -224,39 +228,39 @@ export ISRVD_CENTER_URL=https://center.example.com
 export ISRVD_NODE_TOKEN="<中控生成的 token>"
 ```
 
-4. 重启后直接用 token 连接。首次接入前 token 有有效期；接入后同一 token 可用于重启与重连。已在线时拒绝重复连接（409），不会顶替旧会话。
+4. 重启后直接用 token 连接。token 无时效限制，接入后同一 token 可用于重启与重连。已在线时拒绝重复连接（409），不会顶替旧会话。
 
-部署参数由进程环境提供，YAML、etcd 与配置 API 管理业务配置。中控支持 `tha`，网关按 `tha.trustedCIDRs` 校验真实连接来源；受控模式要求 `tha.enabled=false`。保存 token 的环境文件应限制权限为 `0600`。
+中控支持 `tha`，网关按 `tha.trustedCIDRs` 校验真实连接来源；受管模式不能启用 `tha`。部署参数由进程环境提供，YAML、etcd 与配置 API 管理业务配置。保存 token 的环境文件应限制权限为 `0600`。
 
 ### 容器部署
 
-提前准备完整的 `/srv/data/conf/isrvd.yml` 保存业务配置，通过 `-e` 传入部署参数，中控与受控机分别部署在各自机器上：
+提前准备完整的 `/srv/data/conf/isrvd.yml` 保存业务配置，通过 `-e` 传入部署参数，中控与受管机分别部署在各自机器上：
 
 ```bash
 # 中控（8080 为对外入口）
 docker run -d --name isrvd-center -e ISRVD_MODE=center --network sdnet -p 8080:8080 \
   -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
 
-# 受控机（不需要 -p）
+# 受管机（不需要 -p）
 docker run -d --name isrvd-agent --network sdnet \
   -e ISRVD_MODE=agent -e ISRVD_CENTER_URL=https://center.example.com \
   -e ISRVD_NODE_TOKEN="<中控生成的 token>" \
   -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
 ```
 
-受控机必须有创始人成员，不能启用 `tha`；受控模式下 `listenAddr` 不生效。切换后只能经中控访问，地址或 token 错误时，需修改受控机环境变量并重启。
+受管机不能启用 `tha`；受管模式下 `listenAddr` 不生效。受管机至少需要一个创始人成员，否则转发请求返回 401。切换后只能经中控访问，地址或 token 错误时，需修改受管机环境变量并重启。
 
 ### systemd 部署
 
-通过 `systemctl edit isrvd` 在 `[Service]` 中设置 `Environment="ISRVD_MODE=center"`；受控机还需设置 `ISRVD_CENTER_URL` 和 `ISRVD_NODE_TOKEN`。保存后执行 `systemctl daemon-reload` 与 `systemctl restart isrvd`。安装默认以单机模式启动。
+通过 `systemctl edit isrvd` 在 `[Service]` 中设置 `Environment="ISRVD_MODE=center"`；受管机还需设置 `ISRVD_CENTER_URL` 和 `ISRVD_NODE_TOKEN`。保存后执行 `systemctl daemon-reload` 与 `systemctl restart isrvd`。安装脚本默认以单机模式启动，如需其他角色，请在执行 `install` 前导出相应的部署环境变量。
 
 ### 安全与边界
 
 - 节点管理按 `/api/node/...` 路由权限授权；业务转发先在中控校验成员的业务路由权限，再以受管机本地服务令牌执行。创始人拥有全部权限。授权对所有节点生效，当前按路由而非节点 ID 分配权限
-- 注册码一次性使用、默认 1 小时过期；节点令牌只保存哈希，注册码短期有效、加密落盘，待接入期间可在列表中查看接入命令；节点可随时吊销，吊销后立即断开
+- 接入 token 无时效限制。创建节点时生成 86 位字母数字随机 token，仅显示一次；`node-list.yml` 只保存其 SHA-256 哈希和状态（`pending`、`active`、`revoked`），首次认证通过后节点变为已激活。token 遗失时需重新创建节点。节点可随时吊销，吊销后立即断开
 - 节点管理操作、节点上的写操作与终端会话都会记入中控的审计页面（操作人为中控登录用户），受管机本机的审计页面里则记录为其本地创始人
-- 中控为单实例设计，重启时节点短暂断开后自动重连；受管机与中控的版本需一致
-- 完整的参数表、接口与行为说明见 [docs/multi-node.md](docs/multi-node.md)，接口字段见 [受管节点](docs/references/node/nodes.md) 与 [注册码](docs/references/node/codes.md)
+- 中控为单实例设计，重启时节点短暂断开后自动重连；版本无需一致，兼容性由协议版本与 features 协商决定（见 [docs/multi-node.md](docs/multi-node.md)）
+- 完整的参数表、接口与行为说明见 [docs/multi-node.md](docs/multi-node.md)，接口字段见 [受管节点](docs/references/node/nodes.md)
 
 ## 配置
 
@@ -326,7 +330,7 @@ ISRVD_CONFIG="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" 
 
 开发脚本会自动：
 
-- **后端**：复制 `config.yml` 为 `.local.yml`（如不存在），运行 `ISRVD_CONFIG=.local.yml go run ./server/cmd/server`；使用 `ISRVD_MODE=center ./develop.sh` 调试节点管理与切换
+- **后端**：复制 `config.yml` 为 `.local.yml`（如不存在），以 `ISRVD_MODE=center ISRVD_CONFIG=.local.yml go run ./server/cmd/server` 启动，开发时即可调试节点管理与切换
 - **前端**：进入 `webview`，安装依赖并执行 `npm run dev`
 - **端口清理**：启动前尝试释放 `8080` 和 `3000` 端口
 - **代理**：前端开发服务器（`3000`）把 `/api/`、`/openapi/` 和节点视角的 `/n/` 代理到 `8080`；`/n/<节点ID>/` 下的页面由后端内嵌的前端产物提供，修改前端后需 `npm run build` 才能在节点视角下看到

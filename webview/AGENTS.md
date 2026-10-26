@@ -18,21 +18,21 @@ webview/src/
 ├── component/              跨页复用组件：modal.vue（BaseModal）、page-search.vue、
 │                           toggle-card.vue、confirm.vue、dropdown.vue、combobox.vue、
 │                           option-multi-select.vue、icon-select.vue、node-switcher.vue、
-│                           user-menu.vue、toolbar-links.vue、navigation.vue、notification.vue
+│                           user-menu.vue、toolbar-links.vue、navigation.vue、notification.vue、
+│                           locale-switch.vue
 │                           子目录：terminal/、explorer/、copilot/
 ├── service/
 │   ├── api.ts              ApiService 单例，后端调用的唯一出口
-│   ├── axios.ts            http / httpBlob 实例
-│   ├── client.ts           HttpClient 接口与 APIResponse<T>（响应拦截器已解包）
+│   ├── client.ts           axios 实例（http / httpBlob）、HttpClient 接口与 APIResponse<T>（响应拦截器已解包）
 │   ├── types.ts            统一 `export *`
 │   └── types/<域>.ts       按域拆分的类型：docker / swarm / apisix / caddy / compose /
 │                           cron / system / account / overview / filer / ssh / local / node
 ├── helper/                 通用函数：format.ts（含 POLL_INTERVAL）、monitor.ts、chart.ts、
-│                           dom.ts、file.ts、node.ts、theme.ts、webauthn.ts、log.ts、
+│                           dom.ts、file.ts、node.ts、portmap.ts、theme.ts、webauthn.ts、log.ts、
 │                           apisix.ts、split-pane.ts、copilot/
 ├── locales/                国际化：index.ts（翻译入口，自动发现语言）、types.ts（LanguageModule）、messages/<code>.ts（一种语言一个文件）
 ├── stores/                 Pinia：index.ts（usePortal）、portal.ts、auth.ts、system.ts、
-│                           ui.ts、node.ts、locale.ts；config.ts 是页面级配置草稿 store，不进 portal
+│                           ui.ts、node.ts、locale.ts、copilot.ts；config.ts 是页面级配置草稿 store，不进 portal
 └── assets/                 light.css（@theme 浅色变量）、light_base.css、
                             light_components.css（CSS 组件类）、dark.css（暗黑覆盖）、style.css
 ```
@@ -652,7 +652,7 @@ Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似
 - 语言代码用 BCP 47（`zh-Hant`、`en`、`ja`），前端直接把它作为 `Accept-Language` / `?lang=` 的取值，后端按同一套标签解析
 - 首次访问按浏览器语言选择（`matchLocale`，逐级去掉末尾子标签匹配），用户主动切换后才写入 localStorage（`app-locale`）并从此固定
 - `locales/messages/zh-Hant.ts` 由仓库根目录 `scripts/gen-zh-hant.mjs` 生成（术语表 + OpenCC 字形转换），不要手工编辑；改术语或英文词典后重新执行脚本
-- `locales/messages/ja.ts` 目前只登记了常用词（覆盖 2%），其余文案会回落中文原文，界面是中日混排；完整译文待人工或机翻录入
+- `locales/messages/ja.ts` 词条基本完整，缺失的回落中文原文（覆盖率以 `npm run locales:check` 为准）
 - 补全译文：先 `npm run locales:worklist -- ja > /tmp/ja.jsonl` 导出未译清单（每行 `{"key","en"}`），填入译文后再写回词典文件；`npm run locales:check` 报告各语言覆盖与多余/空值/占位符不一致的词条，不会自动改文件
 - 模板与类组件方法用 `$t('中文原文')`（`this.$t`），`.ts` 里用 `useLocaleStore().t('中文原文')`；未登记译文时回落中文原文，不会出现空白或 key 泄漏
 - 语言状态在 `stores/locale.ts`（`locale` / `meta` / `locales` / `t` / `setLocale`）；组件经 `usePortal()` 读取 `locale` / `localeMeta` / `locales` 并调用 `setLocale`

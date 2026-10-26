@@ -97,8 +97,8 @@ docker network create --driver=overlay --attachable sdnet
 | Image | Port mapping | Description |
 | ------ | ---------- | ------ |
 | `slim` | 8080 → 8080 | isrvd web UI |
-| `apisix` | 8080 → 8080、80 → 9080、443 → 9443 | isrvd UI; APISIX HTTP / HTTPS proxy |
-| `caddy` | 8080 → 8080、80 → 80、443 → 443 | isrvd UI; Caddy HTTP / HTTPS proxy |
+| `apisix` | 8080 → 8080, 80 → 9080, 443 → 9443 | isrvd UI; APISIX HTTP / HTTPS proxy |
+| `caddy` | 8080 → 8080, 80 → 80, 443 → 443 | isrvd UI; Caddy HTTP / HTTPS proxy |
 
 #### slim (default)
 
@@ -206,12 +206,10 @@ One binary, one role selected by the `ISRVD_MODE` environment variable, one cons
 | `agent` | Managed node: exposes no inbound port, connects out to the center and executes forwarded requests locally |
 
 ```text
-浏览器 ──> center ──┬── 页面、账号、权限、审计 ──> 本进程内的 isrvd
-                    └── /n/<节点ID>/api/… ──隧道──> agent（本进程内的 isrvd）
-                                                  ▲ 受管机主动出站，中控从不主动外连
+Browser ──> center ──┬── pages, accounts, permissions, audit ──> in-process isrvd
+                     └── /n/<nodeID>/api/… ──tunnel──> agent (in-process isrvd)
+                                                       ▲ the managed node dials out; the center never connects out
 ```
-
-> Diagram legend (from top to bottom): the browser reaches `center`; pages, accounts, permissions and audit are handled by the in-process isrvd; `/n/<nodeID>/api/…` goes through the tunnel to the agent's in-process isrvd; the managed node dials out, the center never connects out to it.
 
 - **No inbound port needed**: a managed node only needs to reach the center, so it can sit behind NAT or a firewall; after a disconnect it reconnects with exponential backoff
 - **Switching node switches the view**: once an authorized member picks a node in the page header, Docker, Swarm, Compose, files, local processes, terminal, scheduled tasks, APISIX, Caddy and the system overview all act on that node, including live logs, terminal and large file upload/download
@@ -250,7 +248,7 @@ docker run -d --name isrvd-agent --network sdnet \
   -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
 ```
 
-Managed hosts require a founder member and cannot enable `tha`; `listenAddr` is ignored in managed mode. After switching, access is only available through the center. Update the host environment and restart if the URL or token is wrong.
+Managed hosts cannot enable `tha`; `listenAddr` is ignored in managed mode. A managed host needs at least one founder member, otherwise forwarded requests return 401. After switching, access is only available through the center. Update the host environment and restart if the URL or token is wrong.
 
 ### systemd Deployment
 
@@ -261,7 +259,7 @@ Use `systemctl edit isrvd` and add `Environment="ISRVD_MODE=center"` under `[Ser
 - Node management uses assignable `/api/node/...` route permissions; forwarded operations check the caller's business route permissions at the center before using the managed node's local service token. Founders retain full access. Permissions apply to all nodes; per-node grants are not supported
 - Enrollment tokens do not expire. Create a node to generate an 86-character alphanumeric random token, shown only once. `node-list.yml` stores only its SHA-256 hash and a status (`pending`, `active`, or `revoked`); the first authenticated connection activates the node. Lost tokens require creating a new node. A node can be revoked at any time and disconnects immediately
 - Node management operations, write operations on nodes and terminal sessions are all recorded in the center's audit page (attributed to the center's logged-in user); the managed node's own audit page attributes them to its local founder
-- The center is designed as a single instance; nodes disconnect briefly on restart and reconnect automatically. The managed node and the center must run the same version
+- The center is designed as a single instance; nodes disconnect briefly on restart and reconnect automatically. Versions need not match; compatibility is negotiated by protocol version and features (see [docs/multi-node.md](docs/multi-node.md))
 - Full parameter lists, APIs and behavior are documented in [docs/multi-node.md](docs/multi-node.md); API fields are in [受管节点](docs/references/node/nodes.md)
 
 ## Configuration

@@ -260,7 +260,7 @@ docs/
 - 顶层 `Config`（`server/config/types.go`）当前包含 `Schema`、`Server`、`Password`、`Passkey`、`OIDC`、`THA`、`Copilot`、`Notify`、`Apisix`、`Caddy`、`Docker`、`Monitor`、`Marketplace`、`PortMap`、`Links`、`Members`
 - `PUT /api/system/config` 支持按分区提交：`AllConfig` 中为 nil 的分区跳过更新，密钥类字段为空表示保留原值
 - 多节点部署仅通过环境变量 `ISRVD_MODE`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN` 传入，由 `config.Init` 读取并通过 `config.Cluster()` 返回副本；不持久化到 YAML/etcd，不由配置 API 管理，修改后重启生效
-- 中控端口转发是业务配置而非部署环境：监听范围与地址在配置文件 `portmap` 分区（`PortMapConfig{Ports,Bind}`，可选分区，未配置为 `nil`；与 Docker 容器的端口映射无关），随配置持久化并可经 `GET|PUT /api/system/config` 管理；校验在 `validateSnapshot`，无效配置返回 `ErrInvalidPortMapConfig`（400）；`node.NewService` 读取一次，修改后重启生效
+- 中控端口转发是业务配置而非部署环境：监听范围与地址在配置文件 `portmap` 分区（`PortMapConfig{Range,Bind}`，可选分区，未配置为 `nil`；与 Docker 容器的端口映射无关），随配置持久化并可经 `GET|PUT /api/system/config` 管理；校验在 `validateSnapshot`，无效配置返回 `ErrInvalidPortMapConfig`（400）；`node.NewService` 读取一次，修改后重启生效
 - `Server` 必须作为 `config.Server` 结构体统一访问，禁止重新展开为 `config.Debug`、`config.ListenAddr` 等包级散变量
 - 镜像仓库 `DockerRegistry`（含 `Name`、`URL`、`Username`、`Password`、`Description`）
 - 远程 Docker：`DockerConfig.TLS`（`DockerTLSConfig`，证书与私钥为 PEM 文本，不使用文件路径，以便随 etcd 配置同步）；`pkgs/docker.TLSConfig.Config(host)` 是唯一的校验与构造入口（`NewDockerService` 与 `system.dockerTLSMerge` 共用）；`DockerService.Remote()` 由 `Host` 地址决定（`tcp://` 且非回环，与 TLS 无关），为真时自身容器识别只用 overlay 路径、不按 IP/主机名匹配，并跳过 bind 源的本机检查
@@ -284,7 +284,7 @@ docs/
 - 中文（简体，`zh-Hans`）是源语言：代码里统一用中文书写提示文案，也是所有语言词典共同的 key；每种语言登记「中文原文 → 译文」，未登记的文案回落中文原文
 - **新增语言只需新建 `server/i18n/lang_<code>.go`**，在 `init` 里调用 `i18n.Register(i18n.Language{Code, Tags}, map[string]string{...})`，不需要改动其他代码；`Tags` 是能匹配到它的 BCP 47 标签（小写），匹配时逐级去掉末尾子标签（`zh-hant-tw` → `zh-hant`）
 - 补全译文：`node scripts/check-locales.mjs [--go]` 报告各语言相对英文词典的缺口、多余词条、空译文与占位符不一致；`node scripts/check-locales.mjs [--go] --worklist ja` 导出未译清单（每行 `{"key","en"}`），交给人工或机翻
-- 现有语言：`lang_zh_hans.go`（源语言，只登记标签）、`lang_en.go` + `lang_en_service.go`（英文，是完整集：其他语言的 key 都应出现在其中）、`lang_ja.go`（日文，只登记了常用提示，覆盖 2%）、`lang_zh_hant_messages.go`（繁體，生成物）
+- 现有语言：`lang_zh_hans.go`（源语言，只登记标签）、`lang_en.go` + `lang_en_service.go`（英文，是完整集：其他语言的 key 都应出现在其中）、`lang_ja.go`（日文，词条基本完整，缺失的回落中文）、`lang_zh_hant_messages.go`（繁體，生成物）
 - 繁體不手工翻译：`scripts/gen-zh-hant.mjs` 以英文词典的 key 为全集，经术语表 + 上下文规则 + OpenCC 字形转换，同时生成前端 `locales/messages/zh-Hant.ts` 与后端 `lang_zh_hant_messages.go`；改了英文词典或术语后重新执行（需先在 `webview` 目录 `npm install`，用到 devDependency `opencc-js`），`node scripts/gen-zh-hant.mjs --check` 校验生成物是否最新
 - 语言协商顺序：`?lang=` 查询参数 → `Accept-Language` 请求头；由 `i18n.Middleware()` 写入请求 context，响应统一带 `Vary: Accept-Language`
 - `server/app` 的响应文案统一经 `server/app/response.go` 的 `i18n.T(c, message)` 翻译；网关是原生 `http.Handler`，用 `i18n.Translate(i18n.Parse(r.Header.Get("Accept-Language")), message)`
