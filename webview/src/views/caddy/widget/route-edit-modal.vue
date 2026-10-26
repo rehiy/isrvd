@@ -838,7 +838,7 @@ export default toNative(RouteEditModal)
     </div>
   
     <template #confirm-text>
-      {{ $t('确认') }} {{ isEditMode ? $t('更新') : $t('新建') }}
+      {{ $t('确认{0}', isEditMode ? $t('更新') : $t('新建')) }}
     </template>
   </BaseModal>
 </template>
