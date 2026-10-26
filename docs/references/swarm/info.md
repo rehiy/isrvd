@@ -28,7 +28,7 @@ isrvd_get "/swarm/nodes"
 | hostname | string | 主机名 |
 | role | string | `manager` / `worker` |
 | availability | string | `active` / `pause` / `drain` |
-| state | string | `ready` / `down` |
+| state | string | `ready` / `down` / `disconnected` / `unknown` |
 | addr | string | IP 地址 |
 | engineVersion | string | Docker 引擎版本 |
 | leader | boolean | 是否为 Leader |
@@ -47,7 +47,7 @@ isrvd_get "/swarm/node/NODE_ID"
 isrvd_get "/swarm/node/NODE_ID/services"
 ```
 
-需要权限 `GET /api/swarm/node/:id/services`。节点详情页在具有此权限时展示服务列表，支持桌面表格和移动端卡片；刷新同时更新节点与服务信息。
+需要权限 `GET /api/swarm/node/:id/services`。
 
 返回按服务名排序的数组，仅包含在该节点有实际 `running` 任务的服务；历史、失败、等待调度及已完成任务不计入。正在停止但实际仍为 `running` 的任务仍计入。无运行服务时返回 `[]`。节点不存在或 Docker 查询失败返回 `500`，Swarm 不可用返回 `503`。
 

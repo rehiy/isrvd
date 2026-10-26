@@ -6,8 +6,6 @@
 isrvd_get "/apisix/routes"
 ```
 
-Web 管理页支持“按路由”和“按 Host”两种展示方式；API 响应仍返回平铺路由列表。按 Host 展示时，`hosts` 中包含多个域名的路由会分别出现在每个可折叠 Host 分组下，搜索时自动展开匹配分组。
-
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | id | string | 路由 ID |
@@ -29,14 +27,14 @@ Web 管理页支持“按路由”和“按 Host”两种展示方式；API 响�
 | create_time | number | 创建时间（只读，Unix 秒） |
 | update_time | number | 更新时间（只读，Unix 秒） |
 
-Web 管理页的“高级选项”默认收起，包含 WebSocket 代理，以及内联上游的 HTTPS 回源、Host 传递和超时配置。收起时显示已配置项的摘要；折叠不会清除配置。引用已有上游时，回源参数由该上游对象统一管理。
+请求体中的 `id`、`consumers`、`create_time`、`update_time` 会被忽略。
 
-内联 `upstream` 的 Host 配置：
+内联 `upstream` 的 Host 配置（引用 `upstream_id` 时由该上游统一管理）：
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | pass_host | string | `pass`（默认，透传客户端 Host）、`node`（使用节点 Host）、`rewrite`（指定 Host） |
-| upstream_host | string | `pass_host=rewrite` 时填写；Web 管理页切换到其他模式时不提交该字段 |
+| upstream_host | string | `pass_host=rewrite` 时填写 |
 
 ```bash
 isrvd_post "/apisix/route" '{"name":"<NAME>","uri":"/*","status":1,"upstream":{"type":"roundrobin","scheme":"https","nodes":{"<HOST>:443":1},"pass_host":"rewrite","upstream_host":"backend.example.com"}}'
@@ -81,7 +79,7 @@ isrvd_post "/apisix/route" '{
 isrvd_put "/apisix/route/<ROUTE_ID>" '{"name":"<NAME>","uri":"<URI>","status":1,"upstream":{"type":"roundrobin","nodes":{"<HOST>:<PORT>":1}}}'
 ```
 
-更新调用 APISIX `PUT /routes/<ID>`，为**全量替换**：未传字段会被移除（含 `plugins`、`status`），应先 GET 详情再整体提交。更新仅校验 `name` 必填。
+更新调用 APISIX `PUT /routes/<ID>`，为全量替换，只下发上表字段：未传字段会被移除（含 `plugins`、`status`），APISIX 路由上的其他字段（`methods`、`labels`、`vars`、`service_id` 等）也会被清除。仅校验 `name` 必填，不校验 `uri`/`uris`。
 
 ## 启用/禁用路由
 
@@ -89,6 +87,8 @@ isrvd_put "/apisix/route/<ROUTE_ID>" '{"name":"<NAME>","uri":"<URI>","status":1,
 isrvd_patch "/apisix/route/<ROUTE_ID>/status" '{"status":0}'  # 禁用
 isrvd_patch "/apisix/route/<ROUTE_ID>/status" '{"status":1}'  # 启用
 ```
+
+`status` 缺省按 `0`（禁用）处理，取值须为 `0` 或 `1`，否则返回 500。
 
 ## 删除路由
 

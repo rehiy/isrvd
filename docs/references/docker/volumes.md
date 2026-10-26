@@ -20,7 +20,7 @@ isrvd_get "/docker/volumes"
 isrvd_get "/docker/volume/<VOL_NAME>"
 ```
 
-额外字段：`scope, size, refCount, usedBy[]{id, name, mountPath, readOnly}`。`size` / `refCount` 为 `-1` 表示未知（Docker 未返回 UsageData 时，通常即为 `-1`）；`usedBy` 仅统计 `type=volume` 的挂载。
+额外字段：`scope, size, refCount, usedBy[]{id, name, mountPath, readOnly}`。`size` / `refCount` 为 `-1` 表示 Docker 未返回 UsageData（通常如此）；`usedBy` 仅统计 `type=volume` 的挂载。
 
 ## 创建数据卷
 

@@ -6,7 +6,9 @@
 >
 > 权限按路由 `METHOD /api/path` 逐条授予（创始人不受限）。
 
-保存前会检查持久化内容是否与加载基线一致，变化时拒绝覆盖；需重载服务后重试。存储机制及进程内保障范围见[配置存储说明](../system/config.md#保存一致性)。
+保存前会检查持久化内容是否与加载基线一致，变化时拒绝覆盖，需重载服务后重试，详见[保存一致性](../system/config.md#保存一致性)。
+
+> ⚠️ 连接时不校验服务端主机密钥（`InsecureIgnoreHostKey`），存在中间人风险，请仅在可信网络使用。
 
 ---
 
@@ -30,13 +32,17 @@ isrvd_get "/ssh/credentials"
 
 > `password` 和 `privateKey` 为敏感字段，不在响应中返回。
 >
-> 添加/更新凭据时：`name`、`user` 必填；填了 `privateKey` 会清空 `password`，只填 `password` 会清空 `privateKey`；更新时两者都留空则保留原值。
+> 添加/更新凭据时：`name`、`user` 必填；填了 `privateKey` 会清空 `password`，只填 `password` 会清空 `privateKey`；更新时两者都留空则保留原值。添加、更新返回凭据对象（字段同上）。
+>
+> 删除被主机引用的凭据不会被阻止，也不级联：引用它的主机之后连接时认证信息为空，会失败。
 
 ### 获取凭据详情
 
 ```bash
 isrvd_get "/ssh/credential/<ID>"
 ```
+
+凭据不存在返回 404（更新、删除不存在返回 400）。
 
 ### 添加凭据
 
@@ -84,7 +90,7 @@ isrvd_get "/ssh/hosts"
 |------|------|------|
 | `id` | string | 主机 ID（只读） |
 | `name` | string | 主机名称 |
-| `addr` | string | 地址（`host` 或 `host:port`，默认端口 22） |
+| `addr` | string | 地址（`host` 或 `host:port`；不含 `:` 时补端口 22，IPv6 字面量需自带端口；连接超时 5 秒） |
 | `credentialId` | string | 绑定的认证凭据 ID（可选） |
 | `credentialName` | string | 绑定的认证凭据名称（只读，可选） |
 | `user` | string | SSH 用户名；绑定凭据时为保存时复制的凭据用户名快照，实际连接以凭据当前的 `user` 为准 |
@@ -136,7 +142,7 @@ isrvd_post "/ssh/host" '{
 |------|------|------|------|
 | `name` | string | ✓ | 主机名称 |
 | `addr` | string | ✓ | 地址（`host` 或 `host:port`） |
-| `credentialId` | string | | 绑定的认证凭据 ID；设置后校验凭据存在（不存在返回 400），使用凭据认证并丢弃主机上的 `password` / `privateKey` |
+| `credentialId` | string | | 绑定的认证凭据 ID；设置后校验凭据存在（不存在返回 400），保存时 `user` 取凭据当前用户名，并清空主机上的 `password` / `privateKey` |
 | `user` | string | | SSH 用户名；`credentialId` 为空时使用 |
 | `password` | string | | SSH 密码；`credentialId` 为空时与 `privateKey` 二选一 |
 | `privateKey` | string | | SSH 私钥内容（PEM 格式）；`credentialId` 为空时优先于密码 |
@@ -183,5 +189,6 @@ TOKEN=$(isrvd_login "$ISRVD_APIURL" "$ISRVD_USERNAME" "$ISRVD_PASSWORD" | jq -r 
 wscat -c "ws://<HOST>/api/ssh/to/<ID>?token=$TOKEN"
 ```
 
-> 终端 WSS 连接内置约 25s 保活心跳，空闲时不会被中间层（nginx/Caddy、NAT）断开。
-> 前端窗口尺寸变化时应发送 resize 控制帧，格式为 `\u0000isrvd:resize:<cols>:<rows>`；服务端会同步远程 SSH PTY 尺寸。
+> 终端 WSS 连接内置约 25s 保活心跳。
+> 窗口尺寸变化时发送 resize 控制帧 `\u0000isrvd:resize:<cols>:<rows>`（范围同 [Shell](../shell.md)），服务端同步远程 PTY 尺寸。
+> 主机不存在时通过 WebSocket 文本帧返回 `[错误: …]` 后关闭。

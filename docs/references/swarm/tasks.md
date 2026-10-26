@@ -1,12 +1,6 @@
 # Swarm 任务 API
 
-> 前缀: `/api/swarm`
-
 ## 列出任务
-
-```
-GET /api/swarm/tasks?serviceID=<SVC_ID>
-```
 
 `serviceID` 可选，不传时返回集群内全部任务。返回 `Task[]`：
 
@@ -14,12 +8,12 @@ GET /api/swarm/tasks?serviceID=<SVC_ID>
 |------|------|------|
 | id | string | 任务 ID |
 | serviceID | string | 服务 ID |
-| serviceName | string | 服务名 |
+| serviceName | string | 服务名；对应服务已不存在时为空串 |
 | nodeID | string | 节点 ID |
-| nodeName | string | 节点主机名 |
+| nodeName | string | 节点主机名；对应节点已不存在时为空串 |
 | slot | number | 任务槽位 |
 | image | string | 镜像 |
-| state | string | `running` / `pending` / `failed` / `complete` 等 |
+| state | string | Docker 任务状态，如 `running` / `pending` / `failed` / `complete` / `shutdown` / `rejected` 等 |
 | message | string | 状态信息 |
 | err | string | 错误信息 |
 | updatedAt | string | 更新时间 |

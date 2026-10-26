@@ -76,7 +76,7 @@ POST /api/copilot/agui
 
 **功能：** 接收 [AG-UI](https://github.com/ag-ui-protocol/ag-ui) 协议的 `RunAgentInput`，转换为 OpenAI 兼容请求发给上游 LLM，再将流式响应翻译为 AG-UI 事件以 SSE 返回。
 
-普通成员需授予 `POST /api/copilot/agui` 权限；前端助手入口统一检查此权限与 Copilot 服务可用性，未通过时不挂载 Copilot，入口与侧栏均不渲染。
+普通成员需授予 `POST /api/copilot/agui` 权限；前端仅在具备该权限且服务可用（`bootstrap` 的 `probe.copilot`，要求 `baseUrl` 与 `apiKey` 均已配置）时挂载 Copilot。后端对该接口仅检查 `baseUrl`。
 
 此端点属于 CopilotKit 内部协议，不纳入通用 OpenAPI 或 `lookup_api` 目录；请求与事件格式以本节为准。
 
@@ -87,29 +87,29 @@ POST /api/copilot/agui
 | `Content-Type` | `application/json` |
 | `Authorization` | `Bearer <YOUR_JWT>`；SSE 无法携带头时可用 `?token=<JWT>` 代替 |
 
-**请求体：**（大小受 `server.maxUploadSize` 限制；未配置 `copilot.baseUrl` 时返回 503；JSON 格式错误或缺少 `runId` 返回 400）
+**请求体：**（读取大小受 `server.maxUploadSize` 限制，超限被截断，解析失败返回 400；未配置 `copilot.baseUrl` 时返回 503；JSON 格式错误或缺少 `runId` 返回 400）
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `threadId` | string | 会话线程 ID |
 | `runId` | string | 本次运行 ID，**必填** |
-| `messages` | array | 会话历史，元素含 `id`、`role`、`content`，可选 `name`；`assistant` 角色可带 `toolCalls`（会转发给上游）；`tool` 角色可带 `toolCallId` |
+| `messages` | array | 会话历史，元素含 `id`、`role`、`content`；`assistant` 可带 `toolCalls`（`{id, type, function:{name, arguments}}`）；`tool` 可带 `toolCallId`。转发给上游的仅 `role`、`content`、`toolCalls`、`toolCallId`，`name` 只接收不转发 |
 | `tools` | array | 前端工具声明，元素含 `name`、`description`、`parameters`（JSON Schema） |
-| `context` | array | 前端注入的页面上下文，元素含 `description`、`value`，会被合并为 system 消息 |
-| `state` | object | 前端共享状态；当前接收但不转发给上游 |
-| `forwardedProps` | object | 附加属性；当前接收但不转发给上游 |
+| `context` | array | 页面上下文，元素含 `description`、`value`；`value` 为空的条目忽略，其余合并为追加在全部消息之后的一条 system 消息 |
+| `state` | object | 前端共享状态；接收但不转发给上游 |
+| `forwardedProps` | object | 附加属性；接收但不转发给上游 |
 
 **响应：** `text/event-stream`，每行一个 `data:` 帧，事件类型包括：
 
 | 事件 | 说明 |
 | --- | --- |
 | `RUN_STARTED` | 运行开始，携带 `threadId`、`runId` |
-| `TEXT_MESSAGE_START` | 文本消息开始，携带 `messageId`、`role` |
+| `TEXT_MESSAGE_START` | 文本消息开始，携带 `messageId`（等于 `runId`）、`role` |
 | `TEXT_MESSAGE_CONTENT` | 文本增量，携带 `delta` |
 | `TEXT_MESSAGE_END` | 文本消息结束 |
-| `TOOL_CALL_START` | 工具调用开始，携带 `toolCallId`、`toolCallName`、`parentMessageId` |
-| `TOOL_CALL_ARGS` | 工具参数增量，按 `toolCallId` 分别顺序拼接；保留首片参数并支持并行工具分片 |
-| `TOOL_CALL_END` | 工具参数发送完毕，前端据此执行工具 |
+| `TOOL_CALL_START` | 工具调用开始，携带 `toolCallId`、`toolCallName`、`parentMessageId`（等于 `runId`） |
+| `TOOL_CALL_ARGS` | 工具参数增量，按 `toolCallId` 分别顺序拼接 |
+| `TOOL_CALL_END` | 工具参数发送完毕，仅在上游 `finish_reason=tool_calls` 时发送 |
 | `RUN_FINISHED` | 运行正常结束 |
 | `RUN_ERROR` | 运行异常，携带 `message`，可选 `code` |
 
@@ -127,9 +127,9 @@ isrvd_post "/copilot/agui" '{
 
 **上游请求说明：**
 
-- 请求发往 `copilot.baseUrl` 拼接 `/chat/completions`，并强制 `stream: true`
-- 模型名使用 `copilot.model`；`context` 与工具声明分别以 system 消息和 `tools` 字段注入
-- 上游非 200 时返回 `RUN_ERROR` 事件，而非 HTTP 错误码（响应头已提交）
+- 请求发往 `copilot.baseUrl` 拼接 `/chat/completions`，强制 `stream: true`，单次请求超时 10 分钟
+- 模型名使用 `copilot.model`；`copilot.apiKey` 为空时不带 `Authorization` 头
+- 上游非 200 或连接失败时不发 `RUN_STARTED`，直接发 `RUN_ERROR`（`message` 为 `上游 LLM 返回 <状态码>: <响应体前 4096 字节>`），而非 HTTP 错误码
 
 ---
 
@@ -138,19 +138,7 @@ isrvd_post "/copilot/agui" '{
 - 查阅接口目录（`GET /api/copilot/catalog`）：登录即可
 - 对话（`POST /api/copilot/agui`）：需要 `POST /api/copilot/agui` 权限
 
-Chat iSrvd 的 API 工具保持为固定的三步流程：
-
-1. `lookup_api` 查询上述 OpenAPI。列表和详情中的每个真实操作都会附加一个仅在当前页面内存中有效的 `callRef`，默认 30 分钟过期，刷新或离开页面后清空。
-2. `isrvd_api` 或 `isrvd_mutation` 只接收 `callRef` 与业务参数，不接收 HTTP 方法和路径。业务参数使用 JSON 字符串 `{"path":{},"query":{},"body":{}}`；执行器根据引用恢复 OpenAPI 操作、校验路径参数/查询参数/请求体，再调用现有业务 REST 接口。列表查询产生的引用会在首次执行前按准确的 `path + method` 自动补全契约。
-3. GET 查询由 `isrvd_api` 执行，并按返回结构展示资源列表或字段；POST、PUT、PATCH、DELETE 写操作由 `isrvd_mutation` 承接，先展示从引用解析出的真实目标和脱敏参数，只有用户在审批卡中确认后才会执行。用户取消会作为工具结果返回给 Agent。
-
-工具卡片默认展开，连续卡片之间保留间距。操作完成后可点击标题栏展开或收起；向下浏览对话时，已进入过视野的完成卡片在尾部距聊天视口顶部不超过 48px 时自动收起，并补偿滚动位置。向上回看不会自动展开；手动重新展开的卡片保持展开。等待确认和执行中的卡片始终展开，确认按钮不会被自动隐藏。
-
-多步对话按用户每次请求归为一个「执行过程」：默认只展示当前进度，早先的说明和工具结果可点击展开；最后一条不带工具调用的答复独立完整显示，未手动展开的过程随之收起，主动展开的过程保持展开。过程中的重复复制按钮不显示，最终答复仍可复制。待确认的写操作及失败/取消记录不会被过程折叠隐藏；折叠仅改变显示，不卸载工具渲染器、不修改发送给模型的消息。`lookup_api` 和 `result_read` 以紧凑状态行显示，调用次数来自实际工具调用，不表示成功次数或完成百分比。
-
-助手提示词要求跟随用户语言，仅在新发现、阻碍或需要决策时简短播报，并将完整结论放在最后答复；这些是生成约束，不会自动翻译或改写已有消息。
-
-执行失败会返回结构化 `error.kind`。引用不存在或契约变化时要求重新查询；参数错误和资源不存在时要求按契约或当前资源修正。相同 `callRef + arguments` 连续失败两次后返回 `RETRY_LIMIT`，防止模型反复重放同一错误请求。`callRef` 用于约束模型选择真实操作，登录认证与模块权限仍由后端负责。
+前端 Chat iSrvd 的 API 工具为固定三步流程（前端行为）：`lookup_api` 查询上述 OpenAPI 并为操作附加仅页面内存有效、30 分钟过期的 `callRef`；`isrvd_api`（GET）或 `isrvd_mutation`（POST/PUT/PATCH/DELETE，需用户在审批卡中确认）只接收 `callRef` 与业务参数 `{"path":{},"query":{},"body":{}}`，校验后调用现有业务接口。相同 `callRef + arguments` 连续失败两次返回 `RETRY_LIMIT`；登录认证与模块权限仍由后端负责。
 
 ---
 

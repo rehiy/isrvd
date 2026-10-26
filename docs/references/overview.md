@@ -6,15 +6,15 @@
 isrvd_get "/overview/bootstrap"
 ```
 
-前端启动专用接口，**无需登录即可调用**（`AccessAnon`）。一次返回 auth、probe、config 三段启动数据。
+前端启动专用接口，**无需登录即可调用**（`AccessAnon`）。始终返回 `auth`；登录后另含 `probe`、`config`。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `auth` | object | 当前认证信息（`mode`、`username`、`member`、`oidcEnabled`、`oidcBtnLabel`、`passkeyEnabled`、`passwordDisabled`、`passwordMinLength`） |
-| `probe` | object | 服务可用性，仅已登录时返回（未登录时不含该字段）：`copilot`、`apisix`、`caddy`、`docker`、`swarm`、`compose`、`node`；各项并发探活，整体 5 秒超时；`copilot` 需 `copilot.baseUrl` 与 `apiKey` 均已配置才为 `true`；`node` 仅在 `center` 模式注册，表示多节点管理可用 |
-| `config` | object | 前端启动所需的最小配置，仅已登录时返回（未登录时不含该字段）：`title`、`maxUploadSize`、`marketplaceUrl`、`openapiEnabled`、`links` |
+| `auth` | object | 当前认证信息（`mode`（`jwt` / `header`）、`username`、`member`、`oidcEnabled`、`oidcBtnLabel`、`passkeyEnabled`、`passwordDisabled`、`passwordMinLength`）；未登录时省略 `username`/`member`；代理 Header 模式下 `oidcEnabled`、`passwordDisabled` 恒为 `false` |
+| `probe` | object | 服务可用性，仅已登录时返回：`copilot`、`apisix`、`caddy`、`docker`、`swarm`、`compose`、`node`；各项并发探活，整体 5 秒超时；`copilot` 需 `copilot.baseUrl` 与 `apiKey` 均已配置才为 `true`；`node` 仅在 `center` 模式注册，表示多节点管理可用 |
+| `config` | object | 前端启动所需的最小配置，仅已登录时返回：`title`、`maxUploadSize`、`marketplaceUrl`、`openapiEnabled`、`links` |
 
-`config.title` 是系统配置中的浏览器标题，留空时前端使用 `iSrvd`。仅登录后显示“标题 · 当前页面名称”；未登录时整个 `config` 段不返回，登录页及退出登录后均显示 `iSrvd`。节点视角使用中控的标题。
+`config.title` 为系统配置中的浏览器标题，留空时前端使用 `iSrvd`；节点视角使用中控的标题。
 
 ---
 
@@ -59,12 +59,12 @@ isrvd_get "/overview/monitor?type=container&since=3600&id=<CONTAINER_ID>"
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `type` | string | | `host`（默认）或 `container`；非 `container` 的值一律按 `host` 处理 |
-| `since` | number | | 时间范围（秒），默认 `3600`：`0`=实时模式，`3600`=1小时，`21600`=6小时，`43200`=12小时，`86400`=24小时；非法值或负数按 `3600` 处理 |
+| `since` | number | | 时间范围（秒），默认 `3600`：`0`=实时模式，其他任意正整数为历史窗口（常用 `3600`/`21600`/`43200`/`86400`）；非数字或负数按 `3600` 处理 |
 | `id` | string | 条件 | `type=container` 时必填（缺失返回 400），容器 ID |
 
 **记录格式：**
 
-历史查询（`since>0`）返回记录数组，服务端会按请求的 `since` 时间窗口降采样，返回点数控制在约 **300** 个以内；历史数据保留 3 天。实时模式（`since=0`）返回单条记录且不写入文件；实时查询容器时 Docker 不可用或采集失败，响应中不含 `payload` 字段（`payload` 带 `omitempty`，`nil` 时被整体省略而非返回 `null`）。监控采集器未启动时返回 `503`。
+历史查询（`since>0`）返回记录数组，服务端会按请求的 `since` 时间窗口降采样，返回点数控制在约 **300** 个以内；历史数据保留 3 天。实时模式（`since=0`）返回单条记录且不写入文件；实时查询容器时 Docker 不可用或采集失败，响应 `payload` 为 `null`（`*Record` 空指针装入 `any` 后不会被 `omitempty` 省略）。采集间隔未配置（`monitor.interval` 禁用）时历史查询只返回已有数据，实时模式不受影响。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -76,7 +76,7 @@ isrvd_get "/overview/monitor?type=container&since=3600&id=<CONTAINER_ID>"
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| system | object | 系统资源明细：`hostName`、`os`、`platform`、`kernelArch`、`uptime`、`cpuCore`、`cpuCoreLogic`、`cpuModel[]`、`cpuPercent[]`、`memoryTotal`、`memoryUsed`、`swapTotal`、`swapUsed`、`diskTotal`、`diskUsed`、`diskPartition[]{device, mountpoint, fstype, total, used}`、`netBytesRecv`、`netBytesSent`、`netInterface[]{name, bytesRecv, bytesSent, dropin, dropout, ipv4List, ipv6List}` 等（字节单位） |
+| system | object | 系统资源明细：`hostId`、`hostName`、`os`、`platform`、`kernelArch`、`createAt`、`uptime`、`cpuCore`、`cpuCoreLogic`、`cpuModel[]`、`cpuPercent[]`、`memoryTotal`、`memoryUsed`、`swapTotal`、`swapUsed`、`diskTotal`、`diskUsed`、`diskReadBytes`、`diskWriteBytes`、`diskPartition[]{device, mountpoint, fstype, total, used}`、`netBytesRecv`、`netBytesSent`、`netInterface[]{name, bytesRecv, bytesSent, dropin, dropout, ipv4List, ipv6List}`、`publicIpv4`、`publicIpv6` 等（字节单位；分区与汇总值已过滤虚拟挂载） |
 | time | string | 系统当前本地时间，格式 `YYYY-MM-DD HH:mm:ss` |
 | timezone | string | 系统当前时区，包含 UTC 偏移，如 `CST UTC+08:00` 或 `UTC+00:00` |
 | diskIO | object[] | `{name, readBytes, writeBytes, readCount, writeCount}`（累计值） |
@@ -91,9 +91,9 @@ isrvd_get "/overview/monitor?type=container&since=3600&id=<CONTAINER_ID>"
 isrvd_post "/overview/upgrade"
 ```
 
-触发 isrvd 程序自升级至最新版本（通过 `upgrade` 包实现，二进制原地替换并重启）。
+触发 isrvd 程序自升级至最新版本：从 `https://isrvd.rehiy.com/update/` 下载 tar.gz 并原地替换二进制，成功返回 200 后约 500ms 重启。需要 `POST /api/overview/upgrade` 路由权限；已是最新版本返回 400"当前已是最新版本"。
 
-Docker 容器部署场景下，前端使用 `GET /api/overview/version` 返回的 `updaterImage` 字段，通过临时 docker-updater 容器拉取最新镜像并重启当前容器；该镜像按国家代码自动选择（CN 使用 CNB 镜像源）。
+Docker 容器部署场景下，前端使用 `GET /api/overview/version` 返回的 `updaterImage`，通过临时 docker-updater 容器拉取最新镜像并重启当前容器。
 
 > ⚠️ 升级操作会重启服务，请确保已保存所有工作。
 

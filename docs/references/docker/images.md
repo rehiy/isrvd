@@ -59,7 +59,7 @@ isrvd_get "/docker/image/<IMAGE_ID>"
 | exposedPorts | string[] | 暴露端口 |
 | labels | object | 标签 |
 | layers | number | 层数 |
-| layerDetails | object[] | `{digest, createdBy, created, size, empty}`；`created` 为 RFC3339 UTC 时间，空层的 `digest` 为空字符串 |
+| layerDetails | object[] | `{digest, createdBy, created, size, empty}`，按构建顺序（旧→新）；`created` 为 RFC3339 UTC 时间，空层的 `digest` 为空字符串；历史读取失败时为空数组 |
 
 ## 构建镜像
 
@@ -91,7 +91,7 @@ isrvd_post "/docker/image/pull" '{"image":"<IMAGE>","registryUrl":"<REGISTRY_URL
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| image | string | ✅ | 镜像名，未带 tag 时补 `:latest` |
+| image | string | ✅ | 镜像名；引用中不含 `:` 或 `@` 时补 `:latest`（带端口的 registry 引用不补，请显式写 tag） |
 | registryUrl | string | | 来源仓库；为空时从 Docker Hub（或 daemon 配置的 mirror）拉取，此时忽略 `namespace` |
 | namespace | string | | 仓库命名空间 |
 
@@ -106,10 +106,10 @@ isrvd_post "/docker/image/push" '{"image":"<IMAGE>","registryUrl":"<REGISTRY_URL
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | image | string | ✅ | 本地镜像（repo:tag） |
-| registryUrl | string | ✅ | 目标仓库地址（需已在 `/docker/registries` 中配置） |
+| registryUrl | string | ✅ | 目标仓库地址；host 与 `/docker/registries` 中某条匹配且配了用户名和密码时自动带认证，否则匿名推送 |
 | namespace | string | | 目标命名空间 |
 
-推送时取 `image` 最后一个 `/` 之后的部分，重新打标签为 `<registryHost>[/<namespace>]/<name>` 后推送；目标引用无 `:` 时补 `:latest`。返回 `{image, target, message}`。
+推送时取 `image` 最后一个 `/` 之后的部分，重新打标签为 `<registryHost>[/<namespace>]/<name>` 后推送；目标引用（含 registry 端口）中不含 `:` 才补 `:latest`。返回 `{image, target, message}`。
 
 ## 镜像删除
 

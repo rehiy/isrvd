@@ -1,6 +1,6 @@
 # SFTP 文件管理 API
 
-> 基于 SSH 主机配置，通过 SFTP 协议进行远程文件管理。所有接口复用主机认证信息，无需额外配置。
+> 基于 SSH 主机配置，通过 SFTP 协议进行远程文件管理，复用主机认证信息。除 `dir-size` 失败返回 500 外，其余错误（主机不存在、SSH 连接失败、路径错误、缺少 `path`）统一返回 400。
 
 ---
 
@@ -18,7 +18,7 @@ isrvd_get "/sftp/<ID>/ls?path=/home/user"
 |------|------|------|
 | `name` | string | 文件/目录名称 |
 | `size` | int64 | 文件大小（字节）；目录为文件系统返回的原始值（通常为 4096） |
-| `mode` | string | 权限字符串（如 `-rw-r--r--`） |
+| `mode` | string | 权限字符串（如 `-rw-r--r--`、`drwxr-xr-x`、符号链接 `Lrwxrwxrwx`） |
 | `modTime` | int64 | 修改时间（Unix 时间戳） |
 | `isDir` | bool | 是否为目录（软链接目录也为 true） |
 | `isLink` | bool | 是否为软链接 |
@@ -32,7 +32,7 @@ isrvd_get "/sftp/<ID>/ls?path=/home/user"
 isrvd_get "/sftp/<ID>/read?path=/path/to/file"
 ```
 
-响应 `payload`：`{"content":"<FILE_CONTENT>"}`。文件超过 4 MiB 返回 413。
+响应 `payload`：`{"content":"<FILE_CONTENT>"}`。文件超过 4 MiB 返回 413；非 UTF-8 字节被替换为 U+FFFD，不适合二进制文件。
 
 ---
 
@@ -74,6 +74,8 @@ isrvd_upload "/sftp/<ID>/upload?path=/remote/dir" "file" "/local/file.txt"
 isrvd_post "/sftp/<ID>/mkdir" '{"path":"/remote/new/dir"}'
 ```
 
+递归创建，已存在不报错。
+
 ---
 
 ## 删除文件或目录
@@ -82,6 +84,8 @@ isrvd_post "/sftp/<ID>/mkdir" '{"path":"/remote/new/dir"}'
 isrvd_delete "/sftp/<ID>/rm?path=/remote/file/or/dir"
 isrvd_delete "/sftp/<ID>/rm?path=/remote/dir&recursive=true"
 ```
+
+未指定 `recursive=true`（仅字面量 `true` 有效）时只能删除文件或空目录。
 
 ---
 
@@ -98,6 +102,8 @@ isrvd_post "/sftp/<ID>/rename" '{"oldPath":"/remote/old","newPath":"/remote/new"
 ```bash
 isrvd_post "/sftp/<ID>/chmod" '{"path":"/remote/file","mode":"0644"}'
 ```
+
+`mode` 须为 3 或 4 位八进制字符串（如 `644`、`0644`），否则返回 400。
 
 ---
 
@@ -122,4 +128,4 @@ isrvd_get "/sftp/<ID>/dir-size?path=/remote/dir"
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `path` | string | 目录路径 |
-| `size` | int64 | 目录总大小（字节） |
+| `size` | int64 | 目录总大小（字节）；不计目录自身，跳过符号链接 |

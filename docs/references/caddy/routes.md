@@ -1,9 +1,9 @@
 # Caddy 路由 API
 
 > Caddy 路由模型与 APISIX 不同：路由是 `apps.http.servers.<name>.routes` 数组中的元素，
-> 用数组下标（index）作为主键。默认服务为 `srv0`，可通过 query 参数 `?server=<NAME>` 切换；名称来自服务列表接口。
+> 用数组下标（index）作为主键。默认服务为 `srv0`，可通过 query 参数 `?server=<服务 name>` 切换（取服务列表中的 `name`）。
 >
-> **接口直接使用 Caddy 原生 JSON 结构**，前端负责组装，后端透传给 Caddy，无中间转换层。
+> **接口直接使用 Caddy 原生 JSON 结构**，后端不校验 `match` / `handle` 内容，透传给 Caddy，非法配置由 Caddy 在 `/load` 时拒绝并透传错误。`index` 非整数返回 400；下标越界或服务不存在返回 404。
 
 ## 列出路由
 
@@ -19,7 +19,7 @@ isrvd_get "/caddy/routes?server=srv0"          # 显式指定服务名称
 | match | MatchSet[] | 匹配条件数组，元素间为 OR 关系，同一元素内字段为 AND |
 | handle | Handler[] | 处理器数组，按顺序执行 |
 | terminal | boolean | 终止后续路由匹配 |
-| @id | string | Caddy `@id` 字段（可选，用于 admin api 寻址） |
+| @id | string \| number | Caddy `@id` 字段（可选，用于 admin api 寻址） |
 
 ### MatchSet 字段（Caddy 原生）
 
@@ -72,7 +72,7 @@ isrvd_post "/caddy/route" '{
 # 按协议匹配（HTTP 跳转）
 isrvd_post "/caddy/route" '{
   "match": [{"protocol": "http"}],
-  "handle": [{"handler": "static_response", "status_code": 301}],
+  "handle": [{"handler": "static_response", "status_code": 301, "headers": {"Location": ["https://{http.request.host}{http.request.uri}"]}}],
   "terminal": true
 }'
 
@@ -163,7 +163,7 @@ isrvd_put "/caddy/route/<INDEX>" '{
 }'
 ```
 
-> 路由更新会触发 Caddy 整体配置 reload（`POST /load`），原子替换。
+> 更新为整条路由替换，未提交的字段（`group`、`terminal`、`@id` 等）会被清除，应先 GET 再修改提交。创建、更新、删除均通过 `POST /load` 整体原子重载。
 
 ## 删除路由
 

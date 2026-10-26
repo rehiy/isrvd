@@ -11,7 +11,7 @@ isrvd_get "/caddy/servers"
 isrvd_get "/caddy/server/<ID>"
 ```
 
-列表仅返回服务摘要，不返回路由内容、认证哈希、日志、TLS 策略或其他 Caddy 原生扩展配置。编辑前应通过详情接口读取最新配置。
+列表（按 `name` 排序）与详情返回相同的服务视图，均不含路由、日志、TLS 策略等 Caddy 原生扩展配置。编辑前建议重新 GET 详情获取最新值。
 
 ```json
 {
@@ -42,9 +42,11 @@ isrvd_get "/caddy/server/<ID>"
 | `max_header_bytes` | integer | 最大请求头字节数；`0` 表示使用默认值，负数返回 400 |
 | `routeCount` | integer | 服务下的路由数量；只读 |
 
+三个超时均为 duration 字符串（如 `5m`）；Caddy 中数字形式（纳秒）在响应里会转换为字符串。
+
 ## 创建
 
-`name` 与非空 `listen` 必填。接口不会自动填入 `:80`，以免与现有服务监听地址冲突。
+`name` 与非空 `listen` 必填。接口不会自动填入 `:80`，以免与现有服务监听地址冲突。重名返回 409，非法配置返回 400。
 
 ```bash
 isrvd_post "/caddy/server" '{
@@ -77,7 +79,7 @@ isrvd_put "/caddy/server/~aW50ZXJuYWw" '{
 
 ## 删除
 
-删除服务会同时删除其路由。结构化接口不允许删除默认服务 `srv0`，也不允许删除当前最后一个服务；需要替换默认服务结构时使用原始配置接口。
+删除服务会同时删除其路由。不允许删除默认服务 `srv0` 或当前最后一个服务（409），服务不存在返回 404；需要替换默认服务结构时使用原始配置接口。
 
 ```bash
 isrvd_delete "/caddy/server/<ID>"
@@ -97,13 +99,12 @@ isrvd_get "/caddy/basic-auth?server=internal"
 
 ## HTTPS 行为
 
-自动 HTTPS 与 HTTP→HTTPS 重定向按服务配置，不属于 Caddy 全局选项。更新服务时通过 `automatic_https` 设置：
+自动 HTTPS 与 HTTP→HTTPS 重定向按服务配置，不属于 Caddy 全局选项。更新服务时通过 `automatic_https` 设置（`id`、`name`、`routeCount` 在更新时被忽略）：
 
 ```bash
 SERVER=$(isrvd_get "/caddy/server/<ID>")
 UPDATED=$(echo "$SERVER" | jq '
-  del(.id, .name, .routeCount)
-  | .automatic_https = {
+  .automatic_https = {
       disable: false,
       disable_redirects: true
     }

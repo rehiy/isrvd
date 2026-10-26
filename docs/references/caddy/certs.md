@@ -15,7 +15,7 @@ isrvd_get "/caddy/certs"
 |------|------|------|
 | key | string | 只读标识；可管理证书为 `<source>-<index>`，`cached` 为 `cached-<相对 storage root 的 .crt 路径>` |
 | source | string | `file` / `pem` / `automate` / `cached` |
-| subject | string | 证书域名：`automate` / `cached` 为目标域名；`file` / `pem` 可从证书 CN 解析 |
+| subject | string | 证书域名：`automate` / `cached` 为目标域名；`file` / `pem` 取证书 CN，CN 为空取首个 SAN |
 | certificate | string | `file`: 路径；`pem`: PEM 文本；`automate` / `cached`: 不返回 |
 | tags | string[] | Caddy 内部标签（可选） |
 | format | string | 仅 `file` 使用，证书格式（默认 PEM） |
@@ -25,7 +25,6 @@ isrvd_get "/caddy/certs"
 | sans | string[] | Subject Alternative Names（DNS） |
 
 > 列表接口不返回 `keyContent`；更新时留空（含纯空白）表示保留原私钥。`keyContent` 非空时（新建与更新）均会去除首尾空白后保存。
-> `cached` 来源为 Caddy 自动签发后的运行时缓存证书，只读展示，不支持编辑/删除。
 
 ## 添加证书
 
@@ -60,8 +59,9 @@ isrvd_post "/caddy/cert" '{
 
 `source` 必填，其他值返回"不支持的证书来源"。
 
-> ⚠️ 内联 PEM 会作为字符串写入 Caddy 完整配置，整体替换时一并下发；
-> 注意配置文件大小，敏感性较高时优先用 `file` 来源 + 文件系统权限控制。
+> ⚠️ 内联 PEM 作为字符串写入 Caddy 完整配置，`GET /caddy/config` 会返回私钥原文；敏感场景优先用 `file` 来源 + 文件系统权限控制。
+>
+> ⚠️ `automate` 的 subject 追加到第一条 automation policy；若首条是 `PUT /caddy/global` 创建的全局默认策略，它会变成只作用于该域名，全局 ACME / on_demand 设置随之失效。
 
 ## 更新证书
 
@@ -74,8 +74,8 @@ isrvd_put "/caddy/cert/file-0" '{
 }'
 ```
 
-> 不允许跨来源更新（例如 `file-0 → pem`）；如果要换来源，请先删除再创建。
-> 更新为全量替换：`file` / `pem` 需提交 `certificate`，`automate` 需提交 `subject`；`tags`、`format` 按请求覆盖（不传即清空）；仅 `keyContent` 留空（含纯空白）时保留原私钥。证书不存在返回 400。
+> 不允许跨来源更新（例如 `file-0 → pem`），换来源请先删除再创建；`source` 可省略（以 `key` 为准），与 `key` 不一致返回 400。
+> 更新为全量替换：`file` / `pem` 需提交 `certificate`，`automate` 需提交 `subject`；`tags`、`format` 按请求覆盖（不传即清空）；仅 `keyContent` 留空（含纯空白）时保留原私钥。证书不存在返回 400。`automate-<n>` 的序号为所有 policy 的 subjects 依次编号。
 
 ## 删除证书
 

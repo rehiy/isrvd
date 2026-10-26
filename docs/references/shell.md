@@ -23,7 +23,7 @@ wscat -c "ws://<HOST>/api/shell?token=$TOKEN&shell=bash"
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
-| `token` | string | JWT 认证令牌（必需） |
+| `token` | string | JWT 认证令牌；JWT 模式必需，代理 Header（THA）模式不需要 |
 | `shell` | string | 可选，仅接受白名单短名：`bash`、`sh`、`zsh`、`powershell`、`pwsh`、`cmd`；传入路径（如 `/bin/bash`）、非白名单或不可用时回退为系统默认 shell（Linux 依次尝试 bash/sh/zsh，macOS 依次尝试 zsh/bash/sh，Windows 依次尝试 powershell/pwsh/cmd） |
 
 **说明：**
@@ -31,7 +31,8 @@ wscat -c "ws://<HOST>/api/shell?token=$TOKEN&shell=bash"
 - 支持 ANSI 转义序列、颜色、光标定位等
 - 连接关闭后终端会话自动结束
 - 终端 WSS 连接内置约 25s 保活心跳，空闲时不会被中间层（nginx/Caddy、NAT）断开
-- 前端窗口尺寸变化时应发送 resize 控制帧，格式为 `\u0000isrvd:resize:<cols>:<rows>`；服务端会调整 PTY 尺寸，避免回车刷新型输出错列或残留文本
+- 前端窗口尺寸变化时发送 resize 控制帧 `\u0000isrvd:resize:<cols>:<rows>`（cols 10–1000，rows 3–1000，格式错误或越界被静默丢弃）
+- PTY 启动失败时降级为 Pipe 模式并输出提示，Pipe 模式不支持 resize
 
 ---
 
@@ -46,34 +47,7 @@ wscat -c "ws://<HOST>/api/shell?token=$TOKEN&shell=bash"
 | Windows / Linux `Ctrl+V`、`Ctrl+Shift+V` | 粘贴剪贴板文字，优先于终端原有的 `^V` 功能（因此 vim 的 `Ctrl+V` 可视块模式不可用；可先在终端执行 `stty -ixon` 关闭流控，再用 `Ctrl+Q` 代替） |
 | macOS `⌘C` / `⌘V` | 使用浏览器原生复制 / 粘贴，`Ctrl+C` 等 Control 组合键继续交给终端 |
 
-复制后若需要中断命令，先点击终端取消选区，再按 `Ctrl+C`。其他快捷键（包括带 Alt 的组合）保持原有行为；`Ctrl+Shift+C` 不做特殊处理，会按终端的 `Ctrl+C` 发送中断信号，浏览器自身对它的处理（如 Chrome 打开开发者工具）也不受影响。
-
-复制和粘贴使用浏览器原生剪贴板事件，不主动读取剪贴板；粘贴仍由 xterm 处理换行和括号粘贴模式（由终端应用启用）。这里只支持文字，不会把电脑文件管理器中复制的文件上传到服务器。
-
----
-
-## 前端集成
-
-前端通过 WebSocket 连接，推荐使用 `xterm.js` 渲染终端：
-
-```javascript
-const ws = new WebSocket(`ws://${host}/api/shell?token=${token}`);
-// 或使用指定的 shell
-// const ws = new WebSocket(`ws://${host}/api/shell?token=${token}&shell=bash`);
-
-ws.onmessage = (event) => {
-  // event.data 为终端输出（可能是字符串或 Blob）
-  terminal.write(event.data);
-};
-
-terminal.onData((data) => {
-  ws.send(data);
-});
-
-terminal.onResize(({ cols, rows }) => {
-  ws.send(`\u0000isrvd:resize:${cols}:${rows}`);
-});
-```
+复制后若需要中断命令，先点击终端取消选区，再按 `Ctrl+C`。复制和粘贴只支持文字，使用浏览器原生剪贴板事件，不会上传文件。
 
 ---
 

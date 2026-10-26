@@ -118,7 +118,7 @@ isrvd_post "/docker/container" '{
 **挂载说明（`volumes[]`）：**
 
 - `containerPath` 必填；`source` 优先于 `hostPath`，两者都为空时报错"挂载源不能为空"
-- `type` 可选 `volume` / `bind`；不填时自动推断：绝对路径或以 `.` 开头为 `bind`，否则按卷名处理为 `volume`
+- `type` 大小写不敏感，可选 `volume` / `bind`，其他值返回"不支持的挂载类型"；不填时自动推断：绝对路径或以 `.` 开头为 `bind`，否则按卷名处理为 `volume`
 - `volume` 类型的名称不能包含 `/`
 - `bind` 类型需使用**宿主机真实路径**（filer 显示的是 isrvd 内部路径，不可直接使用）；相对路径在配置了 `docker.containerRoot` 时解析为 `<containerRoot>/<容器名>/<路径>`；挂载点不存在时自动创建
 
