@@ -5,1249 +5,420 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>iSrvd — 轻量级运维管理面板</title>
-    <meta name="description" content="iSrvd 是基于 Go + Vue 3 构建的轻量级运维管理面板，集成文件管理、Docker 容器编排、APISIX/Caddy 网关配置、Web 终端、SSH 远程管理、GPU 监控、计划任务、资源告警与 AI 助手，为个人服务器与中小型团队提供一站式管理体验。" />
+    <meta name="description" content="iSrvd 是轻量、开源的服务器管理面板。通过一个控制台管理文件、终端、Docker 与网关，从个人服务器到多机协作。" />
     <script src="https://jscdn.rehi.org/npm/@tailwindcss/browser@4"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a' },
-                        slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' }
-                    }
-                }
-            }
+        try {
+            const saved = localStorage.getItem('theme');
+            document.documentElement.classList.toggle('dark', saved === 'dark' || (saved !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches));
+        } catch (e) {
+            document.documentElement.classList.toggle('dark', matchMedia('(prefers-color-scheme: dark)').matches);
         }
-
     </script>
     <style>
-        * {
-            scroll-behavior: smooth;
+        :root {
+            color-scheme: light;
+            --page: #f7f7f2;
+            --surface: #fdfdf9;
+            --subtle: #efefe8;
+            --line: #dddfd4;
+            --ink: #242d22;
+            --muted: #687062;
+            --accent: #446742;
+            --accent-soft: #e9eee2;
+            --nav: rgba(247, 247, 242, .94);
+        }
+        :root.dark {
+            color-scheme: dark;
+            --page: #171d17;
+            --surface: #1e261e;
+            --subtle: #242e23;
+            --line: #354132;
+            --ink: #eceee4;
+            --muted: #a4af9b;
+            --accent: #bfd2a3;
+            --accent-soft: #303e29;
+            --nav: rgba(23, 29, 23, .94);
+        }
+        html { scroll-behavior: smooth; }
+        body { margin: 0; background: var(--page); color: var(--ink); font-family: 'Avenir Next', 'Noto Sans CJK SC', 'PingFang SC', 'Microsoft YaHei', sans-serif; line-height: 1.7; }
+        a { text-decoration: none; }
+        button, input { font: inherit; }
+        button, summary { cursor: pointer; }
+        [id] { scroll-margin-top: 6rem; }
+        [hidden] { display: none !important; }
+        :focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+        ::selection { background: var(--accent-soft); color: var(--ink); }
+        .page-width { width: min(1120px, calc(100% - 48px)); margin-inline: auto; }
+        .muted { color: var(--muted); }
+        .eyebrow { font-family: 'Cascadia Code', 'SFMono-Regular', Consolas, monospace; font-size: .6875rem; letter-spacing: .16em; color: var(--accent); }
+        #main-nav { position: sticky; top: 0; z-index: 50; background: var(--nav); backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); }
+        .nav-inner { height: 76px; display: flex; align-items: center; gap: 2rem; }
+        .wordmark { margin-right: auto; color: var(--ink); font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif; font-size: 2rem; font-weight: 700; letter-spacing: -.06em; }
+        .wordmark span { margin-left: .3rem; color: var(--accent); font-weight: 400; }
+        #nav-menu > summary { display: none; list-style: none; }
+        #nav-menu > summary::-webkit-details-marker { display: none; }
+        .nav-links { display: flex; align-items: center; gap: 1.75rem; }
+        .nav-links a { color: var(--muted); font-size: .8125rem; white-space: nowrap; }
+        .nav-links a:hover, .text-link:hover { color: var(--accent); }
+        .nav-action { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 50%; color: var(--muted); background: transparent; }
+        .nav-action:hover { background: var(--accent-soft); color: var(--accent); }
+        #hero { padding-block: 100px 76px; }
+        .hero-layout { display: grid; grid-template-columns: 1fr 260px; align-items: end; gap: 4rem; }
+        .hero-kicker { display: flex; align-items: center; gap: .6rem; }
+        .hero-kicker::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+        h1 { margin: 24px 0; font-family: 'Noto Serif CJK SC', 'Songti SC', 'STSong', serif; font-size: clamp(2.8rem, 5.7vw, 4.75rem); font-weight: 500; line-height: 1.22; letter-spacing: -.045em; }
+        h1 span { color: var(--accent); }
+        .hero-description { max-width: 31rem; color: var(--muted); font-size: .9375rem; line-height: 1.95; }
+        .hero-actions { display: flex; align-items: center; gap: 1.75rem; margin-top: 32px; }
+        .primary-action { display: inline-flex; align-items: center; gap: 1.5rem; padding: .85rem 1.3rem; background: var(--ink); color: var(--page); border-radius: 4px; font-size: .8125rem; transition: background .2s; }
+        .primary-action:hover { background: var(--accent); }
+        .text-link { display: inline-flex; align-items: center; gap: .5rem; color: var(--ink); font-size: .8125rem; }
+        .hero-aside { padding: 1.5rem 0 1.5rem 2rem; border-left: 1px solid var(--line); }
+        .hero-aside p { margin: 18px 0 24px; font-family: 'Noto Serif CJK SC', 'Songti SC', 'STSong', serif; font-size: 1.5rem; line-height: 1.8; }
+        .hero-aside small { color: var(--muted); font-size: .75rem; line-height: 1.9; }
+        #features { padding-block: 8px 72px; }
+        .feature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+        .feature-item { padding: 28px 32px 0 0; }
+        .feature-item + .feature-item { padding-left: 32px; border-left: 1px solid var(--line); }
+        .feature-item h3 { margin: 14px 0 10px; font-size: 1rem; font-weight: 600; }
+        .feature-item p { max-width: 19rem; color: var(--muted); font-size: .8125rem; line-height: 1.9; }
+        #quickstart { padding-block: 64px 88px; border-top: 1px solid var(--line); background: var(--surface); }
+        .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 2rem; margin-bottom: 32px; }
+        .section-heading h2 { margin: 12px 0 8px; font-size: clamp(1.7rem, 3vw, 2.25rem); font-weight: 500; letter-spacing: -.04em; }
+        .section-heading p { color: var(--muted); font-size: .8125rem; }
+        .wizard { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+        .wizard-row { display: flex; align-items: flex-start; gap: 1rem; padding: 22px; border-top: 1px solid var(--line); }
+        .wizard-row:first-child { border-top: 0; }
+        .wizard-label { flex: 0 0 4.5rem; padding-top: .45rem; font-size: .75rem; font-weight: 600; }
+        .wizard-body { flex: 1 1 auto; min-width: 0; }
+        .chip-group { display: flex; flex-wrap: wrap; gap: .45rem; }
+        .chip { display: inline-flex; align-items: center; gap: .35rem; padding: .5rem .65rem; border: 1px solid var(--line); border-radius: 4px; background: transparent; color: var(--muted); font-size: .75rem; line-height: 1.3; transition: border-color .15s, background .15s; }
+        .chip:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+        .chip[aria-checked="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+        .chip:disabled { opacity: .4; cursor: not-allowed; }
+        .chip-tag { font-size: .5625rem; opacity: .8; }
+        .wizard-hint { margin-top: .7rem; color: var(--muted); font-size: .6875rem; line-height: 1.8; }
+        .field-input { width: 100%; padding: .55rem .65rem; border: 1px solid var(--line); border-radius: 4px; background: var(--page); color: var(--ink); font-size: .75rem; }
+        .field-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+        .field-input.invalid { border-color: #d46464; box-shadow: 0 0 0 2px rgba(212, 100, 100, .15); }
+        .parameter-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+        .code-block { background: #1d291f; color: #e5eadb; border: 1px solid #354536; border-radius: 6px; overflow: hidden; }
+        .code-header { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .65rem 1rem; border-bottom: 1px solid #354536; color: #aab9a1; font-size: .6875rem; }
+        .code-body { padding: 20px; overflow-x: auto; font-family: 'Cascadia Code', 'SFMono-Regular', Consolas, monospace; font-size: .75rem; line-height: 1.9; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .copy-btn { flex-shrink: 0; padding: .25rem .6rem; border: 1px solid #52634b; border-radius: 3px; background: transparent; color: #d8e5c8; font-size: .6875rem; }
+        .copy-btn:hover { background: #354536; }
+        .copy-btn:disabled { opacity: .4; cursor: not-allowed; }
+        #install-meta { display: flex; flex-wrap: wrap; gap: .35rem .75rem; margin-top: 14px; color: var(--muted); font-size: .625rem; overflow-wrap: anywhere; }
+        #install-notes { margin: 18px 0 0; padding-left: 16px; color: var(--muted); font-size: .6875rem; line-height: 1.9; }
+        #install-notes li + li { margin-top: .4rem; }
+        #install-manage-block { margin-top: 32px; border: 1px solid var(--line); border-radius: 6px; background: var(--page); overflow: hidden; }
+        #install-manage-block summary { display: flex; align-items: center; gap: 16px; list-style: none; color: var(--ink); }
+        #install-manage-block summary::-webkit-details-marker { display: none; }
+        #install-manage-block summary::after { content: '+'; flex: 0 0 16px; color: var(--muted); font-size: 1.125rem; font-weight: 400; text-align: center; }
+        #install-manage-block details[open] > summary::after, #install-manage-block[open] > summary::after { content: '−'; }
+        #install-manage-block > summary { padding: 20px 24px; font-size: .8125rem; }
+        #install-manage-block > summary > span:first-child { flex: 1; }
+        .manage-summary-hint, .manage-status { color: var(--muted); font-size: .6875rem; }
+        .manage-safety { margin: 0; padding: 14px 24px; border-top: 1px solid var(--line); background: var(--subtle); color: var(--muted); font-size: .6875rem; line-height: 1.9; }
+        #install-manage { padding-inline: 24px; }
+        .manage-action + .manage-action { border-top: 1px solid var(--line); }
+        .manage-action > summary { padding-block: 18px; }
+        .manage-index { flex: 0 0 20px; color: var(--muted); font-family: 'Cascadia Code', 'SFMono-Regular', Consolas, monospace; font-size: .625rem; }
+        .manage-title { flex: 1; min-width: 0; font-size: .8125rem; font-weight: 500; }
+        .manage-status { flex-shrink: 0; }
+        .manage-action[data-danger="true"] .manage-title, .manage-action[data-danger="true"] .manage-status { color: #a44637; }
+        .dark .manage-action[data-danger="true"] .manage-title, .dark .manage-action[data-danger="true"] .manage-status { color: #e69a8d; }
+        .manage-content { padding: 0 0 22px 36px; }
+        .manage-note { max-width: 56rem; margin-bottom: 14px; color: var(--muted); font-size: .75rem; line-height: 1.9; }
+        .manage-content .code-body { max-height: 22rem; overflow-y: auto; }
+        footer { padding-block: 28px; border-top: 1px solid var(--line); }
+        .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; color: var(--muted); font-size: .6875rem; }
+        .footer-links { display: flex; flex-wrap: wrap; gap: 1.25rem; }
+        .footer-links a:hover { color: var(--accent); }
+        @media (max-width: 1023px) {
+            .nav-inner { height: 68px; gap: 1rem; }
+            #nav-menu > summary { display: block; color: var(--muted); font-size: .8125rem; }
+            #nav-menu > .nav-links { display: none; }
+            #nav-menu[open] > .nav-links { display: flex; position: absolute; inset: 68px 0 auto; justify-content: center; padding: 20px 24px; background: var(--surface); border-bottom: 1px solid var(--line); }
+            .hero-layout { grid-template-columns: 1fr 220px; gap: 2rem; }
         }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-
-        .code-block {
-            background: #0f172a;
-            color: #e2e8f0;
-            border-radius: .75rem;
-            overflow: hidden
-        }
-
-        .dark .code-block {
-            background: #020617;
-        }
-
-        .code-header {
-            background: #1e293b;
-            padding: .5rem 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: .75rem;
-            color: #94a3b8;
-        }
-
-        .dark .code-header {
-            background: #0f172a;
-            color: #64748b;
-        }
-
-        .code-body {
-            padding: 1rem 1.25rem;
-            overflow-x: auto;
-            font-family: 'SFMono-Regular', Consolas, monospace;
-            font-size: .875rem;
-            line-height: 1.7
-        }
-
-        .copy-btn {
-            cursor: pointer;
-            padding: .25rem .75rem;
-            border-radius: .375rem;
-            background: #334155;
-            color: #cbd5e1;
-            font-size: .75rem;
-            transition: background .2s
-        }
-
-        .copy-btn:hover {
-            background: #475569
-        }
-
-        .dark .copy-btn {
-            background: #1e293b;
-            color: #94a3b8;
-        }
-
-        .dark .copy-btn:hover {
-            background: #334155;
-        }
-
-        .feature-card {
-            border-radius: 1rem;
-            border: 1px solid #e2e8f0;
-            background: white;
-            padding: 1.5rem;
-            transition: box-shadow .2s
-        }
-
-        .dark .feature-card {
-            border-color: #334155;
-            background: #1e293b;
-        }
-
-        .feature-card:hover {
-            box-shadow: 0 4px 24px rgba(0, 0, 0, .06)
-        }
-
-        .section-title {
-            font-size: 1.875rem;
-            font-weight: 700;
-            color: #1e293b;
-            text-align: center
-        }
-
-        .dark .section-title {
-            color: #f1f5f9;
-        }
-
-        .section-subtitle {
-            color: #64748b;
-            text-align: center;
-            margin-top: .5rem
-        }
-
-        .dark .section-subtitle {
-            color: #94a3b8;
-        }
-
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: .125rem .625rem;
-            border-radius: .5rem;
-            font-size: .75rem;
-            font-weight: 500
-        }
-
-        .badge-blue {
-            background: #eff6ff;
-            color: #2563eb
-        }
-
-        .dark .badge-blue {
-            background: #1e3a8a;
-            color: #93c5fd;
-        }
-
-        .badge-emerald {
-            background: #ecfdf5;
-            color: #059669
-        }
-
-        .dark .badge-emerald {
-            background: #064e3b;
-            color: #6ee7b7;
-        }
-
-        .badge-amber {
-            background: #fffbeb;
-            color: #d97706
-        }
-
-        .dark .badge-amber {
-            background: #78350f;
-            color: #fcd34d;
-        }
-
-        .badge-violet {
-            background: #f5f3ff;
-            color: #7c3aed
-        }
-
-        .dark .badge-violet {
-            background: #3b0764;
-            color: #c4b5fd;
-        }
-
-        .badge-rose {
-            background: #fff1f2;
-            color: #e11d48
-        }
-
-        .badge-indigo {
-            background: #eef2ff;
-            color: #4f46e5
-        }
-
-        .badge-cyan {
-            background: #ecfeff;
-            color: #0891b2
-        }
-
-        .tab-group {
-            background: #e2e8f0;
-            padding: .25rem;
-            border-radius: .5rem;
-            display: inline-flex;
-            gap: .125rem
-        }
-
-        .tab-btn {
-            padding: .375rem 1rem;
-            font-size: .75rem;
-            font-weight: 500;
-            border-radius: .375rem;
-            transition: all .2s;
-            color: #64748b;
-            background: transparent;
-            border: none;
-            cursor: pointer
-        }
-
-        .tab-active {
-            background: white;
-            color: #1e293b;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, .1)
-        }
-
-        .tab-content {
-            display: none
-        }
-
-        .tab-content.active {
-            display: block
-        }
-
-        .arch-arrow {
-            color: #94a3b8;
-            font-size: 1.25rem;
-            margin: 0 .5rem
-        }
-
-        .dark .feature-card {
-            background: #1e293b;
-            border-color: #334155
-        }
-
-        .dark body {
-            background: #0f172a;
-            color: #e2e8f0
-        }
-
-        .dark .section-title {
-            color: #f1f5f9
-        }
-
-        .dark .section-subtitle {
-            color: #94a3b8
-        }
-
-        .dark .bg-white {
-            background: #1e293b !important
-        }
-
-        .dark .text-slate-800 {
-            color: #e2e8f0 !important
-        }
-
-        /* Navigation dark mode */
-        .dark #main-nav {
-            background: rgba(15, 23, 42, 0.8) !important;
-            border-color: rgba(51, 65, 85, 0.6) !important;
-        }
-
-        .dark .text-slate-600 {
-            color: #94a3b8 !important
-        }
-
-        .dark .text-slate-500 {
-            color: #64748b !important
-        }
-
-        .dark .text-slate-400 {
-            color: #475569 !important
-        }
-
-        /* GPU Table dark mode - pure CSS solution */
-        #gpu-table tbody tr {
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        #gpu-table thead tr {
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .dark #gpu-table tbody tr {
-            border-bottom-color: #1e293b !important;
-        }
-
-        .dark #gpu-table thead tr {
-            border-bottom-color: #334155 !important;
-        }
-
-        .dark .border-slate-200 {
-            border-color: #334155 !important
-        }
-
-        .dark .bg-slate-50 {
-            background: #1e293b !important
-        }
-
-        .dark .bg-slate-100 {
-            background: #334155 !important
-        }
-
-        .dark .bg-slate-900 {
-            background: #020617 !important
-        }
-
-        .dark .tab-group {
-            background: #334155
-        }
-
-        .dark .tab-active {
-            background: #1e293b;
-            color: #e2e8f0
-        }
-
-        .dark .tab-btn {
-            color: #94a3b8
-        }
-
-        /* CTA button shadow in dark mode */
-        .dark .shadow-blue-200 {
-            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.5), 0 8px 10px -6px rgba(37, 99, 235, 0.3) !important
-        }
-
-        /* Hero section dark mode */
-        .dark .bg-gradient-to-b.from-slate-50.to-white {
-            background: linear-gradient(to bottom, #0f172a, #1e293b) !important
-        }
-
-        /* 命令生成器 */
-        .wizard {
-            border-radius: 1rem;
-            border: 1px solid #e2e8f0;
-            background: #fff;
-            overflow: hidden
-        }
-
-        .dark .wizard {
-            border-color: #334155;
-            background: #1e293b
-        }
-
-        .wizard [hidden] {
-            display: none
-        }
-
-        .wizard-row {
-            display: flex;
-            gap: 1rem;
-            padding: 1rem 1.25rem;
-            border-top: 1px solid #f1f5f9;
-            align-items: flex-start
-        }
-
-        .wizard-row:first-child {
-            border-top: 0
-        }
-
-        .dark .wizard-row {
-            border-color: #334155
-        }
-
-        .wizard-label {
-            flex: 0 0 5rem;
-            padding-top: .4rem;
-            font-size: .8125rem;
-            font-weight: 600;
-            color: #334155
-        }
-
-        .dark .wizard-label {
-            color: #cbd5e1
-        }
-
-        .wizard-body {
-            flex: 1 1 auto;
-            min-width: 0
-        }
-
-        .chip-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: .5rem
-        }
-
-        .chip {
-            display: inline-flex;
-            align-items: center;
-            gap: .375rem;
-            padding: .375rem .75rem;
-            border: 1px solid #e2e8f0;
-            border-radius: .5rem;
-            background: #fff;
-            color: #475569;
-            font-size: .8125rem;
-            font-weight: 500;
-            line-height: 1.25;
-            cursor: pointer;
-            transition: background .15s, border-color .15s, color .15s
-        }
-
-        .chip:hover {
-            border-color: #93c5fd;
-            color: #1d4ed8
-        }
-
-        .chip[aria-checked="true"] {
-            background: #2563eb;
-            border-color: #2563eb;
-            color: #fff
-        }
-
-        .chip-tag {
-            padding: 0 .3rem;
-            border-radius: .25rem;
-            background: rgba(37, 99, 235, .1);
-            color: #2563eb;
-            font-size: .625rem;
-            font-weight: 600
-        }
-
-        .chip[aria-checked="true"] .chip-tag {
-            background: rgba(255, 255, 255, .25);
-            color: #fff
-        }
-
-        .dark .chip {
-            background: transparent;
-            border-color: #475569;
-            color: #cbd5e1
-        }
-
-        .dark .chip:hover {
-            border-color: #60a5fa;
-            color: #dbeafe
-        }
-
-        .dark .chip[aria-checked="true"] {
-            background: #2563eb;
-            border-color: #3b82f6;
-            color: #fff
-        }
-
-        .wizard-hint {
-            margin-top: .5rem;
-            font-size: .75rem;
-            line-height: 1.6;
-            color: #94a3b8
-        }
-
-        .dark .wizard-hint {
-            color: #64748b
-        }
-
-        .field-input {
-            width: 100%;
-            padding: .4rem .65rem;
-            border: 1px solid #e2e8f0;
-            border-radius: .5rem;
-            background: #fff;
-            color: #1e293b;
-            font-size: .8125rem;
-            transition: border-color .2s, box-shadow .2s
-        }
-
-        .field-input:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 2px rgba(37, 99, 235, .25)
-        }
-
-        .field-input.invalid {
-            border-color: #f43f5e;
-            box-shadow: 0 0 0 2px rgba(244, 63, 94, .18)
-        }
-
-        .dark .field-input {
-            background: #0f172a;
-            border-color: #475569;
-            color: #e2e8f0
-        }
-
-        .copy-btn[disabled] {
-            opacity: .4;
-            cursor: not-allowed
-        }
-
         @media (max-width: 639px) {
-            .wizard-row {
-                flex-direction: column;
-                gap: .5rem
-            }
-
-            .wizard-label {
-                padding-top: 0
-            }
+            .page-width { width: calc(100% - 40px); }
+            #hero { padding-block: 60px 48px; }
+            .hero-layout { grid-template-columns: 1fr; gap: 0; }
+            .hero-aside { display: none; }
+            .hero-description { font-size: .875rem; }
+            .feature-grid { grid-template-columns: 1fr; }
+            .feature-item, .feature-item + .feature-item { padding: 22px 0; border-left: 0; border-bottom: 1px solid var(--line); }
+            .feature-item:last-child { border-bottom: 0; padding-bottom: 0; }
+            .feature-item h3 { display: inline; margin-left: 16px; }
+            .feature-item p { max-width: none; margin-top: 10px; }
+            #features { padding-bottom: 48px; }
+            #quickstart { padding-block: 44px 52px; }
+            .section-heading { align-items: start; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+            .wizard-row { flex-direction: column; gap: .65rem; padding: 18px; }
+            .wizard-label { flex: none; padding-top: 0; }
+            .code-body { padding: 16px; }
+            #install-manage-block > summary { padding: 18px; }
+            #install-manage-block summary { gap: 12px; }
+            .manage-summary-hint, .manage-status { display: none; }
+            .manage-action[data-danger="true"] .manage-status { display: inline; }
+            .manage-safety { padding: 12px 18px; }
+            #install-manage { padding-inline: 18px; }
+            .manage-index { flex-basis: 16px; }
+            .manage-content { padding: 0 0 18px; }
+            .footer-inner { align-items: start; flex-direction: column; gap: 12px; }
         }
-
-        .code-body.generated {
-            white-space: pre-wrap;
-            word-break: break-word
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after { transition: none !important; }
         }
     </style>
 </head>
 
-<body class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 antialiased">
-
-    <!-- Navigation -->
-    <nav id="main-nav" class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/60">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center">
-                    <img src="logo.svg?4" alt="iSrvd" class="w-24">
+<body class="antialiased">
+    <nav id="main-nav" aria-label="主导航">
+        <div class="page-width nav-inner">
+            <a class="wordmark" href="#hero" aria-label="iSrvd 首页">iSrvd<span>/</span></a>
+            <details id="nav-menu">
+                <summary aria-label="展开页面导航">导航</summary>
+                <div class="nav-links">
+                    <a href="#features">核心能力</a>
+                    <a href="#quickstart">安装</a>
+                    <a href="https://github.com/rehiy/isrvd/tree/master/docs" target="_blank" rel="noopener noreferrer">文档 ↗</a>
+                    <a href="https://github.com/rehiy/isrvd" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
                 </div>
-                <div class="hidden md:flex items-center gap-6 text-sm">
-                    <a href="#hero" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">首页</a>
-                    <a href="#quickstart" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">快速开始</a>
-                    <a href="#features" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">功能特性</a>
-                    <a href="#techstack" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">技术栈</a>
-                    <a href="#centralized" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">集中管理</a>
-                    <a href="#architecture" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">架构设计</a>
-                    <a href="#security" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">安全特性</a>
-                    <a href="#gpu" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">GPU 监控</a>
-                </div>
-                <div class="flex items-center gap-3">
-                    <button id="theme-toggle" class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition" onclick="toggleTheme()">
-                        <svg id="icon-sun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="5" />
-                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-                        </svg>
-                        <svg id="icon-moon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-                        </svg>
-                    </button>
-                    <a href="https://github.com/rehiy/isrvd" target="_blank" class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path
-                                d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                        </svg>
-                    </a>
-                    <span class="badge badge-blue">v1.x</span>
-                </div>
-            </div>
+            </details>
+            <button id="theme-toggle" type="button" class="nav-action" aria-label="切换深色主题" aria-pressed="false" onclick="toggleTheme()">
+                <svg id="icon-sun" class="w-4 h-4" hidden fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" />
+                </svg>
+                <svg id="icon-moon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                </svg>
+            </button>
         </div>
     </nav>
 
-    <!-- Hero -->
-    <section id="hero" class="pt-28 pb-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-50 to-white">
-        <div class="max-w-6xl mx-auto text-center">
-            <!-- logo -->
-            <div class="flex justify-center mb-8">
-                <img src="logo.svg?4" alt="iSrvd" class="w-64 sm:w-80 lg:w-96">
-            </div>
-
-            <!-- Badge -->
-            <div class="mb-6">
-                <span class="badge badge-emerald">开源 · Apache 2.0</span>
-                <span class="badge badge-blue ml-2">Go 1.26+ · Vue 3</span>
-            </div>
-
-            <!-- Description -->
-            <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-800 mb-4 leading-tight">
-                轻量级运维管理面板
-            </h1>
-            <p class="text-lg sm:text-xl text-slate-500 max-w-5xl mx-auto mb-6 leading-relaxed">
-                基于 Go + Vue 3 构建的轻量级运维面板，集成文件管理、Docker 容器编排、APISIX/Caddy 网关配置、Web 终端、SSH 远程管理、GPU 监控、计划任务、资源告警与 AI 助手，为个人服务器与中小型团队提供一站式管理体验。
-            </p>
-
-            <!-- Name Origin -->
-            <div class="mb-8 text-sm text-slate-400">
-                <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">it is a server daemon</code>
-                <span class="mx-1">→</span>
-                <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">isrvd</code>
-                <span class="mx-1">=</span>
-                <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">/srv</code> + daemon
-                <span class="mx-2">|</span>
-                发音：<span class="text-slate-500 font-medium">/ˈaɪ sɜːrvd/</span>
-                <span class="text-slate-300 mx-1">→</span>
-                <span class="text-slate-500">"I served"（爱服务）</span>
-            </div>
-
-            <!-- TDP & Contributors -->
-            <div class="mb-10 text-sm text-slate-500 leading-relaxed">
-                <div class="flex items-center justify-center gap-2 mb-2">
-                    <span>由 <a href="https://tdp.fan/" target="_blank" class="text-blue-600 hover:underline font-medium">腾讯云开发者先锋（TDP）</a>成员
-                        <a href="https://github.com/rehiy" class="text-slate-700 hover:underline font-medium">若海</a> 主导开发</span>
-                </div>
+    <main>
+        <section id="hero">
+            <div class="page-width hero-layout">
                 <div>
-                    特别感谢
-                    <a href="https://cnb.cool/u/leun" class="text-slate-700 hover:underline font-medium">没猫饼</a>、
-                    <a href="https://github.com/SimpleMaxR" class="text-slate-700 hover:underline font-medium">hugo</a>、
-                    <a href="https://github.com/Mintimate" class="text-slate-700 hover:underline font-medium">minti</a>
-                    的代码贡献与测试支持
+                    <p class="eyebrow hero-kicker">OPEN SOURCE / SERVER OPERATIONS</p>
+                    <h1>服务器管理，<br><span>回归简单。</span></h1>
+                    <p class="hero-description">iSrvd，把文件、终端、容器与网关放进一个轻量面板。为你的第一台服务器，也为下一组服务器。</p>
+                    <div class="hero-actions">
+                        <a href="#quickstart" class="primary-action">开始部署 <span aria-hidden="true">→</span></a>
+                        <a href="https://github.com/rehiy/isrvd" target="_blank" rel="noopener noreferrer" class="text-link">查看源码 <span aria-hidden="true">↗</span></a>
+                    </div>
                 </div>
+                <aside class="hero-aside" aria-label="产品定位">
+                    <span class="eyebrow">ONE CONSOLE.</span>
+                    <p>少一点切换。<br>多一点掌控。</p>
+                    <small>个人服务器 / 小型团队<br>开源 · Apache 2.0</small>
+                </aside>
             </div>
+        </section>
 
-            <!-- CTA Buttons -->
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="#install-wizard-anchor"
-                    class="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-200 dark:bg-blue-500 dark:hover:bg-blue-600 dark:shadow-none">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    立即安装
-                </a>
-                <a href="https://github.com/rehiy/isrvd" target="_blank"
-                    class="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-slate-700 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-600">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path
-                            d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                    </svg>
-                    GitHub
-                </a>
+        <section id="features" aria-label="核心能力">
+            <div class="page-width feature-grid">
+                <article class="feature-item">
+                    <span class="eyebrow" aria-hidden="true">01 / OPERATE</span>
+                    <h3>日常运维，顺手完成</h3>
+                    <p>文件管理、Web 终端与 SSH，配合资源监控和计划任务，处理服务器的日常工作。</p>
+                </article>
+                <article class="feature-item">
+                    <span class="eyebrow" aria-hidden="true">02 / DEPLOY</span>
+                    <h3>从容器，到访问入口</h3>
+                    <p>管理 Docker、Compose 与 Swarm，在同一处配置 Caddy 或 APISIX 网关。</p>
+                </article>
+                <article class="feature-item">
+                    <span class="eyebrow" aria-hidden="true">03 / CONNECT</span>
+                    <h3>一台起步，多台协作</h3>
+                    <p>单机独立运行，或由一个中控管理多台服务器。受管机主动接入，无需开放入站端口。</p>
+                </article>
             </div>
-        </div>
-    </section>
-    <!-- Quick Start -->
-    <section id="quickstart" class="py-20">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="section-title">快速开始</h2>
-            <p class="section-subtitle">选择部署方式、运行角色、集成组件与软件源，生成一条完整的部署命令</p>
+        </section>
 
-            <!-- 命令生成器 -->
-            <div class="mt-12 flex items-center gap-3" id="install-wizard-anchor">
-                <span class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></span>
-                <span class="text-sm text-slate-400">命令生成器</span>
-                <span class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></span>
-            </div>
-            <p class="mt-3 text-center text-xs text-slate-400">所有选项一屏可见，选完直接复制下方命令执行</p>
-
-            <div class="mt-8 wizard">
-                <!-- 部署方式 -->
-                <div class="wizard-row">
-                    <div class="wizard-label">部署方式</div>
-                    <div class="wizard-body">
-                        <div class="chip-group" role="radiogroup" aria-label="部署方式">
-                            <button type="button" class="chip" role="radio" data-opt="method" data-val="script-binary" onclick="setOpt('method','script-binary')">
-                                系统服务 + 组件容器<span class="chip-tag">推荐</span>
-                            </button>
-                            <button type="button" class="chip" role="radio" data-opt="method" data-val="script-docker" onclick="setOpt('method','script-docker')">
-                                全容器化
-                            </button>
-                            <button type="button" class="chip" role="radio" data-opt="method" data-val="docker" onclick="setOpt('method','docker')">
-                                docker run
-                            </button>
-                        </div>
-                        <p class="wizard-hint" id="hint-method"></p>
+        <section id="quickstart">
+            <div class="page-width">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">GET STARTED</p>
+                        <h2>按你的方式部署。</h2>
+                        <p>选择配置，生成可复制的部署命令。</p>
                     </div>
+                    <a href="https://github.com/rehiy/isrvd/tree/master/docs" target="_blank" rel="noopener noreferrer" class="text-link">阅读部署文档 <span aria-hidden="true">↗</span></a>
                 </div>
 
-                <!-- 运行角色 -->
-                <div class="wizard-row">
-                    <div class="wizard-label">运行角色</div>
-                    <div class="wizard-body">
-                        <div class="chip-group" role="radiogroup" aria-label="运行角色">
-                            <button type="button" class="chip" role="radio" data-opt="role" data-val="server" onclick="setOpt('role','server')">单机</button>
-                            <button type="button" class="chip" role="radio" data-opt="role" data-val="center" onclick="setOpt('role','center')">中控</button>
-                            <button type="button" class="chip" role="radio" data-opt="role" data-val="agent" onclick="setOpt('role','agent')">受管机</button>
+                <div class="wizard">
+                    <div class="wizard-row">
+                        <div class="wizard-label">部署方式</div>
+                        <div class="wizard-body">
+                            <div class="chip-group" role="radiogroup" aria-label="部署方式">
+                                <button type="button" class="chip" role="radio" data-opt="method" data-val="script-binary" onclick="setOpt('method','script-binary')">系统服务<span class="chip-tag">推荐</span></button>
+                                <button type="button" class="chip" role="radio" data-opt="method" data-val="script-docker" onclick="setOpt('method','script-docker')">全容器化</button>
+                                <button type="button" class="chip" role="radio" data-opt="method" data-val="docker" onclick="setOpt('method','docker')">docker run</button>
+                            </div>
+                            <p class="wizard-hint" id="hint-method"></p>
                         </div>
-                        <p class="wizard-hint" id="hint-role"></p>
-                        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 hidden" id="role-agent-inputs">
-                            <label class="block text-xs text-slate-500 dark:text-slate-400">
-                                <span class="block mb-1">中控地址 <span class="text-rose-500">*</span></span>
-                                <input id="in-center-url" type="text" autocomplete="off" spellcheck="false" placeholder="https://center.example.com" oninput="renderBuilder()" class="field-input">
-                            </label>
-                            <label class="block text-xs text-slate-500 dark:text-slate-400">
-                                <span class="block mb-1">节点令牌 <span class="text-rose-500">*</span></span>
-                                <input id="in-node-token" type="text" autocomplete="off" spellcheck="false" placeholder="在中控「节点管理」页生成" oninput="renderBuilder()" class="field-input">
+                    </div>
+                    <div class="wizard-row">
+                        <div class="wizard-label">运行角色</div>
+                        <div class="wizard-body">
+                            <div class="chip-group" role="radiogroup" aria-label="运行角色">
+                                <button type="button" class="chip" role="radio" data-opt="role" data-val="server" onclick="setOpt('role','server')">单机</button>
+                                <button type="button" class="chip" role="radio" data-opt="role" data-val="center" onclick="setOpt('role','center')">中控</button>
+                                <button type="button" class="chip" role="radio" data-opt="role" data-val="agent" onclick="setOpt('role','agent')">受管机</button>
+                            </div>
+                            <p class="wizard-hint" id="hint-role"></p>
+                            <div class="mt-3 parameter-grid" id="role-agent-inputs" hidden>
+                                <label class="block text-xs muted">
+                                    <span class="block mb-1">中控地址 <span class="text-rose-500">*</span></span>
+                                    <input id="in-center-url" type="text" autocomplete="off" spellcheck="false" placeholder="https://center.example.com" oninput="renderBuilder()" class="field-input">
+                                </label>
+                                <label class="block text-xs muted">
+                                    <span class="block mb-1">节点令牌 <span class="text-rose-500">*</span></span>
+                                    <input id="in-node-token" type="text" autocomplete="off" spellcheck="false" placeholder="在中控「节点管理」页生成" oninput="renderBuilder()" class="field-input">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="wizard-row">
+                        <div class="wizard-label" id="variant-label">组件容器</div>
+                        <div class="wizard-body">
+                            <div class="chip-group" role="radiogroup" aria-labelledby="variant-label">
+                                <button type="button" class="chip" role="radio" data-opt="variant" data-val="slim" onclick="setOpt('variant','slim')"><span id="variant-slim-label">不安装组件</span><span class="chip-tag">默认</span></button>
+                                <button type="button" class="chip" role="radio" data-opt="variant" data-val="caddy" onclick="setOpt('variant','caddy')">Caddy</button>
+                                <button type="button" class="chip" role="radio" data-opt="variant" data-val="apisix" onclick="setOpt('variant','apisix')">APISIX + etcd</button>
+                                <button type="button" class="chip" role="radio" data-opt="variant" data-val="etcd" data-system-only="true" onclick="setOpt('variant','etcd')">etcd</button>
+                                <button type="button" class="chip" role="radio" data-opt="variant" data-val="caddy,etcd" data-system-only="true" onclick="setOpt('variant','caddy,etcd')">Caddy + etcd</button>
+                            </div>
+                            <p class="wizard-hint" id="hint-variant"></p>
+                            <label class="block mt-3 text-xs muted" id="f-tag" hidden>
+                                <span class="block mb-1">镜像标签（可选）</span>
+                                <input id="in-tag" type="text" autocomplete="off" spellcheck="false" maxlength="128" placeholder="留空使用所选布局的标签" oninput="renderBuilder()" class="field-input" aria-describedby="hint-tag">
+                                <span class="block mt-1" id="hint-tag">自定义 tag 必须已发布；内置标签必须与所选布局匹配。</span>
                             </label>
                         </div>
                     </div>
-                </div>
-
-                <!-- 集成组件 -->
-                <div class="wizard-row">
-                    <div class="wizard-label" id="variant-label">组件容器</div>
-                    <div class="wizard-body">
-                        <div class="chip-group" role="radiogroup" aria-labelledby="variant-label">
-                            <button type="button" class="chip" role="radio" data-opt="variant" data-val="slim" onclick="setOpt('variant','slim')"><span id="variant-slim-label">不安装组件</span><span class="chip-tag">默认</span></button>
-                            <button type="button" class="chip" role="radio" data-opt="variant" data-val="caddy" onclick="setOpt('variant','caddy')">Caddy</button>
-                            <button type="button" class="chip" role="radio" data-opt="variant" data-val="apisix" onclick="setOpt('variant','apisix')">APISIX + etcd</button>
-                            <button type="button" class="chip" role="radio" data-opt="variant" data-val="etcd" data-system-only="true" onclick="setOpt('variant','etcd')">etcd</button>
-                            <button type="button" class="chip" role="radio" data-opt="variant" data-val="caddy,etcd" data-system-only="true" onclick="setOpt('variant','caddy,etcd')">Caddy + etcd</button>
+                    <div class="wizard-row">
+                        <div class="wizard-label">软件源</div>
+                        <div class="wizard-body">
+                            <div class="chip-group" role="radiogroup" aria-label="软件源">
+                                <button type="button" class="chip" role="radio" data-opt="source" data-val="auto" onclick="setOpt('source','auto')"><span id="source-auto-label">自动</span><span class="chip-tag">默认</span></button>
+                                <button type="button" class="chip" role="radio" data-opt="source" data-val="cn" onclick="setOpt('source','cn')">CNB</button>
+                                <button type="button" class="chip" role="radio" data-opt="source" data-val="global" onclick="setOpt('source','global')"><span id="source-global-label">GitHub</span></button>
+                            </div>
+                            <p class="wizard-hint" id="hint-source"></p>
                         </div>
-                        <p class="wizard-hint" id="hint-variant"></p>
-                        <label class="block mt-3 text-xs text-slate-500 dark:text-slate-400 hidden" id="f-tag">
-                            <span class="block mb-1">isrvd 镜像标签（可选）</span>
-                            <input id="in-tag" type="text" autocomplete="off" spellcheck="false" maxlength="128" placeholder="留空使用所选组件的标签" oninput="renderBuilder()" class="field-input" aria-describedby="hint-tag">
-                            <span class="block mt-1" id="hint-tag">自定义 tag 必须已发布；上方选择决定端口布局，内置标签必须与布局匹配。</span>
-                        </label>
                     </div>
-                </div>
-
-                <!-- 软件源 -->
-                <div class="wizard-row">
-                    <div class="wizard-label">软件源</div>
-                    <div class="wizard-body">
-                        <div class="chip-group" role="radiogroup" aria-label="软件源">
-                            <button type="button" class="chip" role="radio" data-opt="source" data-val="auto" onclick="setOpt('source','auto')"><span id="source-auto-label">自动</span><span class="chip-tag">默认</span></button>
-                            <button type="button" class="chip" role="radio" data-opt="source" data-val="cn" onclick="setOpt('source','cn')">CNB</button>
-                            <button type="button" class="chip" role="radio" data-opt="source" data-val="global" onclick="setOpt('source','global')"><span id="source-global-label">GitHub</span></button>
-                        </div>
-                        <p class="wizard-hint" id="hint-source"></p>
-                    </div>
-                </div>
-
-                <!-- Docker 参数：仅 docker run -->
-                <div class="wizard-row hidden" id="sec-docker">
-                    <div class="wizard-label">Docker 参数</div>
-                    <div class="wizard-body space-y-3">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                            <label class="block text-xs text-slate-500 dark:text-slate-400">
-                                <span class="block mb-1">容器名</span>
-                                <input id="in-cname" type="text" autocomplete="off" spellcheck="false" oninput="renderBuilder()" class="field-input">
-                            </label>
-                            <label class="block text-xs text-slate-500 dark:text-slate-400 lg:col-span-2">
-                                <span class="block mb-1">数据目录 <span class="text-slate-400">→ /data</span></span>
-                                <input id="in-data" type="text" autocomplete="off" spellcheck="false" placeholder="/srv/data" oninput="renderBuilder()" class="field-input">
-                            </label>
-                            <label class="block text-xs text-slate-500 dark:text-slate-400" id="f-web">
-                                <span class="block mb-1">Web 端口 <span class="text-slate-400">→ 8080</span></span>
-                                <input id="in-p-web" type="text" inputmode="numeric" autocomplete="off" placeholder="8080" oninput="renderBuilder()" class="field-input">
-                            </label>
-                            <label class="block text-xs text-slate-500 dark:text-slate-400 hidden" id="f-http">
-                                <span class="block mb-1">HTTP 端口 <span class="text-slate-400" id="f-http-to"></span></span>
-                                <input id="in-p-http" type="text" inputmode="numeric" autocomplete="off" placeholder="80" oninput="renderBuilder()" class="field-input">
-                            </label>
-                            <label class="block text-xs text-slate-500 dark:text-slate-400 hidden" id="f-https">
-                                <span class="block mb-1">HTTPS 端口 <span class="text-slate-400" id="f-https-to"></span></span>
-                                <input id="in-p-https" type="text" inputmode="numeric" autocomplete="off" placeholder="443" oninput="renderBuilder()" class="field-input">
-                            </label>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+                    <div class="wizard-row" id="sec-docker" hidden>
+                        <div class="wizard-label">容器参数</div>
+                        <div class="wizard-body space-y-3">
+                            <div class="parameter-grid">
+                                <label class="block text-xs muted">
+                                    <span class="block mb-1">容器名</span>
+                                    <input id="in-cname" type="text" autocomplete="off" spellcheck="false" oninput="renderBuilder()" class="field-input">
+                                </label>
+                                <label class="block text-xs muted">
+                                    <span class="block mb-1">数据目录 → /data</span>
+                                    <input id="in-data" type="text" autocomplete="off" spellcheck="false" placeholder="/srv/data" oninput="renderBuilder()" class="field-input">
+                                </label>
+                                <label class="block text-xs muted" id="f-web">
+                                    <span class="block mb-1">Web 端口 → 8080</span>
+                                    <input id="in-p-web" type="text" inputmode="numeric" autocomplete="off" placeholder="8080" oninput="renderBuilder()" class="field-input">
+                                </label>
+                                <label class="block text-xs muted" id="f-http" hidden>
+                                    <span class="block mb-1">HTTP 端口 <span id="f-http-to"></span></span>
+                                    <input id="in-p-http" type="text" inputmode="numeric" autocomplete="off" placeholder="80" oninput="renderBuilder()" class="field-input">
+                                </label>
+                                <label class="block text-xs muted" id="f-https" hidden>
+                                    <span class="block mb-1">HTTPS 端口 <span id="f-https-to"></span></span>
+                                    <input id="in-p-https" type="text" inputmode="numeric" autocomplete="off" placeholder="443" oninput="renderBuilder()" class="field-input">
+                                </label>
+                            </div>
                             <div>
-                                <span class="block mb-1 text-xs text-slate-500 dark:text-slate-400">容器网络</span>
+                                <span class="block mb-1 text-xs muted">容器网络</span>
                                 <div class="chip-group" role="radiogroup" aria-label="容器网络">
-                                    <button type="button" class="chip" role="radio" data-opt="net" data-val="auto" onclick="setOpt('net','auto')">sdnet · 自动创建</button>
+                                    <button type="button" class="chip" role="radio" data-opt="net" data-val="auto" onclick="setOpt('net','auto')">sdnet · 自动</button>
                                     <button type="button" class="chip" role="radio" data-opt="net" data-val="existing" onclick="setOpt('net','existing')">已有网络</button>
                                     <button type="button" class="chip" role="radio" data-opt="net" data-val="none" onclick="setOpt('net','none')">不指定</button>
                                 </div>
                             </div>
-                            <label class="hidden block text-xs text-slate-500 dark:text-slate-400" id="f-netname">
+                            <label class="block text-xs muted" id="f-netname" hidden>
                                 <span class="block mb-1">网络名称</span>
                                 <input id="in-netname" type="text" autocomplete="off" spellcheck="false" placeholder="sdnet" oninput="renderBuilder()" class="field-input">
                             </label>
+                            <label class="flex items-start gap-2 text-xs muted">
+                                <input id="in-install-docker" type="checkbox" onchange="renderBuilder()" class="mt-0.5">
+                                <span>未安装 Docker 时自动安装</span>
+                            </label>
+                            <p class="wizard-hint" id="hint-net"></p>
                         </div>
-                        <label class="flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400 cursor-pointer">
-                            <input id="in-install-docker" type="checkbox" onchange="renderBuilder()" class="mt-0.5">
-                            <span>未安装 Docker 时自动安装</span>
-                        </label>
-                        <p class="wizard-hint" id="hint-net"></p>
                     </div>
-                </div>
-            </div>
-
-            <!-- 命令 -->
-            <div class="mt-6 code-block shadow-lg shadow-slate-200/60 dark:shadow-none">
-                <div class="code-header">
-                    <span id="build-label">bash</span>
-                    <button type="button" class="copy-btn" id="build-copy" onclick="copyCode(this)" aria-live="polite">复制</button>
-                </div>
-                <div class="code-body generated" id="build-cmd"></div>
-            </div>
-            <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400" id="install-meta"></div>
-            <ul id="install-notes" class="mt-2 text-xs text-slate-500 dark:text-slate-400 space-y-1 list-disc pl-5"></ul>
-
-            <!-- 管理命令 -->
-            <details id="install-manage-block" class="mt-8">
-                <summary class="cursor-pointer text-sm font-medium text-slate-600 dark:text-slate-300">管理：查看当前部署方式的更新 / 卸载命令</summary>
-                <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">每张卡片只复制一项操作；更新、换标签与卸载相互独立，请勿连续执行全部操作。</p>
-                <div id="install-manage"></div>
-            </details>
-
-            <p class="mt-5 text-xs text-slate-400">需要本地 YAML / etcd 配置？查看 <a href="https://github.com/rehiy/isrvd/blob/master/docs/references/system/config.md" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">配置文档</a>。</p>
-        </div>
-    </section>
-
-    <!-- Features -->
-    <section id="features" class="py-20 bg-slate-50 dark:bg-slate-800">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="section-title">功能特性</h2>
-            <p class="section-subtitle">模块化设计，按需使用</p>
-            <div class="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div class="feature-card">
-                    <div class="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center mb-4">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold text-slate-800 mb-1">系统概览</h3>
-                    <p class="text-sm text-slate-500">CPU、内存、磁盘、网络、GPU 实时监控，服务探测，在线升级</p>
-                </div>
-                <div class="feature-card">
-                    <div class="w-10 h-10 rounded-lg bg-amber-500 flex items-center justify-center mb-4">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold text-slate-800 mb-1">文件管理</h3>
-                    <p class="text-sm text-slate-500">浏览、上传、下载、编辑、创建/删除目录、重命名、权限修改、压缩/解压</p>
-                </div>
-                <div class="feature-card">
-                    <div class="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center mb-4">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold text-slate-800 mb-1">Web 终端</h3>
-                    <p class="text-sm text-slate-500">基于 xterm.js 的 Shell 与容器终端，支持多会话</p>
-                </div>
-                <div class="feature-card">
-                    <div class="w-10 h-10 rounded-lg bg-teal-500 flex items-center justify-center mb-4">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold text-slate-800 mb-1">SSH 远程管理</h3>
-                    <p class="text-sm text-slate-500">通过 SSH 协议管理主机，支持密码与私钥认证</p>
-                </div>
-                <div class="feature-card">
-                    <div class="w-10 h-10 rounded-lg bg-cyan-600 flex items-center justify-center mb-4">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold text-slate-800 mb-1">集中管理</h3>
-                    <p class="text-sm text-slate-500">一个控制台管理多台服务器，受管机主动出站接入，无需开放入站端口</p>
-                </div>
-                <div class="feature-card">
-                    <div class="w-10 h-10 rounded-lg bg-violet-500 flex items-center justify-center mb-4">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path
-                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold text-slate-800 mb-1">AI 助手</h3>
-                    <p class="text-sm text-slate-500">内置 Agent，支持自然语言操作，兼容 OpenAI API</p>
-                </div>
-                <div class="feature-card">
-                    <div class="w-10 h-10 rounded-lg bg-indigo-500 flex items-center justify-center mb-4">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold text-slate-800 mb-1">计划任务</h3>
-                    <p class="text-sm text-slate-500">定时任务调度；按运行平台提供 Shell 或 BAT/PowerShell 脚本与可执行文件，Docker 可用时支持临时容器或已有容器执行，并可查看执行历史</p>
-                </div>
-                <div class="feature-card">
-                    <div class="w-10 h-10 rounded-lg bg-cyan-500 flex items-center justify-center mb-4">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold text-slate-800 mb-1">APISIX 网关</h3>
-                    <p class="text-sm text-slate-500">路由、Consumer、上游、SSL 证书、插件配置、插件列表、白名单管理</p>
-                </div>
-                <div class="feature-card">
-                    <div class="w-10 h-10 rounded-lg bg-rose-500 flex items-center justify-center mb-4">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold text-slate-800 mb-1">Caddy 代理</h3>
-                    <p class="text-sm text-slate-500">HTTP 服务、路由、Basic Auth、证书与全局选项管理，支持原始配置编辑和 HTTPS 配置</p>
-                </div>
-                <div class="feature-card">
-                    <div class="w-10 h-10 rounded-lg bg-sky-500 flex items-center justify-center mb-4">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold text-slate-800 mb-1">Docker 管理</h3>
-                    <p class="text-sm text-slate-500">容器、镜像、网络、卷、镜像仓库管理，容器日志（实时流式）、资源统计、终端接入、镜像构建/推送/拉取</p>
-                </div>
-                <div class="feature-card">
-                    <div class="w-10 h-10 rounded-lg bg-teal-500 flex items-center justify-center mb-4">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path
-                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold text-slate-800 mb-1">Swarm 集群</h3>
-                    <p class="text-sm text-slate-500">集群、节点、服务、任务管理</p>
-                </div>
-                <div class="feature-card">
-                    <div class="w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center mb-4">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold text-slate-800 mb-1">Compose 部署</h3>
-                    <p class="text-sm text-slate-500">文件编辑、Docker Compose / Swarm Stack 部署与重部署</p>
-                </div>
-                <div class="feature-card">
-                    <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center mb-4">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold text-slate-800 mb-1">成员管理</h3>
-                    <p class="text-sm text-slate-500">多用户、家目录隔离、路由权限、API 令牌、TOTP 二次验证与 Passkey 无密码登录</p>
-                </div>
-                <div class="feature-card">
-                    <div class="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center mb-4">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold text-slate-800 mb-1">OIDC 认证</h3>
-                    <p class="text-sm text-slate-500">集成 OpenID Connect，支持企业级单点登录</p>
-                </div>
-                <div class="feature-card">
-                    <div class="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center mb-4">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path
-                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                            <circle cx="12" cy="12" r="3" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold text-slate-800 mb-1">系统管理</h3>
-                    <p class="text-sm text-slate-500">分组配置、操作审计、资源告警，以及容器异常、任务失败和证书到期通知</p>
-                </div>
-            </div>
-            <div class="mt-8 text-center">
-                <span class="badge badge-indigo">响应式设计</span>
-                <span class="ml-2 text-sm text-slate-500">适配桌面与移动端</span>
-                <span class="ml-2 text-sm text-slate-500">|</span>
-                <span class="ml-2 text-sm text-slate-500">内置 Agent 模式，兼容 OpenAI API</span>
-            </div>
-        </div>
-    </section>
-    <!-- Tech Stack -->
-    <section id="techstack" class="py-20">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="section-title">技术栈</h2>
-            <p class="section-subtitle">现代化技术选型</p>
-            <div class="mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
-                    <p class="font-semibold text-slate-800">Go 1.26+</p>
-                    <p class="text-xs text-slate-400 mt-1">后端</p>
-                </div>
-                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
-                    <p class="font-semibold text-slate-800">Gin</p>
-                    <p class="text-xs text-slate-400 mt-1">Web 框架</p>
-                </div>
-                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
-                    <p class="font-semibold text-slate-800">golang-jwt</p>
-                    <p class="text-xs text-slate-400 mt-1">JWT 认证</p>
-                </div>
-                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
-                    <p class="font-semibold text-slate-800">Vue 3 + TypeScript</p>
-                    <p class="text-xs text-slate-400 mt-1">前端框架</p>
-                </div>
-                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
-                    <p class="font-semibold text-slate-800">Pinia</p>
-                    <p class="text-xs text-slate-400 mt-1">状态管理</p>
-                </div>
-                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
-                    <p class="font-semibold text-slate-800">Tailwind CSS</p>
-                    <p class="text-xs text-slate-400 mt-1">样式</p>
-                </div>
-                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
-                    <p class="font-semibold text-slate-800">xterm.js</p>
-                    <p class="text-xs text-slate-400 mt-1">终端</p>
-                </div>
-                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
-                    <p class="font-semibold text-slate-800">Docker / APISIX / Caddy</p>
-                    <p class="text-xs text-slate-400 mt-1">容器 / 网关</p>
-                </div>
-                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
-                    <p class="font-semibold text-slate-800">OpenAI API 兼容</p>
-                    <p class="text-xs text-slate-400 mt-1">AI 助手</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-
-    <!-- Centralized Management -->
-    <section id="centralized" class="py-20 border-b border-slate-200">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="section-title">集中管理</h2>
-            <p class="section-subtitle">同一个二进制，一个控制台管理多台服务器</p>
-
-            <div class="mt-12 bg-slate-50 rounded-xl p-8">
-                <div class="flex flex-wrap items-center justify-center gap-2 text-sm">
-                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 text-slate-600">浏览器</div>
-                    <span class="arch-arrow">→</span>
-                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">ISRVD_MODE=center</div>
-                    <span class="arch-arrow">⇄</span>
-                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 text-slate-600">隧道</div>
-                    <span class="arch-arrow">⇠</span>
-                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">ISRVD_MODE=agent</div>
-                    <span class="text-slate-400 text-xs">× N 台</span>
-                </div>
-                <p class="mt-4 text-xs text-slate-400 text-center">隧道由受管机主动发起，中控从不主动外连；受管机位于 NAT 或防火墙后也可以接入</p>
-            </div>
-
-            <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div class="bg-white border border-slate-200 rounded-lg p-4">
-                    <p class="font-semibold text-slate-700 mb-1">一个二进制，三种角色</p>
-                    <p class="text-slate-500">通过环境变量 <code class="bg-slate-100 px-1 rounded">ISRVD_MODE</code> 选择 <code class="bg-slate-100 px-1 rounded">server</code>（默认单机）、<code class="bg-slate-100 px-1 rounded">center</code>（中控）或 <code class="bg-slate-100 px-1 rounded">agent</code>（受管机），修改后重启服务生效</p>
-                </div>
-                <div class="bg-white border border-slate-200 rounded-lg p-4">
-                    <p class="font-semibold text-slate-700 mb-1">切换节点即切换视角</p>
-                    <p class="text-slate-500">在页头选择节点，Docker、Swarm、Compose、文件、终端、计划任务、APISIX、Caddy 与系统概览都作用于该节点，含实时日志与大文件传输</p>
-                </div>
-                <div class="bg-white border border-slate-200 rounded-lg p-4">
-                    <p class="font-semibold text-slate-700 mb-1">账号与权限统一在中控</p>
-                    <p class="text-slate-500">成员、权限、系统配置和 AI 助手只维护一份</p>
-                </div>
-                <div class="bg-white border border-slate-200 rounded-lg p-4">
-                    <p class="font-semibold text-slate-700 mb-1">接入可控，随时吊销</p>
-                    <p class="text-slate-500">一次性注册码自动接入，节点管理和操作按路由权限授权；中控保存节点令牌哈希，有注册码读取权限的成员可查看待接入凭据，吊销后立即断开</p>
-                </div>
-            </div>
-
-            <p class="text-xs text-slate-400 mt-4 text-center">受管机通过 ISRVD_NODE_TOKEN 环境变量提供接入凭据，重启与重连使用同一 token；受管机与中控的版本需一致。详见 <a href="https://github.com/rehiy/isrvd/blob/master/docs/multi-node.md" target="_blank" class="underline hover:text-slate-600">集中管理文档</a></p>
-
-            <div class="mt-10 bg-white border border-slate-200 rounded-xl p-6 sm:p-8 text-center">
-                <h3 class="font-semibold text-slate-800 mb-2">部署中控或受管机</h3>
-                <p class="text-sm text-slate-500 max-w-2xl mx-auto">在快速开始中将「运行角色」切换为中控或受管机，即会生成对应的启动命令——中控只需一个环境变量；受管机可填入中控地址与注册码，自动生成即复即用的接入命令。</p>
-                <a href="#quickstart" class="mt-4 inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition">
-                    前往快速开始
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 5l7 7-7 7M3 12h18" /></svg>
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Architecture -->
-    <section id="architecture" class="py-20 bg-slate-50 dark:bg-slate-800">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="section-title">架构设计</h2>
-            <p class="section-subtitle">分层架构，高内聚低耦合</p>
-            <div class="mt-12 bg-slate-50 rounded-xl p-8">
-                <div class="flex flex-wrap items-center justify-center gap-2 text-sm">
-                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">config</div>
-                    <span class="arch-arrow">→</span>
-                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">registry</div>
-                    <span class="arch-arrow">→</span>
-                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">pkgs</div>
-                    <span class="arch-arrow">→</span>
-                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">service</div>
-                    <span class="arch-arrow">→</span>
-                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">server</div>
-                    <span class="arch-arrow">→</span>
-                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">webview</div>
-                </div>
-                <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                    <div class="bg-white border border-slate-200 rounded-lg p-4">
-                        <p class="font-semibold text-slate-700 mb-1">config</p>
-                        <p class="text-slate-500">配置加载（YAML/etcd）</p>
-                    </div>
-                    <div class="bg-white border border-slate-200 rounded-lg p-4">
-                        <p class="font-semibold text-slate-700 mb-1">registry</p>
-                        <p class="text-slate-500">外部服务初始化与可用性检查</p>
-                    </div>
-                    <div class="bg-white border border-slate-200 rounded-lg p-4">
-                        <p class="font-semibold text-slate-700 mb-1">pkgs</p>
-                        <p class="text-slate-500">各模块客户端（Docker / Swarm / APISIX / Caddy / GPU / SSH）</p>
-                    </div>
-                    <div class="bg-white border border-slate-200 rounded-lg p-4">
-                        <p class="font-semibold text-slate-700 mb-1">service</p>
-                        <p class="text-slate-500">业务逻辑、类型转换、权限校验</p>
-                    </div>
-                    <div class="bg-white border border-slate-200 rounded-lg p-4">
-                        <p class="font-semibold text-slate-700 mb-1">server</p>
-                        <p class="text-slate-500">HTTP handlers、路由注册、中间件</p>
-                    </div>
-                    <div class="bg-white border border-slate-200 rounded-lg p-4">
-                        <p class="font-semibold text-slate-700 mb-1">webview</p>
-                        <p class="text-slate-500">Vue 3 前端（Pinia + TypeScript + Tailwind CSS）</p>
-                    </div>
-                </div>
-                <div class="mt-6 text-xs text-slate-400 text-center">
-                    设计原则：高内聚（同领域功能聚合）、低耦合（层间通过接口解耦）、单一职责（Handler 只管 HTTP）
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Security -->
-    <section id="security" class="py-20">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="section-title">安全特性</h2>
-            <p class="section-subtitle">多层防护，默认安全</p>
-            <div class="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="bg-white border border-slate-200 rounded-xl p-5">
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                            </svg>
+                    <div class="wizard-row">
+                        <div class="wizard-label">部署命令</div>
+                        <div class="wizard-body">
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span id="build-label">bash</span>
+                                    <button type="button" class="copy-btn" id="build-copy" onclick="copyCode(this)" aria-live="polite" aria-label="复制安装命令">复制</button>
+                                </div>
+                                <div class="code-body" id="build-cmd"></div>
+                            </div>
+                            <div id="install-meta"></div>
+                            <ul id="install-notes"></ul>
+                            <p class="mt-5 text-xs muted">需要调整配置？<a href="https://github.com/rehiy/isrvd/blob/master/docs/references/system/config.md" target="_blank" rel="noopener noreferrer" class="underline">查看配置文档 ↗</a></p>
                         </div>
-                        <h3 class="font-semibold text-slate-800 text-sm">JWT 认证</h3>
                     </div>
-                    <p class="text-xs text-slate-500">敏感字段（密钥、密码）不返回前端</p>
                 </div>
-                <div class="bg-white border border-slate-200 rounded-xl p-5">
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" />
-                            </svg>
-                        </div>
-                        <h3 class="font-semibold text-slate-800 text-sm">路径校验</h3>
-                    </div>
-                    <p class="text-xs text-slate-500">文件路径校验，防止目录遍历攻击</p>
-                </div>
-                <div class="bg-white border border-slate-200 rounded-xl p-5">
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <h3 class="font-semibold text-slate-800 text-sm">解压校验</h3>
-                    </div>
-                    <p class="text-xs text-slate-500">解压校验路径，防止 Zip Slip 攻击</p>
-                </div>
-                <div class="bg-white border border-slate-200 rounded-xl p-5">
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949l3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                        </div>
-                        <h3 class="font-semibold text-slate-800 text-sm">WebSocket 认证</h3>
-                    </div>
-                    <p class="text-xs text-slate-500">WebSocket 连接需经过认证中间件</p>
-                </div>
-                <div class="bg-white border border-slate-200 rounded-xl p-5">
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                        </div>
-                        <h3 class="font-semibold text-slate-800 text-sm">细粒度权限</h3>
-                    </div>
-                    <p class="text-xs text-slate-500">基于路由的权限控制，支持匿名/登录/需权限三级</p>
-                </div>
-                <div class="bg-white border border-slate-200 rounded-xl p-5">
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
-                        </div>
-                        <h3 class="font-semibold text-slate-800 text-sm">操作审计</h3>
-                    </div>
-                    <p class="text-xs text-slate-500">操作审计日志，路由访问与操作全程记录</p>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- GPU -->
-    <section id="gpu" class="py-20 bg-slate-50 dark:bg-slate-800">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="section-title">GPU 监控</h2>
-            <p class="section-subtitle">支持 NVIDIA / AMD / Intel 独立显卡（含 Apple Silicon）</p>
-            <div class="mt-8 bg-slate-50 dark:bg-slate-800 rounded-xl p-6 overflow-x-auto">
-                <table id="gpu-table" class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-slate-200 dark:border-slate-700">
-                            <th class="text-left pb-3 text-slate-500 dark:text-slate-400 font-medium">厂商</th>
-                            <th class="text-left pb-3 text-slate-500 dark:text-slate-400 font-medium">首选方式</th>
-                            <th class="text-left pb-3 text-slate-500 dark:text-slate-400 font-medium">回退方式</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="border-b">
-                            <td class="py-3 font-medium text-slate-700 dark:text-slate-200">NVIDIA</td>
-                            <td class="py-3 text-slate-500 dark:text-slate-400">go-nvml</td>
-                            <td class="py-3 text-slate-500 dark:text-slate-400">nvidia-smi</td>
-                        </tr>
-                        <tr class="border-b">
-                            <td class="py-3 font-medium text-slate-700 dark:text-slate-200">AMD</td>
-                            <td class="py-3 text-slate-500 dark:text-slate-400">sysfs</td>
-                            <td class="py-3 text-slate-500 dark:text-slate-400">rocm-smi</td>
-                        </tr>
-                        <tr class="border-b">
-                            <td class="py-3 font-medium text-slate-700 dark:text-slate-200">Intel</td>
-                            <td class="py-3 text-slate-500 dark:text-slate-400">sysfs</td>
-                            <td class="py-3 text-slate-500 dark:text-slate-400">—</td>
-                        </tr>
-                        <tr class="border-b">
-                            <td class="py-3 font-medium text-slate-700 dark:text-slate-200">Apple Silicon</td>
-                            <td class="py-3 text-slate-500 dark:text-slate-400">sysctl</td>
-                            <td class="py-3 text-slate-500 dark:text-slate-400">—</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <details id="install-manage-block">
+                    <summary><span>已安装？管理现有部署</span><span class="manage-summary-hint">更新 / 换标签 / 卸载</span></summary>
+                    <p class="manage-safety">选择一项操作，再查看和复制命令。更新、换标签与卸载相互独立，请勿连续执行全部操作。</p>
+                    <div id="install-manage"></div>
+                </details>
             </div>
-        </div>
-    </section>
+        </section>
+    </main>
 
-    <!-- Footer -->
-    <footer class="border-t border-slate-200 py-12">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-                <div class="flex items-center gap-2">
-                    <img src="logo.svg?4" alt="iSrvd" class="w-12">
-                </div>
-                <div class="flex items-center gap-4 text-sm text-slate-400">
-                    <a href="https://cnb.cool/rehiy/isrvd" target="_blank" class="hover:text-slate-600 transition">CNB</a>
-                    <a href="https://github.com/rehiy/isrvd" target="_blank" class="hover:text-slate-600 transition">GitHub</a>
-                    <a href="https://github.com/rehiy/isrvd/blob/master/LICENSE" target="_blank" class="hover:text-slate-600 transition">Apache 2.0</a>
-                    <a href="https://github.com/rehiy/isrvd/blob/master/NOTICE" target="_blank" class="hover:text-slate-600 transition">NOTICE</a>
-                </div>
-                <p class="text-xs text-slate-400">© 2024-2026 iSrvd. Built with Go + Vue 3.</p>
+    <footer>
+        <div class="page-width footer-inner">
+            <p>© 2024–2026 iSrvd · 开源服务器管理</p>
+            <div class="footer-links">
+                <a href="https://cnb.cool/rehiy/isrvd" target="_blank" rel="noopener noreferrer">CNB</a>
+                <a href="https://github.com/rehiy/isrvd/blob/master/LICENSE" target="_blank" rel="noopener noreferrer">Apache 2.0</a>
+                <a href="https://github.com/rehiy/isrvd/blob/master/NOTICE" target="_blank" rel="noopener noreferrer">致谢与声明</a>
             </div>
         </div>
     </footer>
 
-    <!-- JavaScript -->
     <script>
-        function toggleTheme() {
-            const html = document.documentElement;
-            const nav = document.getElementById('main-nav');
-            const isDark = html.classList.toggle('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            document.getElementById('icon-sun').classList.toggle('hidden', !isDark);
-            document.getElementById('icon-moon').classList.toggle('hidden', isDark);
-            // Update nav styles
-            if (isDark) {
-                nav.classList.remove('bg-white/80', 'border-slate-200/60');
-                nav.classList.add('bg-slate-900/80', 'border-slate-700/60');
-            } else {
-                nav.classList.remove('bg-slate-900/80', 'border-slate-700/60');
-                nav.classList.add('bg-white/80', 'border-slate-200/60');
-            }
+        function applyTheme(isDark) {
+            document.documentElement.classList.toggle('dark', isDark);
+            setVisible(byId('icon-sun'), isDark);
+            setVisible(byId('icon-moon'), !isDark);
+            const button = document.getElementById('theme-toggle');
+            button.setAttribute('aria-pressed', String(isDark));
+            button.setAttribute('aria-label', isDark ? '切换浅色主题' : '切换深色主题');
         }
-        // Init theme
-        (function () {
-            const saved = localStorage.getItem('theme');
-            const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const nav = document.getElementById('main-nav');
-            if (saved === 'dark' || (!saved && preferDark)) {
-                document.documentElement.classList.add('dark');
-                document.getElementById('icon-sun').classList.remove('hidden');
-                document.getElementById('icon-moon').classList.add('hidden');
-                nav.classList.remove('bg-white/80', 'border-slate-200/60');
-                nav.classList.add('bg-slate-900/80', 'border-slate-700/60');
-            }
-        })();
+        function toggleTheme() {
+            const isDark = !document.documentElement.classList.contains('dark');
+            applyTheme(isDark);
+            try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+        }
+        applyTheme(document.documentElement.classList.contains('dark'));
+        const desktopNav = matchMedia('(min-width: 1024px)');
+        const navMenu = document.getElementById('nav-menu');
+        function syncNav() { navMenu.open = desktopNav.matches; }
+        syncNav();
+        desktopNav.addEventListener('change', syncNav);
+        document.querySelectorAll('#nav-menu a').forEach(function (link) {
+            link.addEventListener('click', function () { if (!desktopNav.matches) navMenu.open = false; });
+        });
         // Command builder：所有选项实时生成一条可直接粘贴执行的命令
         var SCRIPT_URL = 'https://isrvd.rehiy.com/install/';
         var DOCKER_SCRIPT_URL = SCRIPT_URL + '?script=docker';
@@ -1255,8 +426,8 @@
 
         function byId(id) { return document.getElementById(id); }
         function fieldVal(id) { return byId(id).value.trim(); }
-        function setVisible(el, on) { el.hidden = !on; el.classList.toggle('hidden', !on); }
-        function setHint(id, text) { byId(id).innerHTML = text; }
+        function setVisible(el, on) { el.toggleAttribute('hidden', !on); }
+        function setHint(id, text) { byId(id).textContent = text; }
 
         function selectedVariant(s) {
             if (s.method === 'docker' && s.role === 'agent') return 'slim';
@@ -1269,7 +440,6 @@
 
         function setOpt(key, val) {
             buildState[key] = val;
-            buildState.variant = selectedVariant(buildState);
             renderBuilder();
         }
 
@@ -1297,67 +467,72 @@
             return (p.protocol === 'http:' || p.protocol === 'https:') && !!p.hostname && !p.username && !p.password && p.pathname === '/' && !/[?#]/.test(u);
         }
 
-        function parsePort(id, def, label, errs) {
+        function parsePort(id, def, label, addError) {
             var raw = fieldVal(id);
             if (raw === '') return def;
-            var n = /^\d+$/.test(raw) ? parseInt(raw, 10) : 0;
-            if (n < 1 || n > 65535) { errs.push(label + '须为 1-65535 的整数'); return def; }
+            var n = /^\d+$/.test(raw) ? Number(raw) : 0;
+            if (n < 1 || n > 65535) { addError(id, label + '须为 1-65535 的整数'); return def; }
             return n;
         }
 
         // 仅校验当前可见（会进入命令）的参数
         function collectParams() {
-            var s = buildState, errs = [], v = {};
+            var s = buildState, errs = [], fields = {}, v = {};
+            function addError(id, message) { fields[id] = true; errs.push(message); }
             var isDocker = s.method === 'docker';
             var isAgent = s.role === 'agent';
 
             v.variant = selectedVariant(s);
             if (s.method !== 'script-binary') {
                 v.tag = fieldVal('in-tag') || v.variant;
-                if (!/^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(v.tag)) errs.push('镜像标签须为 1-128 个字母、数字或 _ . -，且不能以 . 或 - 开头');
+                if (!/^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(v.tag)) addError('in-tag', '镜像标签须为 1-128 个字母、数字或 _ . -，且不能以 . 或 - 开头');
                 var layouts = { slim: 'slim', latest: 'slim', caddy: 'caddy', apisix: 'apisix' };
                 var knownVariant = Object.prototype.hasOwnProperty.call(layouts, v.tag) ? layouts[v.tag] : '';
-                if (knownVariant && knownVariant !== v.variant) errs.push('镜像标签与端口布局不一致，请选择对应布局或清空标签');
+                if (knownVariant && knownVariant !== v.variant) addError('in-tag', '镜像标签与端口布局不一致，请选择对应布局或清空标签');
             }
 
             if (isAgent) {
                 v.centerUrl = fieldVal('in-center-url').replace(/\/+$/, '');
-                if (!v.centerUrl) errs.push('请填写中控地址');
-                else if (!validCenterUrl(v.centerUrl)) errs.push('中控地址须为 http(s):// 开头的合法地址，且不含账号密码、路径、查询参数、空白或 URL 片段');
+                if (!v.centerUrl) addError('in-center-url', '请填写中控地址');
+                else if (!validCenterUrl(v.centerUrl)) addError('in-center-url', '中控地址须为 http(s):// 开头的合法地址，且不含账号密码、路径、查询参数、空白或 URL 片段');
 
                 v.code = fieldVal('in-node-token');
-                if (!v.code) errs.push('请填写节点令牌（在中控「节点管理」页生成）');
-                else if (!CODE_RE.test(v.code)) errs.push('节点令牌格式无效，请直接复制中控生成的令牌');
+                if (!v.code) addError('in-node-token', '请填写节点令牌（在中控「节点管理」页生成）');
+                else if (!CODE_RE.test(v.code)) addError('in-node-token', '节点令牌格式无效，请直接复制中控生成的令牌');
             }
 
             if (isDocker) {
                 var defName = { server: 'isrvd', center: 'isrvd-center', agent: 'isrvd-agent' }[s.role];
                 v.cname = fieldVal('in-cname') || defName;
-                if (!NAME_RE.test(v.cname)) errs.push('容器名须以字母或数字开头，仅含字母、数字及 _ . -');
+                if (!NAME_RE.test(v.cname)) addError('in-cname', '容器名须以字母或数字开头，仅含字母、数字及 _ . -');
 
                 v.data = fieldVal('in-data') || '/srv/data';
                 if (!v.data.startsWith('/') || /^[/]+$/.test(v.data) || /(^|\/)\.\.?(\/|$)/.test(v.data) || /[:\\]/.test(v.data) || CONTROL_CHARS.test(v.data)) {
-                    errs.push('数据目录须为绝对路径，不能为根目录，也不能含 .、.. 路径段、冒号、反斜杠或控制字符');
+                    addError('in-data', '数据目录须为绝对路径，不能为根目录，也不能含 .、.. 路径段、冒号、反斜杠或控制字符');
                 }
                 v.data = v.data.replace(/\/$/, '');
 
                 if (s.net === 'existing') {
                     v.netName = fieldVal('in-netname') || 'sdnet';
-                    if (!NAME_RE.test(v.netName)) errs.push('网络名称须以字母或数字开头，仅含字母、数字及 _ . -');
+                    if (!NAME_RE.test(v.netName)) addError('in-netname', '网络名称须以字母或数字开头，仅含字母、数字及 _ . -');
                 }
 
                 if (!isAgent) {
-                    v.pWeb = parsePort('in-p-web', 8080, 'Web 端口', errs);
+                    v.pWeb = parsePort('in-p-web', 8080, 'Web 端口', addError);
                     if (v.variant !== 'slim') {
-                        v.pHttp = parsePort('in-p-http', 80, 'HTTP 端口', errs);
-                        v.pHttps = parsePort('in-p-https', 443, 'HTTPS 端口', errs);
+                        v.pHttp = parsePort('in-p-http', 80, 'HTTP 端口', addError);
+                        v.pHttps = parsePort('in-p-https', 443, 'HTTPS 端口', addError);
                     }
-                    var used = [v.pWeb, v.pHttp, v.pHttps].filter(function (p) { return p !== undefined; });
-                    if (used.length !== new Set(used).size) errs.push('宿主机端口不能重复');
+                    var ports = { 'in-p-web': v.pWeb, 'in-p-http': v.pHttp, 'in-p-https': v.pHttps };
+                    var duplicates = Object.keys(ports).filter(function (id) {
+                        return ports[id] !== undefined && Object.keys(ports).some(function (other) { return other !== id && ports[other] === ports[id]; });
+                    });
+                    duplicates.forEach(function (id) { fields[id] = true; });
+                    if (duplicates.length) errs.push('宿主机端口不能重复');
                 }
                 v.installDocker = byId('in-install-docker').checked;
             }
-            return { v: v, errs: errs };
+            return { v: v, errs: errs, fields: fields };
         }
 
         // 运行角色通过环境变量传入，安装脚本会写入 systemd 或 docker run，无需安装后手工改配置
@@ -1462,14 +637,15 @@
         }
 
         function renderManage(actions) {
-            byId('install-manage').innerHTML = actions.map(function (action) {
-                var headingClass = action.danger ? 'text-red-600 dark:text-red-400' : 'text-slate-600 dark:text-slate-300';
-                return '<section class="mt-4" data-manage-action="' + esc(action.id) + '">'
-                    + '<h3 class="text-sm font-medium ' + headingClass + '">' + esc(action.title) + '</h3>'
-                    + '<p class="mt-1 mb-2 text-xs text-slate-500 dark:text-slate-400">' + esc(action.note) + '</p>'
+            byId('install-manage').innerHTML = actions.map(function (action, index) {
+                return '<details class="manage-action" name="isrvd-manage-action" data-manage-action="' + esc(action.id) + '" data-danger="' + String(!!action.danger) + '">'
+                    + '<summary><span class="manage-index" aria-hidden="true">0' + (index + 1) + '</span>'
+                    + '<span class="manage-title">' + esc(action.title) + '</span>'
+                    + '<span class="manage-status">' + (action.danger ? '谨慎操作' : '查看命令') + '</span></summary>'
+                    + '<div class="manage-content"><p class="manage-note">' + esc(action.note) + '</p>'
                     + '<div class="code-block"><div class="code-header"><span>bash</span>'
                     + '<button type="button" class="copy-btn" onclick="copyCode(this)" aria-live="polite" aria-label="复制' + esc(action.title) + '命令">复制</button></div>'
-                    + '<div class="code-body generated">' + highlight(action.command) + '</div></div></section>';
+                    + '<div class="code-body">' + highlight(action.command) + '</div></div></div></details>';
             }).join('');
         }
 
@@ -1539,12 +715,6 @@
             'none': '沿用 Docker 默认 bridge，无法按容器名互访。'
         };
 
-        // 标红不合法输入：只标注进入命令且校验失败的字段
-        function markField(id, bad) {
-            var el = byId(id);
-            if (el) el.classList.toggle('invalid', bad);
-        }
-
         function renderBuilder() {
             var s = buildState;
             var isDocker = s.method === 'docker';
@@ -1558,7 +728,6 @@
                 var disabled = key === 'variant' && ((!isSystem && systemOnly) || (isDocker && isAgent && val !== 'slim'));
                 el.setAttribute('aria-checked', String(s[key] === val));
                 el.setAttribute('aria-disabled', String(disabled));
-                el.classList.toggle('disabled', disabled);
                 el.disabled = disabled;
                 if (systemOnly) setVisible(el, isSystem);
             });
@@ -1590,11 +759,11 @@
             var parsed = collectParams();
             var v = parsed.v, errs = parsed.errs;
 
-            // 输入框就地标红，命令卡保持可见
-            markField('in-center-url', isAgent && !!v.centerUrl && !validCenterUrl(v.centerUrl));
-            markField('in-node-token', isAgent && !!v.code && !CODE_RE.test(v.code));
-            markField('in-tag', !isSystem && errs.some(function (err) { return /^镜像标签/.test(err); }));
-            markField('in-p-web', !isAgent && isDocker && /^\d+$/.test(fieldVal('in-p-web')) && (v.pWeb < 1 || v.pWeb > 65535));
+            document.querySelectorAll('.field-input').forEach(function (el) {
+                var bad = !!parsed.fields[el.id];
+                el.classList.toggle('invalid', bad);
+                el.setAttribute('aria-invalid', String(bad));
+            });
 
             if (errs.length) {
                 byId('build-cmd').innerHTML = '<span style="color:#fbbf24"># 还需补全以下信息，命令会自动出现在这里：</span>\n'
@@ -1632,7 +801,7 @@
                 meta.push('配置 <code>/srv/data/conf/isrvd.yml</code>');
                 meta.push('镜像 <code>isrvd:' + esc(v.tag) + '</code>');
             }
-            byId('install-meta').innerHTML = meta.join('<span class="text-slate-300 dark:text-slate-700">·</span>');
+            byId('install-meta').innerHTML = meta.map(function (item) { return '<span>' + item + '</span>'; }).join('');
         }
         renderBuilder();
 
@@ -1665,17 +834,7 @@
             clearTimeout(btn.copyTimer);
             btn.copyTimer = setTimeout(function () { btn.textContent = '复制'; }, 2000);
         }
-        // Nav scroll style
-        (function () {
-            const nav = document.querySelector('nav');
-            window.addEventListener('scroll', function () {
-                if (window.scrollY > 10) {
-                    nav.classList.add('shadow-sm');
-                } else {
-                    nav.classList.remove('shadow-sm');
-                }
-            });
-        })();
+
     </script>
 </body>
 
