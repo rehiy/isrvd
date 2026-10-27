@@ -28,6 +28,22 @@ class Login extends Vue {
     }
     twoFactorRequired = false
 
+    // ─── 计算属性 ───
+    get passwordLogin() {
+        return !this.portal.passwordDisabled && !this.portal.headerMode
+    }
+
+    get thirdPartyLogin() {
+        return !this.portal.headerMode && (this.portal.oidcEnabled || this.portal.passkeyEnabled)
+    }
+
+    // 没有任何可交互登录方式时的说明（模板中再翻译）
+    get loginNotice() {
+        if (this.portal.headerMode) return '当前使用 Header 认证，请通过上游认证网关访问。'
+        if (!this.passwordLogin && !this.thirdPartyLogin) return '密码登录已禁用，请联系管理员配置其他登录方式。'
+        return ''
+    }
+
     // ─── 方法 ───
     async handleLogin() {
         this.loading = true
@@ -109,7 +125,7 @@ export default toNative(Login)
 
         <!-- Form -->
         <form class="space-y-5" @submit.prevent="handleLogin">
-          <template v-if="!portal.passwordDisabled">
+          <template v-if="passwordLogin">
             <div>
               <label for="username" class="form-label">
                 {{ $t('用户名') }}
@@ -154,8 +170,8 @@ export default toNative(Login)
             </button>
           </template>
 
-          <template v-if="portal.oidcEnabled || portal.passkeyEnabled">
-            <div :class="portal.passwordDisabled ? 'space-y-3' : 'border-t border-slate-200 pt-4 space-y-3'">
+          <template v-if="thirdPartyLogin">
+            <div :class="passwordLogin ? 'border-t border-slate-200 pt-4 space-y-3' : 'space-y-3'">
               <button
                 v-if="portal.passkeyEnabled"
                 type="button"
@@ -174,8 +190,8 @@ export default toNative(Login)
             </div>
           </template>
 
-          <div v-if="portal.passwordDisabled && !portal.oidcEnabled && !portal.passkeyEnabled" class="text-center text-slate-400 text-sm py-4">
-            <i class="fas fa-lock mr-2"></i>{{ $t('密码登录已禁用，请联系管理员配置其他登录方式。') }}
+          <div v-if="loginNotice" class="text-center text-slate-400 text-sm py-4">
+            <i class="fas fa-lock mr-2"></i>{{ $t(loginNotice) }}
           </div>
         </form>
       </div>

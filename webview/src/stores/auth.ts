@@ -16,6 +16,7 @@ export const useAuthStore = defineStore('auth', () => {
     const oidcLoginLabel = ref('')
     const passkeyEnabled = ref(false)
     const passwordDisabled = ref(false)
+    const headerMode = ref(false)
     const passwordMinLength = ref(6)
 
     // ─── 操作定义 ───
@@ -65,6 +66,7 @@ export const useAuthStore = defineStore('auth', () => {
         oidcLoginLabel.value = auth?.oidcBtnLabel || ''
         passkeyEnabled.value = auth?.passkeyEnabled || false
         passwordDisabled.value = auth?.passwordDisabled || false
+        headerMode.value = auth?.mode === 'header'
         passwordMinLength.value = auth?.passwordMinLength || 6
     }
 
@@ -91,6 +93,7 @@ export const useAuthStore = defineStore('auth', () => {
         oidcLoginLabel,
         passkeyEnabled,
         passwordDisabled,
+        headerMode,
         passwordMinLength,
         // 操作
         setAuth,
