@@ -30,12 +30,21 @@ const SOURCE_META: LocaleMeta = { code: SOURCE, label: '简体中文', short: '�
 // 自动发现 messages/ 下的全部语言文件
 const modules = import.meta.glob<{ default: LanguageModule }>('./messages/*.ts', { eager: true })
 
-/** 全部可选语言：源语言在前，其余按代码排序 */
+const localeOrder = new Map<Locale, number>([
+    ['zh-Hant', 0],
+    ['en', 1],
+    ['ja', 2]
+])
+
+/** 全部可选语言：简体中文、繁体中文、英文、日语，其余按代码排序 */
 export const LOCALES: LocaleMeta[] = [
     SOURCE_META,
     ...Object.values(modules)
         .map(m => m.default)
-        .sort((a, b) => a.code.localeCompare(b.code))
+        .sort((a, b) =>
+            (localeOrder.get(a.code) ?? localeOrder.size) - (localeOrder.get(b.code) ?? localeOrder.size)
+            || a.code.localeCompare(b.code)
+        )
         .map(m => ({ code: m.code, label: m.label, short: m.short, tag: m.htmlLang ?? m.code }))
 ]
 
