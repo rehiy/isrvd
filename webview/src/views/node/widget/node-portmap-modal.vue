@@ -94,7 +94,7 @@ export default toNative(NodePortMapModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="editing ? $t('编辑转发') : $t('添加转发')" :loading="modalLoading" :confirm-disabled="invalid" max-width-class="max-w-lg" confirm-class="btn-orange" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="editing ? $t('编辑转发') : $t('添加转发')" :loading="modalLoading" :confirm-disabled="invalid" confirm-class="btn-orange" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <p class="text-sm text-slate-600">{{ $t('中控监听指定端口，经隧道连接到节点上的目标地址，支持 TCP 与 UDP。') }}</p>
       <p class="text-xs text-amber-600">

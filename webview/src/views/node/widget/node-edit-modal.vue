@@ -48,7 +48,7 @@ export default toNative(NodeEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="$t('重命名节点')" :loading="modalLoading" :confirm-disabled="!name.trim()" max-width-class="max-w-lg" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('重命名节点')" :loading="modalLoading" :confirm-disabled="!name.trim()" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label class="form-label">{{ $t('节点名称') }} <span class="text-red-500">*</span></label>
