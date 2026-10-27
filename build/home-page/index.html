@@ -67,6 +67,8 @@
         .nav-links { display: flex; align-items: center; gap: 1.75rem; }
         .nav-links a { color: var(--muted); font-size: .8125rem; white-space: nowrap; }
         .nav-links a:hover, .text-link:hover { color: var(--accent); }
+        .external-link { display: inline-flex; align-items: center; gap: .35rem; }
+        .external-link::after { content: ''; flex: none; width: 10px; height: 10px; background: currentColor; opacity: .65; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 3h4v4M13 3 7 9M6 3H3v10h10v-3'/%3E%3C/svg%3E") center / contain no-repeat; }
         .nav-action { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 50%; color: var(--muted); background: transparent; }
         .nav-action:hover { background: var(--accent-soft); color: var(--accent); }
         #hero { padding-block: 100px 76px; }
@@ -192,8 +194,8 @@
                 <div class="nav-links">
                     <a href="#features">核心能力</a>
                     <a href="#quickstart">安装</a>
-                    <a href="https://github.com/rehiy/isrvd/tree/master/docs" target="_blank" rel="noopener noreferrer">文档 ↗</a>
-                    <a href="https://github.com/rehiy/isrvd" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+                    <a href="https://github.com/rehiy/isrvd/tree/master/docs" target="_blank" rel="noopener noreferrer" class="external-link">文档</a>
+                    <a href="https://github.com/rehiy/isrvd" target="_blank" rel="noopener noreferrer" class="external-link">GitHub</a>
                 </div>
             </details>
             <button id="theme-toggle" type="button" class="nav-action" aria-label="切换深色主题" aria-pressed="false" onclick="toggleTheme()">
@@ -217,7 +219,7 @@
                     <p class="hero-description">iSrvd，把文件、终端、容器与网关放进一个轻量面板。为你的第一台服务器，也为下一组服务器。</p>
                     <div class="hero-actions">
                         <a href="#quickstart" class="primary-action">开始部署 <span aria-hidden="true">→</span></a>
-                        <a href="https://github.com/rehiy/isrvd" target="_blank" rel="noopener noreferrer" class="text-link">查看源码 <span aria-hidden="true">↗</span></a>
+                        <a href="https://github.com/rehiy/isrvd" target="_blank" rel="noopener noreferrer" class="text-link external-link">查看源码</a>
                     </div>
                 </div>
                 <aside class="hero-aside" aria-label="产品定位">
@@ -256,7 +258,7 @@
                         <h2>按你的方式部署。</h2>
                         <p>选择配置，生成可复制的部署命令。</p>
                     </div>
-                    <a href="https://github.com/rehiy/isrvd/tree/master/docs" target="_blank" rel="noopener noreferrer" class="text-link">阅读部署文档 <span aria-hidden="true">↗</span></a>
+                    <a href="https://github.com/rehiy/isrvd/tree/master/docs" target="_blank" rel="noopener noreferrer" class="text-link external-link">阅读部署文档</a>
                 </div>
 
                 <div class="wizard">
@@ -377,7 +379,7 @@
                             </div>
                             <div id="install-meta"></div>
                             <ul id="install-notes"></ul>
-                            <p class="mt-5 text-xs muted">需要调整配置？<a href="https://github.com/rehiy/isrvd/blob/master/docs/references/system/config.md" target="_blank" rel="noopener noreferrer" class="underline">查看配置文档 ↗</a></p>
+                            <p class="mt-5 text-xs muted">需要调整配置？<a href="https://github.com/rehiy/isrvd/blob/master/docs/references/system/config.md" target="_blank" rel="noopener noreferrer" class="underline external-link">查看配置文档</a></p>
                         </div>
                     </div>
                 </div>
@@ -415,7 +417,7 @@
                 ['导航', 'Menu'],
                 ['核心能力', 'Features'],
                 ['安装', 'Install'],
-                ['文档 ↗', 'Docs ↗'],
+                ['文档', 'Docs'],
                 ['服务器管理，', 'Server management,'],
                 ['回归简单。', 'made simple.'],
                 ['iSrvd，把文件、终端、容器与网关放进一个轻量面板。为你的第一台服务器，也为下一组服务器。', 'iSrvd brings files, terminals, containers and gateways into one lightweight panel. For your first server, and your next fleet.'],
@@ -470,7 +472,7 @@
                 ['复制安装命令', 'Copy installation command'],
                 ['复制', 'Copy'],
                 ['需要调整配置？', 'Need to adjust the configuration? '],
-                ['查看配置文档 ↗', 'Configuration docs ↗'],
+                ['查看配置文档', 'Configuration docs'],
                 ['已安装？管理现有部署', 'Already installed? Manage your deployment'],
                 ['更新 / 换标签 / 卸载', 'Update / Change tag / Uninstall'],
                 ['选择一项操作，再查看和复制命令。更新、换标签与卸载相互独立，请勿连续执行全部操作。', 'Choose one operation, then view and copy its command. Updates, tag changes and uninstall are independent. Do not run every operation in sequence.'],
