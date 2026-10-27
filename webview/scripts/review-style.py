@@ -6,6 +6,7 @@
 
 import re
 import sys
+from html.parser import HTMLParser
 from pathlib import Path
 from collections import defaultdict
 
@@ -27,7 +28,7 @@ def report(filepath: str, lineno: int, level: str, msg: str):
 # ─── 工具函数 ────────
 
 def get_template(content: str) -> str:
-    m = re.search(r'<template>(.*?)</template>', content, re.DOTALL)
+    m = re.search(r'<template>(.*)</template>', content, re.DOTALL)
     return m.group(1) if m else ""
 
 def find_line(lines: list[str], text: str) -> int:
@@ -660,7 +661,102 @@ def check_code_editor_height(filepath, lines, tmpl, tmpl_line0):
                    "CodeMirror 包装层高度不生效：特殊高度使用 :style 的 height，默认高度由 .editor-container 提供")
 
 
+def check_form_label_hints(filepath, lines, tmpl, tmpl_line0):
+    content = '\n'.join(lines)
+    labels = re.finditer(
+        r'<(?P<tag>label|p)\b[^>]*\bclass="[^"]*\bform-label\b[^"]*"[^>]*>'
+        r'(?P<body>.*?)</(?P=tag)>', content, re.DOTALL)
+    for label in labels:
+        body = re.sub(r'<a\b[^>]*>.*?</a>|<button\b[^>]*>.*?</button>', '',
+                      label.group('body'), flags=re.DOTALL)
+        for key in re.findall(r"\$t\(\s*['\"]([^'\"]+)['\"]", body):
+            if re.search(r'[（(](?:可选|选填|留空|优先于|与私钥|每行|八进制|KEY=VALUE|JSON[）)])', key) or key.startswith('每行 '):
+                lineno = content[:label.start()].count('\n') + 1
+                report(filepath, lineno, "ERROR",
+                       "字段标题中的使用说明应移到控件下方，与已有 help 合并去重")
+                break
+
+
+class FormTemplateParser(HTMLParser):
+    void_tags = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'}
+
+    def __init__(self):
+        super().__init__()
+        self.root = {'tag': '', 'attrs': {}, 'children': [], 'line': 1}
+        self.stack = [self.root]
+
+    def handle_starttag(self, tag, attrs):
+        node = {'tag': tag, 'attrs': dict(attrs), 'children': [], 'line': self.getpos()[0]}
+        self.stack[-1]['children'].append(node)
+        if tag not in self.void_tags:
+            self.stack.append(node)
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+        if tag not in self.void_tags:
+            self.stack.pop()
+
+    def handle_endtag(self, tag):
+        for i in range(len(self.stack) - 1, 0, -1):
+            if self.stack[i]['tag'] == tag:
+                del self.stack[i:]
+                break
+
+
+def check_form_help_layout(filepath, lines, tmpl, tmpl_line0):
+    parser = FormTemplateParser()
+    parser.feed(tmpl)
+    controls = {'input', 'textarea', 'select', 'codemirror', 'combobox', 'containerselect', 'containerportselect', 'imageselect'}
+    reported = set()
+
+    def has_control(node):
+        attrs = node['attrs']
+        classes = (attrs.get('class') or '').split()
+        model = any(name == 'v-model' or name.startswith('v-model:') or name in {':model-value', ':modelValue'} for name in attrs)
+        field_value = {'detail-value', 'detail-value-mono'} & set(classes)
+        return node['tag'] in controls or model or bool(field_value) or any(has_control(child) for child in node['children'])
+
+    def has_field_title(node):
+        return 'form-label' in (node['attrs'].get('class') or '').split() or any(has_field_title(child) for child in node['children'])
+
+    def has_title(node):
+        return node['tag'] in {'label', 'h2', 'h3', 'h4', 'h5', 'h6'} or has_field_title(node)
+
+    def is_help(node):
+        classes = node['attrs'].get('class', '').split()
+        conditional = {'v-if', 'v-else', 'v-else-if', 'v-for'} & node['attrs'].keys()
+        return node['tag'] == 'p' and {'text-xs', 'text-slate-400'} <= set(classes) and not conditional
+
+    def helps(node):
+        if is_help(node):
+            return [node]
+        return [help_node for child in node['children'] for help_node in helps(child)]
+
+    def emit(node, level, message):
+        line = tmpl_line0 + node['line'] - 1
+        if (line, message) not in reported:
+            report(filepath, line, level, message)
+            reported.add((line, message))
+
+    def walk(node):
+        children = node['children']
+        for i, child in enumerate(children):
+            later_controls = any(has_control(sibling) for sibling in children[i + 1:])
+            if is_help(child) and i > 0 and has_title(children[i - 1]) and later_controls:
+                emit(child, 'ERROR', '字段说明应放在对应控件组下方，不应夹在标题与控件之间')
+            elif not has_control(child) and has_field_title(child) and later_controls:
+                for help_node in helps(child):
+                    emit(help_node, 'ERROR', '字段说明应从标题区移到对应控件组下方')
+            if is_help(child) and i + 1 < len(children) and is_help(children[i + 1]):
+                emit(child, 'WARN', '同一字段连续多段 help，请确认是否应合并去重（独立业务警告可保留）')
+            walk(child)
+
+    walk(parser.root)
+
+
 CHECKS = [
+    check_form_help_layout,
+    check_form_label_hints,
     check_code_editor_height,
     check_toolbar_layout,
     check_toolbar_icon,

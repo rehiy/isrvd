@@ -322,6 +322,7 @@ webview/src/
 - 编辑器/双栏内容（如 Compose 部署的 yml + .env）不设限宽，占满 `card-body`
 - CodeMirror 统一包裹在 `.editor-container` 内，实际 `.cm-editor` 默认高度 `15rem`，内容区独立滚动；需要特殊高度时使用 `<Codemirror :style="{ height: '...' }">`，禁止在组件包装层用 `h-*` / `min-h-*` / `max-h-*`（包装层为 `display: contents`，高度不生效）。保留全页、预览和日志的专用尺寸；脚本示例放入编辑器 `placeholder`，不预填实际内容
 - label：`block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1`，input 通用 `.input`，help `text-xs text-slate-400 mt-1`
+- 字段标题仅保留名称、单位、必填标记和必要操作；可选、输入格式、留空行为及示例统一放到控件或控件组下方的 help，与已有注解合并去重，不在标题旁或括号内重复。保留独立业务警告、状态标记和可点击链接；共享组件的说明在组件内统一处理
 - 密钥/密码：后端敏感字段 `json:"-"`，前端 `type="password" autocomplete="new-password"`，留空保存=不修改，placeholder："留空保持不变"
 
 - **Toggle Switch 规范**（单一功能启用/禁用开关）：统一使用 `<ToggleCard>` 组件（`webview/src/component/toggle-card.vue`），禁止手写内联 Tailwind toggle 样式或直接使用底层 CSS 类：
