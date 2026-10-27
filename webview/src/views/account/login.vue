@@ -150,7 +150,7 @@ export default toNative(Login)
             <button type="submit" :disabled="loading || (twoFactorRequired && !totpForm.code)" class="btn btn-primary w-full mt-6">
               <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
               <i v-else class="fas fa-sign-in-alt mr-2"></i>
-              {{ loading ? $t('登录中...') : (twoFactorRequired ? $t('验证并登录') : $t('登录')) }}
+              {{ twoFactorRequired ? $t('验证并登录') : $t('登录') }}
             </button>
           </template>
 
@@ -165,7 +165,7 @@ export default toNative(Login)
               >
                 <i v-if="passkeyLoading" class="fas fa-spinner fa-spin mr-2"></i>
                 <i v-else class="fas fa-fingerprint mr-2"></i>
-                {{ passkeyLoading ? $t('Passkey 认证中...') : $t('使用 Passkey 登录') }}
+                {{ $t('使用 Passkey 登录') }}
               </button>
               <button v-if="portal.oidcEnabled" type="button" class="btn btn-indigo w-full" @click="handleOIDCLogin">
                 <i class="fas fa-id-badge mr-2"></i>

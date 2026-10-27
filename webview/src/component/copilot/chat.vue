@@ -118,7 +118,7 @@ useFrontendTool({
 // 用 unknown 只绕过上游类型限制，不改变配置结构；文案以中文为 key，随语言切换重算。
 const chatLabels = computed(() => ({
     chatInputPlaceholder: t('请输入消息...'),
-    chatInputToolbarStartTranscribeButtonLabel: t('开始语音输入'),
+    chatInputToolbarStartTranscribeButtonLabel: t('语音输入'),
     chatInputToolbarCancelTranscribeButtonLabel: t('取消语音输入'),
     chatInputToolbarFinishTranscribeButtonLabel: t('完成语音输入'),
     chatInputToolbarAddButtonLabel: t('添加图片或文件'),

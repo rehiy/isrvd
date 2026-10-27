@@ -292,8 +292,8 @@ const messages: Record<string, string> = {
     '该操作必须使用 {0}。': 'この操作は {0} を使用する必要があります。',
     // Enter a message...
     '请输入消息...': 'メッセージを入力...',
-    // Start voice input
-    '开始语音输入': '音声入力を開始',
+    // Voice input
+    '语音输入': '音声入力',
     // Cancel voice input
     '取消语音输入': '音声入力をキャンセル',
     // Finish voice input
@@ -840,8 +840,8 @@ const messages: Record<string, string> = {
     '请输入令牌名称': 'トークン名を入力',
     // Copy Token
     '复制令牌': 'トークンをコピー',
-    // Create Token
-    '创建令牌': 'トークンを作成',
+    // Generate Token
+    '生成令牌': 'トークンを生成',
     // Close
     '关闭': '閉じる',
     // Contact the administrator to change account permissions
@@ -2635,7 +2635,7 @@ const messages: Record<string, string> = {
     // Search image name, tag or ID...
     '搜索镜像名称、标签或 ID...': 'イメージ名、タグ、またはIDを検索...',
     // Push
-    '推送': '押す',
+    '推送': 'プッシュ',
     // No images yet
     '暂无镜像': 'まだ鏡がありません',
     // No matching image
@@ -3894,10 +3894,8 @@ const messages: Record<string, string> = {
     '备注': '備考',
     // e.g. Hangzhou IDC web-01
     '如：杭州机房 web-01': '例: 杭州コンピューター室 web-01',
-    // Generate token
-    '生成 token': 'トークンを生成',
     // Click Add Node to generate a token, then start the managed host in agent mode
-    '点击右上角「接入节点」生成 token，并在受管机上以 agent 模式启动': '右上の「ノードを追加」をクリックしてトークンを生成し、管理対象ホストを agent モードで起動してください',
+    '点击右上角「接入节点」生成令牌，并在受管机上以 agent 模式启动': '右上の「ノードを追加」をクリックしてトークンを生成し、管理対象ホストを agent モードで起動してください',
     // Run mode
     '运行模式': '実行モード',
     // Standalone mode

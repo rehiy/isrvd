@@ -246,7 +246,7 @@ function formatValue(value: unknown): string {
             </button>
             <button type="button" class="btn" :class="isDanger ? 'btn-danger' : 'btn-primary'" :disabled="submitting || !!previewError" @click="approve">
               <span v-if="submitting" class="spinner w-3.5 h-3.5"></span>
-              {{ submitting ? $t('执行中…') : $t('确认执行') }}
+              {{ $t('确认执行') }}
             </button>
           </div>
         </template>

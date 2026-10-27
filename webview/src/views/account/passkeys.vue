@@ -27,6 +27,7 @@ class AccountPasskeys extends Vue {
     // ─── 重命名 ───
     renamingCredId = ''
     renameValue = ''
+    renameLoading = false
 
     // ─── 权限 ───
     get canView() { return this.portal.hasPerm('GET /api/account/passkey/credentials') }
@@ -68,6 +69,7 @@ class AccountPasskeys extends Vue {
     }
 
     async handleRegisterPasskey() {
+        if (this.registerLoading) return
         this.registerLoading = true
         try {
             await registerPasskey(this.registerDisplayName || undefined)
@@ -81,26 +83,31 @@ class AccountPasskeys extends Vue {
 
     // ─── 重命名 ───
     startRename(cred: PasskeyCredential) {
+        if (this.renameLoading) return
         this.renamingCredId = cred.idBase64
         this.renameValue = cred.displayName || ''
     }
 
     cancelRename() {
+        if (this.renameLoading) return
         this.renamingCredId = ''
         this.renameValue = ''
     }
 
     async confirmRename(cred: PasskeyCredential) {
+        if (this.renameLoading || this.renamingCredId !== cred.idBase64) return
         const name = this.renameValue.trim()
         if (!name || name === cred.displayName) {
             this.cancelRename()
             return
         }
+        this.renameLoading = true
         try {
             await api.accountPasskeyRenameCredential(cred.idBase64, name)
             cred.displayName = name
             this.portal.showNotification('success', this.$t('凭证已重命名'))
         } finally {
+            this.renameLoading = false
             this.cancelRename()
         }
     }
@@ -185,14 +192,15 @@ export default toNative(AccountPasskeys)
                 <input
                   v-model="renameValue"
                   class="input input-sm py-0.5 px-2 text-sm w-40"
+                  :disabled="renameLoading"
                   autofocus
                   @keyup.enter="confirmRename(cred)"
                   @keyup.escape="cancelRename"
                 />
-                <button class="btn-icon btn-icon-emerald" @click="confirmRename(cred)">
-                  <i class="fas fa-check text-xs"></i>
+                <button type="button" class="btn-icon btn-icon-emerald" :title="$t('保存')" :aria-label="$t('保存')" :aria-busy="renameLoading" :disabled="renameLoading" @click="confirmRename(cred)">
+                  <i :class="renameLoading ? 'fas fa-spinner fa-spin text-xs' : 'fas fa-check text-xs'"></i>
                 </button>
-                <button class="btn-icon btn-icon-slate" @click="cancelRename">
+                <button type="button" class="btn-icon btn-icon-slate" :title="$t('取消')" :aria-label="$t('取消')" :disabled="renameLoading" @click="cancelRename">
                   <i class="fas fa-times text-xs"></i>
                 </button>
               </div>
@@ -253,7 +261,7 @@ export default toNative(AccountPasskeys)
         </p>
       </div>
       <template #confirm-text>
-        {{ registerLoading ? $t('绑定中...') : $t('开始绑定') }}
+        {{ $t('绑定') }}
       </template>
     </BaseModal>
   </div>

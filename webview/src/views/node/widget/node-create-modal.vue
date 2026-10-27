@@ -103,6 +103,6 @@ export default toNative(NodeCreateModal)
       <button type="button" class="btn btn-secondary" @click="isOpen = false">{{ $t('关闭') }}</button>
     </template>
 
-    <template #confirm-text>{{ $t('生成 token') }}</template>
+    <template #confirm-text>{{ $t('生成令牌') }}</template>
   </BaseModal>
 </template>

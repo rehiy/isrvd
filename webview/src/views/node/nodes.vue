@@ -195,7 +195,7 @@ export default toNative(NodeManage)
           <i class="fas fa-sitemap text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ nodes.length === 0 ? $t('暂无受管节点') : $t('未找到匹配节点') }}</p>
-        <p class="text-sm text-slate-400">{{ nodes.length === 0 ? $t('点击右上角「接入节点」生成 token，并在受管机上以 agent 模式启动') : $t('尝试更换关键词或清空搜索条件') }}</p>
+        <p class="text-sm text-slate-400">{{ nodes.length === 0 ? $t('点击右上角「接入节点」生成令牌，并在受管机上以 agent 模式启动') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
 

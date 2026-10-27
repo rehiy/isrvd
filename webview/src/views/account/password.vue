@@ -59,6 +59,7 @@ class AccountPassword extends Vue {
     }
 
     async handleTOTPEnable() {
+        if (this.twoFactorLoading) return
         if (!this.totpSetup.code) {
             this.portal.showNotification('error', this.$t('请输入认证器中的验证码'))
             return
@@ -75,6 +76,7 @@ class AccountPassword extends Vue {
     }
 
     async handleTOTPDisable() {
+        if (this.twoFactorLoading) return
         if (!this.totpDisableCode) {
             this.portal.showNotification('error', this.$t('请输入当前验证码'))
             return
@@ -99,6 +101,7 @@ class AccountPassword extends Vue {
     }
 
     async handleChangePassword() {
+        if (this.passwordLoading) return
         if (!this.passwordForm.newPassword) {
             this.portal.showNotification('error', this.$t('请输入新密码'))
             return
@@ -150,7 +153,7 @@ export default toNative(AccountPassword)
         >
           <i v-if="!passwordLoading" class="fas fa-check"></i>
           <i v-else class="fas fa-spinner fa-spin"></i>
-          {{ $t('确认修改') }}
+          {{ $t('保存') }}
         </button>
       </div>
 
@@ -172,7 +175,7 @@ export default toNative(AccountPassword)
         >
           <i v-if="!passwordLoading" class="fas fa-check"></i>
           <i v-else class="fas fa-spinner fa-spin"></i>
-          {{ $t('修改') }}
+          {{ $t('保存') }}
         </button>
       </div>
     </div>

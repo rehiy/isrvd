@@ -29,6 +29,7 @@ class AccountTokens extends Vue {
     ]
 
     async handleCreateToken() {
+        if (this.tokenLoading) return
         if (!this.tokenForm.name.trim()) {
             this.portal.showNotification('error', this.$t('请输入令牌名称'))
             return
@@ -92,7 +93,7 @@ export default toNative(AccountTokens)
           >
             <i v-if="!tokenLoading" class="fas fa-plus"></i>
             <i v-else class="fas fa-spinner fa-spin"></i>
-            {{ $t('创建令牌') }}
+            {{ $t('生成令牌') }}
           </button>
         </div>
       </div>
@@ -123,7 +124,7 @@ export default toNative(AccountTokens)
             form="apikey-form"
             :disabled="tokenLoading || !tokenForm.name.trim()"
             class="btn-icon-sm"
-            :title="$t('创建令牌')"
+            :title="$t('生成令牌')"
           >
             <i v-if="!tokenLoading" class="fas fa-plus text-sm"></i>
             <i v-else class="fas fa-spinner fa-spin text-sm"></i>

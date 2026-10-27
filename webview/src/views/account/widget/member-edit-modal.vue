@@ -339,5 +339,7 @@ export default toNative(MemberEditModal)
         </div>
       </div>
     </form>
+
+    <template #confirm-text>{{ isEdit ? $t('保存') : $t('新建') }}</template>
   </BaseModal>
 </template>
