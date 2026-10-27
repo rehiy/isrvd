@@ -1,32 +1,39 @@
 <?php
 /**
  * iSrvd 自动升级服务端
- * 部署于 https://isrvd.rehiy.com/update/
+ *
+ * 部署地址：https://isrvd.rehiy.com/update/
+ * 功能说明：比较客户端与最新 Release 版本，返回版本信息和匹配平台的升级包地址。
  *
  * 请求参数（GET）：
- *   ver   当前版本，如 v1.0.0
- *   os    运行平台，如 linux / darwin / windows
- *   arch  CPU 架构，如 amd64 / arm64
+ *   ver   当前版本，如 v1.0.0。
+ *   os    运行平台，如 linux、darwin 或 windows。
+ *   arch  CPU 架构，如 amd64 或 arm64。
  *
- * 响应（UpdateInfo JSON）：
- *   version  最新版本号（始终返回）
- *   release  GitHub Release 页面 URL（始终返回）
- *   package  下载地址（有对应 asset 且有新版时返回，否则为空）
- *   message  提示信息
- *   error    错误信息（非空时客户端终止更新）
+ * 响应格式：
+ *   UpdateInfo JSON，包含以下字段：
+ *   version  最新版本号，成功获取 Release 数据时返回。
+ *   release  GitHub Release 页面地址，成功获取 Release 数据时返回。
+ *   package  升级包地址，有新版且存在匹配资源时返回，否则为空。
+ *   message  提示信息。
+ *   error    错误信息，非空时客户端终止更新。
+ *
+ * 缓存策略：
+ *   Release 数据缓存 1 小时；按请求参数生成的 JSON 响应不缓存。
  */
-
-header('Content-Type: application/json; charset=utf-8');
 
 // ── 常量配置 ──────────────────────────────────────────────
 
-const CACHE_FILE    = __DIR__ . '/latest.json';
-const CACHE_TTL     = 3600; // 1 小时
+const CONTENT_TYPE      = 'application/json; charset=utf-8';
+const CACHE_TTL         = 3600; // 1 小时
+const DOWNLOAD_BASE_URL = 'https://api.github.com/repos/rehiy/isrvd/releases/';
+const DOWNLOAD_FILES    = ['latest.json' => 'latest'];
+const DOWNLOAD_HEADERS  = [
+    'Accept: application/vnd.github+json',
+    'X-GitHub-Api-Version: 2022-11-28',
+];
 
-const GITHUB_REPO   = 'rehiy/isrvd';
-const GITHUB_API    = 'https://api.github.com/repos/' . GITHUB_REPO . '/releases/latest';
-
-// 平台/架构到 Release Asset 文件名的映射
+// 操作系统和架构到升级包文件名的映射。
 const ASSET_MAP = [
     'linux/amd64'   => 'isrvd-linux-amd64.tar.gz',
     'linux/arm64'   => 'isrvd-linux-arm64.tar.gz',
@@ -38,46 +45,46 @@ const ASSET_MAP = [
 
 // ── 入口 ──────────────────────────────────────────────────
 
+/**
+ * 校验客户端参数，并返回版本信息和匹配平台的升级包地址。
+ */
 function main(): void
 {
-    $ver  = trim($_GET['ver']  ?? '');
-    $os   = trim($_GET['os']   ?? '');
-    $arch = trim($_GET['arch'] ?? '');
+    $ver  = $_GET['ver']  ?? '';
+    $os   = $_GET['os']   ?? '';
+    $arch = $_GET['arch'] ?? '';
 
+    if (!is_string($ver) || !is_string($os) || !is_string($arch)) {
+        respondUpdate('', '', '', 'missing required parameters: ver, os, arch');
+    }
+
+    $ver  = trim($ver);
+    $os   = trim($os);
+    $arch = trim($arch);
     if (!$ver || !$os || !$arch) {
-        respond('', '', '', 'missing required parameters: ver, os, arch');
-        return;
+        respondUpdate('', '', '', 'missing required parameters: ver, os, arch');
     }
 
     $release = fetchLatestRelease();
-    if (!$release) {
-        respond('', '', '', '', 'failed to fetch release info, please retry later');
-        return;
+    if ($release === null) {
+        respondUpdate('', '', '', '', 'failed to fetch release info, please retry later');
     }
 
-    $latest     = $release['tag_name'] ?? '';
-    $releaseUrl = $release['html_url']  ?? '';
-    $assets     = $release['assets']    ?? [];
+    $latest     = $release['tag_name'];
+    $releaseUrl = $release['html_url'];
+    $assets     = $release['assets'];
 
-    if (!$latest) {
-        respond('', '', '', '', 'no release tag found');
-        return;
-    }
-
-    // 始终返回最新版本信息，由客户端判断是否需要更新
-    // package 为空时客户端只做版本展示，不执行下载
+    // 当前版本无需升级时仅展示版本信息，不提供升级包地址。
     if (versionCompare($ver, $latest) >= 0) {
-        respond($latest, $releaseUrl, '', 'already up to date');
-        return;
+        respondUpdate($latest, $releaseUrl, '', 'already up to date');
     }
 
-    // 查找对应平台的下载地址
+    // 根据操作系统和架构匹配升级包文件名。
     $key      = "$os/$arch";
     $filename = ASSET_MAP[$key] ?? null;
 
     if (!$filename) {
-        respond($latest, $releaseUrl, '', '', "unsupported platform: $key");
-        return;
+        respondUpdate($latest, $releaseUrl, '', '', "unsupported platform: $key");
     }
 
     $downloadUrl = '';
@@ -89,43 +96,53 @@ function main(): void
     }
 
     if (!$downloadUrl) {
-        respond($latest, $releaseUrl, '', '', "asset not found for platform: $key");
-        return;
+        respondUpdate($latest, $releaseUrl, '', '', "asset not found for platform: $key");
     }
 
-    respond($latest, $releaseUrl, $downloadUrl, "update available: $latest");
+    respondUpdate($latest, $releaseUrl, $downloadUrl, "update available: $latest");
 }
 
 // ── 工具函数 ──────────────────────────────────────────────
 
-function respond(
-    string $version,
-    string $release,
-    string $package,
-    string $message,
-    string $error = ''
-): void {
-    echo json_encode([
-        'version' => $version,
-        'release' => $release,
-        'package' => $package,
-        'message' => $message,
-        'error'   => $error,
-    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+/**
+ * 输出响应并终止请求。
+ * 仅允许缓存的 HTTP 200 响应使用 CACHE_TTL，其余响应禁止缓存。
+ */
+function respond(string $content, int $status = 200, bool $cacheable = true): void
+{
+    http_response_code($status);
+    header('Content-Type: ' . CONTENT_TYPE);
+    header('Cache-Control: ' . ($status === 200 && $cacheable
+        ? 'public, max-age=' . CACHE_TTL
+        : 'no-store'));
+    header('Content-Length: ' . strlen($content));
+    echo $content;
     exit;
 }
 
 /**
- * 从 GitHub API 获取最新 Release，结果缓存 CACHE_TTL 秒
- * GitHub 请求失败时返回旧缓存（若有），确保客户端始终能得到版本信息
+ * 下载白名单文件，优先使用 CACHE_TTL 秒内的有效缓存。
+ * 拉取失败或内容无效时回退到有效旧缓存；有效新内容通过临时文件原子写入。
+ * 缓存写入失败不影响返回已下载的有效内容。
+ * $file 为 DOWNLOAD_FILES 的本地缓存文件名，$validate 为可选业务校验函数。
  */
-function fetchLatestRelease(): ?array
+function fetchFile(string $file, ?callable $validate = null): ?string
 {
-    $cached = null;
+    if (!array_key_exists($file, DOWNLOAD_FILES)) {
+        return null;
+    }
 
-    if (file_exists(CACHE_FILE)) {
-        $cached = json_decode(file_get_contents(CACHE_FILE), true) ?: null;
-        if ($cached && (time() - filemtime(CACHE_FILE)) < CACHE_TTL) {
+    $cached = null;
+    $cacheFile = __DIR__ . '/' . $file;
+    clearstatcache(true, $cacheFile);
+
+    if (is_file($cacheFile)) {
+        $cached = @file_get_contents($cacheFile);
+        if ($cached === false || !isValidFile($file, $cached, $validate)) {
+            $cached = null;
+        }
+        $mtime = @filemtime($cacheFile);
+        if ($cached !== null && $mtime !== false && (time() - $mtime) < CACHE_TTL) {
             return $cached;
         }
     }
@@ -133,17 +150,16 @@ function fetchLatestRelease(): ?array
     $ctx = stream_context_create([
         'http' => [
             'method'          => 'GET',
-            'header'          => implode("\r\n", [
-                'Accept: application/vnd.github+json',
-                'X-GitHub-Api-Version: 2022-11-28',
+            'header'          => implode("\r\n", array_merge([
                 'User-Agent: iSrvd-Proxy/1.0',
-            ]),
-            'timeout'         => 10,
+            ], DOWNLOAD_HEADERS)),
+            'timeout'         => 15,
             'ignore_errors'   => true,
+            'follow_location' => 0,
         ],
     ]);
 
-    $body = @file_get_contents(GITHUB_API, false, $ctx);
+    $body = @file_get_contents(DOWNLOAD_BASE_URL . DOWNLOAD_FILES[$file], false, $ctx);
 
     $status = 0;
     foreach ($http_response_header ?? [] as $h) {
@@ -152,29 +168,126 @@ function fetchLatestRelease(): ?array
         }
     }
 
-    if (!$body || $status !== 200) {
+    if ($body === false || $status !== 200 || !isValidFile($file, $body, $validate)) {
         return $cached;
     }
 
-    $data = json_decode($body, true);
-    if (!$data) {
-        return $cached;
+    $cacheDir = dirname($cacheFile);
+    if (!is_dir($cacheDir) && !@mkdir($cacheDir, 0755, true) && !is_dir($cacheDir)) {
+        return $body;
     }
 
-    $cacheDir = dirname(CACHE_FILE);
-    if (!is_dir($cacheDir)) {
-        mkdir($cacheDir, 0755, true);
+    $tempFile = @tempnam($cacheDir, '.isrvd-');
+    if ($tempFile === false) {
+        return $body;
     }
-    file_put_contents(CACHE_FILE, $body, LOCK_EX);
+    if (dirname($tempFile) !== $cacheDir
+        || @file_put_contents($tempFile, $body, LOCK_EX) !== strlen($body)
+        || !@chmod($tempFile, 0644)
+        || !@rename($tempFile, $cacheFile)) {
+        @unlink($tempFile);
+    }
+    clearstatcache(true, $cacheFile);
 
-    return $data;
+    return $body;
 }
 
+/**
+ * 校验非空内容、PHP 语法及 JSON 对象或数组格式。
+ * 基础校验通过后执行可选业务校验。
+ */
+function isValidFile(string $file, string $content, ?callable $validate = null): bool
+{
+    if ($content === '') {
+        return false;
+    }
+
+    if (substr($file, -4) === '.php') {
+        if (strncmp($content, '<?php', 5) !== 0) {
+            return false;
+        }
+        try {
+            token_get_all($content, TOKEN_PARSE);
+        } catch (ParseError $e) {
+            return false;
+        }
+    }
+
+    if (substr($file, -5) === '.json') {
+        $data = json_decode($content, true);
+        if (!is_array($data) || json_last_error() !== JSON_ERROR_NONE) {
+            return false;
+        }
+    }
+
+    return $validate === null || $validate($content);
+}
+
+/**
+ * 构造 UpdateInfo JSON，并输出禁止缓存的动态响应。
+ */
+function respondUpdate(
+    string $version,
+    string $release,
+    string $package,
+    string $message,
+    string $error = ''
+): void {
+    $content = json_encode([
+        'version' => $version,
+        'release' => $release,
+        'package' => $package,
+        'message' => $message,
+        'error'   => $error,
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    respond($content, 200, false);
+}
+
+/**
+ * 获取经业务校验的最新 Release 数据，拉取失败时回退到有效旧缓存。
+ */
+function fetchLatestRelease(): ?array
+{
+    $content = fetchFile('latest.json', 'validateRelease');
+    return $content === null ? null : json_decode($content, true);
+}
+
+/**
+ * 校验 Release 版本号、发布地址和资源列表的字段类型。
+ */
+function validateRelease(string $content): bool
+{
+    $data = json_decode($content, true);
+    if (!is_array($data)
+        || !is_string($data['tag_name'] ?? null)
+        || trim($data['tag_name']) === ''
+        || !is_string($data['html_url'] ?? null)
+        || !is_array($data['assets'] ?? null)) {
+        return false;
+    }
+
+    foreach ($data['assets'] as $asset) {
+        if (!is_array($asset)
+            || !is_string($asset['name'] ?? '')
+            || !is_string($asset['browser_download_url'] ?? '')) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * 移除版本号开头的 v 前缀。
+ */
 function normalizeVer(string $v): string
 {
     return ltrim($v, 'v');
 }
 
+/**
+ * 按数字分段比较版本号，忽略 v 前缀，并将缺失分段视为 0。
+ */
 function versionCompare(string $a, string $b): int
 {
     $pa = array_map('intval', explode('.', normalizeVer($a)));
