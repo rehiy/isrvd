@@ -49,6 +49,7 @@ class CaddyGlobalConfig extends Vue {
     }
 
     async save() {
+        if (this.saving || this.loading) return
         const payload: CaddyGlobal = {
             logLevel:      this.logLevel      || undefined,
             logFormat:     this.logFormat     || undefined,
@@ -95,7 +96,7 @@ export default toNative(CaddyGlobalConfig)
           <button v-if="portal.hasPerm('PUT /api/caddy/global')" :disabled="saving || loading" class="btn btn-violet" @click="save()">
             <i v-if="saving" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-floppy-disk"></i>
-            {{ saving ? $t('保存中...') : $t('保存配置') }}
+            {{ $t('保存') }}
           </button>
         </div>
       </div>
@@ -115,7 +116,7 @@ export default toNative(CaddyGlobalConfig)
             <i class="fas fa-rotate text-sm"></i>
           </button>
           <button v-if="portal.hasPerm('PUT /api/caddy/global')" :disabled="saving || loading" class="btn btn-violet btn-square" :title="$t('保存')" @click="save()">
-            <i class="fas fa-floppy-disk text-sm"></i>
+            <i :class="saving ? 'fas fa-spinner fa-spin text-sm' : 'fas fa-floppy-disk text-sm'"></i>
           </button>
         </div>
       </div>

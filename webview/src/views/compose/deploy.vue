@@ -192,7 +192,7 @@ export default toNative(ComposeDeploy)
             <button type="button" :disabled="!canSubmit" class="btn btn-amber" @click="handleDeploy()">
               <i v-if="loading" class="fas fa-spinner fa-spin"></i>
               <i v-else class="fas fa-rocket"></i>
-              <span>{{ loading ? $t('部署中...') : $t('部署') }}</span>
+              <span>{{ $t('部署') }}</span>
             </button>
           </div>
         </div>
@@ -210,7 +210,7 @@ export default toNative(ComposeDeploy)
             <button type="button" :disabled="loading" class="btn btn-secondary btn-square" :title="$t('清空')" @click="resetForm()">
               <i class="fas fa-rotate-left"></i>
             </button>
-            <button type="button" :disabled="!canSubmit" class="btn btn-amber btn-square" :title="loading ? $t('部署中...') : $t('部署')" @click="handleDeploy()">
+            <button type="button" :disabled="!canSubmit" class="btn btn-amber btn-square" :title="$t('部署')" @click="handleDeploy()">
               <i v-if="loading" class="fas fa-spinner fa-spin"></i>
               <i v-else class="fas fa-rocket"></i>
             </button>

@@ -47,7 +47,7 @@ class WhitelistEditModal extends Vue {
 
     get confirmText() {
         if (this.isEdit && this.whitelistConsumers.length === 0) return this.$t('删除授权')
-        return this.isEdit ? this.$t('保存配置') : this.$t('确认配置')
+        return this.isEdit ? this.$t('保存') : this.$t('添加')
     }
 
     get selectableRoutes() {

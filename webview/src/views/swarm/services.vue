@@ -157,7 +157,7 @@ export default toNative(Services)
             <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadServices">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/swarm/service')" class="btn btn-emerald btn-square" :title="$t('创建')" @click="openCreateModal">
+            <button v-if="portal.hasPerm('POST /api/swarm/service')" class="btn btn-emerald btn-square" :title="$t('新建服务')" @click="openCreateModal">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>

@@ -47,9 +47,7 @@ class BasicAuthEditModal extends Vue {
     }
 
     get confirmText() {
-        if (this.mode === 'edit') return this.$t('保存配置')
-        if (this.mode === 'addUser') return this.$t('确认添加')
-        return this.$t('确认配置')
+        return this.mode === 'edit' ? this.$t('保存') : this.$t('添加')
     }
 
     // edit 模式后端不做 realm 兜底，留空即清空；setup 模式留空表示不设置

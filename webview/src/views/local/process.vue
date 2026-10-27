@@ -231,7 +231,7 @@ class SystemProcessInfoView extends Vue {
             message: this.$t(question, proc.name, proc.pid, tip),
             icon: 'fa-skull-crossbones',
             iconColor: 'red',
-            confirmText: force ? this.$t('强制终止') : this.$t('确认终止'),
+            confirmText: this.$t('确认{0}', force ? this.$t('强制终止') : this.$t('终止')),
             danger: true,
             onConfirm: async () => {
                 try {

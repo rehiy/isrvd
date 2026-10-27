@@ -144,7 +144,7 @@ export default toNative(ImagePullModal)
             <input v-model="searchKeyword" type="text" :placeholder="$t('请输入要搜索的镜像名称')" class="input flex-1" @keydown.enter.prevent="handleSearchImage" />
             <button type="button" :disabled="searchLoading" class="btn btn-secondary" @click="handleSearchImage">
               <i :class="['fas', searchLoading ? 'fa-spinner fa-spin' : 'fa-search']"></i>
-              {{ searchLoading ? $t('搜索中') : $t('搜索') }}
+              {{ $t('搜索') }}
             </button>
           </div>
 
@@ -190,6 +190,6 @@ export default toNative(ImagePullModal)
       </section>
     </form>
 
-    <template #confirm-text>{{ $t('开始拉取') }}</template>
+    <template #confirm-text>{{ $t('拉取') }}</template>
   </BaseModal>
 </template>

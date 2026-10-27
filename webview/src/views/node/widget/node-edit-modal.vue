@@ -57,6 +57,6 @@ export default toNative(NodeEditModal)
       </div>
     </form>
 
-    <template #confirm-text>{{ $t('保存修改') }}</template>
+    <template #confirm-text>{{ $t('保存') }}</template>
   </BaseModal>
 </template>

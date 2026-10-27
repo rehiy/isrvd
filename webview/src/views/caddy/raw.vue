@@ -30,6 +30,7 @@ class CaddyRaw extends Vue {
     }
 
     async saveConfig() {
+        if (this.saving || this.loading) return
         let parsed: unknown
         try {
             parsed = JSON.parse(this.raw)
@@ -75,10 +76,10 @@ export default toNative(CaddyRaw)
         </div>
         <div class="action-group">
           <button class="btn btn-secondary" @click="loadConfig()"><i class="fas fa-rotate"></i>{{ $t('刷新') }}</button>
-          <button v-if="portal.hasPerm('POST /api/caddy/config')" :disabled="saving" class="btn btn-indigo" @click="saveConfig()">
+          <button v-if="portal.hasPerm('POST /api/caddy/config')" :disabled="saving || loading" class="btn btn-indigo" @click="saveConfig()">
             <i v-if="saving" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-cloud-arrow-up"></i>
-            <span>{{ saving ? $t('提交中...') : $t('提交配置') }}</span>
+            <span>{{ $t('提交配置') }}</span>
           </button>
         </div>
       </div>
@@ -93,7 +94,7 @@ export default toNative(CaddyRaw)
         </div>
         <div class="action-group-sm">
           <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadConfig()"><i class="fas fa-rotate text-sm"></i></button>
-          <button v-if="portal.hasPerm('POST /api/caddy/config')" :disabled="saving" class="btn btn-indigo btn-square" :title="$t('提交配置')" @click="saveConfig()"><i class="fas fa-cloud-arrow-up text-sm"></i></button>
+          <button v-if="portal.hasPerm('POST /api/caddy/config')" :disabled="saving || loading" class="btn btn-indigo btn-square" :title="$t('提交配置')" @click="saveConfig()"><i :class="saving ? 'fas fa-spinner fa-spin text-sm' : 'fas fa-cloud-arrow-up text-sm'"></i></button>
         </div>
       </div>
     </div>

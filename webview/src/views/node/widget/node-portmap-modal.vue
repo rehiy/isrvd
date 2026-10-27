@@ -134,6 +134,6 @@ export default toNative(NodePortMapModal)
       </div>
     </form>
 
-    <template #confirm-text>{{ $t('保存转发') }}</template>
+    <template #confirm-text>{{ editing ? $t('保存') : $t('添加') }}</template>
   </BaseModal>
 </template>

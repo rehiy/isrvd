@@ -54,6 +54,6 @@ export default toNative(ServiceScaleModal)
       </div>
     </div>
 
-    <template #confirm-text>{{ $t('确认扩缩容') }}</template>
+    <template #confirm-text>{{ $t('扩缩容') }}</template>
   </BaseModal>
 </template>

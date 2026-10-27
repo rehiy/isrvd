@@ -29,7 +29,7 @@ class RegistryEditModal extends Vue {
     }
 
     get title() {
-        return this.isEdit ? this.$t('编辑镜像仓库') : this.$t('新建镜像仓库')
+        return this.isEdit ? this.$t('编辑镜像仓库') : this.$t('添加仓库')
     }
 
     // ─── 方法 ───
@@ -98,6 +98,6 @@ export default toNative(RegistryEditModal)
       </div>
     </form>
 
-    <template #confirm-text>{{ $t('确认添加') }}</template>
+    <template #confirm-text>{{ isEdit ? $t('保存') : $t('添加') }}</template>
   </BaseModal>
 </template>

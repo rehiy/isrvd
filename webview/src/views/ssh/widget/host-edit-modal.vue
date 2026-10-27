@@ -170,6 +170,6 @@ export default toNative(HostEditModal)
       </div>
     </form>
 
-    <template #confirm-text>{{ isEdit ? $t('保存修改') : $t('确认添加') }}</template>
+    <template #confirm-text>{{ isEdit ? $t('保存') : $t('添加') }}</template>
   </BaseModal>
 </template>

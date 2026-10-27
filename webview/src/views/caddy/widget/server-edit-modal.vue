@@ -198,6 +198,6 @@ export default toNative(ServerEditModal)
       </div>
     </div>
 
-    <template #confirm-text>{{ isEditMode ? $t('保存修改') : $t('创建服务') }}</template>
+    <template #confirm-text>{{ isEditMode ? $t('保存') : $t('新建') }}</template>
   </BaseModal>
 </template>

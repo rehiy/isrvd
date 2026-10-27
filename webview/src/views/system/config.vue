@@ -84,7 +84,7 @@ export default toNative(ConfigLayout)
           <button v-if="canUpdate" type="submit" form="config-form" class="btn btn-indigo rounded-xl whitespace-nowrap" :disabled="config.saving || config.loading">
             <i v-if="config.saving" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-save"></i>
-            <span>{{ config.saving ? $t('保存中...') : $t('保存配置') }}</span>
+            <span>{{ $t('保存') }}</span>
           </button>
         </div>
       </div>
@@ -103,7 +103,7 @@ export default toNative(ConfigLayout)
           <button type="button" class="btn btn-secondary btn-square" :title="$t('重载')" :disabled="config.loading || config.saving" @click="reloadConfig">
             <i :class="config.loading ? 'fas fa-spinner fa-spin text-sm' : 'fas fa-rotate text-sm'"></i>
           </button>
-          <button v-if="canUpdate" type="submit" form="config-form" class="btn btn-indigo btn-square" :title="$t('保存配置')" :disabled="config.saving || config.loading">
+          <button v-if="canUpdate" type="submit" form="config-form" class="btn btn-indigo btn-square" :title="$t('保存')" :disabled="config.saving || config.loading">
             <i v-if="config.saving" class="fas fa-spinner fa-spin text-sm"></i>
             <i v-else class="fas fa-save text-sm"></i>
           </button>

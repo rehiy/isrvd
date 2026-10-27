@@ -114,7 +114,7 @@ export default toNative(ConsumerEditModal)
     </div>
 
     <template #confirm-text>
-      {{ $t('确认{0}', isEditMode ? $t('更新') : $t('新建')) }}
+      {{ isEditMode ? $t('保存') : $t('新建') }}
     </template>
   </BaseModal>
 </template>

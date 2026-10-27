@@ -102,6 +102,6 @@ export default toNative(RegistryPushModal)
       </div>
     </form>
 
-    <template #confirm-text>{{ $t('开始推送') }}</template>
+    <template #confirm-text>{{ $t('推送') }}</template>
   </BaseModal>
 </template>

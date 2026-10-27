@@ -283,6 +283,6 @@ export default toNative(ContainerCreateModal)
       </div>
     </form>
 
-    <template #confirm-text>{{ $t('确认新建') }}</template>
+    <template #confirm-text>{{ $t('新建') }}</template>
   </BaseModal>
 </template>

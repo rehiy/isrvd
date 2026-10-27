@@ -129,7 +129,7 @@ export default toNative(PluginConfigs)
           <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadConfigs()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/apisix/plugin-config')" class="btn btn-rose btn-square" :title="$t('创建')" @click="openCreateModal()">
+          <button v-if="portal.hasPerm('POST /api/apisix/plugin-config')" class="btn btn-rose btn-square" :title="$t('新建配置')" @click="openCreateModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>

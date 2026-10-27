@@ -58,6 +58,6 @@ export default toNative(ImageBuildModal)
       </div>
     </div>
 
-    <template #confirm-text>{{ $t('开始构建') }}</template>
+    <template #confirm-text>{{ $t('构建') }}</template>
   </BaseModal>
 </template>

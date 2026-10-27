@@ -146,7 +146,7 @@ export default toNative(Registries)
             <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadRegistries()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/registry')" class="btn btn-purple btn-square" :title="$t('添加')" @click="openAdd">
+            <button v-if="portal.hasPerm('POST /api/docker/registry')" class="btn btn-purple btn-square" :title="$t('添加仓库')" @click="openAdd">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
