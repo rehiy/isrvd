@@ -2330,6 +2330,7 @@ const messages: Record<string, string> = {
     '粘贴 compose.yml，或从应用市场回填': 'compose.yml を貼り付けるか、App Market からバックフィルします。',
     // Standalone Container
     '单机容器': 'スタンドアロンコンテナ',
+    '单机部署': 'スタンドアロンデプロイ',
     // Swarm is not enabled on this node
     '当前节点未启用 Swarm': '現在のノードでは Swarm が有効になっていません',
     // Swarm Service

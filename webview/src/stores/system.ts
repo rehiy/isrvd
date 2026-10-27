@@ -73,6 +73,8 @@ export const useSystemStore = defineStore('system', () => {
             const path = module.split(' ')[1]
             const seg = path?.match(/^\/api\/([^/]+)/)?.[1]
             if (seg && !checkAvailability(seg)) return false
+            const composeTarget = path?.match(/^\/api\/compose\/(docker|swarm)$/)?.[1]
+            if (composeTarget && !checkAvailability(composeTarget)) return false
             return founder || permissions.includes(module)
         }
 

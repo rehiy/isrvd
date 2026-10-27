@@ -1,6 +1,6 @@
 <script lang="ts">
 import * as yaml from 'js-yaml'
-import { Component, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
@@ -21,7 +21,6 @@ class ComposeDeploy extends Vue {
     loading = false
 
     // 部署参数
-    target: ComposeDeployTarget = 'docker'
     initURL = ''
     initFile: File | null = null
     content = ''
@@ -37,12 +36,30 @@ class ComposeDeploy extends Vue {
     }
 
     // ─── 计算属性 ───
-    get swarmAvailable(): boolean {
-        return this.portal.hasPerm('POST /api/compose/swarm')
+    get target(): ComposeDeployTarget {
+        if (this.$route.query.target === 'swarm') return 'swarm'
+        if (this.$route.query.target === 'docker') return 'docker'
+        return this.portal.hasPerm('POST /api/compose/docker') ? 'docker' : 'swarm'
+    }
+
+    get deployTitle(): string {
+        return this.target === 'swarm' ? this.$t('Swarm 服务') : this.$t('单机部署')
+    }
+
+    get canAccess(): boolean {
+        if (!this.portal.initialized) return true
+        const target = this.$route.query.target
+        if (target !== undefined && target !== 'docker' && target !== 'swarm') return false
+        return this.portal.hasPerm(`POST /api/compose/${this.target}`)
     }
 
     get canSubmit(): boolean {
-        return !this.loading && !!this.content.trim()
+        return this.portal.initialized && this.canAccess && !this.loading && !!this.content.trim()
+    }
+
+    @Watch('canAccess', { immediate: true })
+    onAccessChange(canAccess: boolean) {
+        if (!canAccess) this.$router.replace('/overview')
     }
 
     /** 编辑器提示文案（整行展示） */
@@ -55,11 +72,6 @@ class ComposeDeploy extends Vue {
     }
 
     // ─── 方法 ───
-    selectTarget(t: ComposeDeployTarget) {
-        if (t === 'swarm' && !this.swarmAvailable) return
-        this.target = t
-    }
-
     // 消费应用市场页跳转时暂存的选中模板（一次性），有则回填部署表单
     consumeMarketplacePick() {
         let raw: string | null
@@ -97,7 +109,6 @@ class ComposeDeploy extends Vue {
         }
         this.content = composeContent
         this.initURL = payload.initURL || ''
-        this.target = 'docker'
         this.fromMarketplace = true
     }
 
@@ -122,9 +133,10 @@ class ComposeDeploy extends Vue {
     async handleDeploy() {
         if (!this.canSubmit) return
 
+        const target = this.target
         this.loading = true
         try {
-            const res = this.target === 'swarm'
+            const res = target === 'swarm'
                 ? await api.composeSwarmDeploy({
                     content: this.content,
                     envContent: this.envTouched ? this.envContent : undefined,
@@ -139,11 +151,11 @@ class ComposeDeploy extends Vue {
                 })
             const projectName = res.payload?.projectName || ''
             const created = res.payload?.items || []
-            const label = this.target === 'swarm' ? this.$t('服务') : this.$t('容器')
+            const label = target === 'swarm' ? this.$t('服务') : this.$t('容器')
             this.portal.showNotification('success', this.$t('{0} 部署成功，已创建 {1} 个{2}', projectName, created.length, label))
 
             // 成功后跳转到对应列表页
-            if (this.target === 'swarm') {
+            if (target === 'swarm') {
                 this.$router.push('/swarm/services')
             } else {
                 this.$router.push('/docker/containers')
@@ -160,7 +172,6 @@ class ComposeDeploy extends Vue {
         this.envTouched = false
         this.initURL = ''
         this.initFile = null
-        this.target = 'docker'
         const input = this.$refs.fileInput as HTMLInputElement | undefined
         if (input) input.value = ''
         this.fromMarketplace = false
@@ -181,7 +192,7 @@ export default toNative(ComposeDeploy)
               <i class="fas fa-file-code text-white"></i>
             </div>
             <div>
-              <h1 class="title-text">{{ $t('Compose 部署') }}</h1>
+              <h1 class="title-text">{{ deployTitle }}</h1>
               <p class="text-xs text-slate-500">{{ $t('直接粘贴 compose.yml，或从左侧应用市场选择模板后回填') }}</p>
             </div>
           </div>
@@ -202,7 +213,7 @@ export default toNative(ComposeDeploy)
               <i class="fas fa-file-code text-white"></i>
             </div>
             <div class="min-w-0 flex-1">
-              <h1 class="title-text">{{ $t('Compose 部署') }}</h1>
+              <h1 class="title-text">{{ deployTitle }}</h1>
               <p class="text-xs text-slate-500 truncate">{{ $t('粘贴 compose.yml，或从应用市场回填') }}</p>
             </div>
           </div>
@@ -220,24 +231,6 @@ export default toNative(ComposeDeploy)
 
       <!-- 表单 -->
       <div class="card-body space-y-4">
-        <!-- 部署目标 -->
-        <div class="tab-group inline-flex">
-          <button type="button" :class="['tab-btn', target === 'docker' ? 'tab-btn-active text-amber-600' : 'tab-btn-inactive']" @click="selectTarget('docker')">
-            <i class="fab fa-docker"></i><span>{{ $t('单机容器') }}</span>
-          </button>
-          <button
-            type="button"
-            :disabled="!swarmAvailable"
-            :class="['tab-btn',
-                     target === 'swarm' ? 'tab-btn-active text-amber-600'
-                     : (swarmAvailable ? 'tab-btn-inactive' : 'text-slate-300 cursor-not-allowed')]"
-            :title="swarmAvailable ? '' : $t('当前节点未启用 Swarm')"
-            @click="selectTarget('swarm')"
-          >
-            <i class="fas fa-cubes"></i><span>{{ $t('Swarm 服务') }}</span>
-          </button>
-        </div>
-
         <!-- Compose 内容 + 环境变量 .env：左右布局（compose 左，.env 右） -->
         <div class="grid gap-4 lg:grid-cols-2">
           <div class="min-w-0">

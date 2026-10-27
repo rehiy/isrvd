@@ -404,6 +404,17 @@ router.beforeEach((to) => {
   // 权限尚未加载完成时放行（刷新页面场景，等 loadMe 完成后由导航菜单 v-if 控制）
   if (!_permsLoaded?.()) return true
 
+  if (to.path === '/compose/deploy' || to.path === '/compose/marketplace') {
+    const dockerAvailable = _hasPerm?.('POST /api/compose/docker')
+    const swarmAvailable = _hasPerm?.('POST /api/compose/swarm')
+    if (!dockerAvailable && !swarmAvailable) return { path: '/overview' }
+    if (to.path === '/compose/deploy' && to.query.target !== undefined) {
+      if (to.query.target === 'docker' && dockerAvailable) return true
+      if (to.query.target === 'swarm' && swarmAvailable) return true
+      return { path: '/overview' }
+    }
+  }
+
   // 从前端路由路径提取模块名（/<module>/...）
   const module = to.path.match(/^\/([^/]+)/)?.[1]
   if (module && !['overview', 'account', 'local'].includes(module)) {

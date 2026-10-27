@@ -1184,6 +1184,7 @@ const messages: Record<string, string> = {
     '直接粘贴 compose.yml，或从左侧应用市场选择模板后回填': 'Paste a compose.yml, or pick a template from the marketplace on the left',
     '粘贴 compose.yml，或从应用市场回填': 'Paste compose.yml, or fill in from the marketplace',
     '单机容器': 'Standalone Container',
+    '单机部署': 'Standalone Deployment',
     '当前节点未启用 Swarm': 'Swarm is not enabled on this node',
     'Swarm 服务': 'Swarm Service',
     '附加文件': 'Additional Files',

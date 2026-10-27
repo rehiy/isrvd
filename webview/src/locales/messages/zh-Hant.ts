@@ -1184,6 +1184,7 @@ const messages: Record<string, string> = {
     '直接粘贴 compose.yml，或从左侧应用市场选择模板后回填': '直接粘貼 compose.yml，或從左側應用市場選擇模板後回填',
     '粘贴 compose.yml，或从应用市场回填': '粘貼 compose.yml，或從應用市場回填',
     '单机容器': '單機容器',
+    '单机部署': '單機部署',
     '当前节点未启用 Swarm': '當前節點未啟用 Swarm',
     'Swarm 服务': 'Swarm 服務',
     '附加文件': '附加文件',

@@ -20,6 +20,7 @@ class NavigationBar extends Vue {
     caddyExpanded = false
     dockerExpanded = false
     swarmExpanded = false
+    composeExpanded = false
     sshExpanded = false
     nodeExpanded = false
     configExpanded = false
@@ -57,9 +58,20 @@ class NavigationBar extends Vue {
         return this.isActive('/system/config')
     }
 
-    // Compose 部署菜单可见性
+    get isComposeActive() {
+        return this.isActive('/compose/')
+    }
+
     get composeDeployVisible() {
         return this.portal.hasPerm('POST /api/compose/docker')
+    }
+
+    get composeSwarmVisible() {
+        return this.portal.hasPerm('POST /api/compose/swarm')
+    }
+
+    get composeVisible() {
+        return this.composeDeployVisible || this.composeSwarmVisible
     }
 
     // ─── 监听器 ───
@@ -98,6 +110,13 @@ class NavigationBar extends Vue {
         }
     }
 
+    @Watch('isComposeActive', { immediate: true })
+    onComposeActiveChange(isActive: boolean) {
+        if (isActive && !this.collapsed) {
+            this.composeExpanded = true
+        }
+    }
+
     @Watch('isSshActive', { immediate: true })
     onSshActiveChange(isActive: boolean) {
         if (isActive && !this.collapsed) {
@@ -122,6 +141,12 @@ class NavigationBar extends Vue {
     // ─── 方法 ───
     isActive(prefix: string) {
         return this.$route.path.startsWith(prefix)
+    }
+
+    isComposeDeployActive(target: 'docker' | 'swarm') {
+        if (this.$route.path !== '/compose/deploy') return false
+        const currentTarget = this.$route.query.target || (this.composeDeployVisible ? 'docker' : 'swarm')
+        return currentTarget === target
     }
 
     toggleLocal() {
@@ -166,6 +191,15 @@ class NavigationBar extends Vue {
             this.swarmExpanded = true
         } else {
             this.swarmExpanded = !this.swarmExpanded
+        }
+    }
+
+    toggleCompose() {
+        if (this.collapsed) {
+            this.$emit('update:collapsed', false)
+            this.composeExpanded = true
+        } else {
+            this.composeExpanded = !this.composeExpanded
         }
     }
 
@@ -222,6 +256,7 @@ class NavigationBar extends Vue {
         this.caddyExpanded = this.$route.path.startsWith('/caddy/')
         this.dockerExpanded = this.$route.path.startsWith('/docker/')
         this.swarmExpanded = this.$route.path.startsWith('/swarm/')
+        this.composeExpanded = this.$route.path.startsWith('/compose/')
         this.sshExpanded = this.$route.path.startsWith('/ssh/')
         this.nodeExpanded = this.$route.path.startsWith('/node')
         this.configExpanded = this.$route.path.startsWith('/system/config')
@@ -542,17 +577,46 @@ export default toNative(NavigationBar)
         </template>
       </div>
 
-      <!-- Compose 部署 -->
-      <router-link v-if="composeDeployVisible" to="/compose/deploy" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('Compose 部署') : ''">
-        <i class="fas fa-file-code"></i>
-        <span v-if="!collapsed">{{ $t('Compose 部署') }}</span>
-      </router-link>
-
-      <!-- 应用市场 -->
-      <router-link v-if="composeDeployVisible" to="/compose/marketplace" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('应用市场') : ''">
-        <i class="fas fa-store"></i>
-        <span v-if="!collapsed">{{ $t('应用市场') }}</span>
-      </router-link>
+      <div v-if="composeVisible">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isComposeActive }" :title="$t('Compose 部署')" @click.stop="toggleCompose">
+          <i class="fas fa-file-code"></i>
+        </button>
+        <template v-else>
+          <button class="nav-link w-full" :class="{ 'nav-link-active': isComposeActive }" :aria-expanded="composeExpanded" @click.stop="toggleCompose">
+            <i class="fas fa-file-code"></i>
+            <span>{{ $t('Compose 部署') }}</span>
+            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': composeExpanded }"></i>
+          </button>
+          <div v-show="composeExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+            <router-link
+              v-if="composeDeployVisible"
+              :to="{ path: '/compose/deploy', query: { target: 'docker' } }"
+              class="nav-link"
+              active-class=""
+              exact-active-class=""
+              :class="{ 'nav-link-active': isComposeDeployActive('docker') }"
+            >
+              <i class="fab fa-docker"></i>
+              <span>{{ $t('单机部署') }}</span>
+            </router-link>
+            <router-link
+              v-if="composeSwarmVisible"
+              :to="{ path: '/compose/deploy', query: { target: 'swarm' } }"
+              class="nav-link"
+              active-class=""
+              exact-active-class=""
+              :class="{ 'nav-link-active': isComposeDeployActive('swarm') }"
+            >
+              <i class="fas fa-cubes"></i>
+              <span>{{ $t('Swarm 服务') }}</span>
+            </router-link>
+            <router-link to="/compose/marketplace" class="nav-link" :class="{ 'nav-link-active': isActive('/compose/marketplace') }">
+              <i class="fas fa-store"></i>
+              <span>{{ $t('应用市场') }}</span>
+            </router-link>
+          </div>
+        </template>
+      </div>
 
       <!-- 计划任务 -->
       <router-link v-if="portal.hasPerm('GET /api/cron/jobs')" to="/cron/jobs" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('计划任务') : ''">

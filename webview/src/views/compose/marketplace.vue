@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
@@ -54,6 +54,17 @@ class ComposeMarketplace extends Vue {
         this.unbindEvents()
     }
 
+    get canAccess(): boolean {
+        return !this.portal.initialized
+            || this.portal.hasPerm('POST /api/compose/docker')
+            || this.portal.hasPerm('POST /api/compose/swarm')
+    }
+
+    @Watch('canAccess', { immediate: true })
+    onAccessChange(canAccess: boolean) {
+        if (!canAccess) this.$router.replace('/overview')
+    }
+
     // ─── 方法 ───
     loadUrl() {
         const url = this.portal.marketplaceUrl || ''
@@ -94,6 +105,7 @@ class ComposeMarketplace extends Vue {
     }
 
     onMessage(e: MessageEvent) {
+        if (!this.portal.initialized || !this.canAccess) return
         // 非 marketplace 协议的消息一律忽略（浏览器扩展/其它 iframe 也会发 message）
         if (!isMarketplaceInstallPayload(e.data)) return
 
@@ -122,7 +134,8 @@ class ComposeMarketplace extends Vue {
             this.portal.showNotification('error', this.$t('暂存模板失败，请重试'))
             return
         }
-        this.$router.push('/compose/deploy')
+        const target = this.portal.hasPerm('POST /api/compose/docker') ? 'docker' : 'swarm'
+        this.$router.push({ path: '/compose/deploy', query: { target } })
     }
 
     goConfig() {

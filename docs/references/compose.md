@@ -4,6 +4,16 @@ Compose 接口用于单机 Docker Compose 与 Swarm Stack 的部署、读取配�
 
 Docker 不可用时 `/compose/*` 返回 `503`；未配置 `docker.containerRoot` 时部署、读取配置和历史接口返回 `500`「未配置容器数据根目录」。
 
+## Webview 部署入口
+
+侧边栏「Compose 部署」包含「单机部署」「Swarm 服务」「应用市场」子菜单，桌面和移动端共用导航：
+
+- 单机部署：`/compose/deploy?target=docker`，需 Docker 能力有效且有 `POST /api/compose/docker` 权限。
+- Swarm 服务：`/compose/deploy?target=swarm`，需 Swarm 管理节点能力有效且有 `POST /api/compose/swarm` 权限。
+- 应用市场：`/compose/marketplace`，至少一种部署目标可用时显示；选择模板后优先进入单机部署，仅 Swarm 可用时进入 Swarm 服务。
+
+部署入口同时要求 Compose 能力有效；两种目标均不可用时隐藏整个「Compose 部署」菜单，单个目标不可用时隐藏对应子菜单。无目标参数的旧部署链接优先选择可用的 Docker 目标，否则选择 Swarm。清空表单不改变当前部署目标。
+
 ## 字段说明
 
 ### 部署请求
