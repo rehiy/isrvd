@@ -8,6 +8,12 @@
     <meta name="description" content="iSrvd 是轻量、开源的服务器管理面板。通过一个控制台管理文件、终端、Docker 与网关，从个人服务器到多机协作。" />
     <script src="https://jscdn.rehi.org/npm/@tailwindcss/browser@4"></script>
     <script>
+        const preferredLanguage = navigator.languages?.[0] || navigator.language || 'en';
+        document.documentElement.lang = /^zh(?:-|_|$)/i.test(preferredLanguage) ? 'zh-CN' : 'en';
+        if (document.documentElement.lang === 'en') {
+            document.title = 'iSrvd — Lightweight Server Management';
+            document.querySelector('meta[name="description"]').content = 'iSrvd is a lightweight, open-source server management panel. Manage files, terminals, Docker and gateways in one console, from a personal server to a fleet.';
+        }
         try {
             const saved = localStorage.getItem('theme');
             document.documentElement.classList.toggle('dark', saved === 'dark' || (saved !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches));
@@ -397,13 +403,103 @@
     </footer>
 
     <script>
+        const isEnglish = document.documentElement.lang === 'en';
+        function t(zh, en) { return isEnglish ? en : zh; }
+
+        function localizeStaticContent() {
+            if (!isEnglish) return;
+            const messages = new Map([
+                ['主导航', 'Main navigation'],
+                ['iSrvd 首页', 'iSrvd home'],
+                ['展开页面导航', 'Open page navigation'],
+                ['导航', 'Menu'],
+                ['核心能力', 'Features'],
+                ['安装', 'Install'],
+                ['文档 ↗', 'Docs ↗'],
+                ['服务器管理，', 'Server management,'],
+                ['回归简单。', 'made simple.'],
+                ['iSrvd，把文件、终端、容器与网关放进一个轻量面板。为你的第一台服务器，也为下一组服务器。', 'iSrvd brings files, terminals, containers and gateways into one lightweight panel. For your first server, and your next fleet.'],
+                ['开始部署', 'Get started'],
+                ['查看源码', 'View source'],
+                ['产品定位', 'Who it is for'],
+                ['少一点切换。', 'Less switching.'],
+                ['多一点掌控。', 'More control.'],
+                ['个人服务器 / 小型团队', 'Personal servers / Small teams'],
+                ['开源 · Apache 2.0', 'Open source · Apache 2.0'],
+                ['日常运维，顺手完成', 'Everyday operations, simplified'],
+                ['文件管理、Web 终端与 SSH，配合资源监控和计划任务，处理服务器的日常工作。', 'Handle everyday server tasks with file management, a web terminal and SSH, plus resource monitoring and scheduled jobs.'],
+                ['从容器，到访问入口', 'From containers to gateways'],
+                ['管理 Docker、Compose 与 Swarm，在同一处配置 Caddy 或 APISIX 网关。', 'Manage Docker, Compose and Swarm, and configure Caddy or APISIX gateways in the same place.'],
+                ['一台起步，多台协作', 'Start with one. Manage many.'],
+                ['单机独立运行，或由一个中控管理多台服务器。受管机主动接入，无需开放入站端口。', 'Run independently on one server, or manage many through a central console. Agents connect outbound without opening inbound ports.'],
+                ['按你的方式部署。', 'Deploy it your way.'],
+                ['选择配置，生成可复制的部署命令。', 'Choose your setup and generate a deployment command.'],
+                ['阅读部署文档', 'Deployment docs'],
+                ['部署方式', 'Deployment'],
+                ['系统服务', 'System service'],
+                ['推荐', 'Recommended'],
+                ['全容器化', 'All-in-one container'],
+                ['运行角色', 'Role'],
+                ['单机', 'Standalone'],
+                ['中控', 'Controller'],
+                ['受管机', 'Agent'],
+                ['中控地址', 'Controller URL'],
+                ['节点令牌', 'Node token'],
+                ['在中控「节点管理」页生成', 'Generate in the controller’s Nodes page'],
+                ['组件容器', 'Components'],
+                ['不安装组件', 'No components'],
+                ['默认', 'Default'],
+                ['镜像标签（可选）', 'Image tag (optional)'],
+                ['留空使用所选布局的标签', 'Leave blank to use the selected layout’s tag'],
+                ['自定义 tag 必须已发布；内置标签必须与所选布局匹配。', 'Custom tags must be published. Built-in tags must match the selected layout.'],
+                ['软件源', 'Source'],
+                ['自动', 'Auto'],
+                ['容器参数', 'Container'],
+                ['容器名', 'Container name'],
+                ['数据目录 → /data', 'Data directory → /data'],
+                ['Web 端口 → 8080', 'Web port → 8080'],
+                ['HTTP 端口', 'HTTP port'],
+                ['HTTPS 端口', 'HTTPS port'],
+                ['容器网络', 'Network'],
+                ['sdnet · 自动', 'sdnet · Auto'],
+                ['已有网络', 'Existing network'],
+                ['不指定', 'Docker default'],
+                ['网络名称', 'Network name'],
+                ['未安装 Docker 时自动安装', 'Install Docker automatically if missing'],
+                ['部署命令', 'Command'],
+                ['复制安装命令', 'Copy installation command'],
+                ['复制', 'Copy'],
+                ['需要调整配置？', 'Need to adjust the configuration? '],
+                ['查看配置文档 ↗', 'Configuration docs ↗'],
+                ['已安装？管理现有部署', 'Already installed? Manage your deployment'],
+                ['更新 / 换标签 / 卸载', 'Update / Change tag / Uninstall'],
+                ['选择一项操作，再查看和复制命令。更新、换标签与卸载相互独立，请勿连续执行全部操作。', 'Choose one operation, then view and copy its command. Updates, tag changes and uninstall are independent. Do not run every operation in sequence.'],
+                ['© 2024–2026 iSrvd · 开源服务器管理', '© 2024–2026 iSrvd · Open-source server management'],
+                ['致谢与声明', 'Credits & notices']
+            ]);
+            const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+            let node;
+            while ((node = walker.nextNode())) {
+                if (node.parentElement.closest('script, style')) continue;
+                const translated = messages.get(node.textContent.trim());
+                if (translated !== undefined) node.textContent = node.textContent.replace(node.textContent.trim(), translated);
+            }
+            document.querySelectorAll('[aria-label], [placeholder]').forEach(function (el) {
+                ['aria-label', 'placeholder'].forEach(function (attribute) {
+                    const translated = messages.get(el.getAttribute(attribute));
+                    if (translated !== undefined) el.setAttribute(attribute, translated);
+                });
+            });
+        }
+        localizeStaticContent();
+
         function applyTheme(isDark) {
             document.documentElement.classList.toggle('dark', isDark);
             setVisible(byId('icon-sun'), isDark);
             setVisible(byId('icon-moon'), !isDark);
             const button = document.getElementById('theme-toggle');
             button.setAttribute('aria-pressed', String(isDark));
-            button.setAttribute('aria-label', isDark ? '切换浅色主题' : '切换深色主题');
+            button.setAttribute('aria-label', isDark ? t('切换浅色主题', 'Switch to light theme') : t('切换深色主题', 'Switch to dark theme'));
         }
         function toggleTheme() {
             const isDark = !document.documentElement.classList.contains('dark');
@@ -471,64 +567,64 @@
             var raw = fieldVal(id);
             if (raw === '') return def;
             var n = /^\d+$/.test(raw) ? Number(raw) : 0;
-            if (n < 1 || n > 65535) { addError(id, label + '须为 1-65535 的整数'); return def; }
+            if (n < 1 || n > 65535) { addError(id, label + t('须为 1-65535 的整数', ' must be an integer from 1 to 65535')); return def; }
             return n;
         }
 
         // 仅校验当前可见（会进入命令）的参数
         function collectParams() {
             var s = buildState, errs = [], fields = {}, v = {};
-            function addError(id, message) { fields[id] = true; errs.push(message); }
+            function addError(id, zh, en) { fields[id] = true; errs.push(en === undefined ? zh : t(zh, en)); }
             var isDocker = s.method === 'docker';
             var isAgent = s.role === 'agent';
 
             v.variant = selectedVariant(s);
             if (s.method !== 'script-binary') {
                 v.tag = fieldVal('in-tag') || v.variant;
-                if (!/^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(v.tag)) addError('in-tag', '镜像标签须为 1-128 个字母、数字或 _ . -，且不能以 . 或 - 开头');
+                if (!/^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(v.tag)) addError('in-tag', '镜像标签须为 1-128 个字母、数字或 _ . -，且不能以 . 或 - 开头', 'Image tags must contain 1–128 letters, digits or _ . -, and must not start with . or -');
                 var layouts = { slim: 'slim', latest: 'slim', caddy: 'caddy', apisix: 'apisix' };
                 var knownVariant = Object.prototype.hasOwnProperty.call(layouts, v.tag) ? layouts[v.tag] : '';
-                if (knownVariant && knownVariant !== v.variant) addError('in-tag', '镜像标签与端口布局不一致，请选择对应布局或清空标签');
+                if (knownVariant && knownVariant !== v.variant) addError('in-tag', '镜像标签与端口布局不一致，请选择对应布局或清空标签', 'The image tag does not match the port layout. Select the matching layout or clear the tag');
             }
 
             if (isAgent) {
                 v.centerUrl = fieldVal('in-center-url').replace(/\/+$/, '');
-                if (!v.centerUrl) addError('in-center-url', '请填写中控地址');
-                else if (!validCenterUrl(v.centerUrl)) addError('in-center-url', '中控地址须为 http(s):// 开头的合法地址，且不含账号密码、路径、查询参数、空白或 URL 片段');
+                if (!v.centerUrl) addError('in-center-url', '请填写中控地址', 'Enter the controller URL');
+                else if (!validCenterUrl(v.centerUrl)) addError('in-center-url', '中控地址须为 http(s):// 开头的合法地址，且不含账号密码、路径、查询参数、空白或 URL 片段', 'The controller URL must start with http(s):// and contain no credentials, path, query, whitespace or fragment');
 
                 v.code = fieldVal('in-node-token');
-                if (!v.code) addError('in-node-token', '请填写节点令牌（在中控「节点管理」页生成）');
-                else if (!CODE_RE.test(v.code)) addError('in-node-token', '节点令牌格式无效，请直接复制中控生成的令牌');
+                if (!v.code) addError('in-node-token', '请填写节点令牌（在中控「节点管理」页生成）', 'Enter the node token generated in the controller’s Nodes page');
+                else if (!CODE_RE.test(v.code)) addError('in-node-token', '节点令牌格式无效，请直接复制中控生成的令牌', 'Invalid node token format. Copy the token directly from the controller');
             }
 
             if (isDocker) {
                 var defName = { server: 'isrvd', center: 'isrvd-center', agent: 'isrvd-agent' }[s.role];
                 v.cname = fieldVal('in-cname') || defName;
-                if (!NAME_RE.test(v.cname)) addError('in-cname', '容器名须以字母或数字开头，仅含字母、数字及 _ . -');
+                if (!NAME_RE.test(v.cname)) addError('in-cname', '容器名须以字母或数字开头，仅含字母、数字及 _ . -', 'Container names must start with a letter or digit and contain only letters, digits and _ . -');
 
                 v.data = fieldVal('in-data') || '/srv/data';
                 if (!v.data.startsWith('/') || /^[/]+$/.test(v.data) || /(^|\/)\.\.?(\/|$)/.test(v.data) || /[:\\]/.test(v.data) || CONTROL_CHARS.test(v.data)) {
-                    addError('in-data', '数据目录须为绝对路径，不能为根目录，也不能含 .、.. 路径段、冒号、反斜杠或控制字符');
+                    addError('in-data', '数据目录须为绝对路径，不能为根目录，也不能含 .、.. 路径段、冒号、反斜杠或控制字符', 'The data directory must be an absolute path other than root, with no . or .. segments, colons, backslashes or control characters');
                 }
                 v.data = v.data.replace(/\/$/, '');
 
                 if (s.net === 'existing') {
                     v.netName = fieldVal('in-netname') || 'sdnet';
-                    if (!NAME_RE.test(v.netName)) addError('in-netname', '网络名称须以字母或数字开头，仅含字母、数字及 _ . -');
+                    if (!NAME_RE.test(v.netName)) addError('in-netname', '网络名称须以字母或数字开头，仅含字母、数字及 _ . -', 'Network names must start with a letter or digit and contain only letters, digits and _ . -');
                 }
 
                 if (!isAgent) {
-                    v.pWeb = parsePort('in-p-web', 8080, 'Web 端口', addError);
+                    v.pWeb = parsePort('in-p-web', 8080, t('Web 端口', 'Web port'), addError);
                     if (v.variant !== 'slim') {
-                        v.pHttp = parsePort('in-p-http', 80, 'HTTP 端口', addError);
-                        v.pHttps = parsePort('in-p-https', 443, 'HTTPS 端口', addError);
+                        v.pHttp = parsePort('in-p-http', 80, t('HTTP 端口', 'HTTP port'), addError);
+                        v.pHttps = parsePort('in-p-https', 443, t('HTTPS 端口', 'HTTPS port'), addError);
                     }
                     var ports = { 'in-p-web': v.pWeb, 'in-p-http': v.pHttp, 'in-p-https': v.pHttps };
                     var duplicates = Object.keys(ports).filter(function (id) {
                         return ports[id] !== undefined && Object.keys(ports).some(function (other) { return other !== id && ports[other] === ports[id]; });
                     });
                     duplicates.forEach(function (id) { fields[id] = true; });
-                    if (duplicates.length) errs.push('宿主机端口不能重复');
+                    if (duplicates.length) errs.push(t('宿主机端口不能重复', 'Host ports must be unique'));
                 }
                 v.installDocker = byId('in-install-docker').checked;
             }
@@ -607,32 +703,32 @@
                 + '      case "${isrvd_current_image##*:}" in\n'
                 + '        slim|latest) isrvd_current_layout=slim ;;\n'
                 + '        caddy|apisix) isrvd_current_layout="${isrvd_current_image##*:}" ;;\n'
-                + '        *) printf "%s\\n" ' + shq('无法确认现有镜像布局，已中止。请先核对现有镜像及配置。') + ' >&2; exit 1 ;;\n'
+                + '        *) printf "%s\\n" ' + shq(t('无法确认现有镜像布局，已中止。请先核对现有镜像及配置。', 'Cannot identify the current image layout. Aborted. Check the existing image and configuration first.')) + ' >&2; exit 1 ;;\n'
                 + '      esac\n'
                 + '      ;;\n'
                 + '  esac\n'
-                + '  [ "$isrvd_current_layout" = ' + shq(variant) + ' ] || { printf "%s\\n" ' + shq('仅支持同布局更新；跨布局请先迁移网关管理地址、密钥并验证 Admin API，不能仅修改 --variant。') + ' >&2; exit 1; }\n'
+                + '  [ "$isrvd_current_layout" = ' + shq(variant) + ' ] || { printf "%s\\n" ' + shq(t('仅支持同布局更新；跨布局请先迁移网关管理地址、密钥并验证 Admin API，不能仅修改 --variant。', 'Only same-layout updates are supported. Migrate gateway admin URLs and keys and verify the Admin API before changing layouts; changing --variant alone is not sufficient.')) + ' >&2; exit 1; }\n'
                 + ')';
         }
 
         function buildManage(s, v) {
-            var migrationNote = '仅支持同布局换标签，命令先检查现有布局，不匹配或无法确认时中止。跨布局需另行迁移网关地址、密钥并验证管理接口。';
+            var migrationNote = t('仅支持同布局换标签，命令先检查现有布局，不匹配或无法确认时中止。跨布局需另行迁移网关地址、密钥并验证管理接口。', 'Only same-layout tag changes are supported. The command checks the current layout and aborts if it is different or unknown. Changing layouts requires migrating gateway URLs and keys and verifying the admin interface.');
             if (s.method === 'docker') {
                 var run = buildDockerRun(s, v).slice(-1)[0];
                 return [
-                    { id: 'update', title: '同布局更新 / 重建', note: migrationNote + ' 先备份并核对容器名、角色和挂载；重建保留数据，不提供自动回滚。', command: joinCommands([sameLayoutGuard(v.cname, v.variant), 'docker pull ' + dockerImage(s, v), 'docker stop ' + shq(v.cname), 'docker rm ' + shq(v.cname), run]) },
-                    { id: 'uninstall', title: '卸载容器', note: '只执行卸载，保留数据目录 ' + v.data + '。', command: 'docker rm -f ' + shq(v.cname), danger: true },
-                    { id: 'logs', title: '查看日志', note: '不会更新或删除容器。', command: 'docker logs -f ' + shq(v.cname) }
+                    { id: 'update', title: t('同布局更新 / 重建', 'Update / Recreate (same layout)'), note: migrationNote + t(' 先备份并核对容器名、角色和挂载；重建保留数据，不提供自动回滚。', ' Back up first and verify the container name, role and mounts. Recreation preserves data but does not provide automatic rollback.'), command: joinCommands([sameLayoutGuard(v.cname, v.variant), 'docker pull ' + dockerImage(s, v), 'docker stop ' + shq(v.cname), 'docker rm ' + shq(v.cname), run]) },
+                    { id: 'uninstall', title: t('卸载容器', 'Remove container'), note: t('只执行卸载，保留数据目录 ', 'Only removes the container. Preserves the data directory ') + v.data + t('。', '.'), command: 'docker rm -f ' + shq(v.cname), danger: true },
+                    { id: 'logs', title: t('查看日志', 'View logs'), note: t('不会更新或删除容器。', 'Does not update or remove the container.'), command: 'docker logs -f ' + shq(v.cname) }
                 ];
             }
             var isSystem = s.method === 'script-binary';
             var scriptUrl = isSystem ? SCRIPT_URL : DOCKER_SCRIPT_URL;
-            var actions = [{ id: 'update', title: '更新现有部署', note: isSystem ? 'isrvd-system.sh：保留配置、密钥及角色，更新二进制与所属组件。' : 'isrvd-docker.sh：保留已安装镜像标签、布局及角色，不使用上方选择切换标签。', command: installerRun('update' + sourceFlag(s), scriptUrl) }];
+            var actions = [{ id: 'update', title: t('更新现有部署', 'Update deployment'), note: isSystem ? t('isrvd-system.sh：保留配置、密钥及角色，更新二进制与所属组件。', 'isrvd-system.sh: preserves configuration, keys and role while updating the binary and its components.') : t('isrvd-docker.sh：保留已安装镜像标签、布局及角色，不使用上方选择切换标签。', 'isrvd-docker.sh: preserves the installed image tag, layout and role. The selections above do not change the tag.'), command: installerRun('update' + sourceFlag(s), scriptUrl) }];
             if (!isSystem) {
-                actions.push({ id: 'change-tag', title: '同布局换标签（可选）', note: migrationNote, command: joinCommands([sameLayoutGuard('isrvd', v.variant), installerRun('update --tag ' + shq(v.tag) + ' --variant ' + v.variant + sourceFlag(s), scriptUrl)]) });
+                actions.push({ id: 'change-tag', title: t('同布局换标签（可选）', 'Change tag (same layout, optional)'), note: migrationNote, command: joinCommands([sameLayoutGuard('isrvd', v.variant), installerRun('update --tag ' + shq(v.tag) + ' --variant ' + v.variant + sourceFlag(s), scriptUrl)]) });
             }
-            actions.push({ id: 'uninstall', title: '卸载部署', note: isSystem ? '删除系统服务与所属组件及备份容器。先备份 /usr/local/isrvd/config.yml；保留 /srv/data。' : '只删除 isrvd 主容器，保留 /srv/data。', command: installerRun('uninstall', scriptUrl), danger: true });
-            actions.push({ id: 'download', title: '仅下载二进制', note: '使用 isrvd-system.sh 下载到当前目录，不安装、不更新、不卸载。', command: installerRun('download' + sourceFlag(s), SCRIPT_URL) });
+            actions.push({ id: 'uninstall', title: t('卸载部署', 'Uninstall deployment'), note: isSystem ? t('删除系统服务与所属组件及备份容器。先备份 /usr/local/isrvd/config.yml；保留 /srv/data。', 'Removes the system service, its components and backup containers. Back up /usr/local/isrvd/config.yml first. Preserves /srv/data.') : t('只删除 isrvd 主容器，保留 /srv/data。', 'Only removes the main isrvd container. Preserves /srv/data.'), command: installerRun('uninstall', scriptUrl), danger: true });
+            actions.push({ id: 'download', title: t('仅下载二进制', 'Download binary only'), note: t('使用 isrvd-system.sh 下载到当前目录，不安装、不更新、不卸载。', 'Uses isrvd-system.sh to download into the current directory. Does not install, update or uninstall.'), command: installerRun('download' + sourceFlag(s), SCRIPT_URL) });
             return actions;
         }
 
@@ -641,10 +737,10 @@
                 return '<details class="manage-action" name="isrvd-manage-action" data-manage-action="' + esc(action.id) + '" data-danger="' + String(!!action.danger) + '">'
                     + '<summary><span class="manage-index" aria-hidden="true">0' + (index + 1) + '</span>'
                     + '<span class="manage-title">' + esc(action.title) + '</span>'
-                    + '<span class="manage-status">' + (action.danger ? '谨慎操作' : '查看命令') + '</span></summary>'
+                    + '<span class="manage-status">' + (action.danger ? t('谨慎操作', 'Use caution') : t('查看命令', 'View command')) + '</span></summary>'
                     + '<div class="manage-content"><p class="manage-note">' + esc(action.note) + '</p>'
                     + '<div class="code-block"><div class="code-header"><span>bash</span>'
-                    + '<button type="button" class="copy-btn" onclick="copyCode(this)" aria-live="polite" aria-label="复制' + esc(action.title) + '命令">复制</button></div>'
+                    + '<button type="button" class="copy-btn" onclick="copyCode(this)" aria-live="polite" aria-label="' + esc(t('复制' + action.title + '命令', 'Copy command: ' + action.title)) + '">' + t('复制', 'Copy') + '</button></div>'
                     + '<div class="code-body">' + highlight(action.command) + '</div></div></div></details>';
             }).join('');
         }
@@ -652,67 +748,67 @@
         function buildNotes(s, v) {
             var notes = [];
             if (s.method === 'docker') {
-                notes.push('请确认 Docker 已启动；数据目录 <code>' + esc(v.data) + '</code> 会挂载到容器 /data。');
-                if (s.net === 'auto') notes.push('自动创建单机 bridge 网络 sdnet；脚本模式要求同名网络为 attachable overlay，不兼容时请先处理网络。');
-                if (v.installDocker) notes.push('命令开头的自动安装 Docker 需要 root 权限。');
-                notes.push('手写更新按当前表单重建容器，不自动保留旧角色或回滚；执行前核对配置并备份。');
+                notes.push(t('请确认 Docker 已启动；数据目录 <code>', 'Make sure Docker is running. The data directory <code>') + esc(v.data) + t('</code> 会挂载到容器 /data。', '</code> is mounted at /data inside the container.'));
+                if (s.net === 'auto') notes.push(t('自动创建单机 bridge 网络 sdnet；脚本模式要求同名网络为 attachable overlay，不兼容时请先处理网络。', 'Creates a local sdnet bridge network automatically. Script deployments require an attachable overlay network with that name; resolve incompatible networks first.'));
+                if (v.installDocker) notes.push(t('命令开头的自动安装 Docker 需要 root 权限。', 'Automatic Docker installation at the start of the command requires root privileges.'));
+                notes.push(t('手写更新按当前表单重建容器，不自动保留旧角色或回滚；执行前核对配置并备份。', 'Manual updates recreate the container using this form. They do not automatically preserve the old role or roll back. Verify the configuration and back up first.'));
             } else {
-                notes.push('请以 root 身份在 Bash 中执行；安装与更新、卸载必须使用同一种部署脚本。');
+                notes.push(t('请以 root 身份在 Bash 中执行；安装与更新、卸载必须使用同一种部署脚本。', 'Run in Bash as root. Use the same deployment script for installation, updates and uninstall.'));
                 if (s.method === 'script-binary') {
-                    notes.push('安装失败或可捕获中断会回滚本次新建资源，保留组件数据；卸载前备份 <code>/usr/local/isrvd/config.yml</code>，<code>/srv/data</code> 不删除。');
-                    if (v.variant !== 'slim') notes.push('组件使用 host 网络；管理接口与 etcd 仅监听本机。更新遗留 <code>isrvd-组件-update-backup</code> 时会在停服前中止，请恢复备份或用系统脚本卸载清理。');
+                    notes.push(t('安装失败或可捕获中断会回滚本次新建资源，保留组件数据；卸载前备份 <code>/usr/local/isrvd/config.yml</code>，<code>/srv/data</code> 不删除。', 'Failed installations or catchable interruptions roll back newly created resources while preserving component data. Back up <code>/usr/local/isrvd/config.yml</code> before uninstalling. <code>/srv/data</code> is not deleted.'));
+                    if (v.variant !== 'slim') notes.push(t('组件使用 host 网络；管理接口与 etcd 仅监听本机。更新遗留 <code>isrvd-组件-update-backup</code> 时会在停服前中止，请恢复备份或用系统脚本卸载清理。', 'Components use host networking; admin interfaces and etcd listen only on localhost. Updates abort before stopping services if an <code>isrvd-&lt;component&gt;-update-backup</code> container remains. Restore the backup or clean it up using the system script’s uninstall operation.'));
                     if (v.variant === 'apisix') {
-                        notes.push('APISIX 密钥随机生成，或在执行前通过环境变量 <code>ISRVD_APISIX_ADMIN_KEY</code> 提供；脚本保存至 <code>config.yml</code>（root 可读，0600），更新沿用原密钥。请保护配置及备份。');
-                        notes.push('APISIX 管理地址为 <code>http://127.0.0.1:9180/apisix/admin</code>；安装会验证 Admin API 鉴权，不能仅凭容器运行判断可用。');
+                        notes.push(t('APISIX 密钥随机生成，或在执行前通过环境变量 <code>ISRVD_APISIX_ADMIN_KEY</code> 提供；脚本保存至 <code>config.yml</code>（root 可读，0600），更新沿用原密钥。请保护配置及备份。', 'The APISIX key is generated randomly or supplied through <code>ISRVD_APISIX_ADMIN_KEY</code> before execution. It is stored in <code>config.yml</code> with root-only permissions (0600) and reused during updates. Protect the configuration and backups.'));
+                        notes.push(t('APISIX 管理地址为 <code>http://127.0.0.1:9180/apisix/admin</code>；安装会验证 Admin API 鉴权，不能仅凭容器运行判断可用。', 'The APISIX admin URL is <code>http://127.0.0.1:9180/apisix/admin</code>. Installation verifies Admin API authentication; a running container alone does not prove it is usable.'));
                     }
                 } else {
-                    notes.push('脚本自动准备 Swarm 与 <code>sdnet</code>；已有同名网络必须为 attachable overlay。卸载只删除主容器，保留 <code>/srv/data</code>。');
-                    notes.push('更新默认保留已安装标签与角色；下方另有同布局换标签命令，跨布局需先迁移网关配置。替换失败会恢复旧容器，中断遗留 <code>isrvd-update-backup</code> 时请先处理备份。');
+                    notes.push(t('脚本自动准备 Swarm 与 <code>sdnet</code>；已有同名网络必须为 attachable overlay。卸载只删除主容器，保留 <code>/srv/data</code>。', 'The script prepares Swarm and <code>sdnet</code> automatically. An existing network with that name must be an attachable overlay. Uninstall removes only the main container and preserves <code>/srv/data</code>.'));
+                    notes.push(t('更新默认保留已安装标签与角色；下方另有同布局换标签命令，跨布局需先迁移网关配置。替换失败会恢复旧容器，中断遗留 <code>isrvd-update-backup</code> 时请先处理备份。', 'Updates preserve the installed tag and role by default. Use the separate same-layout tag-change command below; migrate gateway configuration before changing layouts. Failed replacements restore the old container. Resolve any <code>isrvd-update-backup</code> left by an interruption first.'));
                 }
             }
-            if (s.method !== 'script-binary') notes.push('挂载 Docker socket 相当于授予宿主机高权限，请勿向不可信用户开放管理界面。');
-            if (s.role === 'center') notes.push('端口转发需在配置中设置 <code>portmap.range</code> 和 <code>portmap.bind</code>；容器内使用 <code>0.0.0.0</code>。Docker 脚本更新会发布 TCP/UDP 范围，手写容器须自行添加对应端口映射。');
-            if (s.role === 'agent') notes.push('节点令牌只用于接入中控，请勿外泄；吊销后受管机会立即断开。');
-            else notes.push('登录后立即修改默认账号 admin 的密码。');
+            if (s.method !== 'script-binary') notes.push(t('挂载 Docker socket 相当于授予宿主机高权限，请勿向不可信用户开放管理界面。', 'Mounting the Docker socket grants elevated access to the host. Do not expose the management interface to untrusted users.'));
+            if (s.role === 'center') notes.push(t('端口转发需在配置中设置 <code>portmap.range</code> 和 <code>portmap.bind</code>；容器内使用 <code>0.0.0.0</code>。Docker 脚本更新会发布 TCP/UDP 范围，手写容器须自行添加对应端口映射。', 'Configure <code>portmap.range</code> and <code>portmap.bind</code> for port forwarding; use <code>0.0.0.0</code> inside containers. Docker script updates publish the TCP/UDP range. Manual containers require the corresponding port mappings.'));
+            if (s.role === 'agent') notes.push(t('节点令牌只用于接入中控，请勿外泄；吊销后受管机会立即断开。', 'The node token is only for connecting to the controller. Keep it secret; revocation immediately disconnects the agent.'));
+            else notes.push(t('登录后立即修改默认账号 admin 的密码。', 'Change the default admin account password immediately after signing in.'));
             return notes;
         }
 
         var METHOD_DESC = {
-            'script-binary': 'isrvd 注册为 systemd 服务（/usr/local/isrvd）；所选 Caddy / APISIX / etcd 组件由独立容器运行。',
-            'script-docker': '自动准备 Docker、Swarm 与 sdnet overlay 网络，使用所选 isrvd:tag 一体化镜像。',
-            'docker': '完全手写 docker run 参数，可自定义容器名、端口、数据目录与网络。'
+            'script-binary': t('isrvd 注册为 systemd 服务（/usr/local/isrvd）；所选 Caddy / APISIX / etcd 组件由独立容器运行。', 'Registers isrvd as a systemd service in /usr/local/isrvd. Selected Caddy / APISIX / etcd components run in separate containers.'),
+            'script-docker': t('自动准备 Docker、Swarm 与 sdnet overlay 网络，使用所选 isrvd:tag 一体化镜像。', 'Prepares Docker, Swarm and the sdnet overlay network automatically, using the selected all-in-one isrvd:tag image.'),
+            'docker': t('完全手写 docker run 参数，可自定义容器名、端口、数据目录与网络。', 'A manual docker run command with customizable container name, ports, data directory and network.')
         };
 
         var ROLE_DESC = {
-            'server': '单机模式，独立管理本机，默认值。',
-            'center': '中控模式，一个控制台管理多台服务器；受管机主动出站接入。',
-            'agent': '受管机模式，主动连接中控，不监听 Web 端口。'
+            'server': t('单机模式，独立管理本机，默认值。', 'Standalone mode manages the local server independently. This is the default.'),
+            'center': t('中控模式，一个控制台管理多台服务器；受管机主动出站接入。', 'Controller mode manages multiple servers in one console. Agents connect outbound.'),
+            'agent': t('受管机模式，主动连接中控，不监听 Web 端口。', 'Agent mode connects to the controller and does not listen on a web port.')
         };
 
         var SYSTEM_COMPONENT_DESC = {
-            'slim': '仅安装 isrvd 系统服务，无需 Docker。',
-            'caddy': '独立 Caddy 容器；管理接口仅监听本机，网关监听 80/443。',
-            'apisix': '独立 APISIX + etcd 容器；自动配置管理密钥，管理接口仅监听本机。',
-            'etcd': '独立 etcd 容器，客户端端口 2379 仅监听本机；不会自动切换 isrvd 的配置存储。',
-            'caddy,etcd': '独立 Caddy 和 etcd 容器；网关监听 80/443，管理接口与 etcd 仅监听本机。'
+            'slim': t('仅安装 isrvd 系统服务，无需 Docker。', 'Installs only the isrvd system service. Docker is not required.'),
+            'caddy': t('独立 Caddy 容器；管理接口仅监听本机，网关监听 80/443。', 'A separate Caddy container. The admin interface listens only on localhost; the gateway uses ports 80/443.'),
+            'apisix': t('独立 APISIX + etcd 容器；自动配置管理密钥，管理接口仅监听本机。', 'Separate APISIX + etcd containers with an automatically configured admin key. Admin interfaces listen only on localhost.'),
+            'etcd': t('独立 etcd 容器，客户端端口 2379 仅监听本机；不会自动切换 isrvd 的配置存储。', 'A separate etcd container with client port 2379 bound to localhost. Does not automatically change isrvd’s configuration storage.'),
+            'caddy,etcd': t('独立 Caddy 和 etcd 容器；网关监听 80/443，管理接口与 etcd 仅监听本机。', 'Separate Caddy and etcd containers. The gateway uses ports 80/443; admin interfaces and etcd listen only on localhost.')
         };
 
         var VARIANT_DESC = {
-            'slim': 'slim 布局：仅 isrvd，体积最小，网关可日后单独部署。',
-            'caddy': 'caddy 布局：一体化镜像内含 Caddy，业务端口为 80/443。',
-            'apisix': 'apisix 布局：一体化镜像内含 APISIX + etcd，业务端口映射至 9080/9443。'
+            'slim': t('slim 布局：仅 isrvd，体积最小，网关可日后单独部署。', 'slim layout: isrvd only, with the smallest image. A gateway can be deployed separately later.'),
+            'caddy': t('caddy 布局：一体化镜像内含 Caddy，业务端口为 80/443。', 'caddy layout: an all-in-one image with Caddy. Gateway ports are 80/443.'),
+            'apisix': t('apisix 布局：一体化镜像内含 APISIX + etcd，业务端口映射至 9080/9443。', 'apisix layout: an all-in-one image with APISIX + etcd. Gateway ports map to 9080/9443.')
         };
 
         var SOURCE_DESC = {
-            'script-binary': ['二进制按出口 IP 自动选择 CNB 或 GitHub；组件使用各自固定镜像源', '二进制包取自 CNB Releases；组件使用各自固定镜像源', '二进制包取自 GitHub Releases；组件使用各自固定镜像源'],
-            'script-docker': ['按出口 IP 自动选择 CNB 或 Docker Hub 镜像源', '镜像取自 docker.cnb.cool/rehiy/isrvd', '镜像取自 Docker Hub（rehiy/isrvd）'],
-            'docker': ['默认使用 Docker Hub；需要国内镜像源请选 CNB，不进行 IP 探测', '镜像取自 docker.cnb.cool/rehiy/isrvd', '镜像取自 Docker Hub（rehiy/isrvd）']
+            'script-binary': [t('二进制按出口 IP 自动选择 CNB 或 GitHub；组件使用各自固定镜像源', 'Selects CNB or GitHub for binaries based on the outbound IP; components use their fixed image sources'), t('二进制包取自 CNB Releases；组件使用各自固定镜像源', 'Binaries from CNB Releases; components use their fixed image sources'), t('二进制包取自 GitHub Releases；组件使用各自固定镜像源', 'Binaries from GitHub Releases; components use their fixed image sources')],
+            'script-docker': [t('按出口 IP 自动选择 CNB 或 Docker Hub 镜像源', 'Selects CNB or Docker Hub based on the outbound IP'), t('镜像取自 docker.cnb.cool/rehiy/isrvd', 'Images from docker.cnb.cool/rehiy/isrvd'), t('镜像取自 Docker Hub（rehiy/isrvd）', 'Images from Docker Hub (rehiy/isrvd)')],
+            'docker': [t('默认使用 Docker Hub；需要国内镜像源请选 CNB，不进行 IP 探测', 'Uses Docker Hub by default. Select CNB for its mirror; no IP detection is performed'), t('镜像取自 docker.cnb.cool/rehiy/isrvd', 'Images from docker.cnb.cool/rehiy/isrvd'), t('镜像取自 Docker Hub（rehiy/isrvd）', 'Images from Docker Hub (rehiy/isrvd)')]
         };
 
         var NET_DESC = {
-            'auto': '不存在时创建单机 bridge 网络 sdnet，容器间可按名称互访。',
-            'existing': '使用已创建的网络，例如跨主机 attachable overlay。',
-            'none': '沿用 Docker 默认 bridge，无法按容器名互访。'
+            'auto': t('不存在时创建单机 bridge 网络 sdnet，容器间可按名称互访。', 'Creates a local sdnet bridge network if missing. Containers can reach each other by name.'),
+            'existing': t('使用已创建的网络，例如跨主机 attachable overlay。', 'Uses an existing network, such as an attachable overlay across hosts.'),
+            'none': t('沿用 Docker 默认 bridge，无法按容器名互访。', 'Uses Docker’s default bridge. Containers cannot reach each other by name.')
         };
 
         function renderBuilder() {
@@ -732,12 +828,12 @@
                 if (systemOnly) setVisible(el, isSystem);
             });
 
-            byId('variant-label').textContent = isSystem ? '组件容器' : '镜像布局';
-            byId('variant-slim-label').textContent = isSystem ? '不安装组件' : 'slim';
-            byId('source-auto-label').textContent = isDocker ? '默认' : '自动';
+            byId('variant-label').textContent = isSystem ? t('组件容器', 'Components') : t('镜像布局', 'Image layout');
+            byId('variant-slim-label').textContent = isSystem ? t('不安装组件', 'No components') : 'slim';
+            byId('source-auto-label').textContent = isDocker ? t('默认', 'Default') : t('自动', 'Auto');
             byId('source-global-label').textContent = isSystem ? 'GitHub' : 'Docker Hub';
             setHint('hint-method', METHOD_DESC[s.method]);
-            setHint('hint-role', ROLE_DESC[s.role] + (isDocker && isAgent ? ' 手写容器使用 slim，不发布任何端口。' : ''));
+            setHint('hint-role', ROLE_DESC[s.role] + (isDocker && isAgent ? t(' 手写容器使用 slim，不发布任何端口。', ' Manual agent containers use slim and publish no ports.') : ''));
             setHint('hint-variant', isSystem ? SYSTEM_COMPONENT_DESC[s.variant] : VARIANT_DESC[s.variant]);
             setVisible(byId('f-tag'), !isSystem);
 
@@ -766,7 +862,7 @@
             });
 
             if (errs.length) {
-                byId('build-cmd').innerHTML = '<span style="color:#fbbf24"># 还需补全以下信息，命令会自动出现在这里：</span>\n'
+                byId('build-cmd').innerHTML = '<span style="color:#fbbf24"># ' + t('还需补全以下信息，命令会自动出现在这里：', 'Complete the following fields to generate your command:') + '</span>\n'
                     + errs.map(function (e) { return '# - ' + esc(e); }).join('\n');
                 byId('install-manage').textContent = '';
                 byId('install-meta').innerHTML = '';
@@ -786,20 +882,20 @@
 
             var meta = [];
             if (isDocker) {
-                meta.push('容器 <code>' + esc(v.cname) + '</code>');
-                meta.push('数据 <code>' + esc(v.data) + '</code>');
-                meta.push('镜像 <code>' + esc(dockerImage(s, v)) + '</code>');
+                meta.push(t('容器', 'Container') + ' <code>' + esc(v.cname) + '</code>');
+                meta.push(t('数据', 'Data') + ' <code>' + esc(v.data) + '</code>');
+                meta.push(t('镜像', 'Image') + ' <code>' + esc(dockerImage(s, v)) + '</code>');
             } else if (isSystem) {
-                meta.push('脚本 <code>isrvd-system.sh</code>');
-                meta.push('安装目录 <code>/usr/local/isrvd</code>');
-                meta.push('配置 <code>/usr/local/isrvd/config.yml</code>');
-                if (v.variant !== 'slim') meta.push('组件数据 <code>/srv/data</code>');
+                meta.push(t('脚本', 'Script') + ' <code>isrvd-system.sh</code>');
+                meta.push(t('安装目录', 'Install directory') + ' <code>/usr/local/isrvd</code>');
+                meta.push(t('配置', 'Configuration') + ' <code>/usr/local/isrvd/config.yml</code>');
+                if (v.variant !== 'slim') meta.push(t('组件数据', 'Component data') + ' <code>/srv/data</code>');
             } else {
-                meta.push('脚本 <code>isrvd-docker.sh</code>');
-                meta.push('容器 <code>isrvd</code>');
-                meta.push('数据 <code>/srv/data</code>');
-                meta.push('配置 <code>/srv/data/conf/isrvd.yml</code>');
-                meta.push('镜像 <code>isrvd:' + esc(v.tag) + '</code>');
+                meta.push(t('脚本', 'Script') + ' <code>isrvd-docker.sh</code>');
+                meta.push(t('容器', 'Container') + ' <code>isrvd</code>');
+                meta.push(t('数据', 'Data') + ' <code>/srv/data</code>');
+                meta.push(t('配置', 'Configuration') + ' <code>/srv/data/conf/isrvd.yml</code>');
+                meta.push(t('镜像', 'Image') + ' <code>isrvd:' + esc(v.tag) + '</code>');
             }
             byId('install-meta').innerHTML = meta.map(function (item) { return '<span>' + item + '</span>'; }).join('');
         }
@@ -830,9 +926,9 @@
                     if (active && active.focus) active.focus({ preventScroll: true });
                 }
             }
-            btn.textContent = copied ? '已复制' : '复制失败，请手动选择';
+            btn.textContent = copied ? t('已复制', 'Copied') : t('复制失败，请手动选择', 'Copy failed; select the text manually');
             clearTimeout(btn.copyTimer);
-            btn.copyTimer = setTimeout(function () { btn.textContent = '复制'; }, 2000);
+            btn.copyTimer = setTimeout(function () { btn.textContent = t('复制', 'Copy'); }, 2000);
         }
 
     </script>
