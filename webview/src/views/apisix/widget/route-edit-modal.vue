@@ -323,21 +323,20 @@ export default toNative(RouteEditModal)
         <textarea v-model="formData.desc" rows="2" class="input" :placeholder="$t('请输入路由描述（可选）')"></textarea>
       </div>
       <div>
-        <label class="form-label">{{ $t('URI（每行一个）') }}<span class="text-red-500">*</span></label>
+        <label class="form-label">{{ $t('URI') }}<span class="text-red-500">*</span></label>
         <textarea v-model="formData.uris" rows="3" class="input font-mono text-sm" :placeholder="$t('请输入 URI（支持通配符）')"></textarea>
-        <p class="text-xs text-slate-400 mt-1">{{ $t('例如：/api/v1/* 或 /api/v2/*') }}</p>
+        <p class="text-xs text-slate-400 mt-1">{{ $t('每行一个，例如：/api/v1/* 或 /api/v2/*') }}</p>
       </div>
       <div>
-        <label class="form-label">{{ $t('Host（每行一个，留空匹配所有）') }}</label>
+        <label class="form-label">{{ $t('Host') }}</label>
         <textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" :placeholder="$t('请输入 Host（可选）')"></textarea>
-        <p class="text-xs text-slate-400 mt-1">{{ $t('例如：example.com 或 *.example.com') }}</p>
+        <p class="text-xs text-slate-400 mt-1">{{ $t('每行一个，留空匹配所有，例如：example.com 或 *.example.com') }}</p>
       </div>
 
       <div class="border border-slate-200 rounded-xl p-4">
         <div class="flex items-center justify-between mb-3">
           <div>
             <label class="form-label">{{ $t('上游配置') }}</label>
-            <p class="text-xs text-slate-400 mt-1">{{ $t('支持直接输入单个上游、引用已有上游或暂不配置上游') }}</p>
           </div>
         </div>
 
@@ -350,6 +349,7 @@ export default toNative(RouteEditModal)
             <div class="text-xs opacity-80 leading-5">{{ $t(item.desc) }}</div>
           </button>
         </div>
+        <p class="text-xs text-slate-400 mt-1 mb-4">{{ $t('支持直接输入单个上游、引用已有上游或暂不配置上游') }}</p>
 
         <div v-if="formData.upstream_mode === 'nodes'" class="space-y-3">
           <div>
@@ -359,8 +359,7 @@ export default toNative(RouteEditModal)
               <ContainerPortSelect v-if="canLoadDockerContainers" :model-value="formData.upstream_nodes[0]?.port || ''" :ports="getPortsByHost(formData.upstream_nodes[0]?.host || '')" :placeholder="$t('请输入端口')" @update:model-value="updateUpstreamNode(0, 'port', $event)" />
               <input v-else :value="formData.upstream_nodes[0]?.port || ''" type="text" class="input" :placeholder="$t('请输入端口')" @input="updateUpstreamNode(0, 'port', ($event.target as HTMLInputElement).value)" />
             </div>
-            <p class="text-xs text-slate-400 mt-2">{{ $t('例如：Host 填写 127.0.0.1 或 nginx，Port 填写 8080') }}</p>
-            <p class="text-xs text-slate-400 mt-1">{{ $t('直接输入模式仅提交一个上游节点；如需多节点负载均衡，请先在「上游管理」中创建后再引用。') }}</p>
+            <p class="text-xs text-slate-400 mt-1">{{ $t('例如：Host 填写 127.0.0.1 或 nginx，Port 填写 8080') }}；{{ $t('直接输入模式仅提交一个上游节点；如需多节点负载均衡，请先在「上游管理」中创建后再引用。') }}</p>
           </div>
 
           <div v-if="routeValidationMessage" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{{ routeValidationMessage }}</div>
@@ -406,11 +405,11 @@ export default toNative(RouteEditModal)
       <div class="border border-slate-200 rounded-xl p-4">
         <div class="mb-3">
           <label class="form-label">{{ $t('引用插件配置') }}</label>
-          <p class="text-xs text-slate-400 mt-1 mb-2">{{ $t('选择已有的插件配置对象，与独立插件配置合并生效') }}</p>
           <select v-model="formData.plugin_config_id" class="input">
             <option value="">{{ $t('不使用') }}</option>
             <option v-for="pc in pluginConfigs" :key="pc.id" :value="pc.id">{{ pc.desc || pc.id }}</option>
           </select>
+          <p class="text-xs text-slate-400 mt-1">{{ $t('选择已有的插件配置对象，与独立插件配置合并生效') }}</p>
         </div>
 
         <div class="pt-3 border-t border-slate-100">

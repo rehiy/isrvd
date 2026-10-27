@@ -250,9 +250,7 @@ export default toNative(ComposeDeploy)
 
         <!-- 附加文件 -->
         <div>
-          <label class="form-label">{{ $t('附加文件') }}
-            <span class="text-xs font-normal text-slate-400">{{ $t('（选填，部署前解压到项目目录）') }}</span>
-          </label>
+          <label class="form-label">{{ $t('附加文件') }}</label>
           <div class="flex items-center gap-2">
             <input v-model="initURL" type="text" :placeholder="$t('请输入 zip 下载 URL')" class="input flex-1" :disabled="loading || !!initFile" />
             <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('或') }}</span>
@@ -269,7 +267,7 @@ export default toNative(ComposeDeploy)
             </label>
           </div>
           <p class="mt-1 text-xs text-slate-400">
-            {{ $t('URL 与上传文件二选一，仅支持 .zip 格式') }}
+            {{ $t('选填，URL 与上传文件二选一，仅支持 .zip 格式，部署前解压到项目目录') }}
             <template v-if="target === 'swarm'">
               ；
               <span class="mt-1 text-xs text-amber-600">

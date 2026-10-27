@@ -266,7 +266,6 @@ export default toNative(UpstreamEditModal)
         <div class="flex items-center justify-between bg-slate-50 px-4 py-3 border-b border-slate-200">
           <div>
             <h2 class="text-sm font-semibold text-slate-700">{{ $t('节点配置') }}</h2>
-            <p class="text-xs text-slate-400 mt-0.5">{{ $t('填写后端服务地址和权重') }}</p>
           </div>
           <button type="button" class="btn btn-secondary text-xs text-emerald-600" @click="addNode()">
             <i class="fas fa-plus"></i>{{ $t('添加节点') }}
@@ -300,6 +299,7 @@ export default toNative(UpstreamEditModal)
             </div>
           </div>
         </div>
+        <p class="text-xs text-slate-400 px-3 pb-3 mt-1">{{ $t('填写后端服务地址和权重') }}</p>
       </div>
       <div class="border-t border-slate-200 pt-4">
         <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" :aria-expanded="showAdvanced" @click="showAdvanced = !showAdvanced">

@@ -44,7 +44,7 @@ export default toNative(ChmodModal)
   <BaseModal v-model="isOpen" :title="$t('修改权限')" :loading="loading" :confirm-disabled="!formData.mode.trim()" @confirm="handleConfirm">
     <form @submit.prevent="handleConfirm">
       <div>
-        <label for="fmFileMode" class="form-label">{{ $t('权限 (八进制)') }}</label>
+        <label for="fmFileMode" class="form-label">{{ $t('权限') }}</label>
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <i class="fas fa-key text-slate-400"></i>

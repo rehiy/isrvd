@@ -125,8 +125,9 @@ export default toNative(HostEditModal)
         <p class="text-xs text-slate-400 mt-1">{{ $t('格式：主机名或 IP [:端口]，如 192.168.1.100:2222，默认端口 22') }}</p>
       </div>
       <div>
-        <label class="form-label">{{ $t('描述') }} <span class="text-slate-400 font-normal">{{ $t('(可选)') }}</span></label>
+        <label class="form-label">{{ $t('描述') }}</label>
         <input v-model="formData.description" type="text" :placeholder="$t('请输入主机描述')" class="input" />
+        <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}</p>
       </div>
 
       <!-- 认证信息 -->
@@ -154,18 +155,19 @@ export default toNative(HostEditModal)
           <input v-model="formData.user" type="text" :placeholder="$t('请输入用户名')" required class="input" autocomplete="off" />
         </div>
         <div>
-          <label class="form-label">{{ $t('密码') }} <span class="text-slate-400 font-normal">{{ $t('(可选)') }}</span></label>
+          <label class="form-label">{{ $t('密码') }}</label>
           <input v-model="formData.password" type="password" :placeholder="isEdit ? $t('留空则保持不变') : $t('请输入登录密码')" class="input" autocomplete="new-password" />
+          <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}</p>
         </div>
         <div>
-          <label class="form-label">{{ $t('SSH 私钥') }} <span class="text-slate-400 font-normal">{{ $t('(可选，优先于密码)') }}</span></label>
+          <label class="form-label">{{ $t('SSH 私钥') }}</label>
           <textarea
             v-model="formData.privateKey"
             rows="5"
             :placeholder="isEdit ? $t('留空则保持不变') : $t('请输入 SSH 私钥')"
             class="input font-mono text-xs"
           />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('PEM 格式私钥，以 "-----BEGIN" 开头，设置后优先使用私钥认证') }}</p>
+          <p class="text-xs text-slate-400 mt-1">{{ $t('可选，PEM 格式私钥，以 "-----BEGIN" 开头，设置后优先使用私钥认证') }}</p>
         </div>
       </div>
     </form>

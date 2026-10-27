@@ -29,11 +29,11 @@ export default toNative(EnvEditor)
     <div>
       <label class="form-label">
         <i class="fas fa-file-code mr-1 text-slate-400"></i>.env
-        <span class="text-xs font-normal text-slate-400">{{ $t('（KEY=VALUE，用于 Compose 变量插值）') }}</span>
       </label>
       <div class="editor-container">
         <Codemirror v-model="content" :style="{ height }" :disabled="disabled" />
       </div>
+      <p class="text-xs text-slate-400 mt-1">{{ $t('每行 KEY=VALUE，用于 Compose 变量插值') }}</p>
     </div>
     <div v-if="warning" class="bg-amber-50 border border-amber-200 rounded-lg p-3">
       <p class="text-sm text-amber-700">

@@ -19,7 +19,7 @@ class ConfigAlert extends Vue {
     selectedWebhookTemplates = new WeakMap<WebhookConfig, string>()
 
     // Go text/template 变量说明；定义为变量后插值输出，避免与 Vue 的 {{ }} 语法冲突
-    templateHint = '支持 Go 模板变量；在 JSON 字段中使用 {{.Title | json}} 可安全处理引号和换行。'
+    templateHint = 'JSON 格式，支持 Go 模板变量；在 JSON 字段中使用 {{.Title | json}} 可安全处理引号和换行。'
     get standardWebhookPreview() {
         return JSON.stringify(
             {
@@ -190,7 +190,7 @@ export default toNative(ConfigAlert)
               <p class="mt-1 text-xs text-slate-400">{{ $t('发送时由后端根据实际告警自动生成，配置中无需保存模板内容。') }}</p>
             </div>
             <div v-else>
-              <label class="form-label">{{ $t('请求体模板（JSON）') }}</label>
+              <label class="form-label">{{ $t('请求体模板') }}</label>
               <textarea v-model="hook.template" rows="4" class="input font-mono text-xs" :placeholder="$t('留空则发送 isrvd 标准事件 JSON')"></textarea>
               <p class="mt-1 text-xs text-slate-400">{{ $t(templateHint) }}</p>
             </div>

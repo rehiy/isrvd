@@ -56,7 +56,6 @@ export default toNative(UnzipModal)
         <p class="text-lg text-slate-700 mb-2">
           {{ $t('确定要解压') }} <strong class="text-slate-900">{{ file.name }}</strong> {{ $t('吗？') }}
         </p>
-        <p class="text-sm text-slate-500">{{ $t('目标目录留空时，文件将解压到当前目录') }}</p>
       </div>
       <form class="space-y-4" @submit.prevent="handleConfirm">
         <div>
@@ -74,7 +73,7 @@ export default toNative(UnzipModal)
               :placeholder="$t('请输入目录名，如：output')"
             >
           </div>
-          <p class="text-xs text-slate-400 mt-1">{{ $t('只能输入目录名，不允许包含 / 等路径分隔符') }}</p>
+          <p class="text-xs text-slate-400 mt-1">{{ $t('目标目录留空时，文件将解压到当前目录；只能输入目录名，不允许包含 / 等路径分隔符') }}</p>
         </div>
       </form>
     </div>

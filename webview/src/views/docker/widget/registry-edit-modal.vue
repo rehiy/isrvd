@@ -83,17 +83,20 @@ export default toNative(RegistryEditModal)
         <input v-model="formData.url" type="text" :placeholder="$t('请输入仓库地址')" required class="input" />
       </div>
       <div>
-        <label class="form-label">{{ $t('描述') }} <span class="text-slate-400 font-normal">{{ $t('(可选)') }}</span></label>
+        <label class="form-label">{{ $t('描述') }}</label>
         <input v-model="formData.description" type="text" :placeholder="$t('请输入仓库描述')" class="input" />
+        <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}</p>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
-          <label class="form-label">{{ $t('用户名') }} <span class="text-slate-400 font-normal">{{ $t('(可选)') }}</span></label>
+          <label class="form-label">{{ $t('用户名') }}</label>
           <input v-model="formData.username" type="text" :placeholder="$t('请输入用户名')" class="input" autocomplete="off" />
+          <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}</p>
         </div>
         <div>
-          <label class="form-label">{{ $t('密码') }} <span class="text-slate-400 font-normal">{{ $t('(可选)') }}</span></label>
+          <label class="form-label">{{ $t('密码') }}</label>
           <input v-model="formData.password" type="password" :placeholder="isEdit ? $t('留空则保持不变') : $t('请输入仓库密码')" class="input" autocomplete="new-password" />
+          <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}</p>
         </div>
       </div>
     </form>

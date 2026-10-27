@@ -168,7 +168,6 @@ export default toNative(PluginConfigPanel)
     <div class="flex items-center justify-between">
       <div>
         <label class="form-label">{{ $t('插件配置') }}</label>
-        <p class="text-xs text-slate-400 mt-1">{{ showImport ? $t('可直接编辑 JSON，也支持从现有路由导入') : $t('可直接编辑 JSON，或从插件列表添加') }}</p>
       </div>
       <div class="flex items-center gap-2">
         <button class="btn-panel-toggle" :class="showPluginPanel ? 'btn-panel-toggle-active' : 'btn-panel-toggle-inactive'" @click="openPluginPanel"><i class="fas fa-puzzle-piece mr-1"></i>{{ $t('添加插件') }}</button>
@@ -225,7 +224,7 @@ export default toNative(PluginConfigPanel)
 
     <!-- JSON 编辑器 -->
     <textarea :value="pluginsJson" rows="8" :class="['input font-mono text-sm mt-3', pluginsJsonError ? 'border-red-300 bg-red-50' : '']" :placeholder="$t('请输入插件配置 JSON...')" @blur="syncPluginsFromJson" @input="onPluginsJsonInput"></textarea>
-    <p class="mt-1 text-xs text-slate-400">示例：{"key-auth": {"key": "your-api-key"}}</p>
+    <p class="text-xs text-slate-400 mt-1">{{ showImport ? $t('可直接编辑 JSON，也支持从现有路由导入') : $t('可直接编辑 JSON，或从插件列表添加') }}；{{ $t('示例：') }}<code v-text="'{&quot;key-auth&quot;: {&quot;key&quot;: &quot;your-api-key&quot;}}'"></code></p>
     <p v-if="pluginsJsonError" class="text-xs text-red-500 mt-1">{{ pluginsJsonError }}</p>
   </div>
 </template>

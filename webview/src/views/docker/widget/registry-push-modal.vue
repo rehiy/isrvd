@@ -96,9 +96,9 @@ export default toNative(RegistryPushModal)
         </select>
       </div>
       <div>
-        <label class="form-label">{{ $t('命名空间') }} <span class="text-slate-400 font-normal">{{ $t('(可选)') }}</span></label>
+        <label class="form-label">{{ $t('命名空间') }}</label>
         <input v-model="pushForm.namespace" type="text" :placeholder="$t('请输入命名空间（可选）')" class="input" />
-        <p class="mt-1 text-xs text-slate-400">{{ $t('镜像将被推送为:') }} {{ pushTargetPreview }}</p>
+        <p class="text-xs text-slate-400 mt-1">{{ $t('可选，镜像将被推送为：{0}', pushTargetPreview) }}</p>
       </div>
     </form>
 

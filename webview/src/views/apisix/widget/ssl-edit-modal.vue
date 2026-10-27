@@ -107,8 +107,7 @@ export default toNative(SSLEditModal)
       <div>
         <label class="form-label">{{ $t('SNI 域名') }} <span class="text-red-500">*</span></label>
         <textarea v-model="formData.snisText" rows="3" class="input font-mono" :placeholder="$t('请输入 SNI（每行一个）')"></textarea>
-        <p class="text-xs text-slate-400 mt-1">{{ $t('每行一个域名，支持通配符，例如：example.com 或 *.example.com') }}</p>
-        <p class="text-xs text-slate-400 mt-1">{{ $t('每行一个域名，也支持用英文逗号分隔。') }}</p>
+        <p class="text-xs text-slate-400 mt-1">{{ $t('每行一个域名，也支持英文逗号分隔和通配符，例如：example.com 或 *.example.com') }}</p>
       </div>
 
       <div>

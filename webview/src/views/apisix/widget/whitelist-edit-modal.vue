@@ -185,7 +185,6 @@ export default toNative(WhitelistEditModal)
       <div class="space-y-3">
         <div>
           <label class="form-label">{{ $t('key-auth 插件配置') }}</label>
-          <p class="mt-1 text-xs text-slate-400">{{ $t('配置路由认证插件参数') }}</p>
         </div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>

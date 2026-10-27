@@ -191,12 +191,9 @@ export default toNative(JobEditModal)
           <p class="text-xs text-slate-400 mt-1">{{ $t('例如：python:3.12-slim、nginx:alpine') }}</p>
         </div>
         <div>
-          <label class="form-label">
-            {{ $t('额外挂载') }}
-            <span class="text-xs font-normal text-slate-400 normal-case ml-1">{{ $t('每行 /host:/container[:ro]') }}</span>
-          </label>
+          <label class="form-label">{{ $t('额外挂载') }}</label>
           <textarea v-model="formData.volumes" rows="2" class="input font-mono resize-none" :placeholder="$t('请输入挂载配置（可选）')" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('例如：/data/files:/data:ro') }}</p>
+          <p class="text-xs text-slate-400 mt-1">{{ $t('每行 /host:/container[:ro]，例如：/data/files:/data:ro') }}</p>
         </div>
         <div>
           <label class="form-label">{{ $t('超时时间（秒）') }}</label>

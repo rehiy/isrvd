@@ -681,18 +681,19 @@ export default toNative(RouteEditModal)
             <div class="space-y-4">
               <!-- 覆盖请求方法 -->
               <div>
-                <label class="form-label">{{ $t('覆盖请求方法') }} <span class="text-slate-400 font-normal">{{ $t('（可选）') }}</span></label>
+                <label class="form-label">{{ $t('覆盖请求方法') }}</label>
                 <input v-model="formData.proxyRewriteMethod" type="text" class="input font-mono text-sm" :placeholder="$t('如 GET、POST，留空不修改')" />
+                <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}</p>
               </div>
               <!-- URI 整体替换 -->
               <div>
-                <label class="form-label">{{ $t('URI 整体替换') }} <span class="text-slate-400 font-normal">{{ $t('（可选）') }}</span></label>
+                <label class="form-label">{{ $t('URI 整体替换') }}</label>
                 <input v-model="formData.proxyRewriteUri" type="text" class="input font-mono text-sm" :placeholder="$t('如 /backend/{http.request.uri.path.1}')" />
-                <p class="text-xs text-slate-400 mt-1">{{ $t('完整替换转发给上游的 URI，留空不修改') }}</p>
+                <p class="text-xs text-slate-400 mt-1">{{ $t('可选，完整替换转发给上游的 URI，留空不修改') }}</p>
               </div>
               <!-- 路径前后缀裁剪 -->
               <div>
-                <p class="form-label">{{ $t('路径前后缀裁剪') }} <span class="text-slate-400 font-normal">{{ $t('（可选）') }}</span></p>
+                <p class="form-label">{{ $t('路径前后缀裁剪') }}</p>
                 <div class="grid grid-cols-2 gap-3 mt-1">
                   <div>
                     <label class="form-label">{{ $t('去掉前缀') }}</label>
@@ -703,10 +704,11 @@ export default toNative(RouteEditModal)
                     <input v-model="formData.proxyStripPathSuffix" type="text" class="input font-mono text-sm" :placeholder="$t('如 .php')" />
                   </div>
                 </div>
+                <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}</p>
               </div>
               <!-- 子串查找替换 -->
               <div>
-                <p class="form-label">{{ $t('子串查找替换') }} <span class="text-slate-400 font-normal">{{ $t('（可选）') }}</span></p>
+                <p class="form-label">{{ $t('子串查找替换') }}</p>
                 <div class="grid grid-cols-2 gap-3 mt-1">
                   <div>
                     <label class="form-label">{{ $t('查找') }}</label>
@@ -717,6 +719,7 @@ export default toNative(RouteEditModal)
                     <input v-model="formData.proxyUriSubstringReplace" type="text" class="input font-mono text-sm" :placeholder="$t('如 /new')" />
                   </div>
                 </div>
+                <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}</p>
               </div>
             </div>
           </ToggleCard>
@@ -794,7 +797,6 @@ export default toNative(RouteEditModal)
           <!-- 请求头 -->
           <div>
             <label class="form-label">{{ $t('请求头') }}</label>
-            <p class="text-xs text-slate-400 mt-1 mb-2">{{ $t('例如：字段 X-Real-IP，值 {http.request.remote.host}') }}</p>
             <div v-if="formData.requestHeaders.length" class="space-y-2 mb-2">
               <div v-for="(op, idx) in formData.requestHeaders" :key="idx" class="flex gap-2 items-center">
                 <select v-model="op.op" class="input text-sm w-24 shrink-0">
@@ -811,11 +813,11 @@ export default toNative(RouteEditModal)
             <button type="button" class="btn-add-row" @click="addHeaderOp('request')">
               <i class="fas fa-plus text-xs"></i>{{ $t('添加请求头操作') }}
             </button>
+            <p class="text-xs text-slate-400 mt-1">{{ $t('例如：字段 X-Real-IP，值 {http.request.remote.host}') }}</p>
           </div>
           <!-- 响应头 -->
           <div>
             <label class="form-label">{{ $t('响应头') }}</label>
-            <p class="text-xs text-slate-400 mt-1 mb-2">{{ $t('例如：字段 X-Frame-Options，值 SAMEORIGIN') }}</p>
             <div v-if="formData.responseHeaders.length" class="space-y-2 mb-2">
               <div v-for="(op, idx) in formData.responseHeaders" :key="idx" class="flex gap-2 items-center">
                 <select v-model="op.op" class="input text-sm w-24 shrink-0">
@@ -832,6 +834,7 @@ export default toNative(RouteEditModal)
             <button type="button" class="btn-add-row" @click="addHeaderOp('response')">
               <i class="fas fa-plus text-xs"></i>{{ $t('添加响应头操作') }}
             </button>
+            <p class="text-xs text-slate-400 mt-1">{{ $t('例如：字段 X-Frame-Options，值 SAMEORIGIN') }}</p>
           </div>
         </div>
       </ToggleCard>

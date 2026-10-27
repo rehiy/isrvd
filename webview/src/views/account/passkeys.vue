@@ -246,7 +246,7 @@ export default toNative(AccountPasskeys)
     >
       <div class="space-y-4">
         <div>
-          <label class="form-label">{{ $t('凭证名称') }} <span class="text-slate-400 font-normal">{{ $t('（可选）') }}</span></label>
+          <label class="form-label">{{ $t('凭证名称') }}</label>
           <input
             v-model="registerDisplayName"
             type="text"
@@ -255,6 +255,7 @@ export default toNative(AccountPasskeys)
             maxlength="50"
             @keyup.enter="handleRegisterPasskey"
           />
+          <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}</p>
         </div>
         <p class="text-sm text-slate-500">
           {{ $t('请确保您的设备支持 Passkey（如 Touch ID、Face ID 或安全密钥）。') }}

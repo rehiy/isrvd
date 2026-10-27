@@ -58,8 +58,9 @@ export default toNative(NetworkCreateModal)
         </select>
       </div>
       <div>
-        <label class="form-label">{{ $t('子网 CIDR（可选）') }}</label>
+        <label class="form-label">{{ $t('子网 CIDR') }}</label>
         <input v-model="formData.subnet" type="text" :placeholder="$t('请输入子网 CIDR')" class="input" />
+        <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}</p>
       </div>
     </form>
 
