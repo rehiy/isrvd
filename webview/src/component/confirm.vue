@@ -58,7 +58,7 @@ export default toNative(ConfirmModal)
     </div>
 
     <template #confirm-text>
-      {{ portal.confirm.loading ? $t('处理中...') : $t(portal.confirm.confirmText) }}
+      {{ $t(portal.confirm.confirmText) }}
     </template>
   </BaseModal>
 </template>

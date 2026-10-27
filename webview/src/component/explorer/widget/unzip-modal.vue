@@ -78,6 +78,6 @@ export default toNative(UnzipModal)
         </div>
       </form>
     </div>
-    <template #confirm-text>{{ loading ? $t('解压中...') : $t('开始解压') }}</template>
+    <template #confirm-text>{{ $t('解压') }}</template>
   </BaseModal>
 </template>

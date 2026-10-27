@@ -79,6 +79,7 @@ class ExplorerPanel extends Vue {
     calculatingDirs = new Set<string>()
     downloadingFile = ''
     mkdirMode = false
+    mkdirLoading = false
     private refreshDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
     formatFileSize = formatFileSize
@@ -183,15 +184,19 @@ class ExplorerPanel extends Vue {
     startBatchDelete() { if (this.selectedCount > 0) this.deleteModalRef?.show(this.adapter, this.selectedFiles) }
 
     startMkdir() { this.mkdirMode = true }
-    cancelMkdir() { this.mkdirMode = false }
+    cancelMkdir() { if (!this.mkdirLoading) this.mkdirMode = false }
     async confirmMkdir(name: string) {
         const dirName = name.trim()
-        if (!dirName) return
+        if (this.mkdirLoading || !dirName) return
+        this.mkdirLoading = true
         try {
             await this.adapter.mkdir(this.currentPath.replace(/\/+$/, '') + '/' + dirName)
             this.portal.showNotification('success', this.$t('创建成功'))
-            this.cancelMkdir(); this.loadFiles()
-        } catch {}
+            this.mkdirMode = false
+            this.loadFiles()
+        } catch {} finally {
+            this.mkdirLoading = false
+        }
     }
 
     startRename(file: FileInfo) { this.renameModalRef?.show(this.adapter, file) }
@@ -391,6 +396,7 @@ export default toNative(ExplorerPanel)
             <tbody class="divide-y divide-slate-100">
               <MkdirRow
                 v-if="mkdirMode"
+                :loading="mkdirLoading"
                 :can-select="canSelect"
                 @confirm="(name: string) => confirmMkdir(name)"
                 @cancel="cancelMkdir()"

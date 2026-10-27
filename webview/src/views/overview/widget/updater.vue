@@ -192,7 +192,7 @@ export default toNative(SystemUpdater)
           @click="openUpdaterModal"
         >
           <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying || upgrading }"></i>
-          <span>{{ deploying ? $t('升级中...') : upgrading ? $t('等待重启...') : $t('升级容器') }}</span>
+          <span>{{ $t('升级容器') }}</span>
         </button>
         <!-- 二进制原地升级 -->
         <button
@@ -203,7 +203,7 @@ export default toNative(SystemUpdater)
           @click="handleBinaryUpgrade"
         >
           <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying || upgrading }"></i>
-          <span>{{ deploying ? $t('升级中...') : upgrading ? $t('等待重启...') : $t('升级二进制') }}</span>
+          <span>{{ $t('升级二进制') }}</span>
         </button>
       </div>
     </div>
@@ -212,7 +212,7 @@ export default toNative(SystemUpdater)
     <BaseModal
       v-model="updaterModalOpen"
       :title="$t('升级当前 Docker 容器')"
-      :loading="deploying"
+      :loading="deploying || upgrading"
       :confirm-disabled="!updaterContainer.trim()"
       confirm-class="btn-primary"
       @confirm="handleDeployUpdater"
@@ -240,7 +240,7 @@ export default toNative(SystemUpdater)
       </form>
 
       <template #confirm-text>
-        {{ deploying ? $t('升级中...') : upgrading ? $t('等待重启...') : $t('部署并升级') }}
+        {{ $t('部署并升级') }}
       </template>
     </BaseModal>
   </template>

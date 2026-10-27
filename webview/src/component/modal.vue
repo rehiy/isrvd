@@ -12,6 +12,7 @@ class BaseModal extends Vue {
     @Prop({ type: Boolean, default: true }) readonly showFooter!: boolean
     @Prop({ type: Boolean, default: false }) readonly confirmDisabled!: boolean
     @Prop({ type: Boolean, default: false }) readonly closeDisabled!: boolean
+    @Prop({ type: Boolean, default: false }) readonly allowCloseWhileLoading!: boolean
     @Prop({ type: String, default: 'btn-primary' }) readonly confirmClass!: string
     @Prop({ type: Boolean, default: true }) readonly showConfirm!: boolean
     @Prop({ type: String, default: 'max-w-3xl' }) readonly maxWidthClass!: string
@@ -43,11 +44,19 @@ class BaseModal extends Vue {
     }
 
     handleConfirm() {
+        if (this.loading || this.confirmDisabled || !this.showConfirm) return
         this.$emit('confirm')
     }
 
+    handleSubmit(event: Event) {
+        if (this.loading || this.confirmDisabled || !this.showConfirm) {
+            event.preventDefault()
+            event.stopPropagation()
+        }
+    }
+
     handleCancel() {
-        if (this.closeDisabled) return
+        if (this.closeDisabled || (this.loading && !this.allowCloseWhileLoading)) return
         this.$emit('cancel')
         this.close()
     }
@@ -111,24 +120,24 @@ export default toNative(BaseModal)
             </div>
             <div class="action-group">
               <slot name="header-actions"></slot>
-              <button type="button" class="btn-icon-sm" :disabled="loading || closeDisabled" @click="handleCancel">
+              <button type="button" class="btn-icon-sm" :disabled="closeDisabled || (loading && !allowCloseWhileLoading)" @click="handleCancel">
                 <i class="fas fa-times"></i>
               </button>
             </div>
           </div>
 
           <!-- Body -->
-          <div :class="['relative flex-1 min-h-0', bodyClass]" :inert="loading">
+          <div :class="['relative flex-1 min-h-0', bodyClass]" :inert="loading" @submit.capture="handleSubmit">
             <slot></slot>
           </div>
 
           <!-- Footer -->
           <div v-if="showFooter" class="flex justify-end gap-3 px-6 py-4 border-t border-slate-200/50 bg-slate-50/50 flex-shrink-0">
             <slot name="footer">
-              <button type="button" class="btn btn-secondary" :disabled="loading || closeDisabled" @click="handleCancel">
+              <button type="button" class="btn btn-secondary" :disabled="closeDisabled || (loading && !allowCloseWhileLoading)" @click="handleCancel">
                 <slot name="cancel-text">{{ $t('取消') }}</slot>
               </button>
-              <button v-if="showConfirm" type="button" class="btn" :class="confirmClass" :disabled="loading || confirmDisabled" @click="handleConfirm">
+              <button v-if="showConfirm" type="button" class="btn" :class="confirmClass" :disabled="loading || confirmDisabled" :aria-busy="loading" @click="handleConfirm">
                 <i v-if="loading" class="fas fa-spinner fa-spin"></i>
                 <slot name="confirm-text">{{ $t('确认') }}</slot>
               </button>

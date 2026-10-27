@@ -73,8 +73,6 @@ class RedeployModal extends Vue {
     }
 
     get confirmText() {
-        if (this.submitting) return this.$t('重建中...')
-        if (this.modalLoading) return this.$t('读取中...')
         return this.loadedRevision ? this.$t('使用此配置重建') : this.$t('更新并重建')
     }
 
@@ -224,7 +222,7 @@ export default toNative(RedeployModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="title" :loading="modalLoading" :close-disabled="submitting" :confirm-disabled="!composeContent.trim() || !!pendingSwitch" max-width-class="max-w-6xl" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="title" :loading="modalLoading || submitting" allow-close-while-loading :close-disabled="submitting" :confirm-disabled="!composeContent.trim() || !!pendingSwitch" max-width-class="max-w-6xl" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
     <template #header-actions>
       <button type="button" class="btn-icon-sm" :disabled="modalLoading" :title="refreshTitle" @click="requestLoad(true)">
         <i :class="refreshing ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"></i>

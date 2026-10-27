@@ -76,6 +76,7 @@ export const useUIStore = defineStore('ui', () => {
     }
 
     async function handleConfirm() {
+        if (confirm.loading || !confirm.show) return
         if (!confirm.onConfirm) return closeConfirm()
         confirm.loading = true
         try {

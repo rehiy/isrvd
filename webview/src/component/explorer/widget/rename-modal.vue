@@ -142,6 +142,6 @@ export default toNative(RenameModal)
         </div>
       </div>
     </form>
-    <template #confirm-text>{{ loading ? $t('处理中...') : $t('确认') }}</template>
+    <template #confirm-text>{{ $t('重命名 / 移动') }}</template>
   </BaseModal>
 </template>

@@ -28,29 +28,40 @@ class ModifyModal extends Vue {
 
     isOpen = false
     loading = false
+    saving = false
+    loadGeneration = 0
     adapter: ExplorerAdapter | null = null
     formData = { filename: '', content: '', path: '' }
     readonly extensions = [css(), go(), html(), javascript(), json(), markdown(), python(), sql(), xml(), yaml()]
 
     async show(adapter: ExplorerAdapter, file: FileInfo) {
+        if (this.saving) return
+        const generation = ++this.loadGeneration
         this.adapter = adapter
         this.formData.path = file.path
         this.formData.filename = file.name
         this.formData.content = ''
         this.isOpen = true
+        this.loading = true
         try {
-            this.loading = true
-            this.formData.content = await adapter.readFile(file.path)
+            const content = await adapter.readFile(file.path)
+            if (generation === this.loadGeneration && this.isOpen) this.formData.content = content
         } catch {
-            this.isOpen = false
+            if (generation === this.loadGeneration) this.isOpen = false
         } finally {
-            this.loading = false
+            if (generation === this.loadGeneration) this.loading = false
         }
     }
 
+    handleCancel() {
+        this.loadGeneration++
+        this.loading = false
+    }
+
     async handleConfirm() {
-        if (!this.adapter) return
+        if (this.loading || !this.isOpen || !this.adapter) return
         this.loading = true
+        this.saving = true
         try {
             await this.adapter.writeFile(this.formData.path, this.formData.content)
             this.portal.showNotification('success', this.$t('文件保存成功'))
@@ -58,6 +69,7 @@ class ModifyModal extends Vue {
             this.isOpen = false
         } catch {} finally {
             this.loading = false
+            this.saving = false
         }
     }
 }
@@ -66,10 +78,10 @@ export default toNative(ModifyModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="$t('编辑: ') + formData.filename" :loading="loading" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('编辑: ') + formData.filename" :loading="loading" :allow-close-while-loading="!saving" :close-disabled="saving" @confirm="handleConfirm" @cancel="handleCancel">
     <div class="editor-container">
       <Codemirror v-model="formData.content" class="h-[60vh]" :extensions="extensions" :disabled="loading" />
     </div>
-    <template #confirm-text>{{ loading ? $t('保存中...') : $t('保存文件') }}</template>
+    <template #confirm-text>{{ $t('保存') }}</template>
   </BaseModal>
 </template>

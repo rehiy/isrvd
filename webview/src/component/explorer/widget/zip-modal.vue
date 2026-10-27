@@ -55,6 +55,6 @@ export default toNative(ZipModal)
       </p>
       <p class="text-sm text-slate-500">{{ $t('压缩后的文件将保存在当前目录') }}</p>
     </div>
-    <template #confirm-text>{{ loading ? $t('压缩中...') : $t('开始压缩') }}</template>
+    <template #confirm-text>{{ $t('压缩') }}</template>
   </BaseModal>
 </template>

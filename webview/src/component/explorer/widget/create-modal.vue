@@ -80,6 +80,6 @@ export default toNative(CreateModal)
         ></textarea>
       </div>
     </form>
-    <template #confirm-text>{{ loading ? $t('新建中...') : $t('新建文件') }}</template>
+    <template #confirm-text>{{ $t('新建') }}</template>
   </BaseModal>
 </template>

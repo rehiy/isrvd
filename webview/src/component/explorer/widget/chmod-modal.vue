@@ -70,6 +70,6 @@ export default toNative(ChmodModal)
         </div>
       </div>
     </form>
-    <template #confirm-text>{{ loading ? $t('修改中...') : $t('确认修改') }}</template>
+    <template #confirm-text>{{ $t('保存') }}</template>
   </BaseModal>
 </template>

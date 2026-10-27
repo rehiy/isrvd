@@ -299,7 +299,7 @@ export default toNative(Nodes)
   </div>
 
   <!-- 加入集群弹窗 -->
-  <BaseModal v-model="showJoinModal" :title="$t('加入集群')" :loading="joinTokensLoading" :show-confirm="false">
+  <BaseModal v-model="showJoinModal" :title="$t('加入集群')" :loading="joinTokensLoading" allow-close-while-loading :show-confirm="false">
     <div v-if="joinTokensLoading" class="empty-state">
       <div class="spinner-lg"></div>
       <p class="text-slate-500">{{ $t('加载中...') }}</p>

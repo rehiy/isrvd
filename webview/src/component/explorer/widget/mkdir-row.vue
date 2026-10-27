@@ -15,16 +15,18 @@ import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 class MkdirRow extends Vue {
     /** 是否显示 checkbox 占位列（与文件列表对齐） */
     @Prop({ default: false }) canSelect!: boolean
+    @Prop({ type: Boolean, default: false }) readonly loading!: boolean
 
     name = ''
 
     handleConfirm() {
         const trimmed = this.name.trim()
-        if (!trimmed) return
+        if (this.loading || !trimmed) return
         this.$emit('confirm', trimmed)
     }
 
     handleCancel() {
+        if (this.loading) return
         this.$emit('cancel')
     }
 }
@@ -48,6 +50,7 @@ export default toNative(MkdirRow)
           v-model="name"
           class="input text-sm py-1 flex-1"
           :placeholder="$t('请输入目录名称')"
+          :disabled="loading"
           autofocus
           @keyup.enter="handleConfirm()"
           @keyup.esc="handleCancel()"
@@ -57,10 +60,10 @@ export default toNative(MkdirRow)
     <!-- 操作列 -->
     <td class="px-4 py-3 whitespace-nowrap">
       <div class="table-actions">
-        <button class="btn btn-primary" @click="handleConfirm()">
-          <i class="fas fa-check"></i><span>{{ $t('确认') }}</span>
+        <button type="button" class="btn btn-primary" :disabled="loading || !name.trim()" @click="handleConfirm()">
+          <i :class="loading ? 'fas fa-spinner fa-spin' : 'fas fa-check'"></i><span>{{ $t('新建') }}</span>
         </button>
-        <button class="btn btn-secondary" @click="handleCancel()">
+        <button type="button" class="btn btn-secondary" :disabled="loading" @click="handleCancel()">
           <i class="fas fa-xmark"></i><span>{{ $t('取消') }}</span>
         </button>
       </div>

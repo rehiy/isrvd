@@ -72,6 +72,6 @@ export default toNative(DeleteModal)
       </p>
     </div>
     <p v-if="files.length > 1" class="detail-value-mono mb-4">{{ previewText }}</p>
-    <template #confirm-text>{{ loading ? $t('删除中...') : $t('确认删除') }}</template>
+    <template #confirm-text>{{ $t('确认删除') }}</template>
   </BaseModal>
 </template>
