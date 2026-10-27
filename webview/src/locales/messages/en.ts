@@ -128,6 +128,7 @@ const messages: Record<string, string> = {
     'Passkey 认证中...': 'Authenticating with Passkey...',
     '使用 OIDC 登录': 'Sign in with OIDC',
     '密码登录已禁用，请联系管理员配置其他登录方式。': 'Password login is disabled, contact the administrator to configure another method.',
+    '当前使用 Header 认证，请通过上游认证网关访问。': 'Header authentication is enabled, please access through the upstream authentication gateway.',
     '语言': 'Language',
     '切换语言': 'Switch language',
 

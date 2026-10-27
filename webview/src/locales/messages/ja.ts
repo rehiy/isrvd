@@ -230,6 +230,7 @@ const messages: Record<string, string> = {
     '使用 OIDC 登录': 'OIDC でサインイン',
     // Password login is disabled, contact the administrator to configure another method.
     '密码登录已禁用，请联系管理员配置其他登录方式。': 'パスワードログインは無効です。他のログイン方法を設定するよう管理者にお問い合わせください。',
+    '当前使用 Header 认证，请通过上游认证网关访问。': 'Header 認証が有効です。上流の認証ゲートウェイ経由でアクセスしてください。',
     // Language
     '语言': '言語',
     // Switch language

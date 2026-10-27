@@ -109,7 +109,7 @@ export default toNative(Login)
 
         <!-- Form -->
         <form class="space-y-5" @submit.prevent="handleLogin">
-          <template v-if="!portal.passwordDisabled">
+          <template v-if="!portal.passwordDisabled && !portal.headerMode">
             <div>
               <label for="username" class="form-label">
                 {{ $t('用户名') }}
@@ -154,7 +154,11 @@ export default toNative(Login)
             </button>
           </template>
 
-          <template v-if="portal.oidcEnabled || portal.passkeyEnabled">
+          <div v-if="portal.headerMode" class="text-center text-slate-400 text-sm py-4">
+            <i class="fas fa-lock mr-2"></i>{{ $t('当前使用 Header 认证，请通过上游认证网关访问。') }}
+          </div>
+
+          <template v-else-if="portal.oidcEnabled || portal.passkeyEnabled">
             <div :class="portal.passwordDisabled ? 'space-y-3' : 'border-t border-slate-200 pt-4 space-y-3'">
               <button
                 v-if="portal.passkeyEnabled"
@@ -174,7 +178,7 @@ export default toNative(Login)
             </div>
           </template>
 
-          <div v-if="portal.passwordDisabled && !portal.oidcEnabled && !portal.passkeyEnabled" class="text-center text-slate-400 text-sm py-4">
+          <div v-else-if="portal.passwordDisabled && !portal.oidcEnabled && !portal.passkeyEnabled" class="text-center text-slate-400 text-sm py-4">
             <i class="fas fa-lock mr-2"></i>{{ $t('密码登录已禁用，请联系管理员配置其他登录方式。') }}
           </div>
         </form>
