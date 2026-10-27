@@ -24,6 +24,7 @@ class CronJobs extends Vue {
 
     jobs: CronJob[] = []
     loading = false
+    runningJobs = new Set<string>()
     searchText = ''
     types: CronTypeInfo[] = []
 
@@ -126,10 +127,14 @@ class CronJobs extends Vue {
     }
 
     async runNow(job: CronJob) {
+        if (this.runningJobs.has(job.id)) return
+        this.runningJobs.add(job.id)
         try {
             await api.cronJobRun(job.id)
             this.portal.showNotification('success', this.$t('任务 "{0}" 已触发', job.name))
-        } catch {}
+        } catch {} finally {
+            this.runningJobs.delete(job.id)
+        }
     }
 
     openLogs(job: CronJob) {
@@ -255,8 +260,8 @@ export default toNative(CronJobs)
               <td class="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{{ formatTime(job.lastRun) }}</td>
               <td class="px-4 py-3">
                 <div class="flex items-center justify-end gap-1.5">
-                  <button v-if="portal.hasPerm('POST /api/cron/jobs/:id/run') && canOperateJob(job)" class="btn-icon btn-icon-emerald" :title="$t('立即执行')" @click="runNow(job)">
-                    <i class="fas fa-play text-xs"></i>
+                  <button v-if="portal.hasPerm('POST /api/cron/jobs/:id/run') && canOperateJob(job)" class="btn-icon btn-icon-emerald" :title="$t('立即执行')" :disabled="runningJobs.has(job.id)" :aria-busy="runningJobs.has(job.id)" @click="runNow(job)">
+                    <i :class="runningJobs.has(job.id) ? 'fas fa-spinner fa-spin text-xs' : 'fas fa-play text-xs'"></i>
                   </button>
                   <button v-if="portal.hasPerm('GET /api/cron/jobs/:id/logs')" class="btn-icon btn-icon-slate" :title="$t('执行日志')" @click="openLogs(job)">
                     <i class="fas fa-list-ul text-xs"></i>
@@ -316,7 +321,7 @@ export default toNative(CronJobs)
           </div>
 
           <div class="flex items-center justify-end gap-1.5 pt-3 mt-3 border-t border-slate-100">
-            <button v-if="portal.hasPerm('POST /api/cron/jobs/:id/run') && canOperateJob(job)" class="btn-icon btn-icon-emerald" :title="$t('立即执行')" @click="runNow(job)"><i class="fas fa-play text-xs"></i></button>
+            <button v-if="portal.hasPerm('POST /api/cron/jobs/:id/run') && canOperateJob(job)" class="btn-icon btn-icon-emerald" :title="$t('立即执行')" :disabled="runningJobs.has(job.id)" :aria-busy="runningJobs.has(job.id)" @click="runNow(job)"><i :class="runningJobs.has(job.id) ? 'fas fa-spinner fa-spin text-xs' : 'fas fa-play text-xs'"></i></button>
             <button v-if="portal.hasPerm('GET /api/cron/jobs/:id/logs')" class="btn-icon btn-icon-slate" :title="$t('执行日志')" @click="openLogs(job)"><i class="fas fa-list-ul text-xs"></i></button>
             <button v-if="portal.hasPerm('PUT /api/cron/jobs/:id') && canOperateJob(job)" class="btn-icon btn-icon-blue" :title="$t('编辑')" @click="openEdit(job)"><i class="fas fa-pen text-xs"></i></button>
             <button v-if="portal.hasPerm('DELETE /api/cron/jobs/:id')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="openDelete(job)"><i class="fas fa-trash text-xs"></i></button>
