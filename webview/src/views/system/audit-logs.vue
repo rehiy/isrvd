@@ -329,7 +329,7 @@ export default toNative(AuditLogs)
         </div>
       </template>
       <div class="editor-container">
-        <Codemirror :model-value="detailBody" class="h-[50vh]" :extensions="jsonExtensions" :disabled="true" />
+        <Codemirror :model-value="detailBody" :style="{ height: '50vh' }" :extensions="jsonExtensions" :disabled="true" />
       </div>
     </BaseModal>
   </div>

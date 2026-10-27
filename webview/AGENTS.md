@@ -320,6 +320,7 @@ webview/src/
 
 - 页面级表单容器 `max-w-4xl space-y-4`（左对齐限宽，不居中）；弹窗内**禁止**重复写 `max-w-*`，宽度由 `BaseModal` 的 `maxWidthClass` 控制（默认 `max-w-3xl`，需要更宽时只改该 prop）
 - 编辑器/双栏内容（如 Compose 部署的 yml + .env）不设限宽，占满 `card-body`
+- CodeMirror 统一包裹在 `.editor-container` 内，实际 `.cm-editor` 默认高度 `15rem`，内容区独立滚动；需要特殊高度时使用 `<Codemirror :style="{ height: '...' }">`，禁止在组件包装层用 `h-*` / `min-h-*` / `max-h-*`（包装层为 `display: contents`，高度不生效）。保留全页、预览和日志的专用尺寸；脚本示例放入编辑器 `placeholder`，不预填实际内容
 - label：`block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1`，input 通用 `.input`，help `text-xs text-slate-400 mt-1`
 - 密钥/密码：后端敏感字段 `json:"-"`，前端 `type="password" autocomplete="new-password"`，留空保存=不修改，placeholder："留空保持不变"
 

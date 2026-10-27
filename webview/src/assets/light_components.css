@@ -109,6 +109,14 @@
     @apply rounded-xl overflow-hidden border border-slate-200;
   }
 
+  .editor-container .cm-editor {
+    height: 15rem;
+  }
+
+  .editor-container .cm-scroller {
+    overflow: auto;
+  }
+
   /* 单选模式 / 来源选择卡片 */
   .option-card          { @apply text-left rounded-xl border p-3 transition-colors; }
   .option-card-inactive { @apply border-slate-200 bg-white text-slate-600 hover:border-slate-300; }

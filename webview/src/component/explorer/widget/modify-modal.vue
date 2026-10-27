@@ -80,7 +80,7 @@ export default toNative(ModifyModal)
 <template>
   <BaseModal v-model="isOpen" :title="$t('编辑: ') + formData.filename" :loading="loading" :allow-close-while-loading="!saving" :close-disabled="saving" @confirm="handleConfirm" @cancel="handleCancel">
     <div class="editor-container">
-      <Codemirror v-model="formData.content" class="h-[60vh]" :extensions="extensions" :disabled="loading" />
+      <Codemirror v-model="formData.content" :style="{ height: '60vh' }" :extensions="extensions" :disabled="loading" />
     </div>
     <template #confirm-text>{{ $t('保存') }}</template>
   </BaseModal>

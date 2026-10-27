@@ -222,8 +222,7 @@ export default toNative(JobEditModal)
       <div>
         <label class="form-label">{{ $t('脚本内容') }} <span class="text-red-500">*</span></label>
         <div class="editor-container">
-          <Codemirror v-model="formData.content" class="h-60" :disabled="modalLoading" :placeholder="$t('请输入脚本内容')" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('例如：#!/bin/bash') }}<br>echo "hello"</p>
+          <Codemirror v-model="formData.content" :disabled="modalLoading" :placeholder="'#!/bin/bash\necho &quot;hello&quot;'" />
         </div>
       </div>
 

@@ -648,7 +648,20 @@ def check_redundant_badge_classes(filepath, lines, tmpl, tmpl_line0):
                 report(filepath, tmpl_line0 + i - 1, "WARN", f"小号 badge 应使用 {cls}，避免手写等价 Tailwind")
 
 
+def check_code_editor_height(filepath, lines, tmpl, tmpl_line0):
+    content = '\n'.join(lines)
+    for match in re.finditer(r'<Codemirror\b[^>]*>', content, re.DOTALL):
+        class_match = re.search(r'(?<![:\w-])class\s*=\s*"([^"]*)"', match.group())
+        if not class_match:
+            continue
+        if re.search(r'(?:^|\s)(?:[\w-]+:)*(?:(?:min|max)-)?h-', class_match.group(1)):
+            lineno = content[:match.start()].count('\n') + 1
+            report(filepath, lineno, "ERROR",
+                   "CodeMirror 包装层高度不生效：特殊高度使用 :style 的 height，默认高度由 .editor-container 提供")
+
+
 CHECKS = [
+    check_code_editor_height,
     check_toolbar_layout,
     check_toolbar_icon,
     check_empty_state,
