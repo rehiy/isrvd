@@ -57,6 +57,8 @@ isrvd
 
 **安装脚本**：系统服务使用 `/install/` 或本地 `isrvd-system.sh`，全容器化使用 `/install/?script=docker` 或本地 `isrvd-docker.sh`。在 `install` 前导出上述环境变量；默认角色为单机，系统服务写入仅 root 可读的 systemd drop-in（`installer.conf`），Docker 脚本传入容器环境。Docker 的 agent 模式不发布 8080（Caddy/APISIX 业务端口仍按镜像发布）。更新及卸载使用对应脚本，`update` 保留现有角色，不读取安装器环境来切换角色。
 
+系统服务选择组件时可执行 `bash isrvd-system.sh install --components caddy --data /mnt/isrvd-data`；适用于单机、中控和受管机，组件数据目录默认 `/srv/data`，isrvd 主配置仍为 `/usr/local/isrvd/config.yml`。目录须为非根绝对路径且不能与安装目录重叠，组件子路径不能通过符号链接重定向。系统服务 `update` 从所属组件的实际 bind 挂载恢复目录，不接受 `--data` 迁移数据；挂载路径不一致时在停服前中止。`uninstall` 保留实际组件数据目录，删除主配置前请备份。
+
 ```bash
 export ISRVD_MODE=agent
 export ISRVD_CENTER_URL=https://center.example.com

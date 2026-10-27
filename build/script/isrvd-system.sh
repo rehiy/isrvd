@@ -4,7 +4,7 @@ set -euo pipefail
 # ------------------------------------------
 # isrvd 系统服务 + 组件容器管理脚本；全容器化请使用 isrvd-docker.sh。
 # 用法:
-#   isrvd-system.sh install [--components caddy|apisix|etcd] [--cn|--global|--auto]
+#   isrvd-system.sh install [--components caddy|apisix|etcd] [--data PATH] [--cn|--global|--auto]
 #   isrvd-system.sh update [--cn|--global|--auto]
 #   isrvd-system.sh download [--cn|--global|--auto]
 #   isrvd-system.sh uninstall
@@ -25,6 +25,11 @@ SYSTEM_COMPONENTS=""
 COMPONENT_NAMES=()
 COMPONENT_CONTAINERS=()
 COMPONENT_CONFIG_DIR="$DOCKER_DATA_DIR/conf/components"
+declare -A COMPONENT_MOUNTS=(
+    [etcd]="/etcd:/etcd-data"
+    [caddy]="/conf/components/caddy.json:/etc/caddy/caddy.json:ro /caddy:/data/caddy /caddy-config:/config"
+    [apisix]="/conf/components/apisix.yaml:/usr/local/apisix/conf/config.yaml:ro"
+)
 INSTALLER_LABEL="io.isrvd.installer"
 CADDY_IMAGE="caddy:2.8.4"
 APISIX_IMAGE="apache/apisix:3.16.0-debian"
@@ -87,7 +92,7 @@ init_arch() {
 }
 
 parse_options() {
-    local command="$1" gateway=""
+    local command="$1" gateway="" data=""
     shift
     while [ "$#" -gt 0 ]; do
         case "$1" in
@@ -100,11 +105,17 @@ parse_options() {
                 [ -z "$gateway" ] || fail "Choose only one gateway"
                 gateway="${1#--}"
                 ;;
-            --components)
-                [ "$command" = install ] || fail "Component selection is only valid for install"
-                [ "$#" -ge 2 ] && [ -n "$2" ] || fail "--components requires a value"
-                [ -z "$SYSTEM_COMPONENTS" ] || fail "Specify --components only once"
-                SYSTEM_COMPONENTS="$2"
+            --components|--data)
+                [ "$command" = install ] || fail "$1 is only valid for install"
+                [ "$#" -ge 2 ] && [ -n "$2" ] || fail "$1 requires a value"
+                case "$1" in
+                    --components)
+                        [ -z "$SYSTEM_COMPONENTS" ] || fail "Specify --components only once"
+                        SYSTEM_COMPONENTS="$2" ;;
+                    --data)
+                        [ -z "$data" ] || fail "Specify --data only once"
+                        data="$2" ;;
+                esac
                 shift
                 ;;
             --docker|--tag|--variant) fail "Fully containerized deployment requires isrvd-docker.sh" ;;
@@ -117,6 +128,11 @@ parse_options() {
     [ -z "$gateway" ] || [ -z "$SYSTEM_COMPONENTS" ] || fail "Use a gateway shortcut or --components, not both"
     SYSTEM_COMPONENTS="${SYSTEM_COMPONENTS:-${gateway:-none}}"
     select_components
+    if [ "${#COMPONENT_NAMES[@]}" -gt 0 ]; then
+        set_component_data_dir "${data:-$DOCKER_DATA_DIR}"
+    else
+        [ -z "$data" ] || fail "--data requires at least one component"
+    fi
 }
 
 select_components() {
@@ -454,6 +470,46 @@ preflight_components() {
     done
 }
 
+set_component_data_dir() {
+    local data="$1" install_dir resolved paths
+    [[ "$data" = /* && "$data" != *:* && "$data" != *\\* && ! "$data" =~ [[:cntrl:]] && ! "$data" =~ (^|/)\.\.?(/|$) ]] \
+        || fail "Component data must be an absolute directory without dot segments, colons, backslashes or control characters"
+    data=$(realpath -m -- "$data") || fail "Cannot resolve component data directory (realpath is required)"
+    install_dir=$(realpath -m -- "$INSTALL_DIR") || fail "Cannot resolve installation directory"
+    [ "$data" != / ] || fail "Component data must not use the root directory"
+    [[ "$data" != "$install_dir" && "$data" != "$install_dir/"* && "$install_dir" != "$data/"* ]] \
+        || fail "Component data must not overlap the installation directory"
+    [ ! -e "$data" ] || [ -d "$data" ] || fail "Component data path is not a directory"
+    paths=("$data/"{etcd,caddy,caddy-config,conf/components/caddy.json,conf/components/apisix.yaml})
+    resolved=$(realpath -m -- "${paths[@]}") || fail "Cannot resolve component data paths"
+    [ "$resolved" = "$(printf '%s\n' "${paths[@]}")" ] || fail "Component data paths must not be redirected by symbolic links"
+    DOCKER_DATA_DIR="$data"
+    COMPONENT_CONFIG_DIR="$data/conf/components"
+}
+
+restore_component_data_dir() {
+    local container component mount destination suffix mode writable source root common=""
+    local mounts=()
+    for container in "${COMPONENT_CONTAINERS[@]}"; do
+        component="${container#isrvd-}"
+        component="${component%-update-backup}"
+        [ -n "${COMPONENT_MOUNTS[$component]:-}" ] || fail "Unknown component container: $container"
+        read -r -a mounts <<< "${COMPONENT_MOUNTS[$component]}"
+        for mount in "${mounts[@]}"; do
+            IFS=: read -r suffix destination mode <<< "$mount"
+            writable=true
+            [ "$mode" != ro ] || writable=false
+            source=$(docker inspect --format "{{range .Mounts}}{{if and (eq .Destination \"$destination\") (eq .Type \"bind\") (eq .RW $writable)}}{{println .Source}}{{end}}{{end}}" "$container") \
+                || fail "Cannot read component data mount: $container"
+            [[ -n "$source" && "$source" = *"$suffix" ]] || fail "Unexpected component data mount: $container ($destination)"
+            root="${source%"$suffix"}"
+            set_component_data_dir "$root"
+            [ -z "$common" ] || [ "$common" = "$DOCKER_DATA_DIR" ] || fail "Component data mounts use different directories; refusing to change them"
+            common="$DOCKER_DATA_DIR"
+        done
+    done
+}
+
 discover_components() {
     local component backup action="${1:-update}"
     COMPONENT_NAMES=()
@@ -478,6 +534,7 @@ discover_components() {
             fi
         done
     fi
+    restore_component_data_dir
 }
 
 validate_apisix_key() {
@@ -622,28 +679,24 @@ component_ready() {
 }
 
 run_component_container() {
-    local component="$1" image="$2"
+    local component="$1" image="$2" mount
     local options=(--name "isrvd-$component" --restart unless-stopped --network host
         --label "$INSTALLER_LABEL=component" --security-opt no-new-privileges:true)
+    local mounts=() args=()
+    read -r -a mounts <<< "${COMPONENT_MOUNTS[$component]:-}"
+    for mount in "${mounts[@]}"; do options+=(-v "$DOCKER_DATA_DIR$mount"); done
     case "$component" in
         etcd)
-            docker run -d "${options[@]}" -v "$DOCKER_DATA_DIR/etcd:/etcd-data" "$image" \
-                /usr/local/bin/etcd --name isrvd-etcd --data-dir /etcd-data \
-                --listen-client-urls http://127.0.0.1:2379 --advertise-client-urls http://127.0.0.1:2379 \
-                --listen-peer-urls http://127.0.0.1:2380 --initial-advertise-peer-urls http://127.0.0.1:2380 \
-                --initial-cluster isrvd-etcd=http://127.0.0.1:2380
+            args=(/usr/local/bin/etcd --name isrvd-etcd --data-dir /etcd-data
+                --listen-client-urls http://127.0.0.1:2379 --advertise-client-urls http://127.0.0.1:2379
+                --listen-peer-urls http://127.0.0.1:2380 --initial-advertise-peer-urls http://127.0.0.1:2380
+                --initial-cluster isrvd-etcd=http://127.0.0.1:2380)
             ;;
-        caddy)
-            docker run -d "${options[@]}" \
-                -v "$COMPONENT_CONFIG_DIR/caddy.json:/etc/caddy/caddy.json:ro" \
-                -v "$DOCKER_DATA_DIR/caddy:/data/caddy" -v "$DOCKER_DATA_DIR/caddy-config:/config" \
-                "$image" caddy run --config /etc/caddy/caddy.json --resume
-            ;;
-        apisix)
-            docker run -d "${options[@]}" -e APISIX_ADMIN_KEY \
-                -v "$COMPONENT_CONFIG_DIR/apisix.yaml:/usr/local/apisix/conf/config.yaml:ro" "$image"
-            ;;
+        caddy) args=(caddy run --config /etc/caddy/caddy.json --resume) ;;
+        apisix) options+=(-e APISIX_ADMIN_KEY) ;;
+        *) fail "Unknown component: $component" ;;
     esac
+    docker run -d "${options[@]}" "$image" "${args[@]}"
 }
 
 install_components() {
@@ -759,7 +812,7 @@ download() {
 
 print_usage() {
     cat <<EOF
-Usage: $0 install [--components none|caddy|apisix|etcd|caddy,etcd] [--cn|--global|--auto]
+Usage: $0 install [--components none|caddy|apisix|etcd|caddy,etcd] [--data PATH] [--cn|--global|--auto]
        $0 update [--cn|--global|--auto]
        $0 download [--cn|--global|--auto]
        $0 uninstall
@@ -767,11 +820,13 @@ Usage: $0 install [--components none|caddy|apisix|etcd|caddy,etcd] [--cn|--globa
 System service + component containers only. Fully containerized deployments use isrvd-docker.sh.
 Commands:
   install     Install isrvd as a systemd service and optional component containers
-  update      Update the binary and owned components; preserve configuration and role
+  update      Update the binary and owned components; preserve configuration, role and data mounts
   download    Download the latest binary package to the current directory
-  uninstall   Remove the system service and owned components; preserve /srv/data
+  uninstall   Remove the system service and owned components; preserve their data directory
 
 Sources: --auto (default), --cn (CNB), --global (GitHub).
+--data PATH selects the component data directory for install only (default: /srv/data).
+The directory must be absolute, non-root and outside $INSTALL_DIR; component subpaths must not redirect via symlinks.
 Components run in separate host-network containers; APISIX includes etcd.
 Component admin APIs and etcd listen only on 127.0.0.1; gateways use ports 80/443.
 --caddy/--apisix select component containers; --systemd is accepted but not required.
@@ -785,7 +840,8 @@ Install reads and persists exported environment variables:
                          Passed to the APISIX container and saved as apisix.adminKey in root-only config.yml (0600)
 Installation failures roll back new service files and containers, preserving component data.
 Interrupted component updates block further updates; restore backups or use uninstall to remove owned backups.
-Updates preserve the installed component key and role. Centers use portmap.range and portmap.bind in $CONFIG_FILE.
+Updates preserve the installed component key, role and actual bind mounts; inconsistent data paths abort before stopping components.
+Changing --data in an install command does not migrate an existing deployment. Centers use portmap.range and portmap.bind in $CONFIG_FILE.
 
 Config: $CONFIG_FILE; component data: $DOCKER_DATA_DIR.
 Uninstall deletes $INSTALL_DIR including config.yml; back it up first.
