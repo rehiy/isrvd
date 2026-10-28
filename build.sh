@@ -4,6 +4,8 @@
 set -e
 
 rm -rf dist
+rm -rf public/assets
+rm -rf public/index.html
 
 ###########################################
 # 尝试获取版本号
@@ -49,6 +51,9 @@ build() {
 # 前端构建
 ###########################################
 
+echo ""
+echo "==> 构建前端"
+
 cd webview/
 
 npm ci
@@ -56,16 +61,24 @@ npm run build
 
 cd ../
 
+echo ""
+echo "==> 复制前端构建结果"
+cp -a webview/dist/* public/
+
 ###########################################
 # 生成 OpenAPI 文档
 ###########################################
 
+echo ""
 echo "==> 生成 OpenAPI 文档"
 go run ./server/cmd/openapi-gen/ -o public/openapi/data.json
 
 ###########################################
 # 编译后端
 ###########################################
+
+echo ""
+echo "==> 编译后端"
 
 # Linux
 build linux amd64
@@ -82,6 +95,9 @@ build windows arm64
 ###########################################
 # 打包分发
 ###########################################
+
+echo ""
+echo "==> 打包分发"
 
 cp config.yml dist/
 cp build/script/isrvd-system.sh build/script/isrvd-docker.sh dist/
