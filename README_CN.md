@@ -72,11 +72,14 @@ Docker 版默认管理员账号为 `admin` / `admin`，首次登录成功后会�
 
 安装拆为两个独立脚本，无需互相下载或加载；均可使用 `--auto`（默认）、`--cn`、`--global` 选择软件源：
 
-- **系统服务 + 组件容器（`isrvd-system.sh`）**：isrvd 以 systemd 服务运行；使用 `--components` 按需安装独立 Caddy、APISIX、etcd 容器。APISIX 自动包含 etcd，`caddy,etcd` 可组合；Caddy 与 APISIX 共用 80/443，不能同时选择。组件使用 host 网络，管理接口和 etcd 仅监听 `127.0.0.1`，数据默认保存在 `/srv/data`，安装时可用 `--data PATH` 自定义组件数据目录。不选择组件时无需 Docker，也不接受 `--data`。
+- **系统服务 + 组件容器（`isrvd-system.sh`）**：isrvd 以 systemd 服务运行；默认不选网关，直接执行 `install`、不传 `--components` 即仅安装 isrvd。可按需用 `--components caddy|apisix` 选择网关：`caddy` 安装独立 Caddy 容器、不带 etcd，`apisix` 自动安装独立 APISIX 和 etcd 容器。首页再次点击已选网关即可取消选择；`--components none` 仅保留为旧命令兼容。新安装不支持独立 etcd 或逗号分隔的组件组合；历史部署中所属组件仍可更新和卸载。组件使用 host 网络，管理接口和 etcd 仅监听 `127.0.0.1`，数据默认保存在 `/srv/data`，安装时可用 `--data PATH` 自定义组件数据目录。不选择网关时无需 Docker，也不接受 `--data`。
 - **全容器化（`isrvd-docker.sh`）**：自动准备 Docker、单节点 Swarm 和可挂载的 overlay 网络 `sdnet`，运行所选 `isrvd:tag` 一体化镜像。默认 tag 为 `slim`；内置 `caddy`、`apisix` 标签自动匹配端口布局，自定义标签用 `--variant slim|caddy|apisix` 指定布局。
 
 ```bash
-# 系统服务 + Caddy（自定义组件数据目录）；或 APISIX / etcd（默认 /srv/data）
+# 仅安装系统服务（默认），无需 Docker
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install
+
+# 系统服务 + Caddy（自定义组件数据目录）；或 APISIX + etcd（默认 /srv/data）
 bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --components caddy --data /mnt/isrvd-data
 bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --components apisix
 

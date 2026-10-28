@@ -72,11 +72,14 @@ The Docker edition ships with the default admin account `admin` / `admin`; the f
 
 Two standalone scripts are provided; neither downloads or loads the other. Both accept `--auto` (default), `--cn`, or `--global` to select the source:
 
-- **System service + component containers (`isrvd-system.sh`)**: isrvd runs as a systemd service. Select separate Caddy, APISIX, or etcd containers with `--components`. APISIX includes etcd; `caddy,etcd` is also supported. Caddy and APISIX cannot be selected together because both use ports 80/443. Components use host networking, with admin APIs and etcd bound to `127.0.0.1`, and persist data in `/srv/data` by default. Set `--data PATH` during installation to customize the component data directory. Docker is not required, and `--data` is not accepted, when no components are selected.
+- **System service + component containers (`isrvd-system.sh`)**: isrvd runs as a systemd service. No gateway is selected by default; run `install` without `--components` to install only isrvd. Optionally select `--components caddy|apisix`: `caddy` installs a separate Caddy container without etcd, and `apisix` automatically installs separate APISIX and etcd containers. The homepage lets you deselect a gateway by clicking it again. `--components none` remains accepted for compatibility with existing commands. Standalone etcd and comma-separated component combinations are not supported for new installations; existing owned components remain supported for updates and uninstall. Components use host networking, with admin APIs and etcd bound to `127.0.0.1`, and persist data in `/srv/data` by default. Set `--data PATH` during installation to customize the component data directory. Docker is not required, and `--data` is not accepted, when no gateway is selected.
 - **Fully containerized (`isrvd-docker.sh`)**: prepares Docker, a single-node Swarm and the attachable overlay network `sdnet`, then starts the selected all-in-one `isrvd:tag` image. The default tag is `slim`. Built-in `caddy` and `apisix` tags select their port layouts automatically; use `--variant slim|caddy|apisix` for a custom tag.
 
 ```bash
-# System service + Caddy (custom data directory), or APISIX / etcd (default /srv/data)
+# System service only (default); no Docker required
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install
+
+# System service + Caddy (custom data directory), or APISIX + etcd (default /srv/data)
 bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --components caddy --data /mnt/isrvd-data
 bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --components apisix
 

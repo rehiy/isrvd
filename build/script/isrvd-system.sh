@@ -4,7 +4,7 @@ set -euo pipefail
 # ------------------------------------------
 # isrvd 系统服务 + 组件容器管理脚本；全容器化请使用 isrvd-docker.sh。
 # 用法:
-#   isrvd-system.sh install [--components caddy|apisix|etcd] [--data PATH] [--cn|--global|--auto]
+#   isrvd-system.sh install [--components caddy|apisix] [--data PATH] [--cn|--global|--auto]
 #   isrvd-system.sh update [--cn|--global|--auto]
 #   isrvd-system.sh download [--cn|--global|--auto]
 #   isrvd-system.sh uninstall
@@ -126,34 +126,22 @@ parse_options() {
     done
     [ "$command" = install ] || return 0
     [ -z "$gateway" ] || [ -z "$SYSTEM_COMPONENTS" ] || fail "Use a gateway shortcut or --components, not both"
-    SYSTEM_COMPONENTS="${SYSTEM_COMPONENTS:-${gateway:-none}}"
+    SYSTEM_COMPONENTS="${SYSTEM_COMPONENTS:-$gateway}"
     select_components
     if [ "${#COMPONENT_NAMES[@]}" -gt 0 ]; then
         set_component_data_dir "${data:-$DOCKER_DATA_DIR}"
     else
-        [ -z "$data" ] || fail "--data requires at least one component"
+        [ -z "$data" ] || fail "--data requires a gateway selection"
     fi
 }
 
 select_components() {
-    local component caddy=0 apisix=0 etcd=0
-    local requested=()
-    IFS=, read -r -a requested <<< "$SYSTEM_COMPONENTS"
-    [[ "$SYSTEM_COMPONENTS" != ,* && "$SYSTEM_COMPONENTS" != *, && "$SYSTEM_COMPONENTS" != *,,* ]] || fail "Invalid component list"
-    for component in "${requested[@]}"; do
-        case "$component" in
-            none) [ "$SYSTEM_COMPONENTS" = none ] || fail "none cannot be combined with components" ;;
-            caddy) caddy=1 ;;
-            apisix) apisix=1; etcd=1 ;;
-            etcd) etcd=1 ;;
-            *) fail "Unknown component: $component" ;;
-        esac
-    done
-    [ "$caddy$apisix" != 11 ] || fail "Caddy and APISIX both use ports 80/443; choose one gateway"
-    COMPONENT_NAMES=()
-    [ "$etcd" -eq 0 ] || COMPONENT_NAMES+=(etcd)
-    [ "$caddy" -eq 0 ] || COMPONENT_NAMES+=(caddy)
-    [ "$apisix" -eq 0 ] || COMPONENT_NAMES+=(apisix)
+    case "$SYSTEM_COMPONENTS" in
+        ""|none) COMPONENT_NAMES=() ;;
+        caddy) COMPONENT_NAMES=(caddy) ;;
+        apisix) COMPONENT_NAMES=(etcd apisix) ;;
+        *) fail "Choose --components caddy or apisix, or omit it for isrvd only; APISIX automatically includes etcd. Standalone etcd and component combinations are not supported" ;;
+    esac
 }
 
 # 解析发布源（国内 CNB / 全球 GitHub 与 Docker Hub），同一次运行只探测一次。
@@ -812,24 +800,28 @@ download() {
 
 print_usage() {
     cat <<EOF
-Usage: $0 install [--components none|caddy|apisix|etcd|caddy,etcd] [--data PATH] [--cn|--global|--auto]
+Usage: $0 install [--components caddy|apisix] [--data PATH] [--cn|--global|--auto]
        $0 update [--cn|--global|--auto]
        $0 download [--cn|--global|--auto]
        $0 uninstall
 
 System service + component containers only. Fully containerized deployments use isrvd-docker.sh.
 Commands:
-  install     Install isrvd as a systemd service and optional component containers
+  install     Install isrvd as a systemd service and optional gateway containers
   update      Update the binary and owned components; preserve configuration, role and data mounts
   download    Download the latest binary package to the current directory
   uninstall   Remove the system service and owned components; preserve their data directory
 
 Sources: --auto (default), --cn (CNB), --global (GitHub).
+No gateway is selected by default; omit --components to install only isrvd, without Docker.
+--components optionally selects caddy or apisix (APISIX + etcd).
+--components none is still accepted for compatibility with existing commands.
+Standalone etcd and component combinations are not supported for new installations.
 --data PATH selects the component data directory for install only (default: /srv/data).
 The directory must be absolute, non-root and outside $INSTALL_DIR; component subpaths must not redirect via symlinks.
-Components run in separate host-network containers; APISIX includes etcd.
+Components run in separate host-network containers; APISIX automatically installs its etcd dependency.
 Component admin APIs and etcd listen only on 127.0.0.1; gateways use ports 80/443.
---caddy/--apisix select component containers; --systemd is accepted but not required.
+--caddy/--apisix select the corresponding gateway option; --systemd is accepted but not required.
 This script never updates or removes the fully containerized isrvd deployment.
 
 Install reads and persists exported environment variables:

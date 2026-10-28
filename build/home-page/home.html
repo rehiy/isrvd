@@ -151,7 +151,7 @@
         .chip-group { display: flex; flex-wrap: wrap; gap: .45rem; }
         .chip { display: inline-flex; align-items: center; gap: .35rem; padding: .5rem .65rem; border: 1px solid var(--line); border-radius: 4px; background: transparent; color: var(--muted); font-size: .75rem; line-height: 1.3; transition: border-color .15s, background .15s; }
         .chip:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-        .chip[aria-checked="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+        .chip[aria-checked="true"], .chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
         .chip:disabled { opacity: .4; cursor: not-allowed; }
         .chip-tag { font-size: .5625rem; opacity: .8; }
         .wizard-hint { margin-top: .7rem; color: var(--muted); font-size: .6875rem; line-height: 1.8; }
@@ -424,14 +424,12 @@
                         </div>
                     </div>
                     <div class="wizard-row">
-                        <div class="wizard-label" id="variant-label">组件容器</div>
+                        <div class="wizard-label" id="variant-label">网关方案</div>
                         <div class="wizard-body">
-                            <div class="chip-group" role="radiogroup" aria-labelledby="variant-label">
-                                <button type="button" class="chip" role="radio" data-opt="variant" data-val="slim" onclick="setOpt('variant','slim')"><span id="variant-slim-label">不安装组件</span><span class="chip-tag">默认</span></button>
-                                <button type="button" class="chip" role="radio" data-opt="variant" data-val="caddy" onclick="setOpt('variant','caddy')">Caddy</button>
-                                <button type="button" class="chip" role="radio" data-opt="variant" data-val="apisix" onclick="setOpt('variant','apisix')">APISIX + etcd</button>
-                                <button type="button" class="chip" role="radio" data-opt="variant" data-val="etcd" data-system-only="true" onclick="setOpt('variant','etcd')">etcd</button>
-                                <button type="button" class="chip" role="radio" data-opt="variant" data-val="caddy,etcd" data-system-only="true" onclick="setOpt('variant','caddy,etcd')">Caddy + etcd</button>
+                            <div class="chip-group" id="variant-options" role="group" aria-labelledby="variant-label" aria-describedby="hint-variant">
+                                <button type="button" id="variant-slim" class="chip" role="radio" data-opt="variant" data-val="slim" onclick="setOpt('variant','slim')" hidden>slim<span class="chip-tag">默认</span></button>
+                                <button type="button" class="chip" aria-pressed="false" data-opt="variant" data-val="caddy" onclick="setOpt('variant','caddy')">Caddy</button>
+                                <button type="button" class="chip" aria-pressed="false" data-opt="variant" data-val="apisix" onclick="setOpt('variant','apisix')">APISIX + etcd</button>
                             </div>
                             <p class="wizard-hint" id="hint-variant"></p>
                             <label class="block mt-3 text-xs muted" id="f-component-data" hidden>
@@ -588,8 +586,7 @@
                 ['中控地址', 'Controller URL'],
                 ['节点令牌', 'Node token'],
                 ['在中控「节点管理」页生成', 'Generate in the controller’s Nodes page'],
-                ['组件容器', 'Components'],
-                ['不安装组件', 'No components'],
+                ['网关方案', 'Gateway option'],
                 ['组件数据目录（可选）', 'Component data directory (optional)'],
                 ['保存组件证书、配置及 etcd 数据，留空使用 /srv/data；isrvd 主配置仍在 /usr/local/isrvd/config.yml。', 'Stores component certificates, configuration and etcd data. Leave blank for /srv/data; the main isrvd configuration remains in /usr/local/isrvd/config.yml.'],
                 ['默认', 'Default'],
@@ -660,8 +657,8 @@
             link.addEventListener('click', function () { if (!desktopNav.matches) navMenu.open = false; });
         });
         // Command builder：所有选项实时生成一条可直接粘贴执行的命令
-        var SCRIPT_URL = 'https://isrvd.rehiy.com/install/';
-        var DOCKER_SCRIPT_URL = SCRIPT_URL + '?script=docker';
+        var SCRIPT_URL = 'https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh';
+        var DOCKER_SCRIPT_URL = 'https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh';
         var buildState = { method: 'script-binary', role: 'server', variant: 'slim', source: 'auto', net: 'auto' };
 
         function byId(id) { return document.getElementById(id); }
@@ -678,15 +675,14 @@
 
         function selectedVariant(s) {
             if (s.method === 'docker' && s.role === 'agent') return 'slim';
-            if (s.method !== 'script-binary') {
-                if (s.variant === 'caddy,etcd') return 'caddy';
-                if (s.variant === 'etcd') return 'slim';
-            }
             return s.variant;
         }
 
         function setOpt(key, val) {
-            if (buildState[key] === val) return;
+            if (buildState[key] === val) {
+                if (key !== 'variant' || buildState.method !== 'script-binary' || val === 'slim') return;
+                val = 'slim';
+            }
             buildState[key] = val;
             renderBuilder();
         }
@@ -739,6 +735,9 @@
             var isAgent = s.role === 'agent';
 
             v.variant = selectedVariant(s);
+            if (['slim', 'caddy', 'apisix'].indexOf(v.variant) === -1) {
+                addError('variant-label', '网关仅支持 Caddy 或 APISIX + etcd，不支持独立 etcd 或自定义组件组合', 'Only Caddy or APISIX + etcd gateways are supported. Standalone etcd and custom component combinations are not supported');
+            }
             if (s.method === 'script-binary' && v.variant !== 'slim') {
                 v.componentData = parseDataDir('in-component-data', addError);
                 var installDir = '/usr/local/isrvd';
@@ -802,7 +801,7 @@
         }
 
         function installerRun(args, url) {
-            return 'bash -c "$(curl -fsSL ' + shq(url || SCRIPT_URL) + ')" isrvd-installer ' + args;
+            return 'bash <(curl -fsSL ' + shq(url || SCRIPT_URL) + ')' + (args ? ' ' + args : '');
         }
 
         function sourceFlag(s) {
@@ -810,9 +809,9 @@
         }
 
         function buildBinary(s, v) {
-            var components = v.variant === 'slim' ? 'none' : v.variant;
-            var dataFlag = v.componentData ? ' --data ' + shq(v.componentData) : '';
-            return [envPrefix(s, v) + installerRun('install --components ' + components + dataFlag + sourceFlag(s))];
+            var componentFlag = v.variant === 'slim' ? '' : ' --components ' + v.variant;
+            var dataFlag = componentFlag && v.componentData ? ' --data ' + shq(v.componentData) : '';
+            return [envPrefix(s, v) + installerRun('install' + componentFlag + dataFlag + sourceFlag(s))];
         }
 
         function buildScriptDocker(s, v) {
@@ -955,7 +954,7 @@
         }
 
         var METHOD_DESC = {
-            'script-binary': t('isrvd 注册为 systemd 服务（/usr/local/isrvd）；所选 Caddy / APISIX / etcd 组件由独立容器运行。', 'Registers isrvd as a systemd service in /usr/local/isrvd. Selected Caddy / APISIX / etcd components run in separate containers.'),
+            'script-binary': t('isrvd 注册为 systemd 服务（/usr/local/isrvd）；可选 Caddy 或 APISIX 网关，选择 APISIX 自动部署其 etcd 依赖，均由独立容器运行。', 'Registers isrvd as a systemd service in /usr/local/isrvd. Optionally deploy Caddy or APISIX in separate containers; APISIX automatically installs its etcd dependency.'),
             'script-docker': t('自动准备 Docker、Swarm 与 sdnet overlay 网络，使用所选 isrvd:tag 一体化镜像。', 'Prepares Docker, Swarm and the sdnet overlay network automatically, using the selected all-in-one isrvd:tag image.'),
             'docker': t('完全手写 docker run 参数，可自定义容器名、端口、数据目录与网络。', 'A manual docker run command with customizable container name, ports, data directory and network.')
         };
@@ -967,11 +966,9 @@
         };
 
         var SYSTEM_COMPONENT_DESC = {
-            'slim': t('仅安装 isrvd 系统服务，无需 Docker。', 'Installs only the isrvd system service. Docker is not required.'),
-            'caddy': t('独立 Caddy 容器；管理接口仅监听本机，网关监听 80/443。', 'A separate Caddy container. The admin interface listens only on localhost; the gateway uses ports 80/443.'),
-            'apisix': t('独立 APISIX + etcd 容器；自动配置管理密钥，管理接口仅监听本机。', 'Separate APISIX + etcd containers with an automatically configured admin key. Admin interfaces listen only on localhost.'),
-            'etcd': t('独立 etcd 容器，客户端端口 2379 仅监听本机；不会自动切换 isrvd 的配置存储。', 'A separate etcd container with client port 2379 bound to localhost. Does not automatically change isrvd’s configuration storage.'),
-            'caddy,etcd': t('独立 Caddy 和 etcd 容器；网关监听 80/443，管理接口与 etcd 仅监听本机。', 'Separate Caddy and etcd containers. The gateway uses ports 80/443; admin interfaces and etcd listen only on localhost.')
+            'slim': t('默认不选网关，仅安装 isrvd 系统服务，无需 Docker；可按需选择网关。', 'No gateway is selected by default. Installs only the isrvd system service, without Docker; select a gateway if needed.'),
+            'caddy': t('仅部署独立 Caddy 网关容器，不安装 etcd；管理接口仅监听本机，网关监听 80/443。', 'Deploys only a separate Caddy gateway container, without etcd. The admin interface listens only on localhost; the gateway uses ports 80/443.'),
+            'apisix': t('部署独立 APISIX 网关容器，自动安装其 etcd 依赖；自动配置管理密钥，管理接口与 etcd 仅监听本机。', 'Deploys a separate APISIX gateway container and automatically installs its etcd dependency, with an automatically configured admin key. Admin interfaces and etcd listen only on localhost.')
         };
 
         var VARIANT_DESC = {
@@ -1002,21 +999,26 @@
 
             document.querySelectorAll('.chip[data-opt]').forEach(function (el) {
                 var key = el.getAttribute('data-opt'), val = el.getAttribute('data-val');
-                var systemOnly = el.getAttribute('data-system-only') === 'true';
-                var disabled = key === 'variant' && ((!isSystem && systemOnly) || (isDocker && isAgent && val !== 'slim'));
-                el.setAttribute('aria-checked', String(s[key] === val));
+                var disabled = key === 'variant' && isDocker && isAgent && val !== 'slim';
+                if (key === 'variant') {
+                    el.setAttribute('role', isSystem ? 'button' : 'radio');
+                    el.removeAttribute(isSystem ? 'aria-checked' : 'aria-pressed');
+                    el.setAttribute(isSystem ? 'aria-pressed' : 'aria-checked', String(s[key] === val && (!isSystem || val !== 'slim')));
+                } else {
+                    el.setAttribute('aria-checked', String(s[key] === val));
+                }
                 el.setAttribute('aria-disabled', String(disabled));
                 el.disabled = disabled;
-                if (systemOnly) setVisible(el, isSystem);
             });
 
-            byId('variant-label').textContent = isSystem ? t('组件容器', 'Components') : t('镜像布局', 'Image layout');
-            byId('variant-slim-label').textContent = isSystem ? t('不安装组件', 'No components') : 'slim';
+            byId('variant-label').textContent = isSystem ? t('网关方案', 'Gateway option') : t('镜像布局', 'Image layout');
+            byId('variant-options').setAttribute('role', isSystem ? 'group' : 'radiogroup');
+            setVisible(byId('variant-slim'), !isSystem);
             byId('source-auto-label').textContent = isDocker ? t('默认', 'Default') : t('自动', 'Auto');
             byId('source-global-label').textContent = isSystem ? 'GitHub' : 'Docker Hub';
             setHint('hint-method', METHOD_DESC[s.method]);
             setHint('hint-role', ROLE_DESC[s.role] + (isDocker && isAgent ? t(' 手写容器使用 slim，不发布任何端口。', ' Manual agent containers use slim and publish no ports.') : ''));
-            setHint('hint-variant', isSystem ? SYSTEM_COMPONENT_DESC[s.variant] : VARIANT_DESC[s.variant]);
+            setHint('hint-variant', isSystem ? (SYSTEM_COMPONENT_DESC[s.variant] || '') + t(' 再次点击已选网关可取消选择。', ' Click the selected gateway again to deselect it.') : VARIANT_DESC[s.variant]);
             setVisible(byId('f-tag'), !isSystem);
             setVisible(byId('f-component-data'), isSystem && s.variant !== 'slim');
 
