@@ -47,8 +47,7 @@
             --nav: rgba(23, 29, 23, .94);
         }
         html { scroll-behavior: smooth; }
-        #main-nav, #hero, #features { --page: #f6f8f5; --surface: #fcfdfb; --line: #dce3da; --ink: #20352b; --muted: #627366; --accent: #38684d; --accent-soft: #e8efe4; --nav: rgba(246, 248, 245, .94); }
-        .dark #main-nav, .dark #hero, .dark #features { --page: #171d17; --surface: #1e261e; --line: #354132; --ink: #eceee4; --muted: #a4af9b; --accent: #bfd2a3; --accent-soft: #303e29; --nav: rgba(23, 29, 23, .94); }
+        :root:not(.dark) :is(#main-nav, #hero, #features) { --page: #f6f8f5; --surface: #fcfdfb; --line: #dce3da; --ink: #20352b; --muted: #627366; --accent: #38684d; --accent-soft: #e8efe4; --nav: rgba(246, 248, 245, .94); }
         #hero, #features { background-color: var(--page); }
         #main-nav *, #hero *, #features * { box-sizing: border-box; }
         body { margin: 0; background: var(--page); color: var(--ink); font-family: 'Avenir Next', 'Noto Sans CJK SC', 'PingFang SC', 'Microsoft YaHei', sans-serif; line-height: 1.7; }
@@ -66,8 +65,6 @@
         .nav-inner { height: 76px; display: flex; align-items: center; gap: 2rem; }
         .wordmark { display: inline-flex; align-items: center; gap: .65rem; margin-right: auto; color: var(--ink); font-family: 'Avenir Next', 'Trebuchet MS', sans-serif; font-size: 1.6rem; font-weight: 700; letter-spacing: -.06em; }
         .brand-mark { width: 30px; height: 30px; padding: 6px; border-radius: 8px; background: var(--ink); color: var(--page); }
-        .nav-action { flex-shrink: 0; }
-        .nav-action svg { width: 16px; height: 16px; }
         #nav-menu > summary { display: none; list-style: none; }
         #nav-menu > summary::-webkit-details-marker { display: none; }
         .nav-links { display: flex; align-items: center; gap: 1.75rem; }
@@ -75,7 +72,8 @@
         .nav-links a:hover, .text-link:hover { color: var(--accent); }
         .external-link { display: inline-flex; align-items: center; gap: .35rem; }
         .external-link::after { content: ''; flex: none; width: 10px; height: 10px; background: currentColor; opacity: .65; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 3h4v4M13 3 7 9M6 3H3v10h10v-3'/%3E%3C/svg%3E") center / contain no-repeat; }
-        .nav-action { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 50%; color: var(--muted); background: transparent; }
+        .nav-action { flex-shrink: 0; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 50%; color: var(--muted); background: transparent; }
+        .nav-action svg { width: 16px; height: 16px; }
         .nav-action:hover { background: var(--accent-soft); color: var(--accent); }
         #hero { position: relative; isolation: isolate; overflow: hidden; padding-block: 76px 56px; }
         #hero::before { content: ''; position: absolute; z-index: -1; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 85% 45%, var(--accent-soft), transparent 60%); }
@@ -113,17 +111,19 @@
         .console-status { display: inline-flex; align-items: center; gap: 5px; color: #b2d3a0; font-size: 9px; white-space: nowrap; }
         .console-status::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #b2d3a0; }
         .console-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
-        .metric { padding: 11px; border: 1px solid #34493c; border-radius: 6px; background: #1e2f25; }
+        .metric, .console-chart, .console-terminal { border: 1px solid #34493c; border-radius: 6px; }
+        .metric { padding: 11px; background: #1e2f25; }
         .metric-label { display: block; margin-bottom: 4px; color: #a7baad; font-size: 9px; }
         .metric-value { font-family: 'Avenir Next', 'Trebuchet MS', sans-serif; font-size: 22px; font-weight: 500; line-height: 1.3; letter-spacing: -.05em; }
         .metric-value small { margin-left: 2px; color: #a7baad; font-size: 10px; }
         .metric-bar { height: 3px; margin-top: 11px; border-radius: 2px; background: #38513e; }
         .metric-bar::after { content: ''; display: block; width: var(--usage); height: 100%; border-radius: inherit; background: #b2d3a0; }
-        .console-chart { margin-top: 12px; padding: 12px 12px 0; border: 1px solid #34493c; border-radius: 6px; background: #1b2a21; }
+        .console-chart, .console-terminal { margin-top: 12px; }
+        .console-chart { padding: 12px 12px 0; background: #1b2a21; }
         .chart-heading { display: flex; align-items: center; justify-content: space-between; color: #c5d3c9; font-size: 9px; }
         .chart-heading span:last-child { color: #a7baad; font-family: Consolas, monospace; font-size: 8px; }
         .console-chart svg { display: block; width: 100%; height: 66px; margin-top: 6px; overflow: visible; }
-        .console-terminal { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 8px; margin-top: 12px; padding: 11px 12px; border: 1px solid #34493c; border-radius: 6px; background: #122018; font-family: 'Cascadia Code', Consolas, monospace; font-size: 9px; }
+        .console-terminal { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 8px; padding: 11px 12px; background: #122018; font-family: 'Cascadia Code', Consolas, monospace; font-size: 9px; }
         .terminal-prompt { color: #b2d3a0; }
         .terminal-result { margin-left: auto; color: #a7baad; }
         .console-caption { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 16px; color: var(--muted); font-size: .625rem; }
@@ -277,11 +277,11 @@
                 </div>
             </details>
             <button id="theme-toggle" type="button" class="nav-action" aria-label="切换深色主题" aria-pressed="false" onclick="toggleTheme()">
-                <svg id="icon-sun" class="w-4 h-4" hidden fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                <svg id="icon-sun" hidden fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
                     <circle cx="12" cy="12" r="4" />
                     <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" />
                 </svg>
-                <svg id="icon-moon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                <svg id="icon-moon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
                 </svg>
             </button>
@@ -518,7 +518,7 @@
                     </div>
                 </div>
 
-                <details id="install-manage-block">
+                <details id="install-manage-block" open>
                     <summary><span>已安装？管理现有部署</span><span class="manage-summary-hint">更新 / 换标签 / 卸载</span></summary>
                     <p class="manage-safety">选择一项操作，再查看和复制命令。更新、换标签与卸载相互独立，请勿连续执行全部操作。</p>
                     <div id="install-manage"></div>
@@ -667,7 +667,14 @@
         function byId(id) { return document.getElementById(id); }
         function fieldVal(id) { return byId(id).value.trim(); }
         function setVisible(el, on) { el.toggleAttribute('hidden', !on); }
-        function setHint(id, text) { byId(id).textContent = text; }
+        function setHint(id, text) {
+            var el = byId(id);
+            if (el.textContent !== text) el.textContent = text;
+        }
+        function setHtml(id, html) {
+            var el = byId(id);
+            if (el.innerHTML !== html) el.innerHTML = html;
+        }
 
         function selectedVariant(s) {
             if (s.method === 'docker' && s.role === 'agent') return 'slim';
@@ -679,6 +686,7 @@
         }
 
         function setOpt(key, val) {
+            if (buildState[key] === val) return;
             buildState[key] = val;
             renderBuilder();
         }
@@ -867,10 +875,10 @@
                 + ')';
         }
 
-        function buildManage(s, v) {
+        function buildManage(s, v, commands) {
             var migrationNote = t('仅支持同布局换标签，命令先检查现有布局，不匹配或无法确认时中止。跨布局需另行迁移网关地址、密钥并验证管理接口。', 'Only same-layout tag changes are supported. The command checks the current layout and aborts if it is different or unknown. Changing layouts requires migrating gateway URLs and keys and verifying the admin interface.');
             if (s.method === 'docker') {
-                var run = buildDockerRun(s, v).slice(-1)[0];
+                var run = commands[commands.length - 1];
                 return [
                     { id: 'update', title: t('同布局更新 / 重建', 'Update / Recreate (same layout)'), note: migrationNote + t(' 先备份并核对容器名、角色和挂载；重建保留数据，不提供自动回滚。', ' Back up first and verify the container name, role and mounts. Recreation preserves data but does not provide automatic rollback.'), command: joinCommands([sameLayoutGuard(v.cname, v.variant), 'docker pull ' + dockerImage(s, v), 'docker stop ' + shq(v.cname), 'docker rm ' + shq(v.cname), run]) },
                     { id: 'uninstall', title: t('卸载容器', 'Remove container'), note: t('只执行卸载，保留数据目录 ', 'Only removes the container. Preserves the data directory ') + v.data + t('。', '.'), command: 'docker rm -f ' + shq(v.cname), danger: true },
@@ -888,9 +896,21 @@
             return actions;
         }
 
+        var manageOpenStates = new Map();
+        var renderedManageMethod = '';
+        var renderedManageActions = '';
         function renderManage(actions) {
-            byId('install-manage').innerHTML = actions.map(function (action, index) {
-                return '<details class="manage-action" name="isrvd-manage-action" data-manage-action="' + esc(action.id) + '" data-danger="' + String(!!action.danger) + '">'
+            var method = buildState.method;
+            var content = JSON.stringify(actions);
+            if (method === renderedManageMethod && content === renderedManageActions) return;
+            var container = byId('install-manage');
+            container.querySelectorAll('[data-manage-action]').forEach(function (el) {
+                manageOpenStates.set(renderedManageMethod + ':' + el.dataset.manageAction, el.open);
+            });
+            container.innerHTML = actions.map(function (action, index) {
+                var key = method + ':' + action.id;
+                var open = manageOpenStates.has(key) ? manageOpenStates.get(key) : action.id === 'update';
+                return '<details class="manage-action" name="isrvd-manage-action" data-manage-action="' + esc(action.id) + '" data-danger="' + String(!!action.danger) + '"' + (open ? ' open' : '') + '>'
                     + '<summary><span class="manage-index" aria-hidden="true">0' + (index + 1) + '</span>'
                     + '<span class="manage-title">' + esc(action.title) + '</span>'
                     + '<span class="manage-status">' + (action.danger ? t('谨慎操作', 'Use caution') : t('查看命令', 'View command')) + '</span></summary>'
@@ -899,6 +919,8 @@
                     + '<button type="button" class="copy-btn" onclick="copyCode(this)" aria-live="polite" aria-label="' + esc(t('复制' + action.title + '命令', 'Copy command: ' + action.title)) + '">' + t('复制', 'Copy') + '</button></div>'
                     + '<div class="code-body">' + highlight(action.command) + '</div></div></div></details>';
             }).join('');
+            renderedManageMethod = method;
+            renderedManageActions = content;
         }
 
         function buildNotes(s, v) {
@@ -970,12 +992,13 @@
             'none': t('沿用 Docker 默认 bridge，无法按容器名互访。', 'Uses Docker’s default bridge. Containers cannot reach each other by name.')
         };
 
-        function renderBuilder() {
-            var s = buildState;
+        var renderedBuildOptions = '';
+        function renderBuildOptions(s) {
+            var options = JSON.stringify(s);
+            if (options === renderedBuildOptions) return;
             var isDocker = s.method === 'docker';
             var isAgent = s.role === 'agent';
             var isSystem = s.method === 'script-binary';
-            s.variant = selectedVariant(s);
 
             document.querySelectorAll('.chip[data-opt]').forEach(function (el) {
                 var key = el.getAttribute('data-opt'), val = el.getAttribute('data-val');
@@ -1011,6 +1034,15 @@
             byId('f-https-to').textContent = '→ ' + (s.variant === 'apisix' ? '9443' : '443');
             setVisible(byId('f-netname'), s.net === 'existing');
             byId('in-cname').placeholder = { server: 'isrvd', center: 'isrvd-center', agent: 'isrvd-agent' }[s.role];
+            renderedBuildOptions = options;
+        }
+
+        function renderBuilder() {
+            var s = buildState;
+            var isDocker = s.method === 'docker';
+            var isSystem = s.method === 'script-binary';
+            s.variant = selectedVariant(s);
+            renderBuildOptions(s);
 
             var parsed = collectParams();
             var v = parsed.v, errs = parsed.errs;
@@ -1022,22 +1054,21 @@
             });
 
             if (errs.length) {
-                byId('build-cmd').innerHTML = '<span style="color:#fbbf24"># ' + t('还需补全以下信息，命令会自动出现在这里：', 'Complete the following fields to generate your command:') + '</span>\n'
-                    + errs.map(function (e) { return '# - ' + esc(e); }).join('\n');
-                byId('install-manage').textContent = '';
-                byId('install-meta').innerHTML = '';
-                byId('install-notes').innerHTML = '';
+                setHtml('build-cmd', '<span style="color:#fbbf24"># ' + t('还需补全以下信息，命令会自动出现在这里：', 'Complete the following fields to generate your command:') + '</span>\n'
+                    + errs.map(function (e) { return '# - ' + esc(e); }).join('\n'));
+                renderManage([]);
+                setHtml('install-meta', '');
+                setHtml('install-notes', '');
                 byId('build-copy').disabled = true;
                 return;
             }
 
-            var command = isDocker ? joinCommands(buildDockerRun(s, v))
-                : joinCommands(s.method === 'script-binary' ? buildBinary(s, v) : buildScriptDocker(s, v));
+            var commands = isDocker ? buildDockerRun(s, v) : (isSystem ? buildBinary(s, v) : buildScriptDocker(s, v));
 
-            byId('build-label').textContent = isDocker ? 'bash — docker run' : 'bash — ' + (isSystem ? 'isrvd-system.sh' : 'isrvd-docker.sh');
-            byId('build-cmd').innerHTML = highlight(command);
-            renderManage(buildManage(s, v));
-            byId('install-notes').innerHTML = buildNotes(s, v).map(function (t) { return '<li>' + t + '</li>'; }).join('');
+            setHint('build-label', isDocker ? 'bash — docker run' : 'bash — ' + (isSystem ? 'isrvd-system.sh' : 'isrvd-docker.sh'));
+            setHtml('build-cmd', highlight(joinCommands(commands)));
+            renderManage(buildManage(s, v, commands));
+            setHtml('install-notes', buildNotes(s, v).map(function (note) { return '<li>' + note + '</li>'; }).join(''));
             byId('build-copy').disabled = false;
 
             var meta = [];
@@ -1057,7 +1088,7 @@
                 meta.push(t('配置', 'Configuration') + ' <code>/srv/data/conf/isrvd.yml</code>');
                 meta.push(t('镜像', 'Image') + ' <code>isrvd:' + esc(v.tag) + '</code>');
             }
-            byId('install-meta').innerHTML = meta.map(function (item) { return '<span>' + item + '</span>'; }).join('');
+            setHtml('install-meta', meta.map(function (item) { return '<span>' + item + '</span>'; }).join(''));
         }
         renderBuilder();
 
