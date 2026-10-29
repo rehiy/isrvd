@@ -6011,6 +6011,16 @@
     "/overview/version": {
       "get": {
         "operationId": "get_overview_version",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "current",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -7186,6 +7196,53 @@
         ]
       }
     },
+    "/swarm/node/{id}/services": {
+      "get": {
+        "operationId": "get_swarm_node_id_services",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "items": {
+                        "$ref": "#/components/schemas/swarm.ServiceInfo"
+                      },
+                      "type": "array"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 Swarm 节点运行服务",
+        "tags": [
+          "swarm"
+        ]
+      }
+    },
     "/swarm/nodes": {
       "get": {
         "operationId": "get_swarm_nodes",
@@ -8018,7 +8075,7 @@
       "apisix.Route": {
         "properties": {
           "consumers": {
-            "description": "白名单 Consumer 列表",
+            "description": "白名单 Consumer 列表（只读，仅访问授权列表接口填充，请求中被忽略）",
             "items": {
               "type": "string"
             },
@@ -8181,7 +8238,7 @@
             "type": "string"
           },
           "nodes": {
-            "description": "节点配置：map[string]int 格式，如 {\"host:port\": weight}"
+            "description": "节点配置：{\"host:port\": weight} 或 APISIX 数组格式"
           },
           "pass_host": {
             "description": "Host 传递方式：pass | node | rewrite",
@@ -8466,7 +8523,7 @@
             "type": "string"
           },
           "key": {
-            "description": "复合主键 \u003csource\u003e-\u003cindex\u003e，仅响应使用（cached 无此字段）",
+            "description": "复合主键 \u003csource\u003e-\u003cindex\u003e，cached 为 cached-\u003c相对路径\u003e；仅响应使用，请求中被忽略",
             "type": "string"
           },
           "keyContent": {
@@ -8978,7 +9035,7 @@
       "caddy.ServerView": {
         "properties": {
           "id": {
-            "description": "服务视图标识（与名称相同）",
+            "description": "服务不透明标识：`~` + base64url(name)，用于详情、更新、删除",
             "type": "string"
           },
           "name": {
@@ -9185,7 +9242,7 @@
             "type": "string"
           },
           "realm": {
-            "description": "HTTP Basic realm；留空使用 Caddy 默认值",
+            "description": "HTTP Basic realm；留空：已有 handler 沿用原 realm，新建使用 Caddy 默认值",
             "type": "string"
           },
           "username": {
@@ -9440,6 +9497,23 @@
         },
         "type": "object"
       },
+      "config.ClusterConfig": {
+        "properties": {
+          "CenterURL": {
+            "description": "CenterURL",
+            "type": "string"
+          },
+          "Mode": {
+            "description": "Mode",
+            "type": "string"
+          },
+          "NodeToken": {
+            "description": "NodeToken",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "config.Config": {
         "properties": {
           "Apisix": {
@@ -9496,6 +9570,10 @@
             "description": "密码登录配置",
             "type": "object"
           },
+          "PortMap": {
+            "description": "中控端口映射（端口转发）配置，仅 center 模式使用",
+            "type": "object"
+          },
           "Schema": {
             "description": "配置格式元信息，用于版本化迁移",
             "type": "object"
@@ -9506,10 +9584,6 @@
           },
           "THA": {
             "description": "代理 Header 登录配置",
-            "type": "object"
-          },
-          "PortMap": {
-            "description": "中控端口映射（端口转发）配置，仅 center 模式使用",
             "type": "object"
           }
         },
@@ -9850,6 +9924,19 @@
         },
         "type": "object"
       },
+      "config.PortMapConfig": {
+        "properties": {
+          "bind": {
+            "description": "监听地址（IP），默认 127.0.0.1；对外开放须显式设为 0.0.0.0 等地址",
+            "type": "string"
+          },
+          "range": {
+            "description": "允许分配的监听端口范围，如 20000-20999 或单个端口；留空表示不启用",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "config.SchemaConfig": {
         "properties": {
           "Version": {
@@ -9894,6 +9981,10 @@
           },
           "rootDirectory": {
             "description": "根目录路径",
+            "type": "string"
+          },
+          "title": {
+            "description": "浏览器标签页标题，仅登录后展示；留空使用 iSrvd",
             "type": "string"
           }
         },
@@ -10074,7 +10165,7 @@
             "type": "string"
           },
           "q": {
-            "description": "关键词，匹配路径、摘要、operationId",
+            "description": "关键词，匹配路径、摘要、operationId、tag",
             "type": "string"
           },
           "tag": {
@@ -10144,7 +10235,7 @@
             "type": "string"
           },
           "workDir": {
-            "description": "工作目录（SHELL/EXEC 类型）",
+            "description": "工作目录（非 Docker 类型）",
             "type": "string"
           }
         },
@@ -10198,7 +10289,7 @@
             "type": "string"
           },
           "output": {
-            "description": "标准输出",
+            "description": "标准输出与标准错误合并",
             "type": "string"
           },
           "runId": {
@@ -10296,7 +10387,7 @@
       "cronJobLogsReq": {
         "properties": {
           "limit": {
-            "description": "返回记录数上限（默认 50，最大 100）",
+            "description": "返回记录数上限（默认 50；\u003c=0 或 \u003e100 按 50）",
             "type": "integer"
           }
         },
@@ -10730,6 +10821,10 @@
       },
       "docker.DockerConfig": {
         "properties": {
+          "ContainerGuard": {
+            "$ref": "#/components/schemas/ast.FuncType",
+            "description": "仅对 ContainerAction 生效，action 取值同 ContainerAction。"
+          },
           "ContainerRoot": {
             "description": "容器数据根目录",
             "type": "string"
@@ -11272,6 +11367,42 @@
         ],
         "type": "object"
       },
+      "docker.ScriptRunOptions": {
+        "properties": {
+          "Image": {
+            "description": "镜像名",
+            "type": "string"
+          },
+          "Mounts": {
+            "description": "额外挂载",
+            "items": {
+              "$ref": "#/components/schemas/mount.Mount"
+            },
+            "type": "array"
+          },
+          "NamePrefix": {
+            "description": "临时容器名前缀，默认 script",
+            "type": "string"
+          },
+          "Script": {
+            "description": "脚本内容",
+            "type": "string"
+          },
+          "ScriptName": {
+            "description": "脚本在容器根目录下的文件名，默认 script.sh",
+            "type": "string"
+          },
+          "Shell": {
+            "description": "容器内 shell，默认 /bin/sh",
+            "type": "string"
+          },
+          "Timeout": {
+            "description": "超时秒数，0 不限",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "docker.StatsBlockDetail": {
         "properties": {
           "major": {
@@ -11563,7 +11694,7 @@
             "type": "string"
           },
           "modeO": {
-            "description": "权限八进制表示（如 0755）",
+            "description": "权限八进制表示（如 755）",
             "type": "string"
           },
           "name": {
@@ -11571,7 +11702,7 @@
             "type": "string"
           },
           "path": {
-            "description": "文件完整路径",
+            "description": "相对成员主目录的路径",
             "type": "string"
           },
           "size": {
@@ -11705,6 +11836,21 @@
           "createTime": {
             "description": "启动时间（Unix 毫秒）",
             "type": "integer"
+          },
+          "gpuDevices": {
+            "description": "占用的 GPU 设备标识",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "gpuMemoryBytes": {
+            "description": "GPU 显存占用（字节），未使用 GPU 时省略",
+            "type": "integer"
+          },
+          "gpuUtilization": {
+            "description": "GPU 利用率（%），首次采样或不可用时省略",
+            "type": "number"
           },
           "ioReadBps": {
             "description": "磁盘读取速率（字节/秒），首次采样或不可用时省略",
@@ -11893,6 +12039,219 @@
         },
         "type": "object"
       },
+      "node.AgentInfo": {
+        "properties": {
+          "arch": {
+            "description": "CPU 架构",
+            "type": "string"
+          },
+          "features": {
+            "description": "可选能力，如 portmap（端口转发）",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "hostname": {
+            "description": "主机名",
+            "type": "string"
+          },
+          "mode": {
+            "description": "运行模式，agent 恒为 agent",
+            "type": "string"
+          },
+          "os": {
+            "description": "操作系统",
+            "type": "string"
+          },
+          "protocol": {
+            "description": "协议版本，不得低于中控的 MinProtocolVersion",
+            "type": "integer"
+          },
+          "version": {
+            "description": "程序版本",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "node.AgentOptions": {
+        "properties": {
+          "CenterURL": {
+            "description": "中控地址（http(s)://host:port，不含 /api）",
+            "type": "string"
+          },
+          "NodeToken": {
+            "description": "节点令牌，由中控生成并从环境变量传入；不另存凭据文件",
+            "type": "string"
+          },
+          "Token": {
+            "$ref": "#/components/schemas/ast.FuncType",
+            "description": "返回访问本机 isrvd 的 API 令牌；每个转发的请求都会取一次，转发的请求以令牌所属成员身份执行"
+          },
+          "Upstream": {
+            "$ref": "#/components/schemas/url.URL",
+            "description": "本机 isrvd 的回环地址"
+          },
+          "Version": {
+            "description": "程序版本",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "node.Node": {
+        "properties": {
+          "arch": {
+            "description": "注册时上报的 CPU 架构",
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "创建时间",
+            "type": "string"
+          },
+          "hostname": {
+            "description": "注册时上报的主机名",
+            "type": "string"
+          },
+          "id": {
+            "description": "节点 ID（自动生成）",
+            "type": "string"
+          },
+          "name": {
+            "description": "节点名称",
+            "type": "string"
+          },
+          "os": {
+            "description": "注册时上报的操作系统",
+            "type": "string"
+          },
+          "portmaps": {
+            "description": "端口转发规则",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "status": {
+            "description": "pending / active / revoked",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "node.NodeCreateResult": {
+        "properties": {
+          "node": {
+            "description": "node",
+            "type": "object"
+          },
+          "token": {
+            "description": "token",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "node.NodeInfo": {
+        "properties": {
+          "agentVersion": {
+            "description": "agentVersion",
+            "type": "string"
+          },
+          "compatible": {
+            "description": "协议版本是否足以通信；无法协商时按兼容处理",
+            "type": "boolean"
+          },
+          "connectedAt": {
+            "description": "connectedAt",
+            "type": "string"
+          },
+          "features": {
+            "description": "节点声明的可选能力；Negotiated 为 false 时无从判断",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "latency": {
+            "description": "latency",
+            "type": "integer"
+          },
+          "negotiated": {
+            "description": "是否成功取得节点的版本与能力信息",
+            "type": "boolean"
+          },
+          "online": {
+            "description": "online",
+            "type": "boolean"
+          },
+          "remoteAddr": {
+            "description": "remoteAddr",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "node.NodeRequest": {
+        "properties": {
+          "name": {
+            "description": "节点名称",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "node.PermissionRoute": {
+        "properties": {
+          "Label": {
+            "description": "Label",
+            "type": "string"
+          },
+          "Method": {
+            "description": "Method",
+            "type": "string"
+          },
+          "Path": {
+            "description": "Path",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "node.PortMap": {
+        "properties": {
+          "listen": {
+            "description": "中控监听端口",
+            "type": "integer"
+          },
+          "name": {
+            "description": "备注",
+            "type": "string"
+          },
+          "proto": {
+            "description": "tcp / udp",
+            "type": "string"
+          },
+          "target": {
+            "description": "节点侧目标 host:port，host 缺省为 127.0.0.1",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "node.PortMapRequest": {
+        "properties": {
+          "portmaps": {
+            "description": "portmaps",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
       "notify.CaddyCert": {
         "properties": {
           "Certificate": {
@@ -11988,6 +12347,10 @@
           },
           "docker": {
             "description": "Docker 引擎是否可用",
+            "type": "boolean"
+          },
+          "node": {
+            "description": "多节点管理是否启用（仅中控模式）",
             "type": "boolean"
           },
           "swarm": {
@@ -12528,6 +12891,10 @@
             "$ref": "#/components/schemas/config.PasswordConfig",
             "description": "密码登录配置"
           },
+          "portmap": {
+            "$ref": "#/components/schemas/config.PortMapConfig",
+            "description": "中控端口映射（端口转发）配置，仅 center 模式使用，修改后需重启生效"
+          },
           "server": {
             "$ref": "#/components/schemas/config.ServerConfig",
             "description": "服务配置（JWTSecret：响应脱敏 / 请求空保留）"
@@ -12535,10 +12902,6 @@
           "tha": {
             "$ref": "#/components/schemas/config.THAConfig",
             "description": "代理 Header 认证配置"
-          },
-          "portmap": {
-            "$ref": "#/components/schemas/config.PortMapConfig",
-            "description": "中控端口映射（端口转发）配置，仅 center 模式使用，修改后需重启生效"
           }
         },
         "type": "object"
@@ -12641,7 +13004,7 @@
       "webssh.Host": {
         "properties": {
           "addr": {
-            "description": "主机地址（host:port）",
+            "description": "主机地址（host 或 host:port，端口缺省 22）",
             "type": "string"
           },
           "credentialId": {
@@ -12665,7 +13028,7 @@
             "type": "string"
           },
           "user": {
-            "description": "用户名（独立认证模式）",
+            "description": "用户名（绑定凭据时为保存时的凭据用户名快照）",
             "type": "string"
           }
         },
@@ -12674,7 +13037,7 @@
       "webssh.HostUpsertRequest": {
         "properties": {
           "addr": {
-            "description": "主机地址（host:port）",
+            "description": "主机地址（host 或 host:port，端口缺省 22）",
             "type": "string"
           },
           "credentialId": {
@@ -12706,19 +13069,6 @@
           "name",
           "addr"
         ],
-        "type": "object"
-      },
-      "config.PortMapConfig": {
-        "properties": {
-          "bind": {
-            "description": "监听地址（IP），默认 127.0.0.1；对外开放须显式设为 0.0.0.0 等地址",
-            "type": "string"
-          },
-          "range": {
-            "description": "允许分配的监听端口范围，如 20000-20999 或单个端口；留空表示不启用",
-            "type": "string"
-          }
-        },
         "type": "object"
       }
     },
