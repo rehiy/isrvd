@@ -1,19 +1,9 @@
 <script lang="ts">
-import { css } from '@codemirror/lang-css'
-import { go } from '@codemirror/lang-go'
-import { html } from '@codemirror/lang-html'
-import { javascript } from '@codemirror/lang-javascript'
-import { json } from '@codemirror/lang-json'
-import { markdown } from '@codemirror/lang-markdown'
-import { python } from '@codemirror/lang-python'
-import { sql } from '@codemirror/lang-sql'
-import { xml } from '@codemirror/lang-xml'
-import { yaml } from '@codemirror/lang-yaml'
-import { Codemirror } from 'vue-codemirror'
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
+import CodeEditor from '@/component/code-editor.vue'
 import BaseModal from '@/component/modal.vue'
 
 import type { ExplorerAdapter, FileInfo } from '../types'
@@ -21,7 +11,7 @@ import type { ExplorerAdapter, FileInfo } from '../types'
 @Component({
     expose: ['show'],
     emits: ['success'],
-    components: { BaseModal, Codemirror },
+    components: { BaseModal, CodeEditor },
 })
 class ModifyModal extends Vue {
     portal = usePortal()
@@ -32,7 +22,6 @@ class ModifyModal extends Vue {
     loadGeneration = 0
     adapter: ExplorerAdapter | null = null
     formData = { filename: '', content: '', path: '' }
-    readonly extensions = [css(), go(), html(), javascript(), json(), markdown(), python(), sql(), xml(), yaml()]
 
     async show(adapter: ExplorerAdapter, file: FileInfo) {
         if (this.saving) return
@@ -79,9 +68,7 @@ export default toNative(ModifyModal)
 
 <template>
   <BaseModal v-model="isOpen" :title="$t('编辑: ') + formData.filename" :loading="loading" :allow-close-while-loading="!saving" :close-disabled="saving" @confirm="handleConfirm" @cancel="handleCancel">
-    <div class="editor-container">
-      <Codemirror v-model="formData.content" :style="{ height: '60vh' }" :extensions="extensions" :disabled="loading" />
-    </div>
+    <CodeEditor v-model="formData.content" :filename="formData.filename" height="60vh" :disabled="loading" />
     <template #confirm-text>{{ $t('保存') }}</template>
   </BaseModal>
 </template>

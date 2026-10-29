@@ -1,6 +1,7 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import CodeEditor from '@/component/code-editor.vue'
 import BaseModal from '@/component/modal.vue'
 
 import type { ExplorerAdapter } from '../types'
@@ -8,7 +9,7 @@ import type { ExplorerAdapter } from '../types'
 @Component({
     expose: ['show'],
     emits: ['success'],
-    components: { BaseModal },
+    components: { BaseModal, CodeEditor },
 })
 class CreateModal extends Vue {
     isOpen = false
@@ -69,15 +70,8 @@ export default toNative(CreateModal)
         </div>
       </div>
       <div>
-        <label for="fmCreateContent" class="form-label">{{ $t('文件内容') }}</label>
-        <textarea
-          id="fmCreateContent"
-          v-model="formData.content"
-          rows="10"
-          :disabled="loading"
-          class="input font-mono text-sm"
-          :placeholder="$t('请输入文件内容...')"
-        ></textarea>
+        <label class="form-label">{{ $t('文件内容') }}</label>
+        <CodeEditor v-model="formData.content" :filename="formData.name" :disabled="loading" :placeholder="$t('请输入文件内容...')" />
       </div>
     </form>
     <template #confirm-text>{{ $t('新建') }}</template>
