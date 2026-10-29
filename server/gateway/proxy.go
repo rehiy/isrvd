@@ -33,7 +33,7 @@ func (g *gateway) nodePath(w http.ResponseWriter, r *http.Request) {
 		// 节点管理属于中控：在节点视角下打开的页面同样要能管理节点，按中控自己的接口处理
 		g.mux.ServeHTTP(w, r)
 	case !g.nodeModules[module]:
-		g.proxy.ServeHTTP(w, r) // 账号、系统、AI 助手、SSH 等始终作用于中控
+		g.proxy.ServeHTTP(w, r) // 账号、AI 助手、SSH 等始终作用于中控
 	case rest == "api/overview/bootstrap":
 		g.nodeBootstrap(w, r, id)
 	default:
@@ -70,8 +70,7 @@ func (g *gateway) originAllowed(r *http.Request) bool {
 	return len(allowed) > 0 && (&websocket.ServerConfig{AllowedOrigins: allowed}).CheckOrigin(origin)
 }
 
-// nodeBootstrap 以中控的认证信息、节点自身的服务可用性组合启动数据，
-// 让页面在所选节点下按该节点实际可用的服务显示菜单。无法组合时原样返回中控的启动数据。
+// nodeBootstrap 以中控的认证信息、节点自身的服务可用性和页面配置组合启动数据。
 // 必须串行：只有中控确认了调用者身份才会去请求节点，未登录的请求不应触发隧道流量。
 func (g *gateway) nodeBootstrap(w http.ResponseWriter, r *http.Request, id string) {
 	status, body, err := g.bootstrapCall(r)
@@ -80,15 +79,15 @@ func (g *gateway) nodeBootstrap(w http.ResponseWriter, r *http.Request, id strin
 		return
 	}
 	if status == http.StatusOK {
-		if merged := g.mergeProbe(r.Context(), id, body); merged != nil {
+		if merged := g.mergeBootstrap(r.Context(), id, body); merged != nil {
 			body = merged
 		}
 	}
 	writeRaw(w, status, body)
 }
 
-// mergeProbe 把节点的服务可用性并入中控的启动数据；无法组合（解析失败或未登录）时返回 nil。
-func (g *gateway) mergeProbe(ctx context.Context, id string, body []byte) []byte {
+// mergeBootstrap 合并节点的服务可用性和页面配置，保留中控认证与 AI；中控响应解析失败或未登录时返回 nil。
+func (g *gateway) mergeBootstrap(ctx context.Context, id string, body []byte) []byte {
 	var env map[string]any
 	if json.Unmarshal(body, &env) != nil {
 		return nil
@@ -109,13 +108,18 @@ func (g *gateway) mergeProbe(ctx context.Context, id string, body []byte) []byte
 			probe[k] = v
 		}
 	}
+	payload["config"] = map[string]any{}
 	if data, err := g.nodes.Fetch(ctx, id, "/api/overview/bootstrap"); err == nil {
 		var remote struct {
 			Payload struct {
-				Probe map[string]any `json:"probe"`
+				Probe  map[string]any `json:"probe"`
+				Config map[string]any `json:"config"`
 			} `json:"payload"`
 		}
 		if json.Unmarshal(data, &remote) == nil {
+			if remote.Payload.Config != nil {
+				payload["config"] = remote.Payload.Config
+			}
 			for _, k := range []string{"apisix", "caddy", "docker", "swarm", "compose"} {
 				if v, ok := remote.Payload.Probe[k]; ok {
 					probe[k] = v

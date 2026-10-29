@@ -86,11 +86,18 @@ func (s *ConfigService) ConfigAll() *AllConfig {
 			}
 		}
 	}
+	if config.Cluster().Mode == "agent" {
+		dst.Password, dst.Passkey, dst.OIDC, dst.THA = nil, nil, nil, nil
+	}
 	return dst
 }
 
 // ConfigUpdate 一次性更新全部配置（任何 nil 分区将跳过）。
 func (s *ConfigService) ConfigUpdate(req AllConfig) error {
+	node := config.Cluster().Mode == "agent"
+	if node {
+		req.Password, req.Passkey, req.OIDC, req.THA = nil, nil, nil, nil
+	}
 	if req.Notify != nil && req.Notify.Events != nil {
 		events := req.Notify.Events
 		if events.RestartThreshold < 0 || events.RestartThreshold > 10000 ||
@@ -104,6 +111,9 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 		oldRoot := draft.Server.RootDirectory
 		newRoot := oldRoot
 		if req.Server != nil {
+			if node {
+				req.Server.JWTSecret, req.Server.JWTExpiration = draft.Server.JWTSecret, draft.Server.JWTExpiration
+			}
 			req.Server.JWTSecret = config.SecretKeep(req.Server.JWTSecret, draft.Server.JWTSecret)
 			req.Server = config.ServerNormalize(req.Server)
 			newRoot = req.Server.RootDirectory

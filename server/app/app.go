@@ -239,7 +239,7 @@ func forward(routes []Route) []Route {
 func (app *App) collectRoutes() []Route {
 	var routes []Route
 	routes = append(routes, forward(app.defineOverviewRoutes())...)
-	routes = append(routes, app.defineSystemRoutes()...)
+	routes = append(routes, forward(app.defineSystemRoutes())...)
 	routes = append(routes, app.defineAccountRoutes()...)
 	routes = append(routes, forward(app.defineShellRoutes())...)
 	routes = append(routes, forward(app.defineLocalRoutes())...)
