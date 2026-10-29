@@ -88,6 +88,9 @@ func (app *App) resetRequestContext() {
 
 // shutdown 先等待 HTTP 请求，再为后台任务提供独立宽限期。
 func (app *App) shutdown(server *http.Server, reloadDone <-chan struct{}) {
+	app.servicesMu.RLock()
+	app.overviewSvc.StopSelfUpgrade()
+	app.servicesMu.RUnlock()
 	httpCtx, httpCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	if err := server.Shutdown(httpCtx); err != nil {
 		logman.Warn("httpd shutdown grace period expired", "error", err)

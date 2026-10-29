@@ -1,13 +1,10 @@
 package app
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rehiy/libgo/upgrade"
 
 	"isrvd/server/config"
 	"isrvd/server/service/account"
@@ -65,25 +62,19 @@ func (app *App) overviewBootstrap(c *gin.Context) {
 }
 
 func (app *App) overviewVersion(c *gin.Context) {
-	respondSuccess(c, "ok", app.overviewSvc.CheckVersion())
+	if c.Query("current") == "1" {
+		respondSuccess(c, "ok", &overview.VersionInfo{Current: config.Version})
+		return
+	}
+	respondSuccess(c, "ok", app.overviewSvc.CheckVersion(c.Request.Context()))
 }
 
 func (app *App) overviewUpgrade(c *gin.Context) {
-	if err := app.overviewSvc.ApplySelfUpgrade(); err != nil {
-		if errors.Is(err, upgrade.ErrNoUpdate) {
-			respondError(c, http.StatusBadRequest, "当前已是最新版本")
-			return
-		}
-		respondError(c, http.StatusInternalServerError, err.Error())
+	if err := app.overviewSvc.StartSelfUpgrade(); err != nil {
+		respondError(c, http.StatusServiceUnavailable, err.Error())
 		return
 	}
-	// 先发送响应，延迟重启，确保客户端能收到完整响应
-	service := app.overviewSvc
-	respondSuccess(c, "升级成功，正在重启", nil)
-	go func() {
-		time.Sleep(500 * time.Millisecond)
-		service.RestartSelf()
-	}()
+	respondSuccess(c, "ok", nil)
 }
 
 // overviewMonitor 返回监控数据
