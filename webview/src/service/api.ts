@@ -142,12 +142,12 @@ class ApiService {
         return http.get<MonitorHostRecord | MonitorContainerRecord | MonitorHostRecord[] | MonitorContainerRecord[] | null>('overview/monitor', { params })
     }
 
-    overviewVersion() {
-        return http.get<SystemVersionInfo>('overview/version')
+    overviewVersion(config?: AxiosRequestConfig) {
+        return http.get<SystemVersionInfo>('overview/version', config)
     }
 
-    overviewUpgrade() {
-        return http.post('overview/upgrade', {})
+    overviewUpgrade(config?: AxiosRequestConfig) {
+        return http.post('overview/upgrade', {}, config)
     }
 
     // ==================== System 系统相关 ====================
@@ -544,8 +544,8 @@ class ApiService {
         return http.post<void>(`docker/container/${id}/action`, { action })
     }
 
-    dockerContainerCreate(data: DockerContainerCreate) {
-        return http.post<DockerContainerCreateResult>('docker/container', data)
+    dockerContainerCreate(data: DockerContainerCreate, config?: AxiosRequestConfig) {
+        return http.post<DockerContainerCreateResult>('docker/container', data, config)
     }
 
     dockerContainerLogs(id: string, tail = '100') {

@@ -24,7 +24,9 @@ isrvd_get "/overview/bootstrap"
 isrvd_get "/overview/version"
 ```
 
-获取当前版本及最新版本信息，需要 `GET /api/overview/version` 路由权限（`AccessPerm`，创始人不受限）。
+获取当前版本及最新版本信息，需要 `GET /api/overview/version` 路由权限（`AccessPerm`，创始人不受限）。`hasUpdate` 直接使用 libgo 检查结果：仅升级服务器提供可用包且没有业务错误时为 `true`，不再自行比较版本号。
+
+升级轮询使用 `/overview/version?current=1`，仅读取当前运行版本，不触发远端版本检查或镜像源探测；响应结构不变，其他字段返回零值。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -91,9 +93,13 @@ isrvd_get "/overview/monitor?type=container&since=3600&id=<CONTAINER_ID>"
 isrvd_post "/overview/upgrade"
 ```
 
-触发 isrvd 程序自升级至最新版本：从 `https://isrvd.rehiy.com/update/` 下载 tar.gz 并原地替换二进制，成功返回 200 后约 500ms 重启。需要 `POST /api/overview/upgrade` 路由权限；已是最新版本返回 400"当前已是最新版本"。
+原接口和 `POST /api/overview/upgrade` 权限不变。提交后立即返回 HTTP 200（`payload` 为空），仅表示已受理；后台检查、下载、校验并替换二进制，成功后约500ms重启。重复提交不会启动第二次升级，失败详情记录在升级日志中，不提供任务ID或状态查询。
 
-Docker 容器部署场景下，前端使用 `GET /api/overview/version` 返回的 `updaterImage`，通过临时 docker-updater 容器拉取最新镜像并重启当前容器。
+使用正式依赖 libgo v0.22.0。版本检查限时30秒，检查及下载共用4分30秒期限；升级器初始化时绑定上下文，后续 `Check()`、`Apply()` 直接复用，超时实际取消请求并清理暂存文件，后台结束后可重试。isrvd 从绑定上下文的响应流直接提取 tar.gz 中的二进制，不再保存中间归档；下载及解压读取响应取消，总解压量限制为512 MiB。检查、HTTP 请求、落盘清理、替换及回滚复用 libgo；服务端提供 `checksum` 时校验解压后二进制的 SHA256，未提供时跳过校验。版本检查与下载共享 HTTPS 和重定向域名限制。服务关闭时取消下载并等待升级工作退出，避免打断文件替换，且不再启动升级或重启。
+
+二进制和容器升级共用提交与版本轮询流程，通过 `GET /api/overview/version?current=1` 的运行版本变化确认完成。二进制提交限时10秒，容器提交限时2分钟；提交后最多等待5分钟，每次查询限时10秒。两种提交遇到断连或不确定的网关502/503/504/524继续等待、不重发POST；提交返回业务503拒绝（`success=false`，如节点离线或服务停止）立即恢复按钮，不进入轮询。轮询中的暂时离线仍继续等待，401/403停止等待。离开页面取消提交请求及轮询，不再触发后续刷新，但不撤销后台已经受理的升级。版本查询及镜像源探测也使用请求上下文，避免前端取消后继续挂起。失败详情查看日志，前端最终提示等待超时；错误提示沿用原客户端行为，未增加Axios扩展。
+
+Docker 容器升级仍通过临时 docker-updater 容器执行，不改变部署流程。
 
 > ⚠️ 升级操作会重启服务，请确保已保存所有工作。
 

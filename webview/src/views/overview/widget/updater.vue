@@ -1,4 +1,5 @@
 <script lang="ts">
+import axios from 'axios'
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
@@ -24,10 +25,15 @@ class SystemUpdater extends Vue {
     updaterAutoRemove = true
     selfContainerName = ''
     inDocker = false
-    upgradeType: 'binary' | 'docker' | null = null
+    pollController: AbortController | null = null
+    refreshTimer: ReturnType<typeof setTimeout> | null = null
+
+    unmounted() {
+        this.pollController?.abort()
+        if (this.refreshTimer) clearTimeout(this.refreshTimer)
+    }
 
     async mounted() {
-        if (!this.portal.hasPerm('POST /api/overview/upgrade')) return
         await Promise.all([this.loadSelfContainer(), this.loadVersionInfo()])
     }
 
@@ -56,6 +62,7 @@ class SystemUpdater extends Vue {
     }
 
     openUpdaterModal() {
+        if (this.deploying || this.upgrading) return
         this.updaterContainer = this.selfContainerName
         this.updaterAutoRemove = true
         this.updaterModalOpen = true
@@ -63,7 +70,7 @@ class SystemUpdater extends Vue {
 
     // Docker 容器升级：部署临时 docker-updater 容器
     async handleDeployUpdater() {
-        if (this.deploying) return
+        if (this.deploying || this.upgrading) return
 
         const containerName = this.updaterContainer.trim()
         if (!containerName) {
@@ -71,81 +78,84 @@ class SystemUpdater extends Vue {
             return
         }
 
-        this.deploying = true
-        this.upgradeType = 'docker'
-        try {
-            const spec: DockerContainerCreate = {
-                image: this.version?.updaterImage || 'rehiy/docker-updater:latest',
-                name: `auto-update-${Date.now()}`,
-                autoRemove: this.updaterAutoRemove,
-                volumes: [
-                    { type: 'bind', hostPath: '/var/run/docker.sock', containerPath: '/var/run/docker.sock', readOnly: false },
-                ],
-                cmd: [containerName],
-            }
-            await api.dockerContainerCreate(spec)
-            this.updaterModalOpen = false
-            this.deploying = false
-            await this.waitForNewVersion()
-        } catch {
-            // Axios 拦截器会显示错误通知
-            this.deploying = false
-            this.upgradeType = null
+        const spec: DockerContainerCreate = {
+            image: this.version?.updaterImage || 'rehiy/docker-updater:latest',
+            name: `auto-update-${Date.now()}`,
+            autoRemove: this.updaterAutoRemove,
+            volumes: [
+                { type: 'bind', hostPath: '/var/run/docker.sock', containerPath: '/var/run/docker.sock', readOnly: false },
+            ],
+            cmd: [containerName],
         }
+        await this.startUpgrade(signal => api.dockerContainerCreate(spec, { timeout: 120_000, signal }))
     }
 
-    // 二进制原地升级：下载最新版本替换当前二进制并重启
     async handleBinaryUpgrade() {
-        if (this.deploying) return
+        await this.startUpgrade(signal => api.overviewUpgrade({ timeout: 10_000, signal }))
+    }
+
+    async startUpgrade(submit: (signal: AbortSignal) => Promise<unknown>) {
+        if (this.deploying || this.upgrading || !this.version?.current) return
+        const oldVersion = this.version.current
         this.deploying = true
-        this.upgradeType = 'binary'
+        const controller = new AbortController()
+        this.pollController = controller
         try {
-            await api.overviewUpgrade()
-            this.deploying = false
-            await this.waitForNewVersion()
-        } catch {
-            // Axios 拦截器会显示错误通知
-            this.deploying = false
-            this.upgradeType = null
+            await submit(controller.signal)
+        } catch (error) {
+            if (controller.signal.aborted) return
+            if (!this.isUpgradeDisconnect(error, true)) {
+                this.finishUpgrade()
+                return
+            }
+        }
+        if (controller.signal.aborted) return
+        this.updaterModalOpen = false
+        this.deploying = false
+        await this.waitForNewVersion(controller, oldVersion)
+    }
+
+    isUpgradeDisconnect(error: unknown, submitting = false) {
+        return axios.isAxiosError<{ success?: boolean }>(error) && !axios.isCancel(error)
+            && !(submitting && error.response?.status === 503 && error.response.data?.success === false)
+            && (!error.response || [502, 503, 504, 524].includes(error.response.status))
+    }
+
+    finishUpgrade(message?: string, type: 'error' | 'success' = 'error') {
+        this.deploying = false
+        this.pollController = null
+        if (message) this.portal.showNotification(type, message)
+        if (type === 'success') {
+            this.refreshTimer = setTimeout(() => window.location.reload(), 2000)
+        } else {
+            this.upgrading = false
         }
     }
 
-    /** 升级触发后轮询版本号，直到版本变化或超时 */
-    async waitForNewVersion() {
-        const oldVersion = this.version?.current ?? ''
-        const maxWait = 300_000  // 最长等待 300 秒（5 分钟）
-        const interval = 3_000   // 每 3 秒轮询一次
-        const start = Date.now()
-
+    async waitForNewVersion(controller: AbortController, oldVersion: string) {
+        const deadline = Date.now() + 300_000
         this.upgrading = true
-        let succeeded = false
-        while (Date.now() - start < maxWait) {
-            await new Promise(r => setTimeout(r, interval))
+
+        while (!controller.signal.aborted && Date.now() < deadline) {
+            await new Promise(resolve => setTimeout(resolve, Math.min(3_000, deadline - Date.now())))
+            if (controller.signal.aborted || Date.now() >= deadline) break
             try {
-                const res = await api.overviewVersion()
-                const newVersion = res.payload?.current
-                if (newVersion && newVersion !== oldVersion) {
-                    succeeded = true
-                    break
+                const options = { params: { current: 1 }, timeout: Math.min(10_000, deadline - Date.now()), signal: controller.signal }
+                const current = (await api.overviewVersion(options)).payload?.current
+                if (controller.signal.aborted) return
+                if (current && oldVersion && current.replace(/^v/, '') !== oldVersion.replace(/^v/, '')) {
+                    this.finishUpgrade(this.$t('升级成功，即将刷新页面...'), 'success')
+                    return
                 }
-            } catch {
-                // 服务重启中，请求失败属正常，继续等待
+            } catch (error) {
+                if (controller.signal.aborted) return
+                if (!this.isUpgradeDisconnect(error)) {
+                    this.finishUpgrade()
+                    return
+                }
             }
         }
-
-        if (succeeded) {
-            // 保持 upgrading = true，按钮继续显示"等待重启..."直到页面刷新
-            this.portal.showNotification('success', this.$t('升级成功，即将刷新页面...'))
-            setTimeout(() => {
-                this.upgradeType = null
-                window.location.reload()
-            }, 2000)
-        } else {
-            // 超时
-            this.upgrading = false
-            this.upgradeType = null
-            this.portal.showNotification('error', this.$t('升级超时，请手动检查服务状态'))
-        }
+        if (!controller.signal.aborted) this.finishUpgrade(this.$t('升级超时，请手动检查服务状态'))
     }
 }
 
@@ -185,7 +195,7 @@ export default toNative(SystemUpdater)
         </a>
         <!-- Docker 容器升级（仅 Docker 环境） -->
         <button
-          v-if="inDocker && portal.hasPerm('POST /api/docker/container') && (upgradeType === 'docker' || (!deploying && !upgrading))"
+          v-if="inDocker && portal.hasPerm('POST /api/docker/container')"
           class="btn btn-emerald w-full xs:w-auto"
           :title="$t('升级当前容器')"
           :disabled="deploying || upgrading"
@@ -196,7 +206,7 @@ export default toNative(SystemUpdater)
         </button>
         <!-- 二进制原地升级 -->
         <button
-          v-if="portal.hasPerm('POST /api/overview/upgrade') && (upgradeType === 'binary' || (!deploying && !upgrading))"
+          v-if="portal.hasPerm('POST /api/overview/upgrade')"
           class="btn btn-primary w-full xs:w-auto"
           :title="$t('下载最新版本并重启')"
           :disabled="deploying || upgrading"
