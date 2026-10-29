@@ -230,7 +230,7 @@ isrvd_get "/docker/container/<ID>/file/ls?path=/"
 isrvd_get "/docker/container/<ID>/file/read?path=/etc/hostname"
 ```
 
-返回：`{content: string}`。`path` 必填（否则 400）；文件超过 4MB 返回 413；非 UTF-8 内容会被替换为 `\uFFFD`。
+返回：`{content: string}`。`path` 必填（否则 400）；文件超过 8MB 返回 413；二进制文件（前 8000 字节含 NUL 字节或非打印字符超过 10%）返回 415；其余非 UTF-8 内容会被替换为 `\uFFFD`。
 
 ### 写入文件
 
@@ -238,7 +238,7 @@ isrvd_get "/docker/container/<ID>/file/read?path=/etc/hostname"
 isrvd_post "/docker/container/<ID>/file/write" '{"path":"/tmp/hello.txt","content":"Hello"}'
 ```
 
-`path` 必填；`content` 最大 4MB、请求体最大 32MB，超出返回 413。写入会覆盖原文件，权限重置为 `0644`。
+`path` 必填；`content` 最大 8MB、请求体最大 32MB，超出返回 413。写入会覆盖原文件，权限重置为 `0644`。
 
 ### 下载文件
 

@@ -7,6 +7,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/rehiy/libgo/filer"
 	"github.com/rehiy/libgo/webssh"
 
 	"isrvd/pkgs/iobuf"
@@ -111,6 +112,9 @@ func (s *Service) SFTPRead(hostID, filePath string) (string, error) {
 	}
 	if err != nil {
 		return "", err
+	}
+	if !filer.IsTextBytes(buf.Bytes()) {
+		return "", iobuf.ErrBinary
 	}
 	return strings.ToValidUTF8(buf.String(), "\uFFFD"), nil
 }

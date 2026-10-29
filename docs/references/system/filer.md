@@ -58,7 +58,7 @@ isrvd_post "/filer/file" '{"path":"<FILE>","content":"<CONTENT>"}'
 isrvd_get "/filer/file?path=<FILE>"
 ```
 
-返回：`{"path": "<FILE>", "content": "文件内容..."}`。文件超过 4 MiB 返回 413（请使用下载接口）。
+返回：`{"path": "<FILE>", "content": "文件内容..."}`。文件超过 8 MiB 返回 413（请使用下载接口）；二进制文件（前 8000 字节含 NUL 字节或非打印字符超过 10%）返回 415；路径为目录返回 400，不存在返回 404，无权限返回 403，其他读取错误返回 500。
 
 ## 保存文件
 
@@ -66,7 +66,7 @@ isrvd_get "/filer/file?path=<FILE>"
 isrvd_put "/filer/file" '{"path":"<FILE>","content":"<CONTENT>"}'
 ```
 
-> 创建 / 保存文件时 `path`、`content` 均必填（空 `content` 返回 400）；`content` 超过 4 MiB、请求体超过 32 MiB 返回 413。
+> 创建 / 保存文件时 `path` 必填，`content` 可为空字符串；`content` 超过 8 MiB、请求体超过 32 MiB 返回 413。
 
 ## 重命名 / 移动
 

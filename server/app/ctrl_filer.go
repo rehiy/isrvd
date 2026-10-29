@@ -2,9 +2,11 @@ package app
 
 import (
 	"errors"
+	"io/fs"
 	"mime"
 	"net/http"
 	"path/filepath"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/logman"
@@ -124,8 +126,8 @@ func (app *App) filerFileMkdir(c *gin.Context) {
 }
 
 type filerContentBody struct {
-	Path    string `json:"path" binding:"required"`    // 文件路径
-	Content string `json:"content" binding:"required"` // 文件内容
+	Path    string `json:"path" binding:"required"` // 文件路径
+	Content string `json:"content"`                 // 文件内容
 }
 
 func (app *App) filerFileCreate(c *gin.Context) {
@@ -169,8 +171,25 @@ func (app *App) filerFileRead(c *gin.Context) {
 		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用下载功能")
 		return
 	}
-	if err != nil {
+	if errors.Is(err, iobuf.ErrBinary) {
+		respondError(c, http.StatusUnsupportedMediaType, "文件不是文本文件，无法在线编辑")
+		return
+	}
+	if errors.Is(err, syscall.EISDIR) {
+		respondError(c, http.StatusBadRequest, "路径是目录")
+		return
+	}
+	if errors.Is(err, fs.ErrNotExist) {
 		respondError(c, http.StatusNotFound, "文件未找到")
+		return
+	}
+	if errors.Is(err, fs.ErrPermission) {
+		respondError(c, http.StatusForbidden, "权限不足")
+		return
+	}
+	if err != nil {
+		logman.Error("Read file failed", "path", absPath, "error", err)
+		respondError(c, http.StatusInternalServerError, "读取文件失败")
 		return
 	}
 	respondSuccess(c, "获取文件内容成功", gin.H{"path": req.Path, "content": string(content)})

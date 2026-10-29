@@ -344,6 +344,10 @@ func (app *App) websshSFTPRead(c *gin.Context) {
 		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用下载功能")
 		return
 	}
+	if errors.Is(err, iobuf.ErrBinary) {
+		respondError(c, http.StatusUnsupportedMediaType, "文件不是文本文件，无法在线编辑")
+		return
+	}
 	if err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -359,8 +363,8 @@ func (app *App) websshSFTPWrite(c *gin.Context) {
 	id := c.Param("id")
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxEditableJSONBytes)
 	var req struct {
-		Path    string `json:"path" binding:"required"`    // 目标文件路径
-		Content string `json:"content" binding:"required"` // 文件文本内容
+		Path    string `json:"path" binding:"required"` // 目标文件路径
+		Content string `json:"content"`                 // 文件文本内容
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondBindError(c, err)

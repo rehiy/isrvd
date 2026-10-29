@@ -32,7 +32,7 @@ isrvd_get "/sftp/<ID>/ls?path=/home/user"
 isrvd_get "/sftp/<ID>/read?path=/path/to/file"
 ```
 
-响应 `payload`：`{"content":"<FILE_CONTENT>"}`。文件超过 4 MiB 返回 413；非 UTF-8 字节被替换为 U+FFFD，不适合二进制文件。
+响应 `payload`：`{"content":"<FILE_CONTENT>"}`。文件超过 8 MiB 返回 413；二进制文件（前 8000 字节含 NUL 字节或非打印字符超过 10%）返回 415；其余非 UTF-8 字节被替换为 U+FFFD。
 
 ---
 
@@ -42,7 +42,7 @@ isrvd_get "/sftp/<ID>/read?path=/path/to/file"
 isrvd_post "/sftp/<ID>/write" '{"path":"/path/to/file","content":"<FILE_CONTENT>"}'
 ```
 
-`path`、`content` 均必填（空字符串 `content` 返回 400）；`content` 超过 4 MiB 返回 413。
+`path` 必填，`content` 可为空字符串；`content` 超过 8 MiB 返回 413。
 
 ---
 

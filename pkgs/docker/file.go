@@ -12,6 +12,7 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/rehiy/libgo/command"
+	"github.com/rehiy/libgo/filer"
 	"github.com/rehiy/libgo/logman"
 
 	"isrvd/pkgs/iobuf"
@@ -187,6 +188,9 @@ func (s *DockerService) ContainerFileRead(ctx context.Context, containerID, file
 	}
 	if err != nil {
 		return "", err
+	}
+	if !filer.IsTextBytes(buf.Bytes()) {
+		return "", iobuf.ErrBinary
 	}
 	return strings.ToValidUTF8(buf.String(), "\uFFFD"), nil
 }

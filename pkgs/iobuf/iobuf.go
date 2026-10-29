@@ -7,10 +7,13 @@ import (
 )
 
 // MaxEditableFileBytes 在线编辑文件的内容上限，所有在线编辑入口共用。
-const MaxEditableFileBytes int64 = 4 << 20
+const MaxEditableFileBytes int64 = 8 << 20
 
 // ErrTooLarge 写入内容超过 MaxEditableFileBytes。
 var ErrTooLarge = errors.New("文件超过在线编辑上限")
+
+// ErrBinary 内容为二进制数据，不支持在线编辑。
+var ErrBinary = errors.New("文件不是文本文件，无法在线编辑")
 
 // EditBuffer 最多接收 MaxEditableFileBytes+1 字节的缓冲：超出后 Write 返回 ErrTooLarge
 // 以中断上游复制；多出的 1 字节用于通过 Exceeded 区分「恰好等于上限」与「超过上限」。

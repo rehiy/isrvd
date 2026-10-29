@@ -166,6 +166,9 @@ func (s *Service) FileRead(absPath string) ([]byte, error) {
 	if int64(len(data)) > iobuf.MaxEditableFileBytes {
 		return nil, iobuf.ErrTooLarge
 	}
+	if !filer.IsTextBytes(data) {
+		return nil, iobuf.ErrBinary
+	}
 	return data, nil
 }
 

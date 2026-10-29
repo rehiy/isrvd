@@ -124,6 +124,10 @@ func (app *App) dockerContainerFileRead(c *gin.Context) {
 		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用下载功能")
 		return
 	}
+	if errors.Is(err, iobuf.ErrBinary) {
+		respondError(c, http.StatusUnsupportedMediaType, "文件不是文本文件，无法在线编辑")
+		return
+	}
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
