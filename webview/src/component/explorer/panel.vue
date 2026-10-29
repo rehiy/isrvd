@@ -456,7 +456,7 @@ export default toNative(ExplorerPanel)
                       <button v-if="can.unzip && file.name.endsWith('.zip')" class="btn-icon btn-icon-amber" :title="$t('解压')" @click="startUnzip(file)">
                         <i class="fas fa-file-zipper text-xs"></i>
                       </button>
-                      <button v-if="can.readFile && can.writeFile && isEditableFile(file.name)" class="btn-icon btn-icon-teal" :title="$t('编辑')" @click="startModify(file)">
+                      <button v-if="can.readFile && can.writeFile && isEditableFile(file.name, file.size, portal.maxEditSize)" class="btn-icon btn-icon-teal" :title="$t('编辑')" @click="startModify(file)">
                         <i class="fas fa-file-pen text-xs"></i>
                       </button>
                     </template>
@@ -510,7 +510,7 @@ export default toNative(ExplorerPanel)
                 <button v-if="can.download" class="btn-icon btn-icon-slate" @click="download(file)"><i class="fas fa-download text-xs"></i><span class="text-xs ml-1">{{ $t('下载') }}</span></button>
                 <button v-if="can.preview && isPreviewableFile(file.name)" class="btn-icon btn-icon-slate" @click="startPreview(file)"><i class="fas fa-eye text-xs"></i><span class="text-xs ml-1">{{ $t('预览') }}</span></button>
                 <button v-if="can.unzip && file.name.endsWith('.zip')" class="btn-icon btn-icon-amber" @click="startUnzip(file)"><i class="fas fa-file-zipper text-xs"></i><span class="text-xs ml-1">{{ $t('解压') }}</span></button>
-                <button v-if="can.readFile && can.writeFile && isEditableFile(file.name)" class="btn-icon btn-icon-teal" @click="startModify(file)"><i class="fas fa-file-pen text-xs"></i><span class="text-xs ml-1">{{ $t('编辑') }}</span></button>
+                <button v-if="can.readFile && can.writeFile && isEditableFile(file.name, file.size, portal.maxEditSize)" class="btn-icon btn-icon-teal" @click="startModify(file)"><i class="fas fa-file-pen text-xs"></i><span class="text-xs ml-1">{{ $t('编辑') }}</span></button>
               </template>
               <button v-if="can.rename" class="btn-icon btn-icon-blue" @click="startRename(file)"><i class="fas fa-file-export text-xs"></i><span class="text-xs ml-1">{{ $t('移动') }}</span></button>
               <button v-if="can.chmod" class="btn-icon btn-icon-indigo" @click="startChmod(file)"><i class="fas fa-key text-xs"></i><span class="text-xs ml-1">{{ $t('权限') }}</span></button>

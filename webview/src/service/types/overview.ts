@@ -7,6 +7,7 @@ import type { LinkConfig } from './system'
 export interface BootstrapConfig {
     title: string
     maxUploadSize: number
+    maxEditSize: number
     marketplaceUrl: string
     openapiEnabled: boolean
     links: LinkConfig[]

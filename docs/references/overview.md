@@ -12,7 +12,7 @@ isrvd_get "/overview/bootstrap"
 |------|------|------|
 | `auth` | object | 当前认证信息（`mode`（`jwt` / `header`）、`username`、`member`、`oidcEnabled`、`oidcBtnLabel`、`passkeyEnabled`、`passwordDisabled`、`passwordMinLength`）；未登录时省略 `username`/`member`；代理 Header 模式下 `oidcEnabled`、`passwordDisabled` 恒为 `false` |
 | `probe` | object | 服务可用性，仅已登录时返回：`copilot`、`apisix`、`caddy`、`docker`、`swarm`、`compose`、`node`；各项并发探活，整体 5 秒超时；`copilot` 需 `copilot.baseUrl` 与 `apiKey` 均已配置才为 `true`；`node` 仅在 `center` 模式注册，表示多节点管理可用 |
-| `config` | object | 前端启动所需的最小配置，仅已登录时返回：`title`、`maxUploadSize`、`marketplaceUrl`、`openapiEnabled`、`links` |
+| `config` | object | 前端启动所需的最小配置，仅已登录时返回：`title`、`maxUploadSize`、`maxEditSize`（在线编辑文件大小上限，字节）、`marketplaceUrl`、`openapiEnabled`、`links` |
 
 `config.title` 为系统配置中的浏览器标题，留空时前端使用 `iSrvd`；节点视角使用中控的标题。
 

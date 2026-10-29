@@ -1,20 +1,18 @@
-const TEXT_EXTENSIONS = [
-    'txt', 'text', 'md', 'markdown', 'rst', 'adoc', 'log', 'csv', 'tsv',
-    'json', 'jsonc', 'json5', 'jsonl', 'xml', 'toml', 'yaml', 'yml', 'ini', 'conf', 'cfg', 'cnf',
-    'env', 'envrc', 'properties', 'editorconfig', 'gitignore', 'gitattributes', 'dockerignore',
-    'npmrc', 'yarnrc', 'pnpmrc', 'nvmrc', 'node-version', 'python-version',
-    'ruby-version', 'tool-versions', 'bashrc', 'bash_profile', 'zshrc', 'zprofile',
-    'profile', 'vimrc', 'gvimrc', 'curlrc', 'wgetrc', 'inputrc',
-    'js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'vue', 'svelte', 'astro',
-    'css', 'scss', 'sass', 'less', 'html', 'htm', 'xhtml', 'svg',
-    'go', 'py', 'pyw', 'rb', 'php', 'java', 'kt', 'kts', 'scala', 'groovy',
-    'c', 'h', 'cc', 'cpp', 'cxx', 'hpp', 'hh', 'cs', 'rs', 'swift', 'm', 'mm',
-    'sh', 'bash', 'zsh', 'fish', 'ps1', 'bat', 'cmd', 'sql', 'lua', 'pl', 'pm',
-    'r', 'dart', 'ex', 'exs', 'erl', 'hrl', 'clj', 'cljs', 'fs', 'fsx', 'vb',
-    'tf', 'tfvars', 'hcl', 'dockerfile', 'compose', 'lock', 'mod', 'sum',
-    'makefile', 'rakefile', 'gemfile', 'podfile', 'procfile',
-    'tmpl', 'tpl', 'template', 'mustache', 'hbs'
-]
+const BINARY_EXTENSIONS = new Set([
+    // 图片 / 音视频 / 字体
+    'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'ico', 'icns', 'tif', 'tiff', 'psd', 'heic', 'avif',
+    'mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'wma', 'mid', 'midi',
+    'mp4', 'webm', 'avi', 'mov', 'm4v', 'mkv', 'flv', 'wmv', 'mpg', 'mpeg',
+    'ttf', 'otf', 'woff', 'woff2', 'eot',
+    // 压缩包 / 镜像 / 安装包
+    'zip', 'rar', '7z', 'tar', 'gz', 'tgz', 'bz2', 'tbz2', 'xz', 'txz', 'zst', 'lz', 'lz4', 'z', 'cab',
+    'iso', 'img', 'dmg', 'deb', 'rpm', 'apk', 'ipa', 'jar', 'war', 'ear', 'whl', 'egg', 'gem', 'nupkg',
+    // 可执行 / 库 / 编译产物
+    'exe', 'dll', 'so', 'dylib', 'bin', 'o', 'a', 'obj', 'lib', 'class', 'pyc', 'pyo', 'wasm', 'node',
+    // 文档 / 数据库 / 其他二进制
+    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'odt', 'ods', 'odp', 'epub',
+    'db', 'sqlite', 'sqlite3', 'mdb', 'dat', 'pack', 'idx', 'parquet', 'der', 'p12', 'pfx', 'jks', 'keystore'
+])
 
 export type PreviewFileType = 'image' | 'audio' | 'video' | 'pdf' | ''
 
@@ -88,18 +86,31 @@ const FILE_ICON_MAP: Record<string, string> = {
     'sql': 'fas fa-database text-secondary'
 }
 
-const editableExtension = (filename: string): string => {
-    const parts = filename.toLowerCase().split('.').filter(Boolean)
-    if (parts.length === 0) return ''
-    if (parts.length > 1 && parts[parts.length - 1] === 'bak') return parts[parts.length - 2]
-    return parts[parts.length - 1]
+const BACKUP_SUFFIXES = ['bak', 'orig', 'old', 'backup', 'tmp', 'swp']
+
+const fileExtension = (filename: string): string => {
+    const idx = filename.lastIndexOf('.')
+    return idx < 0 ? '' : filename.slice(idx + 1).toLowerCase()
 }
 
-const fileExtension = (filename: string): string => filename.split('.').pop()?.toLowerCase() ?? ''
+// 忽略备份后缀后的真实扩展名；无扩展名返回空串
+const effectiveExtension = (filename: string): string => {
+    let name = filename.toLowerCase()
+    while (BACKUP_SUFFIXES.includes(fileExtension(name)) && name.lastIndexOf('.') > 0) {
+        name = name.slice(0, name.lastIndexOf('.'))
+    }
+    const idx = name.lastIndexOf('.')
+    return idx <= 0 ? '' : name.slice(idx + 1)
+}
 
-export const isEditableFile = (filename: string): boolean => {
+/**
+ * 是否允许在线编辑：采用「排除已知二进制扩展名 + 大小限制」策略，
+ * 无扩展名或未知扩展名的文件默认允许，真正的二进制内容由后端读取时嗅探拒绝。
+ */
+export const isEditableFile = (filename: string, size?: number, maxSize?: number): boolean => {
     if (!filename) return false
-    return TEXT_EXTENSIONS.includes(editableExtension(filename))
+    if (typeof size === 'number' && typeof maxSize === 'number' && size > maxSize) return false
+    return !BINARY_EXTENSIONS.has(effectiveExtension(filename))
 }
 
 export const getPreviewType = (filename: string): PreviewFileType => {

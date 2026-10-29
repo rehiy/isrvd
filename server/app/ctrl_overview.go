@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"isrvd/pkgs/iobuf"
 	"isrvd/server/config"
 	"isrvd/server/service/account"
 	"isrvd/server/service/overview"
@@ -25,6 +26,7 @@ func (app *App) defineOverviewRoutes() []Route {
 type BootstrapConfig struct {
 	Title          string               `json:"title"`
 	MaxUploadSize  int64                `json:"maxUploadSize"`
+	MaxEditSize    int64                `json:"maxEditSize"`
 	MarketplaceURL string               `json:"marketplaceUrl"`
 	OpenAPIEnabled bool                 `json:"openapiEnabled"`
 	Links          []*config.LinkConfig `json:"links"`
@@ -51,6 +53,7 @@ func (app *App) overviewBootstrap(c *gin.Context) {
 		resp.Config = &BootstrapConfig{
 			Title:          snapshot.Server.Title,
 			MaxUploadSize:  snapshot.Server.MaxUploadSize,
+			MaxEditSize:    iobuf.MaxEditableFileBytes,
 			MarketplaceURL: snapshot.Marketplace.URL,
 			OpenAPIEnabled: snapshot.Server.OpenAPI,
 			Links:          snapshot.Links,

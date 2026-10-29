@@ -36,6 +36,7 @@ export const useSystemStore = defineStore('system', () => {
     const toolbarLinks = ref<LinkConfig[]>([])
     const marketplaceUrl = ref<string>('')
     const openapiEnabled = ref<boolean>(false)
+    const maxEditSize = ref<number>(8 << 20)
 
     // ─── 操作定义 ───
 
@@ -59,6 +60,7 @@ export const useSystemStore = defineStore('system', () => {
         if (config) {
             marketplaceUrl.value = config.marketplaceUrl || ''
             openapiEnabled.value = config.openapiEnabled || false
+            if (config.maxEditSize > 0) maxEditSize.value = config.maxEditSize
             toolbarLinks.value = config.links || []
         }
     }
@@ -94,6 +96,7 @@ export const useSystemStore = defineStore('system', () => {
         toolbarLinks,
         marketplaceUrl,
         openapiEnabled,
+        maxEditSize,
         // 操作
         apply,
         hasPerm,
