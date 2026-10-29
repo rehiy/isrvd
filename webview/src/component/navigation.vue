@@ -273,7 +273,7 @@ export default toNative(NavigationBar)
 
 <template>
   <aside 
-    class="fixed left-0 top-0 h-screen z-50 flex flex-col transition-all duration-300"
+    class="fixed left-0 inset-y-0 z-50 flex flex-col transition-all duration-300"
     :class="[
       collapsed ? 'w-16' : 'w-64',
       mobileSidebarVisible ? 'translate-x-0 bg-white/95 backdrop-blur-xl shadow-2xl' : '-translate-x-full lg:translate-x-0 lg:bg-white/80 lg:backdrop-blur-xl'
@@ -712,7 +712,7 @@ export default toNative(NavigationBar)
         <i class="fas fa-code text-base"></i>
       </a>
       <button
-        class="btn-icon btn-icon-slate"
+        class="btn-icon btn-icon-slate max-lg:hidden"
         :class="collapsed ? 'w-full h-10' : 'flex-1 h-10 text-xs font-medium'"
         :title="collapsed ? $t('展开菜单') : $t('收起菜单')"
         @click="$emit('update:collapsed', !collapsed)"
