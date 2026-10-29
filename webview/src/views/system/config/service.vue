@@ -1,12 +1,13 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
-import { useConfigStore } from '@/stores'
+import { useConfigStore, usePortal } from '@/stores'
 
 import ToggleCard from '@/component/toggle-card.vue'
 
 @Component({ components: { ToggleCard } })
 class ConfigService extends Vue {
+    portal = usePortal()
     config = useConfigStore()
 }
 
@@ -50,13 +51,13 @@ export default toNative(ConfigService)
       <p class="mt-1 text-xs text-slate-400">{{ $t('示例：https://example.com、https://*.example.com；支持通配符 *；留空则不限制') }}</p>
     </div>
 
-    <div>
+    <div v-if="!portal.currentNodeId">
       <label class="form-label">{{ $t('JWT 认证密钥') }}</label>
       <input v-model="config.draft.server.jwtSecret" type="password" :placeholder="$t('留空则保持不变')" class="input" autocomplete="new-password" />
       <p class="mt-1 text-xs text-slate-400">{{ $t('用于签名登录令牌，修改后所有用户需要重新登录') }}</p>
     </div>
 
-    <div>
+    <div v-if="!portal.currentNodeId">
       <label class="form-label">{{ $t('JWT 有效期（秒）') }}</label>
       <input v-model.number="config.draft.server.jwtExpiration" type="number" min="60" :placeholder="$t('请输入 JWT 有效期')" class="input" />
       <p class="mt-1 text-xs text-slate-400">{{ $t('登录令牌的有效期，默认 86400（24 小时）') }}</p>

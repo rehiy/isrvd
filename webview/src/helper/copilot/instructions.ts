@@ -168,7 +168,7 @@ const PAGE_INSTRUCTIONS: Array<{ test: (path: string) => boolean; desc: string }
 
     // Compose 部署（排除 /docker/compose 和 /swarm/compose 等子路径）
     {
-        test: p => p.includes('/compose/deploy'),
+        test: p => p.includes('/compose/docker') || p.includes('/compose/swarm'),
         desc: '当前页面：Compose 部署。可直接粘贴 compose.yml 文本部署（Docker Compose 或 Swarm Stack），也可从左侧「应用市场」选择模板后自动回填；项目名自动从 compose 文件的 name 字段获取，无需手动填写。',
     },
     // 应用市场

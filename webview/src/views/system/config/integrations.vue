@@ -1,12 +1,13 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
-import { useConfigStore } from '@/stores'
+import { useConfigStore, usePortal } from '@/stores'
 
 import IconSelect from '@/component/icon-select.vue'
 
 @Component({ components: { IconSelect } })
 class ConfigIntegrations extends Vue {
+    portal = usePortal()
     config = useConfigStore()
 
     addLink() {
@@ -24,7 +25,7 @@ export default toNative(ConfigIntegrations)
 <template>
   <div class="max-w-4xl space-y-6">
     <!-- AI 助手 -->
-    <section class="space-y-4">
+    <section v-if="!portal.currentNodeId" class="space-y-4">
       <div class="config-section-heading">
         <div>
           <h2 class="config-section-title">{{ $t('AI 助手') }}</h2>

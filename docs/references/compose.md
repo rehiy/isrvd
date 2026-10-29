@@ -8,11 +8,11 @@ Docker 不可用时 `/compose/*` 返回 `503`；未配置 `docker.containerRoot`
 
 侧边栏「Compose 部署」包含「单机部署」「Swarm 服务」「应用市场」子菜单，桌面和移动端共用导航：
 
-- 单机部署：`/compose/deploy?target=docker`，需 Docker 能力有效且有 `POST /api/compose/docker` 权限。
-- Swarm 服务：`/compose/deploy?target=swarm`，需 Swarm 管理节点能力有效且有 `POST /api/compose/swarm` 权限。
+- 单机部署：`/compose/docker`，需 Docker 能力有效且有 `POST /api/compose/docker` 权限。
+- Swarm 服务：`/compose/swarm`，需 Swarm 管理节点能力有效且有 `POST /api/compose/swarm` 权限。
 - 应用市场：`/compose/marketplace`，至少一种部署目标可用时显示；选择模板后优先进入单机部署，仅 Swarm 可用时进入 Swarm 服务。
 
-部署入口同时要求 Compose 能力有效；两种目标均不可用时隐藏整个「Compose 部署」菜单，单个目标不可用时隐藏对应子菜单。无目标参数的旧部署链接优先选择可用的 Docker 目标，否则选择 Swarm。清空表单不改变当前部署目标。
+部署入口同时要求 Compose 能力有效；两种目标均不可用时隐藏整个「Compose 部署」菜单，单个目标不可用时隐藏对应子菜单。两条部署路由复用同一表单组件，由路由固定目标，不再使用 `target` 查询参数；旧 `/compose/deploy` 链接需更新。清空表单不改变当前部署目标。
 
 ## 字段说明
 

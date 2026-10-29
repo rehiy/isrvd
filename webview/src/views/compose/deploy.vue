@@ -1,6 +1,6 @@
 <script lang="ts">
 import * as yaml from 'js-yaml'
-import { Component, Vue, Watch, toNative } from 'vue-facing-decorator'
+import { Component, Prop, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
@@ -16,6 +16,7 @@ import EnvEditor from './widget/env-editor.vue'
 })
 class ComposeDeploy extends Vue {
     portal = usePortal()
+    @Prop({ type: String, required: true }) readonly target!: ComposeDeployTarget
 
     // ─── 数据属性 ───
     loading = false
@@ -36,20 +37,12 @@ class ComposeDeploy extends Vue {
     }
 
     // ─── 计算属性 ───
-    get target(): ComposeDeployTarget {
-        if (this.$route.query.target === 'swarm') return 'swarm'
-        if (this.$route.query.target === 'docker') return 'docker'
-        return this.portal.hasPerm('POST /api/compose/docker') ? 'docker' : 'swarm'
-    }
-
     get deployTitle(): string {
         return this.target === 'swarm' ? this.$t('Swarm 服务') : this.$t('单机部署')
     }
 
     get canAccess(): boolean {
         if (!this.portal.initialized) return true
-        const target = this.$route.query.target
-        if (target !== undefined && target !== 'docker' && target !== 'swarm') return false
         return this.portal.hasPerm(`POST /api/compose/${this.target}`)
     }
 

@@ -3,6 +3,7 @@ import { ref } from 'vue'
 
 import { useLocaleStore } from './locale'
 
+import { nodeLocation } from '@/helper/node'
 import api from '@/service/api'
 import type {
     AllConfig,
@@ -40,13 +41,15 @@ export interface ConfigGroupMeta {
 }
 
 /** 配置分组导航定义：顺序即展示顺序 */
-export const configGroups: ConfigGroupMeta[] = [
+export const configGroups = ([
     { id: 'service', label: '基础服务', description: '端口、目录、上传、跨域与 JWT', icon: 'fa-server', sections: ['server'] },
     { id: 'auth', label: '登录认证', description: '密码、Passkey、OIDC 与代理 Header 登录', icon: 'fa-shield-halved', sections: ['password', 'passkey', 'oidc', 'tha'] },
     { id: 'gateway', label: '网关容器', description: 'APISIX、Caddy 与 Docker 连接参数', icon: 'fa-route', sections: ['apisix', 'caddy', 'docker'] },
     { id: 'alert', label: '监控告警', description: '采集间隔、Webhook 通道、资源阈值与应用故障', icon: 'fa-bell', sections: ['monitor', 'notify'] },
     { id: 'integrations', label: '扩展集成', description: 'AI 助手、应用市场与导航链接', icon: 'fa-puzzle-piece', sections: ['copilot', 'marketplace', 'links'] },
-]
+] satisfies ConfigGroupMeta[])
+    .filter(item => !nodeLocation().id || item.id !== 'auth')
+    .map(item => ({ ...item, sections: item.sections.filter(section => !nodeLocation().id || section !== 'copilot') }))
 
 /** 默认配置，保证各分区字段完整，避免表单绑定出现 undefined */
 function defaultConfig(): AllConfig {

@@ -20,7 +20,7 @@ export const centerUrl = (): string =>
 
 /** 仅在中控视角展示的管理页面；个人账户设置仍可在节点视角访问 */
 export const isCenterPage = (path: string): boolean =>
-    /^\/(?:node|ssh|system\/config|system\/audit\/logs|account\/members)(?:\/|$)/.test(path)
+    /^\/(?:node|ssh|system\/config\/auth|account\/members)(?:\/|$)/.test(path)
 
 /** 节点可选能力：key 与受管机上报的 features 一致，value 为界面显示名 */
 const NODE_FEATURES: Record<string, string> = {

@@ -287,13 +287,21 @@ const routes: RouteRecordRaw[] = [
     path: '/compose/marketplace',
     name: 'compose-marketplace',
     component: () => import('@/views/compose/marketplace.vue'),
-    meta: { title: '应用市场' }
+    meta: { title: '应用市场', permissions: ['POST /api/compose/docker', 'POST /api/compose/swarm'] }
   },
   {
-    path: '/compose/deploy',
-    name: 'compose-deploy',
+    path: '/compose/docker',
+    name: 'compose-docker',
     component: () => import('@/views/compose/deploy.vue'),
-    meta: { title: 'Compose 部署' }
+    props: { target: 'docker' },
+    meta: { title: '单机部署', permissions: ['POST /api/compose/docker'] }
+  },
+  {
+    path: '/compose/swarm',
+    name: 'compose-swarm',
+    component: () => import('@/views/compose/deploy.vue'),
+    props: { target: 'swarm' },
+    meta: { title: 'Swarm 服务', permissions: ['POST /api/compose/swarm'] }
   },
   {
     path: '/cron',
@@ -334,6 +342,7 @@ const routes: RouteRecordRaw[] = [
     path: '/system/config',
     component: () => import('@/views/system/config.vue'),
     redirect: '/system/config/service',
+    meta: { permissions: ['GET /api/system/config', 'PUT /api/system/config'] },
     children: [
       {
         path: 'service',
@@ -371,7 +380,7 @@ const routes: RouteRecordRaw[] = [
     path: '/system/audit/logs',
     name: 'system-audit-logs',
     component: () => import('@/views/system/audit-logs.vue'),
-    meta: { title: '操作审计' }
+    meta: { title: '操作审计', permissions: ['GET /api/system/audit/logs'] }
   },
 ]
 
@@ -404,15 +413,9 @@ router.beforeEach((to) => {
   // 权限尚未加载完成时放行（刷新页面场景，等 loadMe 完成后由导航菜单 v-if 控制）
   if (!_permsLoaded?.()) return true
 
-  if (to.path === '/compose/deploy' || to.path === '/compose/marketplace') {
-    const dockerAvailable = _hasPerm?.('POST /api/compose/docker')
-    const swarmAvailable = _hasPerm?.('POST /api/compose/swarm')
-    if (!dockerAvailable && !swarmAvailable) return { path: '/overview' }
-    if (to.path === '/compose/deploy' && to.query.target !== undefined) {
-      if (to.query.target === 'docker' && dockerAvailable) return true
-      if (to.query.target === 'swarm' && swarmAvailable) return true
-      return { path: '/overview' }
-    }
+  const permissions = to.meta.permissions as string[] | undefined
+  if (permissions) {
+    return permissions.some(permission => _hasPerm?.(permission)) ? true : { path: '/overview' }
   }
 
   // 从前端路由路径提取模块名（/<module>/...）

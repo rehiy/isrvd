@@ -143,12 +143,6 @@ class NavigationBar extends Vue {
         return this.$route.path.startsWith(prefix)
     }
 
-    isComposeDeployActive(target: 'docker' | 'swarm') {
-        if (this.$route.path !== '/compose/deploy') return false
-        const currentTarget = this.$route.query.target || (this.composeDeployVisible ? 'docker' : 'swarm')
-        return currentTarget === target
-    }
-
     toggleLocal() {
         if (this.collapsed) {
             this.$emit('update:collapsed', false)
@@ -590,22 +584,18 @@ export default toNative(NavigationBar)
           <div v-show="composeExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
             <router-link
               v-if="composeDeployVisible"
-              :to="{ path: '/compose/deploy', query: { target: 'docker' } }"
+              to="/compose/docker"
               class="nav-link"
-              active-class=""
-              exact-active-class=""
-              :class="{ 'nav-link-active': isComposeDeployActive('docker') }"
+              :class="{ 'nav-link-active': isActive('/compose/docker') }"
             >
               <i class="fab fa-docker"></i>
               <span>{{ $t('单机部署') }}</span>
             </router-link>
             <router-link
               v-if="composeSwarmVisible"
-              :to="{ path: '/compose/deploy', query: { target: 'swarm' } }"
+              to="/compose/swarm"
               class="nav-link"
-              active-class=""
-              exact-active-class=""
-              :class="{ 'nav-link-active': isComposeDeployActive('swarm') }"
+              :class="{ 'nav-link-active': isActive('/compose/swarm') }"
             >
               <i class="fas fa-cubes"></i>
               <span>{{ $t('Swarm 服务') }}</span>
@@ -625,7 +615,7 @@ export default toNative(NavigationBar)
       </router-link>
 
       <!-- 操作审计 -->
-      <router-link v-if="!portal.currentNodeId && portal.hasPerm('GET /api/system/audit/logs')" to="/system/audit/logs" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('操作审计') : ''">
+      <router-link v-if="portal.hasPerm('GET /api/system/audit/logs')" to="/system/audit/logs" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('操作审计') : ''">
         <i class="fas fa-clipboard-list"></i>
         <span v-if="!collapsed">{{ $t('操作审计') }}</span>
       </router-link>
@@ -661,7 +651,7 @@ export default toNative(NavigationBar)
       </div>
 
       <!-- 系统配置折叠子菜单（GET 或 PUT 任一权限即显示，只读成员同样可查看） -->
-      <div v-if="!portal.currentNodeId && (portal.hasPerm('GET /api/system/config') || portal.hasPerm('PUT /api/system/config'))">
+      <div v-if="portal.hasPerm('GET /api/system/config') || portal.hasPerm('PUT /api/system/config')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
         <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isConfigActive }" :title="$t('系统配置')" @click.stop="toggleConfig">
           <i class="fas fa-gear"></i>

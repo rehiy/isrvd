@@ -135,7 +135,7 @@ class ComposeMarketplace extends Vue {
             return
         }
         const target = this.portal.hasPerm('POST /api/compose/docker') ? 'docker' : 'swarm'
-        this.$router.push({ path: '/compose/deploy', query: { target } })
+        this.$router.push(`/compose/${target}`)
     }
 
     goConfig() {
