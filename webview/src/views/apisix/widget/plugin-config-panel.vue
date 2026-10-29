@@ -6,10 +6,13 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { ApisixRoute } from '@/service/types'
 
+import CodeEditor from '@/component/code-editor.vue'
+
 const TYPE_DEFAULTS: Record<string, string | number | boolean | unknown[] | Record<string, unknown>> = { string: '', integer: 0, number: 0, boolean: false, array: [], object: {} }
 
 @Component({
     expose: ['pluginsJsonError'],
+    components: { CodeEditor },
     emits: ['update:plugins']
 })
 class PluginConfigPanel extends Vue {
@@ -25,7 +28,6 @@ class PluginConfigPanel extends Vue {
     pluginSearchKeyword = ''
     pluginsJson = '{}'
     pluginsJsonError = ''
-    isEditingJson = false
 
     // 从路由导入
     importRouteId = ''
@@ -41,9 +43,10 @@ class PluginConfigPanel extends Vue {
     // ─── Watchers ───
     @Watch('plugins', { deep: true })
     onPluginsChanged() {
-        if (!this.isEditingJson) {
-            this.syncJsonFromPlugins()
-        }
+        try {
+            if (JSON.stringify(JSON.parse(this.pluginsJson || '{}')) === JSON.stringify(this.plugins)) return
+        } catch {}
+        this.syncJsonFromPlugins()
     }
 
     // ─── 计算属性 ───
@@ -65,9 +68,12 @@ class PluginConfigPanel extends Vue {
     }
 
     syncPluginsFromJson() {
-        this.isEditingJson = false
         try {
             const parsed = JSON.parse(this.pluginsJson || '{}')
+            if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+                this.pluginsJsonError = this.$t('请修正 Plugin JSON 格式错误')
+                return
+            }
             this.pluginsJsonError = ''
             if (JSON.stringify(parsed) !== JSON.stringify(this.plugins)) {
                 this.$emit('update:plugins', parsed)
@@ -106,9 +112,9 @@ class PluginConfigPanel extends Vue {
         this.pluginSearchKeyword = ''
     }
 
-    onPluginsJsonInput(event: Event) {
-        this.isEditingJson = true
-        this.pluginsJson = (event.target as HTMLTextAreaElement).value
+    onPluginsJsonInput(value: string) {
+        this.pluginsJson = value
+        this.syncPluginsFromJson()
     }
 
     // ─── 从路由导入 ───
@@ -223,7 +229,7 @@ export default toNative(PluginConfigPanel)
     </div>
 
     <!-- JSON 编辑器 -->
-    <textarea :value="pluginsJson" rows="8" :class="['input font-mono text-sm mt-3', pluginsJsonError ? 'border-red-300 bg-red-50' : '']" :placeholder="$t('请输入插件配置 JSON...')" @blur="syncPluginsFromJson" @input="onPluginsJsonInput"></textarea>
+    <CodeEditor :model-value="pluginsJson" language="json" :label="$t('插件配置')" class="mt-3" :class="pluginsJsonError ? 'border-red-300 bg-red-50' : ''" :placeholder="$t('请输入插件配置 JSON...')" @update:model-value="onPluginsJsonInput" />
     <p class="text-xs text-slate-400 mt-1">{{ showImport ? $t('可直接编辑 JSON，也支持从现有路由导入') : $t('可直接编辑 JSON，或从插件列表添加') }}；{{ $t('示例：') }}<code v-text="'{&quot;key-auth&quot;: {&quot;key&quot;: &quot;your-api-key&quot;}}'"></code></p>
     <p v-if="pluginsJsonError" class="text-xs text-red-500 mt-1">{{ pluginsJsonError }}</p>
   </div>

@@ -1,14 +1,14 @@
 <script lang="ts">
-import { json } from '@codemirror/lang-json'
-import { Codemirror } from 'vue-codemirror'
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
 
+import CodeEditor from '@/component/code-editor.vue'
+
 @Component({
-    components: { Codemirror }
+    components: { CodeEditor }
 })
 class CaddyRaw extends Vue {
     portal = usePortal()
@@ -16,8 +16,6 @@ class CaddyRaw extends Vue {
     raw = ''
     loading = false
     saving = false
-
-    readonly extensions = [json()]
 
     async loadConfig() {
         this.loading = true
@@ -101,9 +99,7 @@ export default toNative(CaddyRaw)
 
     <div v-if="loading" class="card-body"><div class="empty-state"><div class="spinner-lg"></div><p class="text-slate-500">{{ $t('加载中...') }}</p></div></div>
     <div v-else class="card-body flex-1 min-h-0 flex flex-col gap-3">
-      <div class="editor-container flex-1 min-h-[16rem]">
-        <Codemirror v-model="raw" :style="{ height: '100%' }" :extensions="extensions" />
-      </div>
+      <CodeEditor v-model="raw" language="json" :label="$t('原始配置')" height="100%" class="flex-1 min-h-[16rem]" :disabled="saving" />
       <p class="text-xs text-slate-400 flex items-start gap-1 flex-shrink-0">
         <i class="fas fa-circle-info mt-0.5 flex-shrink-0"></i>
         <span>{{ $t('提交将通过') }} <code class="px-1 bg-slate-100 rounded">POST /load</code> {{ $t('整体替换 Caddy 运行配置，操作前请确保已备份。') }}</span>

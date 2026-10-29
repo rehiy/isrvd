@@ -5,6 +5,7 @@ import { useConfigStore } from '@/stores'
 
 import type { WebhookConfig } from '@/service/types'
 
+import CodeEditor from '@/component/code-editor.vue'
 import ToggleCard from '@/component/toggle-card.vue'
 
 interface WebhookTemplatePreset {
@@ -13,7 +14,7 @@ interface WebhookTemplatePreset {
     template: string
 }
 
-@Component({ components: { ToggleCard } })
+@Component({ components: { CodeEditor, ToggleCard } })
 class ConfigAlert extends Vue {
     config = useConfigStore()
     selectedWebhookTemplates = new WeakMap<WebhookConfig, string>()
@@ -186,12 +187,12 @@ export default toNative(ConfigAlert)
             </div>
             <div v-if="webhookTemplateValue(hook) === 'generic'">
               <label class="form-label">{{ $t('标准请求体结构预览') }}</label>
-              <textarea :value="standardWebhookPreview" rows="9" readonly class="input font-mono text-xs"></textarea>
+              <CodeEditor :model-value="standardWebhookPreview" language="json" :label="$t('标准请求体结构预览')" disabled />
               <p class="mt-1 text-xs text-slate-400">{{ $t('发送时由后端根据实际告警自动生成，配置中无需保存模板内容。') }}</p>
             </div>
             <div v-else>
               <label class="form-label">{{ $t('请求体模板') }}</label>
-              <textarea v-model="hook.template" rows="4" class="input font-mono text-xs" :placeholder="$t('留空则发送 isrvd 标准事件 JSON')"></textarea>
+              <CodeEditor v-model="hook.template" language="json" :label="$t('请求体模板')" :placeholder="$t('留空则发送 isrvd 标准事件 JSON')" />
               <p class="mt-1 text-xs text-slate-400">{{ $t(templateHint) }}</p>
             </div>
           </div>

@@ -1,5 +1,4 @@
 <script lang="ts">
-import { Codemirror } from 'vue-codemirror'
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
@@ -7,6 +6,7 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { CronJob, CronJobCreate, CronTypeInfo, DockerContainerInfo, DockerImageInfo } from '@/service/types'
 
+import CodeEditor from '@/component/code-editor.vue'
 import BaseModal from '@/component/modal.vue'
 import ToggleCard from '@/component/toggle-card.vue'
 
@@ -29,7 +29,7 @@ const defaultFormData = (type = 'SHELL'): CronJobCreate => ({
 
 @Component({
     expose: ['show'],
-    components: { BaseModal, Codemirror, ImageSelect, ContainerSelect, ToggleCard },
+    components: { BaseModal, CodeEditor, ImageSelect, ContainerSelect, ToggleCard },
     emits: ['success']
 })
 class JobEditModal extends Vue {
@@ -218,9 +218,7 @@ export default toNative(JobEditModal)
 
       <div>
         <label class="form-label">{{ $t('脚本内容') }} <span class="text-red-500">*</span></label>
-        <div class="editor-container">
-          <Codemirror v-model="formData.content" :disabled="modalLoading" :placeholder="'#!/bin/bash\necho &quot;hello&quot;'" />
-        </div>
+        <CodeEditor v-model="formData.content" :label="$t('脚本内容')" :disabled="modalLoading" :placeholder="'#!/bin/bash\necho &quot;hello&quot;'" />
       </div>
 
       <ToggleCard v-model="formData.enabled" :label="$t('状态')" :desc="$t('启用后任务将按计划执行')" />

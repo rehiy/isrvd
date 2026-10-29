@@ -1,10 +1,10 @@
 <script lang="ts">
-import { yaml } from '@codemirror/lang-yaml'
-import { Codemirror } from 'vue-codemirror'
 import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
+import CodeEditor from '@/component/code-editor.vue'
+
 @Component({
-    components: { Codemirror },
+    components: { CodeEditor },
     emits: ['update:modelValue']
 })
 class ComposeEditor extends Vue {
@@ -12,8 +12,6 @@ class ComposeEditor extends Vue {
     @Prop({ default: false }) disabled!: boolean
     @Prop({ default: '50vh' }) height!: string
     @Prop({ default: '' }) warning!: string
-
-    readonly extensions = [yaml()]
 
     get content() {
         return this.modelValue
@@ -33,9 +31,7 @@ export default toNative(ComposeEditor)
       <label class="form-label">
         <i class="fas fa-file-code mr-1 text-slate-400"></i>compose.yml
       </label>
-      <div class="editor-container">
-        <Codemirror v-model="content" :style="{ height }" :extensions="extensions" :disabled="disabled" />
-      </div>
+      <CodeEditor v-model="content" filename="compose.yml" :height="height" :disabled="disabled" />
     </div>
     <div v-if="warning" class="bg-amber-50 border border-amber-200 rounded-lg p-3">
       <p class="text-sm text-amber-700">

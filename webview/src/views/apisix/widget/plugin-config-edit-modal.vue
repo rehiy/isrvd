@@ -33,6 +33,7 @@ class PluginConfigEditModal extends Vue {
     formData = defaultFormData()
     availablePlugins: Record<string, { schema: Record<string, unknown> }> = {}
     routes: ApisixRoute[] = []
+    declare $refs: { pluginPanel: InstanceType<typeof PluginConfigPanel> }
 
     resetForm() {
         this.formData = defaultFormData()
@@ -80,6 +81,10 @@ class PluginConfigEditModal extends Vue {
     }
 
     async handleConfirm() {
+        if (this.$refs.pluginPanel?.pluginsJsonError) {
+            this.portal.showNotification('error', this.$t('请修正 Plugin JSON 格式错误'))
+            return
+        }
         if (Object.keys(this.formData.plugins || {}).length === 0) {
             this.portal.showNotification('error', this.$t('至少需要配置一个插件'))
             return
@@ -116,7 +121,7 @@ export default toNative(PluginConfigEditModal)
         <textarea v-model="formData.desc" rows="2" class="input resize-none" :placeholder="$t('请输入插件配置描述（可选）')"></textarea>
       </div>
 
-      <PluginConfigPanel :plugins="formData.plugins" :available-plugins="availablePlugins" :show-import="true" :routes="routes" @update:plugins="updatePlugins" />
+      <PluginConfigPanel ref="pluginPanel" :plugins="formData.plugins" :available-plugins="availablePlugins" :show-import="true" :routes="routes" @update:plugins="updatePlugins" />
     </div>
 
     <template #confirm-text>

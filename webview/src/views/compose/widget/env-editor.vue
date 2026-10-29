@@ -1,9 +1,10 @@
 <script lang="ts">
-import { Codemirror } from 'vue-codemirror'
 import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
+import CodeEditor from '@/component/code-editor.vue'
+
 @Component({
-    components: { Codemirror },
+    components: { CodeEditor },
     emits: ['update:modelValue']
 })
 class EnvEditor extends Vue {
@@ -30,9 +31,7 @@ export default toNative(EnvEditor)
       <label class="form-label">
         <i class="fas fa-file-code mr-1 text-slate-400"></i>.env
       </label>
-      <div class="editor-container">
-        <Codemirror v-model="content" :style="{ height }" :disabled="disabled" />
-      </div>
+      <CodeEditor v-model="content" filename=".env" :height="height" :disabled="disabled" />
       <p class="text-xs text-slate-400 mt-1">{{ $t('每行 KEY=VALUE，用于 Compose 变量插值') }}</p>
     </div>
     <div v-if="warning" class="bg-amber-50 border border-amber-200 rounded-lg p-3">

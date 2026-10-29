@@ -8,6 +8,7 @@ import type { CaddyHandler, CaddyHandlerFileServer, CaddyHandlerHeaders, CaddyHa
 
 import { parseHostPort } from '@/helper/format'
 
+import CodeEditor from '@/component/code-editor.vue'
 import BaseModal from '@/component/modal.vue'
 import ToggleCard from '@/component/toggle-card.vue'
 
@@ -76,7 +77,7 @@ const defaultFormData = () => ({
 
 @Component({
     expose: ['show'],
-    components: { BaseModal, ContainerPortSelect, ContainerSelect, ToggleCard },
+    components: { BaseModal, CodeEditor, ContainerPortSelect, ContainerSelect, ToggleCard },
     emits: ['success']
 })
 class RouteEditModal extends Vue {
@@ -744,7 +745,7 @@ export default toNative(RouteEditModal)
           </div>
           <div>
             <label class="form-label">{{ $t('响应体') }}</label>
-            <textarea v-model="formData.body" rows="4" class="input font-mono text-sm" :placeholder="$t('请输入响应体')"></textarea>
+            <CodeEditor v-model="formData.body" :label="$t('响应体')" :disabled="modalLoading" :placeholder="$t('请输入响应体')" />
             <p class="text-xs text-slate-400 mt-1">{{ $t('留空则返回默认响应，例如：OK') }}</p>
           </div>
         </div>
@@ -785,7 +786,7 @@ export default toNative(RouteEditModal)
         <!-- raw -->
         <div v-else-if="formData.kind === 'raw'" class="space-y-2">
           <label class="form-label">{{ $t('路由 JSON') }} <span class="text-red-500">*</span></label>
-          <textarea v-model="rawJson" rows="12" class="input font-mono text-xs" placeholder='{ "match": [...], "handle": [...] }' @input="rawDirty = true"></textarea>
+          <CodeEditor v-model="rawJson" language="json" :label="$t('路由 JSON')" :disabled="modalLoading" placeholder='{ "match": [...], "handle": [...] }' @update:model-value="rawDirty = true" />
           <p class="text-xs text-slate-400">{{ $t('直接编辑完整的 Caddy 路由 JSON，match 字段可选') }}</p>
         </div>
       </div>

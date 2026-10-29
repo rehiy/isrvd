@@ -5,11 +5,12 @@ import { usePortal } from '@/stores'
 
 import api from '@/service/api'
 
+import CodeEditor from '@/component/code-editor.vue'
 import BaseModal from '@/component/modal.vue'
 
 @Component({
     expose: ['show'],
-    components: { BaseModal },
+    components: { BaseModal, CodeEditor },
     emits: ['success']
 })
 class ImageBuildModal extends Vue {
@@ -54,7 +55,7 @@ export default toNative(ImageBuildModal)
       </div>
       <div>
         <label class="form-label">Dockerfile</label>
-        <textarea v-model="buildDockerfile" rows="14" class="input font-mono text-sm" :placeholder="$t('请输入 Dockerfile 内容')" spellcheck="false"></textarea>
+        <CodeEditor v-model="buildDockerfile" filename="Dockerfile" :disabled="modalLoading" :placeholder="$t('请输入 Dockerfile 内容')" />
       </div>
     </div>
 
