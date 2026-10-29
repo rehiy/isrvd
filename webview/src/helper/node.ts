@@ -5,7 +5,7 @@
  * 前端使用相对路径（baseURL 为 api/、hash 路由），因此切换节点只需要换页面所在的路径前缀。
  */
 
-const NODE_PATH = /^(.*\/)n\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(?:index\.html)?$/
+const NODE_PATH = /^(.*\/)n\/([0-9A-Za-z-]+)\/(?:index\.html)?$/
 
 /** 当前页面所在的中控根路径（以 / 结尾）与所选节点 ID（本机为空字符串） */
 export const nodeLocation = (): { root: string; id: string } => {

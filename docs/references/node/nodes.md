@@ -23,7 +23,7 @@ isrvd_get "/node/nodes"
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `id` | string | 节点 ID（UUID，只读） |
+| `id` | string | 节点 ID（只读）：新建节点为 10 位字母数字随机 ID（`0-9A-Za-z`，区分大小写），已有 ID 保持不变并继续兼容 |
 | `name` | string | 节点名称 |
 | `status` | string | `pending` 待接入 \| `active` 已激活 \| `revoked` 已吊销 |
 | `hostname` | string | 最近一次连接时上报的主机名，首次连接前为空 |

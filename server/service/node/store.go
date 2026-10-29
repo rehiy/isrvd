@@ -1,8 +1,11 @@
 package node
 
 import (
+	"errors"
 	"slices"
 	"sync"
+
+	"github.com/rehiy/libgo/strutil"
 
 	"isrvd/pkgs/cstore"
 	"isrvd/server/config"
@@ -99,9 +102,30 @@ func (s *nodeStore) find(match func(*Node) bool) *Node {
 }
 
 func (s *nodeStore) insert(item *Node) error {
-	return s.mutate(func(items []*Node) ([]*Node, error) {
-		return append(items, cloneNode(item)), nil
+	id := item.ID
+	err := s.mutate(func(items []*Node) ([]*Node, error) {
+		if id != "" {
+			if slices.ContainsFunc(items, func(n *Node) bool { return n.ID == id }) {
+				return nil, errors.New("node: duplicate ID")
+			}
+			return append(items, cloneNode(item)), nil
+		}
+		for range 16 {
+			id = strutil.Rand(10)
+			if slices.ContainsFunc(items, func(n *Node) bool { return n.ID == id }) {
+				continue
+			}
+			next := cloneNode(item)
+			next.ID = id
+			return append(items, next), nil
+		}
+		return nil, errors.New("node: failed to generate a unique ID after 16 attempts")
 	})
+	if err != nil {
+		return err
+	}
+	item.ID = id
+	return nil
 }
 
 // update 在锁内读取-修改-写入；fn 返回错误则放弃修改

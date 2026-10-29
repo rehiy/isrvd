@@ -168,13 +168,17 @@ func (g *gateway) bootstrapCall(r *http.Request) (int, []byte, error) {
 
 // ─── 辅助函数 ───
 
-// validNodeID 节点 ID 为 strutil.NewString 生成的 UUID（小写十六进制，8-4-4-4-12）
+// validNodeID 接受 10 位字母数字节点 ID，兼容已有的 8 位 ID 和小写 UUID（8-4-4-4-12）。
 func validNodeID(id string) bool {
-	if len(id) != 36 {
+	if len(id) != 8 && len(id) != 10 && len(id) != 36 {
 		return false
 	}
 	for i, c := range id {
 		switch {
+		case len(id) == 8 || len(id) == 10:
+			if (c < '0' || c > '9') && (c < 'A' || c > 'Z') && (c < 'a' || c > 'z') {
+				return false
+			}
 		case i == 8 || i == 13 || i == 18 || i == 23:
 			if c != '-' {
 				return false

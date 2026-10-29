@@ -90,7 +90,7 @@ func (s *Service) NodeCreate(req *NodeRequest) (*NodeCreateResult, error) {
 	}
 	token := strutil.Rand(86) // 86 个字母数字字符，熵约 512 位
 	n := &Node{
-		ID: strutil.NewString(), Name: name, Status: StatusPending,
+		Name: name, Status: StatusPending,
 		CreatedAt: time.Now(), TokenHash: hashToken(token),
 	}
 	if err := s.nodes.insert(n); err != nil {
