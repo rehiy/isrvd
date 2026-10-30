@@ -46,8 +46,12 @@ type ExecSession struct {
 	closer func() // hijackedResp.Close() 返回 void，用 func() 封装
 }
 
-func (s *ExecSession) Read(p []byte) (int, error)  { return s.reader.Read(p) }
-func (s *ExecSession) Write(p []byte) (int, error) { return s.writer.Write(p) }
+func (s *ExecSession) Read(p []byte) (int, error) {
+	return s.reader.Read(p)
+}
+func (s *ExecSession) Write(p []byte) (int, error) {
+	return s.writer.Write(p)
+}
 func (s *ExecSession) Close() error {
 	s.closer()
 	return nil

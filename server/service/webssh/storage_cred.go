@@ -11,7 +11,9 @@ type Credential struct {
 	PrivateKey  string `yaml:"privateKey,omitempty" json:"-"`                // 私钥（不序列化到 JSON）
 }
 
-func (c *Credential) fields() (*string, *string, *string) { return &c.ID, &c.Password, &c.PrivateKey }
+func (c *Credential) fields() (*string, *string, *string) {
+	return &c.ID, &c.Password, &c.PrivateKey
+}
 
 // credentialStore 凭据存储
 type credentialStore = itemStore[Credential, *Credential]

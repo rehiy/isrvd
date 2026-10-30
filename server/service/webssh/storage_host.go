@@ -19,7 +19,9 @@ type Host struct {
 	Description    string `yaml:"description" json:"description"`                       // 主机描述
 }
 
-func (h *Host) fields() (*string, *string, *string) { return &h.ID, &h.Password, &h.PrivateKey }
+func (h *Host) fields() (*string, *string, *string) {
+	return &h.ID, &h.Password, &h.PrivateKey
+}
 
 // hostStore 主机配置存储
 type hostStore = itemStore[Host, *Host]

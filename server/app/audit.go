@@ -18,7 +18,9 @@ var running atomic.Pointer[App]
 type Auditor struct{}
 
 // Audit 返回操作审计入口
-func Audit() Auditor { return Auditor{} }
+func Audit() Auditor {
+	return Auditor{}
+}
 
 // BodyRead 读取有限长度的请求体用于审计，并保证后续处理仍可读取完整内容。
 func (Auditor) BodyRead(r *http.Request) string {

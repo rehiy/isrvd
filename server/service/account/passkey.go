@@ -414,10 +414,18 @@ type passkeyUser struct {
 	credentials []webauthn.Credential
 }
 
-func (u *passkeyUser) WebAuthnID() []byte                         { return u.id }
-func (u *passkeyUser) WebAuthnName() string                       { return u.name }
-func (u *passkeyUser) WebAuthnDisplayName() string                { return u.displayName }
-func (u *passkeyUser) WebAuthnCredentials() []webauthn.Credential { return u.credentials }
+func (u *passkeyUser) WebAuthnID() []byte {
+	return u.id
+}
+func (u *passkeyUser) WebAuthnName() string {
+	return u.name
+}
+func (u *passkeyUser) WebAuthnDisplayName() string {
+	return u.displayName
+}
+func (u *passkeyUser) WebAuthnCredentials() []webauthn.Credential {
+	return u.credentials
+}
 
 func (s *Service) verifyAndUpdateCredentialState(username, credIDStr string, signCount uint32, backupState bool) error {
 	s.credentialMu.Lock()
