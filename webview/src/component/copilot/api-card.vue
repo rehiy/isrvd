@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, useId } from 'vue'
 
-import { useLocaleStore } from '@/stores'
+import { useLocaleStore, usePortal } from '@/stores'
 
 import { executeCopilotAPI, previewCopilotAPICall } from '@/helper/copilot/api'
 import type { CopilotAPIArgs } from '@/helper/copilot/api'
@@ -9,6 +9,11 @@ import { bindCardAutoCollapse } from '@/helper/copilot/card-scroll'
 import { sanitizeCopilotValue as sanitizeValue } from '@/helper/copilot/sanitize'
 
 const t = useLocaleStore().t
+const portal = usePortal()
+// 节点视角下，调用实际作用于该节点，卡片上标出避免误操作
+const nodeName = computed(() => portal.currentNodeId
+    ? portal.nodes.find(n => n.id === portal.currentNodeId)?.name || portal.currentNodeId
+    : '')
 
 type ToolStatus = 'inProgress' | 'executing' | 'complete'
 
@@ -204,7 +209,7 @@ function formatValue(value: unknown): string {
           </span>
           <span class="min-w-0 block">
             <span class="item-title-sm">{{ cardTitle }}</span>
-            <code class="item-subtitle-mono">{{ path || props.args.callRef || $t('等待调用引用') }}</code>
+            <code class="item-subtitle-mono">{{ nodeName ? `[${nodeName}] ` : '' }}{{ path || props.args.callRef || $t('等待调用引用') }}</code>
           </span>
         </span>
         <span v-if="method" class="badge-sm flex-shrink-0" :class="methodClass">{{ method }}</span>

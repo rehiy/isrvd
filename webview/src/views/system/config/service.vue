@@ -63,7 +63,7 @@ export default toNative(ConfigService)
       <p class="mt-1 text-xs text-slate-400">{{ $t('登录令牌的有效期，默认 86400（24 小时）') }}</p>
     </div>
 
-    <ToggleCard v-model="config.draft.server.openapi" :label="$t('API 文档')" :desc="$t('开启后对外提供 /openapi/ 接口文档页（含全部接口结构，建议生产环境关闭）')" />
+    <ToggleCard v-if="!portal.currentNodeId" v-model="config.draft.server.openapi" :label="$t('API 文档')" :desc="$t('开启后对外提供 /openapi/ 接口文档页（含全部接口结构，建议生产环境关闭）')" />
     <ToggleCard v-model="config.draft.server.debug" :label="$t('Debug 模式')" :desc="$t('开启后输出详细调试日志')" />
   </section>
 </template>
