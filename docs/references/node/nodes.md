@@ -133,11 +133,11 @@ isrvd_get "/docker/containers"
 
 | 类别 | 模块 | 处理位置 |
 |------|------|----------|
-| 经隧道转发到节点 | `overview`、`filer`、`shell`、`local`、`docker`、`swarm`、`compose`、`cron`、`apisix`、`caddy` | 受管机 |
-| 始终由中控处理 | `account`、`system`、`copilot`、`ssh`、`sftp`、`node` | 中控 |
+| 经隧道转发到节点 | `overview`、`system`、`filer`、`shell`、`local`、`ssh`、`sftp`、`docker`、`swarm`、`compose`、`cron`、`apisix`、`caddy` | 受管机 |
+| 始终由中控处理 | `account`、`copilot`、`node` | 中控 |
 | 页面与静态资源 | 其余路径 | 中控 |
 
-- `GET /n/<ID>/api/overview/bootstrap` 的认证信息取自中控，`probe` 中的 `docker`、`swarm`、`compose`、`apisix`、`caddy` 取自节点，`node`、`copilot` 取自中控；节点不可达时这几项全部为 `false`。
+- `GET /n/<ID>/api/overview/bootstrap` 的认证信息取自中控，`probe` 中的 `docker`、`swarm`、`compose`、`apisix`、`caddy` 取自节点，`node`、`copilot` 取自中控；节点不可达时这几项全部为 `false`。`config` 以中控为底：`title`、`maxUploadSize`、`maxEditSize`、`marketplaceUrl` 取自节点，`links` 与中控合并，其余保持中控；节点返回的值类型不符时忽略。
 - 节点不存在返回 `404`；离线或已吊销返回 `503`；协议版本低于中控最低支持版本、隧道故障返回 `502`；节点响应超时返回 `504`。
 - 节点管理操作、节点上的写操作与 WebSocket 会记入中控的审计页面（`GET /system/audit/logs`），URI 带 `/n/<节点ID>/` 前缀，请求体按 isrvd 的规则脱敏；空成功响应记为 `200`，WebSocket 升级成功记为 `101`；受管机本机的审计页面里同一操作记录为其本地创始人。
 

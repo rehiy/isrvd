@@ -19,11 +19,11 @@
 ## 工作方式
 
 - 每个进程内部仍是完整的 isrvd：`center` 与 `agent` 模式下，isrvd 只监听 `127.0.0.1` 的随机端口。`center` 另起网关占用配置里的 `listenAddr` 作为对外入口；`agent` 不监听任何对外端口，`listenAddr` 不生效。
-- 浏览器访问 `/n/<节点ID>/`，页面仍由中控提供；Docker、Swarm、Compose、文件、本机进程、Shell 终端、计划任务、APISIX、Caddy、系统概览接口经隧道转发到该节点，包括流式日志、终端和文件上传下载。
+- 浏览器访问 `/n/<节点ID>/`，页面仍由中控提供；Docker、Swarm、Compose、文件、本机进程、Shell 终端、计划任务、APISIX、Caddy、系统概览与系统配置、SSH 与 SFTP 接口经隧道转发到该节点，包括流式日志、终端和文件上传下载。节点视角下的 SSH 主机与凭据保存在该节点上，连接从该节点的网络发起。
 - 新建节点通过 `libgo` 的 `strutil.Rand(10)` 生成 10 位字母数字随机 ID（`0-9A-Za-z`，区分大小写，如 `aB3dE6gH9j`），保存时检查重复，碰撞最多重试 16 次，耗尽则创建失败；已有节点 ID 不迁移，原有 UUID 和 8 位短 ID 的链接继续有效。节点 ID 不是认证凭据，接入仍使用独立的 token。
-- 账号、系统配置、AI 助手、SSH 与 SFTP 远程管理始终由中控自己处理，即使在 `/n/<节点ID>/` 下访问也一样。
-- 节点切换与节点管理**按需启用**：只有 `center` 模式（`/api/overview/bootstrap` 的 `probe.node` 为 `true`）且当前用户有 `GET /api/node/nodes` 权限时，才出现头部节点切换器；侧边栏「集中管控」（位于「用户管理」下方）还要求处于中控视角，包含「节点管理」（`#/node/access`）与「端口转发」（`#/node/portmaps`）。其他情况看不到任何节点界面，直接访问 `#/node` 会回到概览。
-- 切换节点是整页跳转到 `/n/<节点ID>/`，停留在当前功能页（带资源参数的详情页、从中控管理页切换时回到概览）。子节点视角隐藏「节点管理」「用户管理」「系统配置」「操作审计」与「SSH 远程管理」，直接访问回到概览；这只是前端限制，相关接口仍作用于中控并执行中控的认证与权限校验。
+- 账号（含成员与权限）、节点管理和 AI 助手始终由中控自己处理，即使在 `/n/<节点ID>/` 下访问也一样。
+- 节点切换与节点管理**按需启用**：只有 `center` 模式（`/api/overview/bootstrap` 的 `probe.node` 为 `true`）且当前用户有 `GET /api/node/nodes` 权限时，才出现头部节点切换器；侧边栏「集中管控」（位于「用户管理」下方）仅在中控视角显示，包含「节点管理」（`#/node/access`）与「端口转发」（`#/node/portmaps`）。其他情况看不到任何节点界面，直接访问 `#/node` 会回到概览。
+- 切换节点是整页跳转到 `/n/<节点ID>/`，停留在当前功能页（带资源参数的详情页、从中控管理页切换时回到概览）。子节点视角下，「节点管理」「集中管控」「用户管理」只属于中控，隐藏且直接访问会回到概览；个人账户设置仍作用于中控，可继续使用；SSH、系统配置与操作审计作用于该节点自己的数据，其中「登录认证」分组、JWT 密钥与有效期、AI 助手、API 文档开关在节点上不生效，节点视角下隐藏，直接访问登录认证页会回到概览。
 - 认证与权限复用中控的账户服务：网关在进程内验证凭据并检查路由权限。权限、密码或 JWT 密钥变更对新请求立即生效，已建立的长连接不逐条重新认证。应用未就绪或正在重载时，节点管理与转发返回 `502`，避免前端误判为登录过期；中控上游不可达时节点视角的启动数据同样返回 `502`。
 - 请求带 `Upgrade: websocket` 或命中声明 `QueryToken` 的 `GET` 路由时可从 `?token=` 读取令牌；普通请求不要把令牌放进 URL。无论凭据来自哪里，仍须通过中控认证与路由权限校验。
 
@@ -170,5 +170,5 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 
 - `server/config/cluster.go` 读取、校验部署环境变量及 `portmap` 配置。
 - `server/app/gateway_permission.go` 提供网关授权，并在 center 模式把节点权限并入路由索引；`server/cmd/server/launch.go` 按三种模式装配。
-- `server/gateway/`：`gateway.go` 装配与路由，`node.go` 节点管理与 WebSocket 接入，`proxy.go` 节点转发与启动数据聚合，`middleware.go` 复用认证/权限/审计，`response.go` 统一 JSON 输出。
+- `server/gateway/`：`gateway.go` 装配与路由，`node.go` 节点管理与 WebSocket 接入，`proxy.go` 节点视角的请求分流与转发，`bootstrap.go` 节点视角的启动数据聚合，`middleware.go` 身份头清理及复用认证/权限/审计，`response.go` 统一 JSON 输出。
 - 前端（`webview/src/`）：`views/node/nodes.vue`（节点管理）、`views/node/portmaps.vue`（端口转发）、`views/node/widget/`（`node-actions`、`node-create-modal`、`node-edit-modal`、`portmap-actions`、`node-portmap-modal`）、`helper/node.ts`、`helper/portmap.ts`、`component/node-switcher.vue`、`stores/node.ts`。后端按节点整体替换规则，`portmapPatch` 在每次增删改前先读取最新规则列表，避免覆盖他人修改。

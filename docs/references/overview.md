@@ -14,7 +14,7 @@ isrvd_get "/overview/bootstrap"
 | `probe` | object | 服务可用性，仅已登录时返回：`copilot`、`apisix`、`caddy`、`docker`、`swarm`、`compose`、`node`；各项并发探活，整体 5 秒超时；`copilot` 需 `copilot.baseUrl` 与 `apiKey` 均已配置才为 `true`；`node` 仅在 `center` 模式注册，表示多节点管理可用 |
 | `config` | object | 前端启动所需的最小配置，仅已登录时返回：`title`、`maxUploadSize`、`maxEditSize`（在线编辑文件大小上限，字节）、`marketplaceUrl`、`openapiEnabled`、`links` |
 
-`config.title` 为系统配置中的浏览器标题，留空时前端使用 `iSrvd`；节点视角使用中控的标题。
+`config.title` 为系统配置中的浏览器标题，留空时前端使用 `iSrvd`；节点视角下 `title` 取自节点，`links` 为中控与节点的合并（中控在前、按 `url` 去重，仅保留 `http(s)` 链接）。
 
 ---
 
