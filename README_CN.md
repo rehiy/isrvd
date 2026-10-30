@@ -241,49 +241,13 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.
 
 ### 接入节点
 
-1. 在中控进程环境中设置 `ISRVD_MODE=center`，重启服务。
-2. 在中控的节点管理页点击「接入节点」，填写必填名称并创建节点。保存 token，并复制弹窗中的安装命令；节点此时为「待接入」状态。
-3. 在受管机进程环境中设置：
+1. 以 `ISRVD_MODE=center` 启动中控。
+2. 在中控的节点管理页点击「接入节点」，填写名称并创建，保存仅显示一次的 token，复制弹窗中的安装命令；节点此时为「待接入」状态。
+3. 在受管机执行该命令，或在进程环境中设置 `ISRVD_MODE=agent`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN` 后重启。首次认证通过后节点变为已激活。
 
-```bash
-export ISRVD_MODE=agent
-export ISRVD_CENTER_URL=https://center.example.com
-export ISRVD_NODE_TOKEN="<中控生成的 token>"
-```
+部署参数只来自进程环境，YAML、etcd 与配置 API 管理业务配置。保存 token 的环境文件应限制权限为 `0600`。受管机不能启用 `tha`，且至少需要一个创始人成员，否则转发请求返回 401。
 
-4. 重启后直接用 token 连接。token 无时效限制，接入后同一 token 可用于重启与重连。已在线时拒绝重复连接（409），不会顶替旧会话。
-
-中控支持 `tha`，网关按 `tha.trustedCIDRs` 校验真实连接来源；受管模式不能启用 `tha`。部署参数由进程环境提供，YAML、etcd 与配置 API 管理业务配置。保存 token 的环境文件应限制权限为 `0600`。
-
-### 容器部署
-
-提前准备完整的 `/srv/data/conf/isrvd.yml` 保存业务配置，通过 `-e` 传入部署参数，中控与受管机分别部署在各自机器上：
-
-```bash
-# 中控（8080 为对外入口）
-docker run -d --name isrvd-center -e ISRVD_MODE=center --network sdnet -p 8080:8080 \
-  -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
-
-# 受管机（不需要 -p）
-docker run -d --name isrvd-agent --network sdnet \
-  -e ISRVD_MODE=agent -e ISRVD_CENTER_URL=https://center.example.com \
-  -e ISRVD_NODE_TOKEN="<中控生成的 token>" \
-  -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
-```
-
-受管机不能启用 `tha`；受管模式下 `listenAddr` 不生效。受管机至少需要一个创始人成员，否则转发请求返回 401。切换后只能经中控访问，地址或 token 错误时，需修改受管机环境变量并重启。
-
-### systemd 部署
-
-通过 `systemctl edit isrvd` 在 `[Service]` 中设置 `Environment="ISRVD_MODE=center"`；受管机还需设置 `ISRVD_CENTER_URL` 和 `ISRVD_NODE_TOKEN`。保存后执行 `systemctl daemon-reload` 与 `systemctl restart isrvd`。安装脚本默认以单机模式启动，如需其他角色，请在执行 `install` 前导出相应的部署环境变量。
-
-### 安全与边界
-
-- 节点管理按 `/api/node/...` 路由权限授权；业务转发先在中控校验成员的业务路由权限，再以受管机本地服务令牌执行。创始人拥有全部权限。授权对所有节点生效，当前按路由而非节点 ID 分配权限
-- 接入 token 无时效限制。创建节点时生成 86 位字母数字随机 token，仅显示一次；`node-list.yml` 只保存其 SHA-256 哈希和状态（`pending`、`active`、`revoked`），首次认证通过后节点变为已激活。token 遗失时需重新创建节点。节点可随时吊销，吊销后立即断开
-- 节点管理操作、节点上的写操作与终端会话都会记入中控的审计页面（操作人为中控登录用户），受管机本机的审计页面里则记录为其本地创始人
-- 中控为单实例设计，重启时节点短暂断开后自动重连；版本无需一致，兼容性由协议版本与 features 协商决定（见 [docs/multi-node.md](docs/multi-node.md)）
-- 完整的参数表、接口与行为说明见 [docs/multi-node.md](docs/multi-node.md)，接口字段见 [受管节点](docs/references/node/nodes.md)
+权限、审计、token 规则、Docker / systemd 部署、端口转发与网关接口见 [docs/multi-node.md](docs/multi-node.md)，接口字段见 [受管节点](docs/references/node/nodes.md)。
 
 ## 配置
 

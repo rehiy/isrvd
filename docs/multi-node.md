@@ -20,7 +20,7 @@
 
 - 每个进程内部仍是完整的 isrvd：`center` 与 `agent` 模式下，isrvd 只监听 `127.0.0.1` 的随机端口。`center` 另起网关占用配置里的 `listenAddr` 作为对外入口；`agent` 不监听任何对外端口，`listenAddr` 不生效。
 - 浏览器访问 `/n/<节点ID>/`，页面仍由中控提供；Docker、Swarm、Compose、文件、本机进程、Shell 终端、计划任务、APISIX、Caddy、系统概览与系统配置、SSH 与 SFTP 接口经隧道转发到该节点，包括流式日志、终端和文件上传下载。节点视角下的 SSH 主机与凭据保存在该节点上，连接从该节点的网络发起。
-- 新建节点通过 `libgo` 的 `strutil.Rand(10)` 生成 10 位字母数字随机 ID（`0-9A-Za-z`，区分大小写，如 `aB3dE6gH9j`），保存时检查重复，碰撞最多重试 16 次，耗尽则创建失败；已有节点 ID 不迁移，原有 UUID 和 8 位短 ID 的链接继续有效。节点 ID 不是认证凭据，接入仍使用独立的 token。
+- 新建节点通过 `libgo` 的 `strutil.Rand(10)` 生成 10 位字母数字随机 ID（`0-9A-Za-z`，区分大小写，如 `aB3dE6gH9j`），保存时检查重复，碰撞最多重试 16 次，耗尽则创建失败；网关接受 10 位以上由字母、数字或横线组成的节点 ID，因此 UUID 形式的旧 ID 仍可使用，8 位短 ID 不再被识别。节点 ID 不是认证凭据，接入仍使用独立的 token。
 - 账号（含成员与权限）、节点管理和 AI 助手始终由中控自己处理，即使在 `/n/<节点ID>/` 下访问也一样。
 - 节点切换与节点管理**按需启用**：只有 `center` 模式（`/api/overview/bootstrap` 的 `probe.node` 为 `true`）且当前用户有 `GET /api/node/nodes` 权限时，才出现头部节点切换器；侧边栏「集中管控」（位于「用户管理」下方）仅在中控视角显示，包含「节点管理」（`#/node/access`）与「端口转发」（`#/node/portmaps`）。其他情况看不到任何节点界面，直接访问 `#/node` 会回到概览。
 - 切换节点是整页跳转到 `/n/<节点ID>/`，停留在当前功能页（带资源参数的详情页、从中控管理页切换时回到概览）。子节点视角下，「节点管理」「集中管控」「用户管理」只属于中控，隐藏且直接访问会回到概览；个人账户设置仍作用于中控，可继续使用；SSH、系统配置与操作审计作用于该节点自己的数据，其中「登录认证」分组、JWT 密钥与有效期、AI 助手、API 文档开关在节点上不生效，节点视角下隐藏，直接访问登录认证页会回到概览。
@@ -45,7 +45,7 @@
 
 `ISRVD_CONFIG` 指定配置文件或 etcd 位置。保存 token 的环境文件应限制权限为 `0600`，不要提交或公开。
 
-**裸机启动示例**（受管机）：
+**启动与安装示例**（受管机，安装脚本在 `install` 前导出同样的变量，如 `bash isrvd-docker.sh install`）：
 
 ```bash
 export ISRVD_MODE=agent
@@ -59,13 +59,6 @@ isrvd
 **安装脚本**：系统服务使用 `/install/` 或本地 `isrvd-system.sh`，全容器化使用 `/install/?script=docker` 或本地 `isrvd-docker.sh`。在 `install` 前导出上述环境变量；默认角色为单机，系统服务写入仅 root 可读的 systemd drop-in（`installer.conf`），Docker 脚本传入容器环境。Docker 的 agent 模式不发布 8080（Caddy/APISIX 业务端口仍按镜像发布）。更新及卸载使用对应脚本，`update` 保留现有角色，不读取安装器环境来切换角色。
 
 系统服务选择组件时可执行 `bash isrvd-system.sh install --components caddy --data /mnt/isrvd-data`；适用于单机、中控和受管机，组件数据目录默认 `/srv/data`，isrvd 主配置仍为 `/usr/local/isrvd/config.yml`。目录须为非根绝对路径且不能与安装目录重叠，组件子路径不能通过符号链接重定向。系统服务 `update` 从所属组件的实际 bind 挂载恢复目录，不接受 `--data` 迁移数据；挂载路径不一致时在停服前中止。`uninstall` 保留实际组件数据目录，删除主配置前请备份。
-
-```bash
-export ISRVD_MODE=agent
-export ISRVD_CENTER_URL=https://center.example.com
-export ISRVD_NODE_TOKEN="<创建节点时生成的 token>"
-bash isrvd-docker.sh install
-```
 
 Docker `update` 将旧容器临时更名为 `isrvd-update-backup`，新容器通过启动检查（仅确认容器仍在运行，不代表已连上中控）后才删除旧容器；创建或启动检查失败时恢复旧容器。更新中断后遗留备份容器时，需先处理再重试。
 
@@ -133,7 +126,7 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 - AI 助手在节点页面下仍作用于中控本机。
 - 配置重载后，`allowedOrigins` 与 `rootDirectory` 的变化对中控即时生效（节点表随 `rootDirectory` 切换）；部署环境变量、`listenAddr` 与 `portmap` 需重启。
 - 中控为单实例设计；重启时节点短暂断开，受管机自动重连：指数退避每次翻倍，上限 60 秒，等待取 [d/2, d] 的随机值，连接稳定超过 30 秒后重置；被拒绝（401/403）时每 60 秒重试。
-- 兼容性以能力协商为准，**不要求版本号一致**。中控连接后读取受管机隧道内的 `GET /agent/info`（返回 `mode`、`version`、`protocol`、`hostname`、`os`、`arch`、`features`）：基础 HTTP 转发默认放行，旧版受管机没有该接口或协商失败时同样放行；只有受管机协议版本低于中控的 `MinProtocolVersion` 时（当前均为 `1`，仅在基础传输格式不兼容变更时调高），节点显示「协议版本过低」并拒绝转发。可选功能（如端口转发）按 `features` 逐项判断，缺失时仅该功能不可用，节点列表以图标标出「部分功能不可用」。
+- 兼容性以能力协商为准，**不要求版本号一致**。中控连接后读取受管机隧道内的 `GET /agent/info`（返回 `mode`、`version`、`hostname`、`os`、`arch`、`features`）：基础 HTTP 转发始终放行，旧版受管机没有该接口或协商失败时同样放行。可选功能（如端口转发）按 `features` 逐项判断，缺失时仅该功能不可用，节点列表以图标标出「部分功能不可用」。
 
 ## 网关接口
 
@@ -161,14 +154,15 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 | `store.go` | `node-list.yml` 的读取、并发修改、提交和数据目录切换 |
 | `auth.go` | 握手认证与限流、token 哈希比较、握手预占释放；认证、吊销、删除共用服务锁 |
 | `session.go` | 会话登记/释放、在线状态投影、隧道传输、延迟采样与协议协商 |
-| `agent.go` | 两端共用的协商协议与受管机常连客户端；隧道流按首字节分流为 HTTP 与端口转发 |
-| `portmap.go` | 端口转发规则、校验、线路头部与 UDP 分帧、受管机侧中继 |
+| `agent.go` | 两端共用的能力协商（`AgentInfo`、能力标识）与受管机常连客户端；隧道流按首字节分流为 HTTP 与端口转发 |
+| `portmap.go` | 端口转发规则模型与校验 |
+| `portmap_wire.go` | 转发线路头部、UDP 分帧与双向中继工具（两端共用），以及受管机侧处理转发流的入口 |
 | `portmap_listener.go` | 中控侧 TCP/UDP 监听器与生命周期 |
-| `proxy.go`、`permission.go` | 节点业务转发及共享权限目录 |
+| `proxy.go`、`permission.go` | 节点业务转发（不处理用户凭据，由网关负责剥离）及共享权限目录 |
 
 其他：
 
-- `server/config/cluster.go` 读取、校验部署环境变量及 `portmap` 配置。
-- `server/app/gateway_permission.go` 提供网关授权，并在 center 模式把节点权限并入路由索引；`server/cmd/server/launch.go` 按三种模式装配。
-- `server/gateway/`：`gateway.go` 装配与路由，`node.go` 节点管理与 WebSocket 接入，`proxy.go` 节点视角的请求分流与转发，`bootstrap.go` 节点视角的启动数据聚合，`middleware.go` 身份头清理及复用认证/权限/审计，`response.go` 统一 JSON 输出。
-- 前端（`webview/src/`）：`views/node/nodes.vue`（节点管理）、`views/node/portmaps.vue`（端口转发）、`views/node/widget/`（`node-actions`、`node-create-modal`、`node-edit-modal`、`portmap-actions`、`node-portmap-modal`）、`helper/node.ts`、`helper/portmap.ts`、`component/node-switcher.vue`、`stores/node.ts`。后端按节点整体替换规则，`portmapPatch` 在每次增删改前先读取最新规则列表，避免覆盖他人修改。
+- `server/config/cluster.go` 读取、校验部署环境变量（运行模式常量 `ModeServer/ModeCenter/ModeAgent` 的唯一来源）；`server/config/portmap.go` 是 `portmap` 配置的方法与校验。
+- `server/app/gateway.go` 提供网关授权（`GatewayAuthorize`）、转发路由清单（`GatewayRoutes`、`centerModules`），并在 center 模式把节点权限并入路由索引；`server/service/account/gateway.go` 集中账户侧的身份头逻辑（`TrustGatewayIdentity`、`GatewayCredentialHeaders`、中控回环身份）；`server/cmd/server/launch.go` 按三种模式装配。
+- `server/gateway/`：`gateway.go` 装配与路由，`node.go` 节点管理与 WebSocket 接入，`proxy.go` 节点视角的请求分流与转发（转发前剥离用户凭据），`bootstrap.go` 节点视角的启动数据聚合，`middleware.go` 复用认证/权限/审计，并通过 `Options` 注入的 `TrustIdentity`、`CredentialHeaders` 清理与重建身份头、剥离凭据头，`response.go` 统一 JSON 输出。
+- 前端（`webview/src/`）：`views/node/nodes.vue`（节点管理）、`views/node/portmaps.vue`（端口转发）、`views/node/widget/`（`node-actions`、`node-create-modal`、`node-edit-modal`、`portmap-actions`、`node-portmap-modal`）、`helper/node.ts`、`helper/portmap.ts`、`component/node-switcher.vue`、`stores/node.ts`（节点列表的唯一来源，含并发合并的 `load` 与共享轮询 `poll`，切换器、节点管理与端口转发页共用）。后端按节点整体替换规则，`portmapPatch` 在每次增删改前先读取最新规则列表，避免覆盖他人修改。

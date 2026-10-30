@@ -34,13 +34,10 @@ isrvd_get "/node/nodes"
 | `online` | bool | 当前是否在线 |
 | `latency` | number | 隧道往返延迟（毫秒），离线为 `0` |
 | `agentVersion` | string | 受管机程序版本，离线时不返回 |
-| `compatible` | bool | 协议版本是否不低于中控的最低支持版本；无法协商（如旧版受管机）时按兼容处理，为 `false` 时拒绝转发；离线时恒为 `false`，仅在线时有意义 |
 | `negotiated` | bool | 是否已成功协商出受管机的能力信息 |
 | `features` | string[] | 受管机上报的可选能力（如 `portmap`），未协商成功时不返回 |
-| `connectedAt` | string | 本次连接时间，离线时不返回 |
-| `remoteAddr` | string | 受管机连接来源地址，离线时不返回 |
 
-> 节点令牌仅保存哈希；令牌只在创建节点时返回一次，列表接口不返回。`online`、`latency`、`agentVersion`、`compatible`、`negotiated`、`features`、`connectedAt`、`remoteAddr` 是运行时状态，不持久化。
+> 节点令牌仅保存哈希；令牌只在创建节点时返回一次，列表接口不返回。`online`、`latency`、`agentVersion`、`negotiated`、`features` 是运行时状态，不持久化。
 
 ### 创建节点并生成 token
 
@@ -59,17 +56,7 @@ isrvd_post "/node" '{"name":"杭州机房 web-01"}'
 
 中控在 `node-list.yml` 中只保存 token 的 SHA-256 哈希，不保存明文；列表和更新响应均不返回 token，遗失后删除节点并重新创建。
 
-创建后在受管机以 root 身份安装：
-
-```bash
-export ISRVD_MODE=agent
-export ISRVD_CENTER_URL=https://center.example.com
-export ISRVD_NODE_TOKEN="<创建时返回的 token>"
-bash <(curl -fsSL https://isrvd.rehiy.com/install/) install                 # 系统服务
-bash <(curl -fsSL 'https://isrvd.rehiy.com/install/?script=docker') install  # 或全容器化
-```
-
-安装脚本会保存这些环境变量；已有服务需更新启动环境并重启。首次认证通过后节点状态变为 `active`，重启和重连继续使用同一 token。
+创建后在受管机以 root 身份导出 `ISRVD_MODE=agent`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN`，再执行安装脚本（系统服务 `bash <(curl -fsSL https://isrvd.rehiy.com/install/) install`，全容器化 `…/install/?script=docker`）。首次认证通过后节点状态变为 `active`，重启和重连继续使用同一 token；环境变量、systemd 与 Docker 部署详见 [集中管理](../../multi-node.md)。
 
 ### 重命名节点
 
@@ -138,7 +125,7 @@ isrvd_get "/docker/containers"
 | 页面与静态资源 | 其余路径 | 中控 |
 
 - `GET /n/<ID>/api/overview/bootstrap` 的认证信息取自中控，`probe` 中的 `docker`、`swarm`、`compose`、`apisix`、`caddy` 取自节点，`node`、`copilot` 取自中控；节点不可达时这几项全部为 `false`。`config` 以中控为底：`title`、`maxUploadSize`、`maxEditSize`、`marketplaceUrl` 取自节点，`links` 与中控合并，其余保持中控；节点返回的值类型不符时忽略。
-- 节点不存在返回 `404`；离线或已吊销返回 `503`；协议版本低于中控最低支持版本、隧道故障返回 `502`；节点响应超时返回 `504`。
+- 节点不存在返回 `404`；离线或已吊销返回 `503`；隧道故障返回 `502`；节点响应超时返回 `504`。
 - 节点管理操作、节点上的写操作与 WebSocket 会记入中控的审计页面（`GET /system/audit/logs`），URI 带 `/n/<节点ID>/` 前缀，请求体按 isrvd 的规则脱敏；空成功响应记为 `200`，WebSocket 升级成功记为 `101`；受管机本机的审计页面里同一操作记录为其本地创始人。
 
 ### `?token=` 的适用范围
@@ -165,4 +152,4 @@ isrvd_get "/docker/containers"
 
 ### 协商接口
 
-`GET /agent/info` 只在隧道内可达（不经 `/api/`），中控连接后调用。响应 `{success, payload:{mode, version, protocol, hostname, os, arch, features}}`；当前 `protocol` 与中控最低支持版本 `MinProtocolVersion` 均为 `1`。旧版受管机没有该接口时按兼容处理。
+`GET /agent/info` 只在隧道内可达（不经 `/api/`），中控连接后调用。响应 `{success, payload:{mode, version, hostname, os, arch, features}}`。旧版受管机没有该接口时按基础转发处理。
