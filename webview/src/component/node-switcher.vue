@@ -3,9 +3,7 @@ import { Component, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
-import type { NodeInfo } from '@/service/types'
-
-import { isCenterPage, switchNode } from '@/helper/node'
+import { isCenterPage, NODE_LIST_PERM, switchNode } from '@/helper/node'
 
 import Dropdown from '@/component/dropdown.vue'
 
@@ -22,7 +20,7 @@ class NodeSwitcher extends Vue {
 
     // 仅中控模式且有节点查看权限（创始人）时显示
     get visible() {
-        return this.portal.hasPerm('GET /api/node/nodes')
+        return this.portal.hasPerm(NODE_LIST_PERM)
     }
 
     get activeNodes() {
@@ -41,19 +39,15 @@ class NodeSwitcher extends Vue {
     // ─── 监听器 ───
     @Watch('visible', { immediate: true })
     onVisibleChange(visible: boolean) {
-        if (visible) this.portal.nodeLoad()
+        if (visible) this.portal.nodeLoad(true)
     }
 
     @Watch('menuOpen')
     onMenuOpenChange(open: boolean) {
-        if (open) this.portal.nodeLoad()
+        if (open) this.portal.nodeLoad(true)
     }
 
     // ─── 方法 ───
-    usable(node: NodeInfo) {
-        return node.online && node.compatible
-    }
-
     select(id: string) {
         this.menuOpen = false
         if (id === this.portal.currentNodeId) return
@@ -97,13 +91,12 @@ export default toNative(NodeSwitcher)
       :key="node.id"
       class="dropdown-item"
       :class="{ 'dropdown-item-active': node.id === portal.currentNodeId }"
-      :disabled="!usable(node) && node.id !== portal.currentNodeId"
+      :disabled="!node.online && node.id !== portal.currentNodeId"
       @click="select(node.id)"
     >
-      <i class="fas fa-circle text-[8px]" :class="usable(node) ? 'text-emerald-500' : 'text-slate-300'"></i>
+      <i class="fas fa-circle text-[8px]" :class="node.online ? 'text-emerald-500' : 'text-slate-300'"></i>
       <span class="truncate max-w-48">{{ node.name }}</span>
       <span v-if="!node.online" class="text-xs ml-auto">{{ $t('离线') }}</span>
-      <span v-else-if="!node.compatible" class="text-xs text-amber-600 ml-auto">{{ $t('协议版本过低') }}</span>
       <i v-else-if="node.id === portal.currentNodeId" class="fas fa-check text-xs ml-auto"></i>
     </button>
 

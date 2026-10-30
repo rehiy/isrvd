@@ -46,7 +46,7 @@ class NodePortMapModal extends Vue {
     show(nodes: NodeInfo[], item?: NodePortMapInfo) {
         this.nodes = nodes
         this.original = item || null
-        this.nodeId = item?.nodeId || this.nodeOptions[0]?.id || ''
+        this.nodeId = item?.node.id || this.nodeOptions[0]?.id || ''
         this.name = item?.name || ''
         this.proto = item?.proto || 'tcp'
         this.listen = item?.listen ?? null

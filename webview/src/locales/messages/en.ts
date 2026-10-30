@@ -433,7 +433,6 @@ const messages: Record<string, string> = {
     '已选': 'Selected',
     '个': 'items',
     '离线': 'Offline',
-    '协议版本过低': 'Protocol version too old',
     '部分功能不可用：{0}，请升级节点程序': 'Some features unavailable: {0}. Please upgrade the node.',
     '加载失败': 'Failed to load',
     '搜索文件...': 'Search files...',

@@ -3,10 +3,9 @@ import { Component, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
-import api from '@/service/api'
-import type { NodePortMapInfo, NodeInfo } from '@/service/types'
+import type { NodePortMapInfo } from '@/service/types'
 
-import { POLL_INTERVAL } from '@/helper/format'
+import { enterNodePage, nodeStatus } from '@/helper/node'
 
 import PageSearch from '@/component/page-search.vue'
 
@@ -21,23 +20,14 @@ class NodePortMaps extends Vue {
     @Ref readonly portmapModalRef!: InstanceType<typeof NodePortMapModal>
 
     // ─── 数据属性 ───
-    nodes: NodeInfo[] = []
-    loading = true
     searchText = ''
-    private pollTimer: ReturnType<typeof setInterval> | null = null
-    private polling = false
+    private stopPoll: (() => void) | null = null
 
     // ─── 计算属性 ───
     // 把各节点的规则展开成一张表；已吊销的节点不会保留规则
     get items(): NodePortMapInfo[] {
-        return this.nodes.flatMap(node =>
-            (node.portmaps || []).map(f => ({
-                ...f,
-                nodeId: node.id,
-                nodeName: node.name,
-                nodeOnline: node.online,
-                nodeStatus: node.status
-            }))
+        return this.portal.nodes.flatMap(node =>
+            (node.portmaps || []).map(f => ({ ...f, node }))
         )
     }
 
@@ -45,7 +35,7 @@ class NodePortMaps extends Vue {
         const keyword = this.searchText.trim().toLowerCase()
         if (!keyword) return this.items
         return this.items.filter(item =>
-            [String(item.listen), item.proto, item.target, item.name, item.nodeName]
+            [String(item.listen), item.proto, item.target, item.name, item.node.name]
                 .some(value => (value || '').toLowerCase().includes(keyword))
         )
     }
@@ -62,72 +52,38 @@ class NodePortMaps extends Vue {
     // ─── 监听器 ───
     @Watch('ready', { immediate: true })
     onReadyChange(ready: boolean) {
-        if (!ready) return
-        // 未启用中控模式或无节点列表权限：直接用地址访问时回到概览，而不是展示一个只会报错的页面
-        if (!this.portal.hasPerm('GET /api/node/nodes')) {
-            this.$router.replace('/overview')
-            return
-        }
-        this.load()
-        this.startPoll()
+        if (ready) this.stopPoll ??= enterNodePage(this.portal, this.$router)
     }
 
     // ─── 展示辅助 ───
     nodeStatusText(item: NodePortMapInfo) {
-        if (item.nodeStatus === 'pending') return this.$t('待接入')
-        return item.nodeOnline ? this.$t('在线') : this.$t('离线')
+        return this.$t(nodeStatus(item.node).text)
     }
 
     nodeStatusClass(item: NodePortMapInfo) {
-        if (item.nodeStatus === 'pending') return 'text-slate-500'
-        return item.nodeOnline ? 'text-emerald-600 font-medium' : 'text-red-500 font-medium'
+        return nodeStatus(item.node).cls
     }
 
     itemKey(item: NodePortMapInfo) {
-        return `${item.nodeId}/${item.proto}/${item.listen}`
-    }
-
-    // ─── 数据加载 ───
-    async load(silent = false) {
-        if (this.polling) return
-        this.polling = true
-        if (!silent) this.loading = true
-        try {
-            const res = await api.nodeList()
-            this.nodes = res.payload || []
-        } catch {} finally {
-            this.loading = false
-            this.polling = false
-        }
-    }
-
-    startPoll() {
-        if (this.pollTimer) return
-        this.pollTimer = setInterval(() => this.load(true), POLL_INTERVAL)
-    }
-
-    stopPoll() {
-        if (!this.pollTimer) return
-        clearInterval(this.pollTimer)
-        this.pollTimer = null
+        return `${item.node.id}/${item.proto}/${item.listen}`
     }
 
     // ─── 操作 ───
     openAdd() {
-        if (!this.nodes.some(node => node.status !== 'revoked')) {
+        if (!this.portal.nodes.some(node => node.status !== 'revoked')) {
             this.portal.showNotification('error', this.$t('暂无可用节点，请先在「节点管理」中接入节点'))
             return
         }
-        this.portmapModalRef?.show(this.nodes)
+        this.portmapModalRef?.show(this.portal.nodes)
     }
 
     openEdit(item: NodePortMapInfo) {
-        this.portmapModalRef?.show(this.nodes, item)
+        this.portmapModalRef?.show(this.portal.nodes, item)
     }
 
     // ─── 生命周期 ───
     unmounted() {
-        this.stopPoll()
+        this.stopPoll?.()
     }
 }
 
@@ -150,7 +106,7 @@ export default toNative(NodePortMaps)
         </div>
         <div class="action-group">
           <PageSearch v-model="searchText" search-key="node-portmaps" :placeholder="$t('搜索监听端口、目标、节点或备注...')" focus-color="orange" type-to-search />
-          <button class="btn btn-secondary" @click="load()">
+          <button class="btn btn-secondary" @click="portal.nodeLoad()">
             <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
           <button v-if="canUpdate" class="btn btn-orange" @click="openAdd">
@@ -170,7 +126,7 @@ export default toNative(NodePortMaps)
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="load()">
+          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="portal.nodeLoad()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
           <button v-if="canUpdate" class="btn btn-orange btn-square" :title="$t('添加转发')" @click="openAdd">
@@ -186,7 +142,7 @@ export default toNative(NodePortMaps)
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="card-body">
+    <div v-if="portal.nodesLoading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
         <p class="text-slate-500">{{ $t('加载中...') }}</p>
@@ -233,12 +189,12 @@ export default toNative(NodePortMaps)
                 <span class="badge-sm bg-orange-50 text-orange-700">{{ item.proto.toUpperCase() }}</span>
               </td>
               <td class="px-4 py-3 max-w-[240px]">
-                <span class="text-sm text-slate-600 truncate block">{{ item.nodeName }}</span>
+                <span class="text-sm text-slate-600 truncate block">{{ item.node.name }}</span>
                 <span class="text-xs mt-0.5 block" :class="nodeStatusClass(item)">{{ nodeStatusText(item) }}</span>
               </td>
               <td class="td-text font-mono">{{ item.target }}</td>
               <td class="px-4 py-3">
-                <PortMapActions :item="item" compact @edit="openEdit" @success="load(true)" />
+                <PortMapActions :item="item" compact @edit="openEdit" @success="portal.nodeLoad(true)" />
               </td>
             </tr>
           </tbody>
@@ -264,7 +220,7 @@ export default toNative(NodePortMaps)
           </div>
           <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('节点') }}</span>
-            <span class="text-xs text-slate-500">{{ item.nodeName }}</span>
+            <span class="text-xs text-slate-500">{{ item.node.name }}</span>
             <span class="text-xs" :class="nodeStatusClass(item)">{{ nodeStatusText(item) }}</span>
           </div>
           <div class="card-prop-row-start">
@@ -272,11 +228,11 @@ export default toNative(NodePortMaps)
             <code class="text-xs bg-slate-100 px-2 py-0.5 rounded-lg break-all">{{ item.target }}</code>
           </div>
 
-          <PortMapActions :item="item" @edit="openEdit" @success="load(true)" />
+          <PortMapActions :item="item" @edit="openEdit" @success="portal.nodeLoad(true)" />
         </div>
       </div>
     </template>
   </div>
 
-  <NodePortMapModal ref="portmapModalRef" @success="load(true)" />
+  <NodePortMapModal ref="portmapModalRef" @success="portal.nodeLoad(true)" />
 </template>

@@ -13,10 +13,7 @@ export interface NodePortMapUpdate {
 
 // 端口转发列表项：规则及其所属节点（由节点列表展开得到，后端不返回）
 export interface NodePortMapInfo extends NodePortMap {
-    nodeId: string
-    nodeName: string
-    nodeOnline: boolean
-    nodeStatus: NodeInfo['status']
+    node: NodeInfo
 }
 
 // 节点信息（列表/详情）
@@ -32,11 +29,8 @@ export interface NodeInfo {
     online: boolean
     latency: number // 隧道往返延迟（毫秒），离线为 0
     agentVersion?: string
-    compatible: boolean // 协议版本是否足以通信；无法协商时按兼容处理
     negotiated: boolean // 是否成功取得节点的版本与能力信息
     features?: string[] // 节点声明的可选能力，如 portmap；negotiated 为 false 时无从判断
-    connectedAt?: string
-    remoteAddr?: string
 }
 
 // 节点更新请求

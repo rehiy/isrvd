@@ -3,6 +3,8 @@ import { Component, Prop, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { configGroups, usePortal } from '@/stores'
 
+import { NODE_LIST_PERM } from '@/helper/node'
+
 @Component({
     expose: ['toggleMobileSidebar', 'closeMobileSidebar', 'openMobileSidebar'],
     emits: ['update:collapsed']
@@ -52,6 +54,11 @@ class NavigationBar extends Vue {
 
     get isNodeActive() {
         return this.isActive('/node')
+    }
+
+    // 仅本机中控视角可见；两个子页都依赖节点列表
+    get nodeVisible() {
+        return !this.portal.currentNodeId && this.portal.hasPerm(NODE_LIST_PERM)
     }
 
     get isConfigActive() {
@@ -626,8 +633,8 @@ export default toNative(NavigationBar)
         <span v-if="!collapsed">{{ $t('用户管理') }}</span>
       </router-link>
 
-      <!-- 受管机折叠子菜单（仅本机中控视角可见；两个子页都依赖节点列表） -->
-      <div v-if="!portal.currentNodeId && portal.hasPerm('GET /api/node/nodes')">
+      <!-- 受管机折叠子菜单 -->
+      <div v-if="nodeVisible">
         <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isNodeActive }" :title="$t('集中管控')" @click.stop="toggleNode">
           <i class="fas fa-sitemap"></i>
         </button>

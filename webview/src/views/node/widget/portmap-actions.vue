@@ -22,14 +22,14 @@ class PortMapActions extends Vue {
         const item = this.item
         this.portal.showConfirm({
             title: this.$t('删除转发'),
-            message: this.$t('确定要删除节点 <strong class="text-slate-900">{0}</strong> 上监听端口 <strong class="text-slate-900">{1}/{2}</strong> 的转发规则吗？已建立的连接会被立即断开。', item.nodeName, item.listen, item.proto.toUpperCase()),
+            message: this.$t('确定要删除节点 <strong class="text-slate-900">{0}</strong> 上监听端口 <strong class="text-slate-900">{1}/{2}</strong> 的转发规则吗？已建立的连接会被立即断开。', item.node.name, item.listen, item.proto.toUpperCase()),
             icon: 'fa-trash',
             iconColor: 'red',
             confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
                 try {
-                    const ok = await portmapPatch(item.nodeId, list => {
+                    const ok = await portmapPatch(item.node.id, list => {
                         const next = list.filter(f => !portmapIs(f, item))
                         return next.length === list.length ? null : next
                     })

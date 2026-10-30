@@ -150,8 +150,10 @@ export const usePortalStore = defineStore('portal', () => {
         // Node Store 状态（响应式，仅中控模式有数据）；currentNodeId 取自页面路径，整页切换节点，不会变化
         currentNodeId: nodeLocation().id,
         nodes: nodeRefs.nodes,
+        nodesLoading: nodeRefs.loading,
         // Node Store 方法
         nodeLoad: nodeStore.load,
+        nodePoll: nodeStore.poll,
 
         // UI Store 状态（响应式）
         notifications: uiRefs.notifications,
