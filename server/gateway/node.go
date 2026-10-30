@@ -86,7 +86,7 @@ func (g *gateway) nodeConnect() http.Handler {
 			c.Abort()
 			return
 		}
-		n, err := g.nodes.Authenticate(c.Request, g.clientIP(c.Request))
+		n, err := g.nodes.Authenticate(c.Request, clientIP(c.Request))
 		if err != nil {
 			nodeFail(c.Writer, c.Request, err)
 			c.Abort()

@@ -7,6 +7,9 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"isrvd/server/config"
+	"isrvd/server/service/account"
 )
 
 // Auditor 把网关处理的操作记入 isrvd 的审计日志（实现见 app.Audit）
@@ -15,8 +18,25 @@ type Auditor interface {
 	AuditRecord(r *http.Request, username, ip string, statusCode int, startTime time.Time, body string)
 }
 
-// permissionOnly 统一执行节点管理与业务转发的认证、权限校验和审计。
-func (g *gateway) permissionOnly(h http.HandlerFunc) http.HandlerFunc {
+// trustIdentity 在入口处清理并重建网关身份头：外部传入的一律丢弃，
+// 启用代理 Header 认证时由网关自己校验，并把结果写入内部身份头，原始认证头不再透传。
+func trustIdentity(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		snapshot := config.Current()
+		r.Header.Del(account.GatewayUserHeader)
+		if snapshot.THA.Enabled {
+			user, _ := account.HeaderAuth(snapshot, r)
+			r.Header.Del(snapshot.THA.HeaderName)
+			if user != "" {
+				r.Header.Set(account.GatewayUserHeader, user)
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// authorized 统一执行节点管理与业务转发的认证、路由权限校验和审计。
+func (g *gateway) authorized(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, status, err := g.authorize(r, g.allowQueryToken(r))
 		if err != nil {
@@ -29,16 +49,16 @@ func (g *gateway) permissionOnly(h http.HandlerFunc) http.HandlerFunc {
 
 // audited 执行 h，并按 isrvd 的审计基线（非 GET 与全部 WebSocket）把操作记入审计日志。
 // 与 app 的审计中间件一致：认证失败的请求不记录，WebSocket 在会话结束时记录。
-func (g *gateway) audited(w http.ResponseWriter, r *http.Request, user string, h func(http.ResponseWriter, *http.Request)) {
-	isWS := strings.EqualFold(r.Header.Get("Upgrade"), "websocket")
-	if g.audit == nil || (r.Method == http.MethodGet && !isWS) {
+func (g *gateway) audited(w http.ResponseWriter, r *http.Request, user string, h http.HandlerFunc) {
+	ws := isWebSocket(r)
+	if g.audit == nil || (r.Method == http.MethodGet && !ws) {
 		h(w, r)
 		return
 	}
 
 	start := time.Now()
 	body := ""
-	if !isWS {
+	if !ws {
 		body = g.audit.BodyRead(r)
 	}
 	rec := &statusRecorder{ResponseWriter: w}
@@ -47,13 +67,13 @@ func (g *gateway) audited(w http.ResponseWriter, r *http.Request, user string, h
 	if status == 0 {
 		status = http.StatusOK
 	}
-	g.audit.AuditRecord(r, user, g.clientIP(r), status, start, body)
+	g.audit.AuditRecord(r, user, clientIP(r), status, start, body)
 }
 
 // allowQueryToken 与 isrvd 一样，根据 Upgrade 头或声明了 QueryToken 的 GET 路由读取 ?token=。
 // 这里不校验 WebSocket 握手；凭据与路由权限仍由中控统一验证。
 func (g *gateway) allowQueryToken(r *http.Request) bool {
-	if strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
+	if isWebSocket(r) {
 		return true
 	}
 	if r.Method != http.MethodGet {
@@ -67,8 +87,12 @@ func (g *gateway) allowQueryToken(r *http.Request) bool {
 	})
 }
 
+func isWebSocket(r *http.Request) bool {
+	return strings.EqualFold(r.Header.Get("Upgrade"), "websocket")
+}
+
 // clientIP 只取连接对端 IP，不信任客户端提供的转发头。
-func (g *gateway) clientIP(r *http.Request) string {
+func clientIP(r *http.Request) string {
 	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
 		return host
 	}

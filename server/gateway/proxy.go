@@ -1,18 +1,15 @@
 package gateway
 
 import (
-	"context"
-	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/rehiy/libgo/websocket"
-
-	"isrvd/server/service/account"
 )
 
+// nodePath 处理 /n/<节点ID>/ 下的全部请求：去掉前缀后，页面与中控专属模块交给中控，
+// 业务模块经认证、权限与审计后转发到节点。
 func (g *gateway) nodePath(w http.ResponseWriter, r *http.Request) {
 	id, rest := r.PathValue("id"), r.PathValue("rest")
 	if !validNodeID(id) {
@@ -37,15 +34,15 @@ func (g *gateway) nodePath(w http.ResponseWriter, r *http.Request) {
 	case rest == "api/overview/bootstrap":
 		g.nodeBootstrap(w, r, id)
 	default:
-		g.permissionOnly(g.nodeForward)(w, r)
+		g.authorized(g.nodeForward)(w, r)
 	}
 }
 
-// nodeForward 在 permissionOnly 的认证、权限校验和审计下把请求经隧道转发到节点。
+// nodeForward 在 authorized 的认证、权限校验和审计下把请求经隧道转发到节点。
 // 受管机内部仍使用本地服务令牌。
 func (g *gateway) nodeForward(w http.ResponseWriter, r *http.Request) {
 	// 与 isrvd 本机终端一致，WebSocket 必须校验 Origin；受管机转发时会去掉 Origin，所以只能在这里把关
-	if strings.EqualFold(r.Header.Get("Upgrade"), "websocket") && !g.originAllowed(r) {
+	if isWebSocket(r) && !g.originAllowed(r) {
 		fail(w, r, http.StatusForbidden, "不允许的跨站来源")
 		return
 	}
@@ -69,104 +66,6 @@ func (g *gateway) originAllowed(r *http.Request) bool {
 	allowed := g.allowedOrigins()
 	return len(allowed) > 0 && (&websocket.ServerConfig{AllowedOrigins: allowed}).CheckOrigin(origin)
 }
-
-// nodeBootstrap 以中控的认证信息、节点自身的服务可用性和页面配置组合启动数据。
-// 必须串行：只有中控确认了调用者身份才会去请求节点，未登录的请求不应触发隧道流量。
-func (g *gateway) nodeBootstrap(w http.ResponseWriter, r *http.Request, id string) {
-	status, body, err := g.bootstrapCall(r)
-	if err != nil {
-		fail(w, r, http.StatusBadGateway, "中控 isrvd 不可用")
-		return
-	}
-	if status == http.StatusOK {
-		if merged := g.mergeBootstrap(r.Context(), id, body); merged != nil {
-			body = merged
-		}
-	}
-	writeRaw(w, status, body)
-}
-
-// mergeBootstrap 合并节点的服务可用性和页面配置，保留中控认证与 AI；中控响应解析失败或未登录时返回 nil。
-func (g *gateway) mergeBootstrap(ctx context.Context, id string, body []byte) []byte {
-	var env map[string]any
-	if json.Unmarshal(body, &env) != nil {
-		return nil
-	}
-	// 对 nil map 取值是安全的，缺失层级一律得到零值
-	payload, _ := env["payload"].(map[string]any)
-	auth, _ := payload["auth"].(map[string]any)
-	if username, _ := auth["username"].(string); username == "" {
-		return nil
-	}
-
-	// 节点管理（node）与 AI 助手（copilot）由中控提供，保留中控的结果；
-	// 其余服务以节点为准，节点不可达时全部视为不可用
-	probe := map[string]any{"node": false, "copilot": false, "apisix": false, "caddy": false, "docker": false, "swarm": false, "compose": false}
-	local, _ := payload["probe"].(map[string]any)
-	for _, k := range []string{"node", "copilot"} {
-		if v, ok := local[k]; ok {
-			probe[k] = v
-		}
-	}
-	payload["config"] = map[string]any{}
-	if data, err := g.nodes.Fetch(ctx, id, "/api/overview/bootstrap"); err == nil {
-		var remote struct {
-			Payload struct {
-				Probe  map[string]any `json:"probe"`
-				Config map[string]any `json:"config"`
-			} `json:"payload"`
-		}
-		if json.Unmarshal(data, &remote) == nil {
-			if remote.Payload.Config != nil {
-				payload["config"] = remote.Payload.Config
-			}
-			for _, k := range []string{"apisix", "caddy", "docker", "swarm", "compose"} {
-				if v, ok := remote.Payload.Probe[k]; ok {
-					probe[k] = v
-				}
-			}
-		}
-	}
-	payload["probe"] = probe
-
-	out, err := json.Marshal(env)
-	if err != nil {
-		return nil
-	}
-	return out
-}
-
-// bootstrapCall 仅为节点视角的页面加载中控启动数据，不用于业务请求的身份校验。
-// 只传递认证与语言信息，避免把浏览器的条件请求、升级或内容头带入聚合查询。
-func (g *gateway) bootstrapCall(r *http.Request) (int, []byte, error) {
-	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, g.upstream.JoinPath("api/overview/bootstrap").String(), nil)
-	if err != nil {
-		return 0, nil, err
-	}
-	for _, name := range []string{"Authorization", "Accept-Language", account.GatewayUserHeader} {
-		if value := r.Header.Get(name); value != "" {
-			req.Header.Set(name, value)
-		}
-	}
-	if lang := r.URL.Query().Get("lang"); lang != "" {
-		req.URL.RawQuery = url.Values{"lang": {lang}}.Encode()
-	}
-	// WebSocket 与下载无法携带请求头，凭据在 ?token= 中；仅限 isrvd 允许的范围
-	if req.Header.Get("Authorization") == "" && g.allowQueryToken(r) {
-		if token := r.URL.Query().Get("token"); token != "" {
-			req.Header.Set("Authorization", "Bearer "+token)
-		}
-	}
-	resp, err := g.client.Do(req)
-	if err != nil {
-		return 0, nil, err
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
-	return resp.StatusCode, body, err
-}
-
-// ─── 辅助函数 ───
 
 // validNodeID 接受 10 位字母数字节点 ID，兼容已有的 8 位 ID 和小写 UUID（8-4-4-4-12）。
 func validNodeID(id string) bool {

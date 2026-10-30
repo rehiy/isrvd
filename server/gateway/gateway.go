@@ -11,7 +11,6 @@ import (
 
 	"github.com/rehiy/libgo/logman"
 
-	"isrvd/server/config"
 	"isrvd/server/service/account"
 	"isrvd/server/service/node"
 )
@@ -53,6 +52,7 @@ func Handler(opt Options) http.Handler {
 	g := &gateway{
 		nodes:          opt.Nodes,
 		upstream:       opt.Upstream,
+		proxy:          newUpstreamProxy(opt.Upstream),
 		allowedOrigins: opt.AllowedOrigins,
 		audit:          opt.Audit,
 		authorize:      opt.Authorize,
@@ -68,9 +68,15 @@ func Handler(opt Options) http.Handler {
 	for _, module := range opt.NodeModules {
 		g.nodeModules[module] = true
 	}
-	g.proxy = &httputil.ReverseProxy{
+	g.mux = g.routes()
+	return trustIdentity(g.mux)
+}
+
+// newUpstreamProxy 创建转发到中控自己 isrvd 的反向代理。
+func newUpstreamProxy(upstream *url.URL) *httputil.ReverseProxy {
+	return &httputil.ReverseProxy{
 		Rewrite: func(pr *httputil.ProxyRequest) {
-			pr.SetURL(opt.Upstream)
+			pr.SetURL(upstream)
 			pr.SetXForwarded()
 			if user := pr.In.Header.Get(account.GatewayUserHeader); user != "" {
 				pr.Out.Header.Set(account.GatewayUserHeader, user)
@@ -85,10 +91,9 @@ func Handler(opt Options) http.Handler {
 			fail(w, r, http.StatusBadGateway, "中控 isrvd 不可用")
 		},
 	}
-	return g.routes()
 }
 
-func (g *gateway) routes() http.Handler {
+func (g *gateway) routes() *http.ServeMux {
 	mux := http.NewServeMux()
 
 	// 节点管理：路由与可分配权限共用 service/node 的元信息。
@@ -110,7 +115,7 @@ func (g *gateway) routes() http.Handler {
 		if h == nil {
 			panic("节点管理路由缺少处理函数: " + route.Method + " " + route.Path)
 		}
-		mux.HandleFunc(account.MuxPattern(route.Method, route.Path), g.permissionOnly(h))
+		mux.HandleFunc(account.MuxPattern(route.Method, route.Path), g.authorized(h))
 	}
 
 	// 受管机接入：凭节点令牌连接，首次连接时待接入的令牌自动激活为节点
@@ -123,17 +128,5 @@ func (g *gateway) routes() http.Handler {
 	mux.HandleFunc("/n/{id}/{rest...}", g.nodePath)
 
 	mux.Handle("/", g.proxy)
-	g.mux = mux
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		snapshot := config.Current()
-		r.Header.Del(account.GatewayUserHeader)
-		if snapshot.THA.Enabled {
-			user, _ := account.HeaderAuth(snapshot, r)
-			r.Header.Del(snapshot.THA.HeaderName)
-			if user != "" {
-				r.Header.Set(account.GatewayUserHeader, user)
-			}
-		}
-		mux.ServeHTTP(w, r)
-	})
+	return mux
 }
