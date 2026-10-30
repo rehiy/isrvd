@@ -3,7 +3,6 @@ package node
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -19,24 +18,16 @@ import (
 
 // nodeConn 一个在线节点的会话及其到该节点的 HTTP 代理
 type nodeConn struct {
-	nodeID      string
-	sess        *wstunnel.Session
-	transport   *http.Transport
-	proxy       *httputil.ReverseProxy
-	remote      string
-	connectedAt time.Time
-	latency     atomic.Int64 // 毫秒
-	info        *AgentInfo   // 协商得到，attach 之前写入，之后只读
-	compatible  bool         // 协议版本不低于 MinProtocolVersion（或无法协商）时才允许转发
+	nodeID    string
+	sess      *wstunnel.Session
+	transport *http.Transport
+	proxy     *httputil.ReverseProxy
+	latency   atomic.Int64 // 毫秒
+	info      *AgentInfo   // 协商得到，attach 之前写入，之后只读；旧版受管机无协商接口时为 nil
 }
 
-func newNodeConn(nodeID string, sess *wstunnel.Session, remote string) *nodeConn {
-	c := &nodeConn{
-		nodeID:      nodeID,
-		sess:        sess,
-		remote:      remote,
-		connectedAt: time.Now(),
-	}
+func newNodeConn(nodeID string, sess *wstunnel.Session) *nodeConn {
+	c := &nodeConn{nodeID: nodeID, sess: sess}
 	// 每条 HTTP 连接对应隧道上的一条流；地址被忽略，流量只会去往这个节点
 	c.transport = &http.Transport{
 		DialContext:         func(context.Context, string, string) (net.Conn, error) { return sess.Open() },
@@ -64,14 +55,12 @@ func (c *nodeConn) get(ctx context.Context, path string) (*http.Response, error)
 	return client.Do(req)
 }
 
-// negotiate 请求 agent 自身信息并判定协议是否兼容。
-// 默认放行：旧版受管机没有协商接口、或协商请求失败时无法判断，按兼容处理，由节点自己对不支持的请求作答；
-// 只有节点明确上报的协议低于 MinProtocolVersion 才拒绝转发。可选能力不在这里判断，见 AgentInfo.Features。
+// negotiate 请求 agent 自身信息以获知可选能力（AgentInfo.Features）。
+// 失败不影响转发：旧版受管机没有协商接口时 info 保持 nil，由节点自己对不支持的请求作答。
 func (c *nodeConn) negotiate(ctx context.Context) {
-	c.compatible = true
 	resp, err := c.get(ctx, AgentInfoPath)
 	if err != nil {
-		logger.Warn("节点协议协商失败，按兼容处理", "id", c.nodeID, "error", err)
+		logger.Warn("节点协商失败", "id", c.nodeID, "error", err)
 		return
 	}
 	defer resp.Body.Close()
@@ -82,14 +71,10 @@ func (c *nodeConn) negotiate(ctx context.Context) {
 	}
 	if resp.StatusCode != http.StatusOK ||
 		json.NewDecoder(io.LimitReader(resp.Body, 64<<10)).Decode(&envelope) != nil || !envelope.Success {
-		logger.Warn("节点不支持协议协商，可能版本过旧，按兼容处理", "id", c.nodeID, "status", resp.StatusCode)
+		logger.Warn("节点不支持协商，可能版本过旧", "id", c.nodeID, "status", resp.StatusCode)
 		return
 	}
 	c.info = &envelope.Payload
-	c.compatible = envelope.Payload.Protocol >= MinProtocolVersion
-	if !c.compatible {
-		logger.Warn("节点协议版本过低", "id", c.nodeID, "agent", envelope.Payload.Protocol, "min", MinProtocolVersion)
-	}
 }
 
 // pingLoop 周期采样隧道延迟，会话结束时退出
@@ -121,7 +106,7 @@ func (s *Service) Serve(ctx context.Context, ws io.ReadWriteCloser, remote strin
 		logger.Warn("节点隧道建立失败", "id", n.ID, "error", err)
 		return
 	}
-	conn := newNodeConn(n.ID, sess, remote)
+	conn := newNodeConn(n.ID, sess)
 	conn.negotiate(ctx)
 	s.syncInfo(n, conn.info)
 
@@ -129,7 +114,7 @@ func (s *Service) Serve(ctx context.Context, ws io.ReadWriteCloser, remote strin
 		conn.close()
 		return
 	}
-	logger.Info("节点已上线", "id", n.ID, "name", n.Name, "remote", conn.remote, "compatible", conn.compatible)
+	logger.Info("节点已上线", "id", n.ID, "name", n.Name, "remote", remote)
 	go conn.pingLoop()
 
 	select {
@@ -186,13 +171,6 @@ func (s *Service) connFor(id string) (*nodeConn, error) {
 	c := s.conns[id]
 	s.mu.RUnlock()
 	if c != nil {
-		if !c.compatible {
-			peer := "未知"
-			if c.info != nil {
-				peer = fmt.Sprint(c.info.Protocol)
-			}
-			return nil, fmt.Errorf("节点协议版本过低（节点协议 %s，中控要求不低于 %d），请升级节点程序", peer, MinProtocolVersion)
-		}
 		return c, nil
 	}
 	if s.nodes.byID(id) == nil {
@@ -203,9 +181,6 @@ func (s *Service) connFor(id string) (*nodeConn, error) {
 
 // nodeInfo 将持久化快照与当前连接合并为响应，在线字段不进入存储。
 func (s *Service) nodeInfo(n *Node) *NodeInfo {
-	if n == nil {
-		return nil
-	}
 	info := &NodeInfo{Node: *n}
 	s.mu.RLock()
 	c := s.conns[n.ID]
@@ -213,13 +188,12 @@ func (s *Service) nodeInfo(n *Node) *NodeInfo {
 	if c == nil {
 		return info
 	}
-	info.Online, info.Latency, info.Compatible = true, c.latency.Load(), c.compatible
+	info.Online, info.Latency = true, c.latency.Load()
 	if c.info != nil {
 		info.AgentVersion = c.info.Version
 		info.Features = slices.Clone(c.info.Features)
 	}
 	info.Negotiated = c.info != nil
-	info.ConnectedAt, info.RemoteAddr = &c.connectedAt, c.remote
 	return info
 }
 

@@ -117,7 +117,7 @@ func cloneYAML[T any](value *T) (*T, error) {
 }
 
 func validateSnapshot(snapshot *Snapshot) error {
-	if Cluster().Mode == "agent" && snapshot.THA.Enabled {
+	if IsAgent() && snapshot.THA.Enabled {
 		return fmt.Errorf("%w：受控模式不能启用代理 Header 登录", ErrInvalidClusterConfig)
 	}
 	if len(strings.TrimSpace(snapshot.Server.JWTSecret)) < 32 {

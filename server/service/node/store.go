@@ -101,15 +101,10 @@ func (s *nodeStore) find(match func(*Node) bool) *Node {
 	return nil
 }
 
+// insert 为 item 生成唯一的节点 ID 并写入存储，成功后回填 item.ID。
 func (s *nodeStore) insert(item *Node) error {
-	id := item.ID
+	var id string
 	err := s.mutate(func(items []*Node) ([]*Node, error) {
-		if id != "" {
-			if slices.ContainsFunc(items, func(n *Node) bool { return n.ID == id }) {
-				return nil, errors.New("node: duplicate ID")
-			}
-			return append(items, cloneNode(item)), nil
-		}
 		for range 16 {
 			id = strutil.Rand(10)
 			if slices.ContainsFunc(items, func(n *Node) bool { return n.ID == id }) {

@@ -15,29 +15,30 @@ import (
 	"time"
 
 	"github.com/rehiy/libgo/wstunnel"
+
+	"isrvd/server/config"
 )
 
-// ProtocolVersion 本程序的隧道协议版本。
-const ProtocolVersion = 1
+// ─── 两端共用的能力协商；中控侧实现见 session.go，受管机侧实现见下文 ───
 
-// MinProtocolVersion 中控仍能与之通信的受管机最低协议版本。
-// 只有基础传输格式发生不兼容变更时才调高它；新增的可选能力通过 AgentInfo.Features 声明，不应动这个值。
-const MinProtocolVersion = 1
-
-// AgentInfoPath 仅供隧道内协议协商，不经 /api/ 转发或暴露给页面。
+// AgentInfoPath 仅供隧道内能力协商，不经 /api/ 转发或暴露给页面。
 const AgentInfoPath = "/agent/info"
 
-// AgentInfo agent 自身的版本与平台信息，供中控做协议协商
+// FeaturePortMap 写入 AgentInfo.Features，表示受管机可处理转发流。
+const FeaturePortMap = "portmap"
+
+// AgentInfo agent 自身的版本与平台信息，供中控做能力协商
 type AgentInfo struct {
 	Mode     string `json:"mode"`     // 运行模式，agent 恒为 agent
 	Version  string `json:"version"`  // 程序版本
-	Protocol int    `json:"protocol"` // 协议版本，不得低于中控的 MinProtocolVersion
 	Hostname string `json:"hostname"` // 主机名
 	OS       string `json:"os"`       // 操作系统
 	Arch     string `json:"arch"`     // CPU 架构
 
 	Features []string `json:"features,omitempty"` // 可选能力，如 portmap（端口转发）
 }
+
+// ─── 受管机侧 ───
 
 // AgentOptions 受管机隧道客户端配置
 type AgentOptions struct {
@@ -166,12 +167,18 @@ func (l *streamListener) Close() error {
 	return nil
 }
 
-func (l *streamListener) Addr() net.Addr { return streamAddr("wstunnel") }
+func (l *streamListener) Addr() net.Addr {
+	return streamAddr("wstunnel")
+}
 
 type streamAddr string
 
-func (a streamAddr) Network() string { return "wstunnel" }
-func (a streamAddr) String() string  { return string(a) }
+func (a streamAddr) Network() string {
+	return "wstunnel"
+}
+func (a streamAddr) String() string {
+	return string(a)
+}
 
 // newHandler 只放行 /api/ 与自身信息接口；其余路径一律 404。
 // 转发给本机 isrvd 的请求会换成本机签发的 API 令牌，用户凭据与来源 Origin 都不下发。
@@ -214,9 +221,8 @@ func (a *Agent) newHandler() http.Handler {
 func localAgentInfo(version string) *AgentInfo {
 	hostname, _ := os.Hostname()
 	return &AgentInfo{
-		Mode:     "agent",
+		Mode:     config.ModeAgent,
 		Version:  version,
-		Protocol: ProtocolVersion,
 		Hostname: hostname,
 		OS:       runtime.GOOS,
 		Arch:     runtime.GOARCH,

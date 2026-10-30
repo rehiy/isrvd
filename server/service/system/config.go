@@ -86,18 +86,20 @@ func (s *ConfigService) ConfigAll() *AllConfig {
 			}
 		}
 	}
-	if config.Cluster().Mode == "agent" {
-		dst.Password, dst.Passkey, dst.OIDC, dst.THA = nil, nil, nil, nil
-	}
+	dst.dropCenterManaged()
 	return dst
+}
+
+// dropCenterManaged 受管机的登录认证由中控负责，本机不读取也不接受这些分区的修改。
+func (c *AllConfig) dropCenterManaged() {
+	if config.IsAgent() {
+		c.Password, c.Passkey, c.OIDC, c.THA = nil, nil, nil, nil
+	}
 }
 
 // ConfigUpdate 一次性更新全部配置（任何 nil 分区将跳过）。
 func (s *ConfigService) ConfigUpdate(req AllConfig) error {
-	node := config.Cluster().Mode == "agent"
-	if node {
-		req.Password, req.Passkey, req.OIDC, req.THA = nil, nil, nil, nil
-	}
+	req.dropCenterManaged()
 	if req.Notify != nil && req.Notify.Events != nil {
 		events := req.Notify.Events
 		if events.RestartThreshold < 0 || events.RestartThreshold > 10000 ||
@@ -111,7 +113,7 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 		oldRoot := draft.Server.RootDirectory
 		newRoot := oldRoot
 		if req.Server != nil {
-			if node {
+			if config.IsAgent() {
 				req.Server.JWTSecret, req.Server.JWTExpiration = draft.Server.JWTSecret, draft.Server.JWTExpiration
 			}
 			req.Server.JWTSecret = config.SecretKeep(req.Server.JWTSecret, draft.Server.JWTSecret)

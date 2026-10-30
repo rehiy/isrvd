@@ -17,6 +17,7 @@ import (
 	"github.com/rehiy/libgo/jsonl"
 	"github.com/rehiy/libgo/logman"
 
+	"isrvd/pkgs/helper"
 	"isrvd/server/config"
 )
 
@@ -138,7 +139,7 @@ func (s *AuditService) AuditRecord(r *http.Request, username, ip string, statusC
 	username = auditUsername(username, body, r)
 
 	// WebSocket
-	if strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
+	if helper.IsWebSocket(r) {
 		if statusCode == 0 || statusCode == http.StatusOK {
 			statusCode = http.StatusSwitchingProtocols
 		}
@@ -329,7 +330,7 @@ func auditUsername(authUsername, body string, r *http.Request) string {
 		}
 	}
 
-	return i18n.Translate(i18n.Parse(r.Header.Get("Accept-Language")), "匿名")
+	return i18n.TR(r, "匿名")
 }
 
 // ─── 辅助函数 ───

@@ -9,6 +9,7 @@ package i18n
 
 import (
 	"context"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -105,7 +106,7 @@ func Translate(lang Lang, message string) string {
 // Middleware 解析请求语言并写入请求 context，供 T / TC 使用。
 func Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		lang := Parse(negotiate(c))
+		lang := negotiate(c.Request)
 		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), ctxKey{}, lang))
 		// 缓存必须按请求头区分（查询参数已体现在 URL 中）
 		c.Writer.Header().Add("Vary", langHeader)
@@ -139,10 +140,15 @@ func T(c *gin.Context, message string) string {
 	return TC(c.Request.Context(), message)
 }
 
+// TR 按请求语言翻译提示文案，用于没有 gin.Context 的原生 http.Handler（中控网关、受管机代理）。
+func TR(r *http.Request, message string) string {
+	return Translate(negotiate(r), message)
+}
+
 // negotiate 语言协商：?lang= → Accept-Language
-func negotiate(c *gin.Context) string {
-	if value := c.Query(langQuery); value != "" {
-		return value
+func negotiate(r *http.Request) Lang {
+	if value := r.URL.Query().Get(langQuery); value != "" {
+		return Parse(value)
 	}
-	return c.GetHeader(langHeader)
+	return Parse(r.Header.Get(langHeader))
 }

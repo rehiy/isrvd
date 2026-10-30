@@ -31,7 +31,9 @@ type portListener struct {
 	closed bool
 }
 
-func (l *portListener) targetAddr() string { return l.target.Load().(string) }
+func (l *portListener) targetAddr() string {
+	return l.target.Load().(string)
+}
 
 // track 登记一条客户端连接；监听已关闭或并发达到上限时拒绝。
 func (l *portListener) track(c net.Conn) bool {
