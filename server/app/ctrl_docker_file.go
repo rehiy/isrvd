@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"isrvd/pkgs/iobuf"
+	"isrvd/pkgs/helper"
 	"isrvd/server/config"
 )
 
@@ -120,11 +120,11 @@ func (app *App) dockerContainerFileRead(c *gin.Context) {
 		return
 	}
 	content, err := app.dockerSvc.ContainerFileRead(c.Request.Context(), id, filePath)
-	if errors.Is(err, iobuf.ErrTooLarge) {
+	if errors.Is(err, helper.ErrTooLarge) {
 		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用下载功能")
 		return
 	}
-	if errors.Is(err, iobuf.ErrBinary) {
+	if errors.Is(err, helper.ErrBinary) {
 		respondError(c, http.StatusUnsupportedMediaType, "文件不是文本文件，无法在线编辑")
 		return
 	}
@@ -146,7 +146,7 @@ func (app *App) dockerContainerFileWrite(c *gin.Context) {
 		respondBindError(c, err)
 		return
 	}
-	if int64(len(req.Content)) > iobuf.MaxEditableFileBytes {
+	if int64(len(req.Content)) > helper.MaxEditableFileBytes {
 		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用上传功能")
 		return
 	}

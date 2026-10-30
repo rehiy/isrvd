@@ -16,7 +16,7 @@ import (
 	"github.com/rehiy/libgo/filer"
 	"github.com/rehiy/libgo/logman"
 
-	"isrvd/pkgs/iobuf"
+	"isrvd/pkgs/helper"
 	"isrvd/server/config"
 )
 
@@ -159,15 +159,15 @@ func (s *Service) FileRead(absPath string) ([]byte, error) {
 		return nil, err
 	}
 	defer file.Close()
-	data, err := io.ReadAll(io.LimitReader(file, iobuf.MaxEditableFileBytes+1))
+	data, err := io.ReadAll(io.LimitReader(file, helper.MaxEditableFileBytes+1))
 	if err != nil {
 		return nil, err
 	}
-	if int64(len(data)) > iobuf.MaxEditableFileBytes {
-		return nil, iobuf.ErrTooLarge
+	if int64(len(data)) > helper.MaxEditableFileBytes {
+		return nil, helper.ErrTooLarge
 	}
 	if !filer.IsTextBytes(data) {
-		return nil, iobuf.ErrBinary
+		return nil, helper.ErrBinary
 	}
 	return data, nil
 }

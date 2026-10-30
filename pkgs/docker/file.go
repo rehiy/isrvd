@@ -15,7 +15,7 @@ import (
 	"github.com/rehiy/libgo/filer"
 	"github.com/rehiy/libgo/logman"
 
-	"isrvd/pkgs/iobuf"
+	"isrvd/pkgs/helper"
 )
 
 // ContainerFileInfo 容器内文件信息
@@ -181,16 +181,16 @@ func (s *DockerService) ContainerFileRename(ctx context.Context, containerID, ol
 
 // ContainerFileRead 读取用于在线编辑的容器文件内容，超大文件应使用流式下载接口。
 func (s *DockerService) ContainerFileRead(ctx context.Context, containerID, filePath string) (string, error) {
-	buf := &iobuf.EditBuffer{}
+	buf := &helper.EditBuffer{}
 	err := s.ContainerFileDownload(ctx, containerID, filePath, buf)
 	if buf.Exceeded() {
-		return "", iobuf.ErrTooLarge
+		return "", helper.ErrTooLarge
 	}
 	if err != nil {
 		return "", err
 	}
 	if !filer.IsTextBytes(buf.Bytes()) {
-		return "", iobuf.ErrBinary
+		return "", helper.ErrBinary
 	}
 	return strings.ToValidUTF8(buf.String(), "\uFFFD"), nil
 }

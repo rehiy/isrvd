@@ -1,5 +1,4 @@
-// Package iobuf 提供在线编辑场景共用的内容上限与限长缓冲。
-package iobuf
+package helper
 
 import (
 	"bytes"

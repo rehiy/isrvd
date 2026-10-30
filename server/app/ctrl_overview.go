@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"isrvd/pkgs/iobuf"
+	"isrvd/pkgs/helper"
 	"isrvd/server/config"
 	"isrvd/server/service/account"
 	"isrvd/server/service/overview"
@@ -53,7 +53,7 @@ func (app *App) overviewBootstrap(c *gin.Context) {
 		resp.Config = &BootstrapConfig{
 			Title:          snapshot.Server.Title,
 			MaxUploadSize:  snapshot.Server.MaxUploadSize,
-			MaxEditSize:    iobuf.MaxEditableFileBytes,
+			MaxEditSize:    helper.MaxEditableFileBytes,
 			MarketplaceURL: snapshot.Marketplace.URL,
 			OpenAPIEnabled: snapshot.Server.OpenAPI,
 			Links:          snapshot.Links,

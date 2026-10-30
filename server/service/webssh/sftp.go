@@ -10,7 +10,7 @@ import (
 	"github.com/rehiy/libgo/filer"
 	"github.com/rehiy/libgo/webssh"
 
-	"isrvd/pkgs/iobuf"
+	"isrvd/pkgs/helper"
 )
 
 // SFTPListResult SFTP 目录列表结果
@@ -105,16 +105,16 @@ func (s *Service) SFTPRead(hostID, filePath string) (string, error) {
 		return "", err
 	}
 
-	buf := &iobuf.EditBuffer{}
+	buf := &helper.EditBuffer{}
 	err = s.sftpClient.Download(opt, filePath, buf)
 	if buf.Exceeded() {
-		return "", iobuf.ErrTooLarge
+		return "", helper.ErrTooLarge
 	}
 	if err != nil {
 		return "", err
 	}
 	if !filer.IsTextBytes(buf.Bytes()) {
-		return "", iobuf.ErrBinary
+		return "", helper.ErrBinary
 	}
 	return strings.ToValidUTF8(buf.String(), "\uFFFD"), nil
 }

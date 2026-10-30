@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/logman"
 
-	"isrvd/pkgs/iobuf"
+	"isrvd/pkgs/helper"
 	"isrvd/server/config"
 )
 
@@ -137,7 +137,7 @@ func (app *App) filerFileCreate(c *gin.Context) {
 		respondBindError(c, err)
 		return
 	}
-	if int64(len(req.Content)) > iobuf.MaxEditableFileBytes {
+	if int64(len(req.Content)) > helper.MaxEditableFileBytes {
 		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用上传功能")
 		return
 	}
@@ -167,11 +167,11 @@ func (app *App) filerFileRead(c *gin.Context) {
 	}
 
 	content, err := app.filerSvc.FileRead(absPath)
-	if errors.Is(err, iobuf.ErrTooLarge) {
+	if errors.Is(err, helper.ErrTooLarge) {
 		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用下载功能")
 		return
 	}
-	if errors.Is(err, iobuf.ErrBinary) {
+	if errors.Is(err, helper.ErrBinary) {
 		respondError(c, http.StatusUnsupportedMediaType, "文件不是文本文件，无法在线编辑")
 		return
 	}
@@ -202,7 +202,7 @@ func (app *App) filerFileModify(c *gin.Context) {
 		respondBindError(c, err)
 		return
 	}
-	if int64(len(req.Content)) > iobuf.MaxEditableFileBytes {
+	if int64(len(req.Content)) > helper.MaxEditableFileBytes {
 		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用上传功能")
 		return
 	}

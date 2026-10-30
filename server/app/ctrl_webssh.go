@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/websocket"
 
-	"isrvd/pkgs/iobuf"
+	"isrvd/pkgs/helper"
 	"isrvd/server/config"
 	"isrvd/server/service/webssh"
 )
@@ -340,11 +340,11 @@ func (app *App) websshSFTPRead(c *gin.Context) {
 	}
 
 	content, err := app.websshSvc.SFTPRead(id, filePath)
-	if errors.Is(err, iobuf.ErrTooLarge) {
+	if errors.Is(err, helper.ErrTooLarge) {
 		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用下载功能")
 		return
 	}
-	if errors.Is(err, iobuf.ErrBinary) {
+	if errors.Is(err, helper.ErrBinary) {
 		respondError(c, http.StatusUnsupportedMediaType, "文件不是文本文件，无法在线编辑")
 		return
 	}
@@ -370,7 +370,7 @@ func (app *App) websshSFTPWrite(c *gin.Context) {
 		respondBindError(c, err)
 		return
 	}
-	if int64(len(req.Content)) > iobuf.MaxEditableFileBytes {
+	if int64(len(req.Content)) > helper.MaxEditableFileBytes {
 		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用上传功能")
 		return
 	}
