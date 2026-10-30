@@ -4,7 +4,6 @@ import (
 	"context"
 	"net"
 	"net/http"
-	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -36,13 +35,6 @@ import (
 
 const APINamespace = "/api"
 
-// 运行模式，由 cmd/server 在启动时确定
-const (
-	ModeServer = "server" // 单机
-	ModeCenter = "center" // 中控：节点管理与转发由进程内的网关提供
-	ModeAgent  = "agent"  // 受管机：请求只经中控隧道到达
-)
-
 const (
 	AccessAnon RouteAccess = -1 // 匿名
 	AccessPerm RouteAccess = 0  // 需要具体权限
@@ -58,7 +50,6 @@ const (
 // App 应用实例，持有各业务服务
 type App struct {
 	*gin.Engine
-	mode               string // 运行模式，启动时确定
 	servicesMu         sync.RWMutex
 	requestCtxMu       sync.RWMutex
 	cleanupWG          sync.WaitGroup
@@ -108,7 +99,6 @@ type Route struct {
 	Access     RouteAccess     `json:"access"`        // 访问级别，0：需要具体权限，-1：匿名，1：登录即可访问
 	Audit      AuditLevel      `json:"-"`             // 审计级别，0：按 Method 审计，-1：忽略，1：强制审计
 	QueryToken bool            `json:"-"`             // 允许从 query ?token= 提取 JWT（用于 SSE/文件下载等无法携带 Header 的场景）
-	Local      bool            `json:"-"`             // 中控节点视角下仍由中控处理、不转发给受管机；未标记的路由所在模块默认转发，同一模块只要有一条标记，整个模块都不转发
 }
 
 // StartApp 启动应用并阻塞到收到退出信号。
@@ -116,15 +106,14 @@ type Route struct {
 // listener 为 nil 时按配置的 listenAddr 监听；非 nil 时直接在它上面提供服务，
 // 用于中控与受管机模式：isrvd 只在回环端口上服务，对外入口由网关或隧道承担。
 //
-// mode 为 ModeServer / ModeCenter / ModeAgent。受管机的请求只会经中控隧道到达，来源已由中控校验并去掉了
+// 运行模式取自 config.Cluster()。受管机的请求只会经中控隧道到达，来源已由中控校验并去掉了
 // Origin，因此放行空 Origin；带 Origin 的请求（浏览器直接访问回环端口）仍按 allowedOrigins 校验。
-func StartApp(listener net.Listener, mode string) {
+func StartApp(listener net.Listener) {
 	lifecycleCtx, lifecycleCancel := context.WithCancel(context.Background())
 	servicesCtx, servicesCancel := context.WithCancel(lifecycleCtx)
 	requestsCtx, requestsCancel := context.WithCancel(lifecycleCtx)
 	app := &App{
 		Engine:          httpd.Engine(config.Current().Server.Debug),
-		mode:            mode,
 		lifecycleCtx:    lifecycleCtx,
 		lifecycleCancel: lifecycleCancel,
 		servicesCtx:     servicesCtx,
@@ -133,7 +122,7 @@ func StartApp(listener net.Listener, mode string) {
 		requestsCancel:  requestsCancel,
 		wsConfig: &websocket.ServerConfig{
 			AllowedOrigins:   config.Current().Server.AllowedOrigins,
-			AllowEmptyOrigin: mode == ModeAgent,
+			AllowEmptyOrigin: config.IsAgent(),
 		},
 		routeIndex: make(map[string]Route),
 	}
@@ -180,7 +169,9 @@ func (app *App) initRoutes() {
 		app.registerRoute(r, route)
 	}
 
-	app.initGatewayPermissions()
+	if config.IsCenter() {
+		app.initGatewayPermissions()
+	}
 
 	// NoRoute: /api/* 返回 JSON 404，其他路径走静态文件 + SPA fallback
 	staticHandler := httpd.StaticServe(http.FS(public.Efs), "")
@@ -200,34 +191,7 @@ func (app *App) initRoutes() {
 	})
 }
 
-// QueryTokenRoutes 返回允许通过 ?token= 认证的 GET 路由（Gin 路径格式，含 /api 前缀）。
-// 中控网关据此对转发到节点的请求套用与 isrvd 相同的规则，避免令牌随意出现在 URL 中。
-func QueryTokenRoutes() []string {
-	var paths []string
-	for _, route := range (&App{}).collectRoutes() {
-		if route.QueryToken && route.Method == http.MethodGet {
-			paths = append(paths, APINamespace+route.Path)
-		}
-	}
-	return paths
-}
-
-// NodeModules 返回节点视角下转发给受管机的业务模块（即 /api/<模块>/ 的首段）：
-// 所有路由所在的模块中，排除出现过 Local 标记的模块。
-func NodeModules() []string {
-	var modules, local []string
-	for _, route := range (&App{}).collectRoutes() {
-		module := strings.SplitN(route.Path, "/", 3)[1]
-		if route.Local {
-			local = append(local, module)
-		} else if !slices.Contains(modules, module) {
-			modules = append(modules, module)
-		}
-	}
-	return slices.DeleteFunc(modules, func(module string) bool { return slices.Contains(local, module) })
-}
-
-// collectRoutes 收集所有模块的路由定义。节点视角下是否转发由路由自身的 Local 标记决定。
+// collectRoutes 收集所有模块的路由定义。
 func (app *App) collectRoutes() []Route {
 	var routes []Route
 	routes = append(routes, app.defineOverviewRoutes()...)

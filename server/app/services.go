@@ -60,7 +60,7 @@ func (app *App) initServices(ctx context.Context) {
 
 	// 中控模式：节点管理由进程内的网关提供（不在本路由表中），这里只向前端声明该能力已启用，
 	// 前端据此显示节点切换与节点管理页面
-	if app.mode == ModeCenter {
+	if config.IsCenter() {
 		app.markReady("node", func(context.Context) bool { return true })
 	}
 

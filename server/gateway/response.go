@@ -15,20 +15,14 @@ func writeRaw(w http.ResponseWriter, status int, body []byte) {
 	_, _ = w.Write(body)
 }
 
-func respond(w http.ResponseWriter, status int, body map[string]any) {
-	data, _ := json.Marshal(body)
-	writeRaw(w, status, data)
-}
-
-// translate 网关是原生 http.Handler，没有 gin 上下文，按请求头直接协商语言翻译提示文案
-func translate(r *http.Request, message string) string {
-	return i18n.Translate(i18n.Parse(r.Header.Get("Accept-Language")), message)
-}
+// 网关是原生 http.Handler，没有 gin 上下文，提示文案按请求语言直接翻译。
 
 func success(w http.ResponseWriter, r *http.Request, message string, payload any) {
-	respond(w, http.StatusOK, map[string]any{"success": true, "message": translate(r, message), "payload": payload})
+	data, _ := json.Marshal(map[string]any{"success": true, "message": i18n.TR(r, message), "payload": payload})
+	writeRaw(w, http.StatusOK, data)
 }
 
 func fail(w http.ResponseWriter, r *http.Request, status int, message string) {
-	respond(w, status, map[string]any{"success": false, "message": translate(r, message)})
+	data, _ := json.Marshal(map[string]any{"success": false, "message": i18n.TR(r, message)})
+	writeRaw(w, status, data)
 }

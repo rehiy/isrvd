@@ -17,8 +17,8 @@ import (
 // defineCopilotRoutes 定义 Copilot 聊天与接口目录路由。
 func (app *App) defineCopilotRoutes() []Route {
 	return []Route{
-		{Method: "GET", Path: "/copilot/catalog", Handler: app.copilotCatalog, Module: "copilot", Label: "查阅接口目录", Access: AccessAuth, Local: true},
-		{Method: "POST", Path: "/copilot/agui", Handler: app.copilotAGUI, Module: "copilot", Label: "Copilot 对话", QueryToken: true, Local: true},
+		{Method: "GET", Path: "/copilot/catalog", Handler: app.copilotCatalog, Module: "copilot", Label: "查阅接口目录", Access: AccessAuth},
+		{Method: "POST", Path: "/copilot/agui", Handler: app.copilotAGUI, Module: "copilot", Label: "Copilot 对话", QueryToken: true},
 	}
 }
 

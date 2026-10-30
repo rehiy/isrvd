@@ -3,16 +3,19 @@ package gateway
 import (
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/rehiy/libgo/websocket"
+
+	"isrvd/pkgs/helper"
 )
 
 // nodePath 处理 /n/<节点ID>/ 下的全部请求：去掉前缀后，页面与中控专属模块交给中控，
 // 业务模块经认证、权限与审计后转发到节点。
 func (g *gateway) nodePath(w http.ResponseWriter, r *http.Request) {
 	id, rest := r.PathValue("id"), r.PathValue("rest")
-	if !validNodeID(id) {
+	if !nodeIDPattern.MatchString(id) {
 		http.NotFound(w, r)
 		return
 	}
@@ -42,11 +45,25 @@ func (g *gateway) nodePath(w http.ResponseWriter, r *http.Request) {
 // 受管机内部仍使用本地服务令牌。
 func (g *gateway) nodeForward(w http.ResponseWriter, r *http.Request) {
 	// 与 isrvd 本机终端一致，WebSocket 必须校验 Origin；受管机转发时会去掉 Origin，所以只能在这里把关
-	if isWebSocket(r) && !g.originAllowed(r) {
+	if helper.IsWebSocket(r) && !g.originAllowed(r) {
 		fail(w, r, http.StatusForbidden, "不允许的跨站来源")
 		return
 	}
-	g.nodes.ProxyServe(w, r, r.PathValue("id"))
+	g.Nodes.ProxyServe(w, g.withoutCredentials(r), r.PathValue("id"))
+}
+
+// withoutCredentials 返回去掉用户凭据的请求副本：用户凭据只属于中控，不下发给节点。
+// 用副本而不改原请求，审计仍能看到完整的原始请求。
+func (g *gateway) withoutCredentials(r *http.Request) *http.Request {
+	out := r.Clone(r.Context())
+	for _, name := range g.CredentialHeaders() {
+		out.Header.Del(name)
+	}
+	if q := out.URL.Query(); q.Has("token") {
+		q.Del("token")
+		out.URL.RawQuery = q.Encode()
+	}
+	return out
 }
 
 // originAllowed 判断 WebSocket 的 Origin 是否可接受：无 Origin（非浏览器客户端，仍需有效令牌）、
@@ -60,31 +77,12 @@ func (g *gateway) originAllowed(r *http.Request) bool {
 		return true
 	}
 	// 未配置白名单时 CheckOrigin 会放行一切，这里要求跨站来源必须被明确列出
-	if g.allowedOrigins == nil {
+	if g.AllowedOrigins == nil {
 		return false
 	}
-	allowed := g.allowedOrigins()
+	allowed := g.AllowedOrigins()
 	return len(allowed) > 0 && (&websocket.ServerConfig{AllowedOrigins: allowed}).CheckOrigin(origin)
 }
 
-// validNodeID 接受 10 位字母数字节点 ID，兼容已有的 8 位 ID 和小写 UUID（8-4-4-4-12）。
-func validNodeID(id string) bool {
-	if len(id) != 8 && len(id) != 10 && len(id) != 36 {
-		return false
-	}
-	for i, c := range id {
-		switch {
-		case len(id) == 8 || len(id) == 10:
-			if (c < '0' || c > '9') && (c < 'A' || c > 'Z') && (c < 'a' || c > 'z') {
-				return false
-			}
-		case i == 8 || i == 13 || i == 18 || i == 23:
-			if c != '-' {
-				return false
-			}
-		case (c < '0' || c > '9') && (c < 'a' || c > 'f'):
-			return false
-		}
-	}
-	return true
-}
+// nodeIDPattern 节点 ID 为 10 位以上的字母、数字或横线。
+var nodeIDPattern = regexp.MustCompile(`^[0-9A-Za-z-]{10,}$`)

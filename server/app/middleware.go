@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"isrvd/pkgs/helper"
 )
 
 // serviceLifecycleMiddleware 固定一次请求使用的服务代际，并在重载时取消长请求。
@@ -46,9 +47,6 @@ func (app *App) serviceLifecycleMiddleware() gin.HandlerFunc {
 func (app *App) authMiddleware(routeIndex map[string]Route) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		auth := app.accountSvc.Auth
-		if app.mode == ModeCenter {
-			auth = app.accountSvc.AuthFromGateway
-		}
 		route, ok := lookupRoute(routeIndex, c)
 		allowQueryToken := ok && route.QueryToken
 		if ok && route.Access == AccessAnon {
@@ -111,7 +109,7 @@ func (app *App) permMiddleware(routeIndex map[string]Route) gin.HandlerFunc {
 func (app *App) auditMiddleware(routeIndex map[string]Route) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		route, _ := lookupRoute(routeIndex, c)
-		isWS := strings.EqualFold(c.GetHeader("Upgrade"), "websocket")
+		isWS := helper.IsWebSocket(c.Request)
 		if route.Audit < AuditByMethod || (route.Audit == AuditByMethod && !isWS && c.Request.Method == http.MethodGet) {
 			c.Next()
 			return

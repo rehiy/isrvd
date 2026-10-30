@@ -12,10 +12,9 @@ import (
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/secure"
 
+	"isrvd/pkgs/helper"
 	"isrvd/server/config"
 )
-
-const GatewayUserHeader = "X-Isrvd-Gateway-User"
 
 // ─── 认证入口 ──────────────
 
@@ -24,37 +23,14 @@ const GatewayUserHeader = "X-Isrvd-Gateway-User"
 // 供中间件统一调用，避免在 server 层判断认证模式。
 func (s *Service) Auth(r *http.Request, allowQueryToken bool) (username, errMsg string) {
 	snapshot := config.Current()
-	if snapshot.THA != nil && snapshot.THA.Enabled {
+	if snapshot.THA.Enabled {
+		// 中控的 isrvd 只在回环端口上服务，身份由进程内网关校验后写入内部身份头（见 gateway.go）
+		if config.IsCenter() && isLoopback(r) {
+			return headerUsername(snapshot, r.Header.Get(GatewayUserHeader))
+		}
 		return HeaderAuth(snapshot, r)
 	}
 	return s.jwtCheck(snapshot, r, allowQueryToken)
-}
-
-// AuthFromGateway 仅在私有回环监听器接收网关校验后写入的内部身份。
-func (s *Service) AuthFromGateway(r *http.Request, allowQueryToken bool) (string, string) {
-	snapshot := config.Current()
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		host = r.RemoteAddr
-	}
-	if ip := net.ParseIP(host); snapshot.THA.Enabled && ip != nil && ip.IsLoopback() {
-		return headerUsername(snapshot, r.Header.Get(GatewayUserHeader))
-	}
-	return s.Auth(r, allowQueryToken)
-}
-
-// GatewayUser 认证进程内网关已清理的请求，返回用户名；认证失败或成员不存在返回空串。
-// 调用方须先移除外部 GatewayUserHeader，校验 THA 来源后再写入内部身份。
-func (s *Service) GatewayUser(r *http.Request, allowQueryToken bool) string {
-	snapshot := config.Current()
-	username := r.Header.Get(GatewayUserHeader)
-	if !snapshot.THA.Enabled {
-		username, _ = s.jwtCheck(snapshot, r, allowQueryToken)
-	}
-	if username == "" || snapshot.Members[username] == nil {
-		return ""
-	}
-	return username
 }
 
 // AuthInfoResponse 认证模式及当前用户信息
@@ -73,7 +49,7 @@ type AuthInfoResponse struct {
 func (s *Service) AuthInfo(username string) *AuthInfoResponse {
 	snapshot := config.Current()
 	mode := "jwt"
-	if snapshot.THA != nil && snapshot.THA.Enabled {
+	if snapshot.THA.Enabled {
 		mode = "header"
 	}
 	oidcEnabled := mode == "jwt" && snapshot.OIDC.Enabled && snapshot.OIDC.IssuerURL != "" && snapshot.OIDC.ClientID != ""
@@ -291,22 +267,15 @@ func (s *Service) extractJWT(r *http.Request, allowQueryToken bool) string {
 		return tokenStr
 	}
 	// WebSocket 及标记了 QueryToken 的路由（SSE、文件预览下载）允许 query token
-	if allowQueryToken || r.Header.Get("Upgrade") == "websocket" {
+	if allowQueryToken || helper.IsWebSocket(r) {
 		return r.URL.Query().Get("token")
 	}
 	return ""
 }
 
 func headerSourceTrusted(snapshot *config.Snapshot, r *http.Request) bool {
-	// 默认可信来源由配置层填充
-	if snapshot.THA == nil || len(snapshot.THA.TrustedCIDRs) == 0 {
-		return true
-	}
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		host = r.RemoteAddr
-	}
-	ip := net.ParseIP(host)
+	// 配置层已保证 TrustedCIDRs 非空（默认仅回环），这里不得退化为放行全部来源
+	ip := net.ParseIP(helper.RemoteHost(r))
 	if ip == nil {
 		return false
 	}

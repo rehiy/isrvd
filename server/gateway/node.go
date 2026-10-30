@@ -10,66 +10,44 @@ import (
 	"github.com/rehiy/libgo/httpd"
 	"github.com/rehiy/libgo/websocket"
 
+	"isrvd/pkgs/helper"
 	"isrvd/server/service/node"
 )
 
 func (g *gateway) nodeList(w http.ResponseWriter, r *http.Request) {
-	success(w, r, "", g.nodes.NodeList())
+	success(w, r, "", g.Nodes.NodeList())
 }
 
 func (g *gateway) nodeCreate(w http.ResponseWriter, r *http.Request) {
 	var req node.NodeRequest
-	if !decode(w, r, &req) {
-		return
+	if decode(w, r, &req) {
+		resp, err := g.Nodes.NodeCreate(&req)
+		reply(w, r, "创建成功", resp, err)
 	}
-	resp, err := g.nodes.NodeCreate(&req)
-	if err != nil {
-		nodeFail(w, r, err)
-		return
-	}
-	success(w, r, "创建成功", resp)
 }
 
 func (g *gateway) nodeUpdate(w http.ResponseWriter, r *http.Request) {
 	var req node.NodeRequest
-	if !decode(w, r, &req) {
-		return
+	if decode(w, r, &req) {
+		n, err := g.Nodes.NodeUpdate(r.PathValue("id"), &req)
+		reply(w, r, "节点更新成功", n, err)
 	}
-	n, err := g.nodes.NodeUpdate(r.PathValue("id"), &req)
-	if err != nil {
-		nodeFail(w, r, err)
-		return
-	}
-	success(w, r, "节点更新成功", n)
 }
 
 func (g *gateway) nodeRevoke(w http.ResponseWriter, r *http.Request) {
-	if err := g.nodes.NodeRevoke(r.PathValue("id")); err != nil {
-		nodeFail(w, r, err)
-		return
-	}
-	success(w, r, "节点已吊销", nil)
+	reply(w, r, "节点已吊销", nil, g.Nodes.NodeRevoke(r.PathValue("id")))
 }
 
 func (g *gateway) nodeDelete(w http.ResponseWriter, r *http.Request) {
-	if err := g.nodes.NodeDelete(r.PathValue("id")); err != nil {
-		nodeFail(w, r, err)
-		return
-	}
-	success(w, r, "节点删除成功", nil)
+	reply(w, r, "节点删除成功", nil, g.Nodes.NodeDelete(r.PathValue("id")))
 }
 
 func (g *gateway) nodePortMapUpdate(w http.ResponseWriter, r *http.Request) {
 	var req node.PortMapRequest
-	if !decode(w, r, &req) {
-		return
+	if decode(w, r, &req) {
+		n, err := g.Nodes.NodePortMapUpdate(r.PathValue("id"), &req)
+		reply(w, r, "端口转发已更新", n, err)
 	}
-	n, err := g.nodes.NodePortMapUpdate(r.PathValue("id"), &req)
-	if err != nil {
-		nodeFail(w, r, err)
-		return
-	}
-	success(w, r, "端口转发已更新", n)
 }
 
 // nodeConnect 受管机建立隧道的入口。WebSocket 升级与二进制流适配交给 libgo 的 websocket.ServerConfig，
@@ -86,16 +64,16 @@ func (g *gateway) nodeConnect() http.Handler {
 			c.Abort()
 			return
 		}
-		n, err := g.nodes.Authenticate(c.Request, clientIP(c.Request))
+		n, err := g.Nodes.Authenticate(c.Request, helper.RemoteHost(c.Request))
 		if err != nil {
 			nodeFail(c.Writer, c.Request, err)
 			c.Abort()
 			return
 		}
-		defer g.nodes.ReleaseConnection(n)
+		defer g.Nodes.ReleaseConnection(n)
 		ws.Handler(func(conn *websocket.ServerConn) {
 			conn.SetMessageType(websocket.BinaryMessage)
-			g.nodes.Serve(c.Request.Context(), conn, c.Request.RemoteAddr, n)
+			g.Nodes.Serve(c.Request.Context(), conn, c.Request.RemoteAddr, n)
 		})(c)
 	})
 	return r
@@ -116,6 +94,15 @@ func decode(w http.ResponseWriter, r *http.Request, v any) bool {
 		return false
 	}
 	return true
+}
+
+// reply 把节点服务的结果写成统一响应：出错时映射状态码，成功时返回提示与数据
+func reply(w http.ResponseWriter, r *http.Request, message string, payload any, err error) {
+	if err != nil {
+		nodeFail(w, r, err)
+		return
+	}
+	success(w, r, message, payload)
 }
 
 // nodeFail 把节点服务错误映射为 HTTP 状态码

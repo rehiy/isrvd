@@ -27,13 +27,13 @@ import (
 
 // run 按环境变量指定的模式运行，阻塞到收到退出信号。
 func run() error {
-	switch config.Cluster().Mode {
-	case app.ModeCenter:
+	switch {
+	case config.IsCenter():
 		return runCenter()
-	case app.ModeAgent:
+	case config.IsAgent():
 		return runAgent()
 	default:
-		app.StartApp(nil, app.ModeServer)
+		app.StartApp(nil)
 		return nil
 	}
 }
@@ -58,15 +58,19 @@ func runCenter() error {
 		return fmt.Errorf("监听回环端口失败: %w", err)
 	}
 
+	queryTokenRoutes, nodeModules := app.GatewayRoutes()
 	srv := &http.Server{
 		Handler: gateway.Handler(gateway.Options{
-			Upstream:         &url.URL{Scheme: "http", Host: private.Addr().String()},
-			Nodes:            nodes,
-			AllowedOrigins:   func() []string { return config.Current().Server.AllowedOrigins },
-			QueryTokenRoutes: app.QueryTokenRoutes(),
-			NodeModules:      app.NodeModules(),
-			Audit:            app.Audit(),
-			Authorize:        app.GatewayAuthorize,
+			Upstream:          &url.URL{Scheme: "http", Host: private.Addr().String()},
+			Nodes:             nodes,
+			AllowedOrigins:    func() []string { return config.Current().Server.AllowedOrigins },
+			QueryTokenRoutes:  queryTokenRoutes,
+			NodeModules:       nodeModules,
+			UserHeader:        account.GatewayUserHeader,
+			TrustIdentity:     account.TrustGatewayIdentity,
+			CredentialHeaders: account.GatewayCredentialHeaders,
+			Audit:             app.Audit(),
+			Authorize:         app.GatewayAuthorize,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       120 * time.Second,
@@ -78,7 +82,7 @@ func runCenter() error {
 		}
 	}()
 
-	app.StartApp(private, app.ModeCenter) // 阻塞到收到退出信号
+	app.StartApp(private) // 阻塞到收到退出信号
 
 	// 隧道是被劫持的长连接，Shutdown 不会等待它们，需先主动断开
 	nodes.Close()
@@ -110,7 +114,7 @@ func runAgent() error {
 		agent.Run(ctx)
 	}()
 
-	app.StartApp(private, app.ModeAgent) // 阻塞到收到退出信号
+	app.StartApp(private) // 阻塞到收到退出信号
 
 	cancel()
 	<-done

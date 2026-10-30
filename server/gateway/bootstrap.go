@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
-	"isrvd/server/service/account"
 )
 
 // 节点视角下的启动数据（/n/<节点ID>/api/overview/bootstrap）：
@@ -33,11 +31,11 @@ func (g *gateway) nodeBootstrap(w http.ResponseWriter, r *http.Request, id strin
 // bootstrapCall 仅为节点视角的页面加载中控启动数据，不用于业务请求的身份校验。
 // 只传递认证与语言信息，避免把浏览器的条件请求、升级或内容头带入聚合查询。
 func (g *gateway) bootstrapCall(r *http.Request) (int, []byte, error) {
-	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, g.upstream.JoinPath("api/overview/bootstrap").String(), nil)
+	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, g.Upstream.JoinPath("api/overview/bootstrap").String(), nil)
 	if err != nil {
 		return 0, nil, err
 	}
-	for _, name := range []string{"Authorization", "Accept-Language", account.GatewayUserHeader} {
+	for _, name := range []string{"Authorization", "Accept-Language", g.UserHeader} {
 		if value := r.Header.Get(name); value != "" {
 			req.Header.Set(name, value)
 		}
@@ -89,7 +87,7 @@ func (g *gateway) mergeBootstrap(ctx context.Context, id string, body []byte) []
 			Config map[string]any `json:"config"`
 		} `json:"payload"`
 	}
-	if data, err := g.nodes.Fetch(ctx, id, "/api/overview/bootstrap"); err == nil {
+	if data, err := g.Nodes.Fetch(ctx, id, "/api/overview/bootstrap"); err == nil {
 		_ = json.Unmarshal(data, &remote)
 	}
 	applyNodeBootstrap(cfg, probe, local, remote.Payload.Config, remote.Payload.Probe)
