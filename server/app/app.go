@@ -243,7 +243,7 @@ func (app *App) collectRoutes() []Route {
 	routes = append(routes, app.defineAccountRoutes()...)
 	routes = append(routes, forward(app.defineShellRoutes())...)
 	routes = append(routes, forward(app.defineLocalRoutes())...)
-	routes = append(routes, app.defineWebSSHRoutes()...)
+	routes = append(routes, forward(app.defineWebSSHRoutes())...)
 	routes = append(routes, forward(app.defineFilerRoutes())...)
 	routes = append(routes, app.defineCopilotRoutes()...)
 	routes = append(routes, forward(app.defineApisixRoutes())...)

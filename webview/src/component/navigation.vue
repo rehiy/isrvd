@@ -329,7 +329,7 @@ export default toNative(NavigationBar)
         </template>
       </div>
       <!-- SSH/SFTP 折叠子菜单 -->
-      <div v-if="!portal.currentNodeId && (portal.hasPerm('GET /api/ssh/hosts') || portal.hasPerm('GET /api/ssh/credentials'))">
+      <div v-if="portal.hasPerm('GET /api/ssh/hosts') || portal.hasPerm('GET /api/ssh/credentials')">
         <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isSshActive }" title="SSH / SFTP" @click.stop="toggleSsh">
           <i class="fas fa-server"></i>
         </button>

@@ -18,9 +18,10 @@ export const nodeLocation = (): { root: string; id: string } => {
 export const centerUrl = (): string =>
     window.location.origin + nodeLocation().root.replace(/\/+$/, '')
 
-/** 仅在中控视角展示的管理页面；个人账户设置仍可在节点视角访问 */
+/** 仅在中控视角可用的页面：节点管理、用户管理与登录认证配置只属于中控，受管机上不生效。
+ *  SSH 随节点转发，个人账户设置仍可在节点视角访问 */
 export const isCenterPage = (path: string): boolean =>
-    /^\/(?:node|ssh|system\/config\/auth|account\/members)(?:\/|$)/.test(path)
+    /^\/(?:node|system\/config\/auth|account\/members)(?:\/|$)/.test(path)
 
 /** 节点可选能力：key 与受管机上报的 features 一致，value 为界面显示名 */
 const NODE_FEATURES: Record<string, string> = {
