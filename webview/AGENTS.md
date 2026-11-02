@@ -414,7 +414,7 @@ if (!this.canList) {
 }
 try {
     await api.xxx()
-} catch {} finally {
+} finally {
     this.loading = false
 }
 
