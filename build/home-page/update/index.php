@@ -9,12 +9,14 @@
  *   ver   当前版本，如 v1.0.0。
  *   os    运行平台，如 linux、darwin 或 windows。
  *   arch  CPU 架构，如 amd64 或 arm64。
+ *   area  可选，客户端判定的站点类型；为 cn 时优先返回 CNB 镜像的升级包地址，其余值或缺省返回 GitHub 地址。
  *
  * 响应格式：
  *   UpdateInfo JSON，包含以下字段：
  *   version  最新版本号，成功获取 Release 数据时返回。
  *   release  GitHub Release 页面地址，成功获取 Release 数据时返回。
  *   package  升级包地址，有新版且存在匹配资源时返回，否则为空。
+ *            area=cn 且 CNB 镜像已有该版本时返回 CNB 地址，否则返回 GitHub 地址。
  *   message  提示信息。
  *   error    错误信息，非空时客户端终止更新。
  *
@@ -32,6 +34,10 @@ const DOWNLOAD_HEADERS  = [
     'Accept: application/vnd.github+json',
     'X-GitHub-Api-Version: 2022-11-28',
 ];
+
+// 国内镜像：客户端声明 area=cn 时优先使用 CNB 发布的同名升级包。
+const CN_DOWNLOAD_URL = 'https://cnb.cool/rehiy/isrvd/-/releases/download/';
+const PROBE_TIMEOUT   = 3; // 镜像探测超时（秒），失败一律回退 GitHub
 
 // 操作系统和架构到升级包文件名的映射。
 const ASSET_MAP = [
@@ -99,10 +105,50 @@ function main(): void
         respondUpdate($latest, $releaseUrl, '', '', "asset not found for platform: $key");
     }
 
+    // 客户端声明 area=cn 且镜像已有该版本时改用 CNB；任何探测失败都保持 GitHub 地址。
+    if (($_GET['area'] ?? '') === 'cn') {
+        $downloadUrl = mirrorPackageUrl($latest, $filename) ?: $downloadUrl;
+    }
+
     respondUpdate($latest, $releaseUrl, $downloadUrl, "update available: $latest");
 }
 
 // ── 工具函数 ──────────────────────────────────────────────
+
+/**
+ * 返回 CNB 镜像上对应版本升级包的地址；镜像尚未同步该版本或探测失败时返回空串。
+ */
+function mirrorPackageUrl(string $tag, string $filename): string
+{
+    $url = CN_DOWNLOAD_URL . rawurlencode($tag) . '/' . $filename;
+    $ctx = stream_context_create([
+        'http' => [
+            'method'          => 'HEAD',
+            'header'          => 'User-Agent: iSrvd-Proxy/1.0',
+            'timeout'         => PROBE_TIMEOUT,
+            'ignore_errors'   => true,
+            'follow_location' => 0,
+        ],
+    ]);
+
+    @file_get_contents($url, false, $ctx);
+    $status = httpStatus($http_response_header ?? []);
+    return $status >= 200 && $status < 400 ? $url : '';
+}
+
+/**
+ * 从响应头中取最后一个状态行的状态码。
+ */
+function httpStatus(array $headers): int
+{
+    $status = 0;
+    foreach ($headers as $h) {
+        if (preg_match('#^HTTP/\S+\s+(\d+)#', $h, $m)) {
+            $status = (int) $m[1];
+        }
+    }
+    return $status;
+}
 
 /**
  * 输出响应并终止请求。
@@ -161,12 +207,7 @@ function fetchFile(string $file, ?callable $validate = null): ?string
 
     $body = @file_get_contents(DOWNLOAD_BASE_URL . DOWNLOAD_FILES[$file], false, $ctx);
 
-    $status = 0;
-    foreach ($http_response_header ?? [] as $h) {
-        if (preg_match('#^HTTP/\S+\s+(\d+)#', $h, $m)) {
-            $status = (int) $m[1];
-        }
-    }
+    $status = httpStatus($http_response_header ?? []);
 
     if ($body === false || $status !== 200 || !isValidFile($file, $body, $validate)) {
         return $cached;
