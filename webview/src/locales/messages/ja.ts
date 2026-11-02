@@ -218,14 +218,10 @@ const messages: Record<string, string> = {
     '该账户已启用 TOTP 二次验证，请输入认证器 App 中的动态验证码。': 'このアカウントでは TOTP 二段階認証が有効です。認証アプリのワンタイムコードを入力してください。',
     // Sign in
     '登录': 'ログイン',
-    // Signing in...
-    '登录中...': 'サインイン中...',
     // Verify and sign in
     '验证并登录': '検証してサインイン',
     // Sign in with Passkey
     '使用 Passkey 登录': 'Passkey でサインイン',
-    // Authenticating with Passkey...
-    'Passkey 认证中...': 'Passkey で認証中...',
     // Sign in with OIDC
     '使用 OIDC 登录': 'OIDC でサインイン',
     // Password login is disabled, contact the administrator to configure another method.
@@ -241,8 +237,6 @@ const messages: Record<string, string> = {
     '确认': '確認',
     // Cancel
     '取消': 'キャンセル',
-    // Processing...
-    '处理中...': '処理中...',
     // This action cannot be undone!
     '此操作不可恢复！': 'この操作は取り消せません！',
     // Search...
@@ -257,18 +251,6 @@ const messages: Record<string, string> = {
     '下载失败': 'ダウンロードに失敗しました',
     // Network unreachable, please check your connection
     '网络连接失败，请检查网络': 'ネットワークに接続できません。接続を確認してください',
-    // BAT batch script
-    'BAT 批处理脚本': 'BAT バッチスクリプト',
-    // PowerShell script
-    'PowerShell 脚本': 'PowerShell スクリプト',
-    // Shell script
-    'Shell 脚本': 'Shell スクリプト',
-    // Docker temporary container
-    'Docker 临时容器': 'Docker 一時コンテナ',
-    // Docker existing container
-    'Docker 现有容器': 'Docker 既存コンテナ',
-    // Executable file
-    '可执行文件': '実行ファイル',
     // The call reference does not exist or has expired, call lookup_api again.
     '调用引用不存在或已过期，请重新调用 lookup_api。': '呼び出し参照が存在しないか期限切れです。lookup_api を再度呼び出してください。',
     // The same call failed twice in a row, look up the API again or adjust the parameters.
@@ -363,8 +345,6 @@ const messages: Record<string, string> = {
     '执行失败': '実行に失敗しました',
     // Failed to cancel
     '取消失败': 'キャンセルに失敗しました',
-    // Executing…
-    '执行中…': '実行中…',
     // Confirm Execution
     '确认执行': '実行の確認',
     // Reading resource…
@@ -555,8 +535,6 @@ const messages: Record<string, string> = {
     '描述': '説明',
     // Disable
     '禁用': '無効にする',
-    // (optional)
-    '(可选)': '(省略可)',
     // Update
     '更新': '更新する',
     // Tags
@@ -615,8 +593,6 @@ const messages: Record<string, string> = {
     '更新时间': '更新日時',
     // Timeout (seconds)
     '超时时间（秒）': 'タイムアウト（秒）',
-    // Save Config
-    '保存配置': '設定を保存',
     // New Service
     '新建服务': 'サービスを新規作成',
     // Environment Variables
@@ -631,8 +607,6 @@ const messages: Record<string, string> = {
     '认证': '認証',
     // Connect
     '连接': '接続',
-    // Confirm create
-    '确认新建': '作成の確認',
     // New File
     '新建文件': 'ファイルを新規作成',
     // Rename
@@ -645,10 +619,6 @@ const messages: Record<string, string> = {
     '编辑配置': '設定を編集',
     // Protocol
     '协议': 'プロトコル',
-    // Confirm add
-    '确认添加': '追加の確認',
-    // Save changes
-    '保存修改': '変更を保存',
     // Schedule
     '执行计划': 'スケジュール',
     // Working Directory
@@ -681,8 +651,6 @@ const messages: Record<string, string> = {
     '移除': '削除',
     // ?
     '吗？': '?',
-    // Saving...
-    '保存中...': '保存中...',
     // Home Directory
     '家目录': 'ホームディレクトリ',
     // Enabled
@@ -759,10 +727,6 @@ const messages: Record<string, string> = {
     '等待数据...': 'データを待っています...',
     // Never
     '从未': 'なし',
-    // Upgrading...
-    '升级中...': 'アップグレード中...',
-    // Waiting for restart...
-    '等待重启...': '再起動を待っています...',
     // Replicas
     '副本': 'レプリカ',
     // Role
@@ -781,8 +745,6 @@ const messages: Record<string, string> = {
     '接入节点': 'ノードを追加',
     // Revoke
     '吊销': '取り消し',
-    // Revoke
-    '撤销': '取り消し',
     // Selected
     '已选': '選択済み',
     // items
@@ -816,8 +778,6 @@ const messages: Record<string, string> = {
     '重命名 / 移动': '名前の変更 / 移動',
     // Open
     '进入': '開く',
-    // Confirm changes
-    '确认修改': '変更の確認',
     // Target Path
     '目标路径': '対象パス',
     // Close Assistant
@@ -898,8 +858,6 @@ const messages: Record<string, string> = {
     '编辑证书': '証明書を編集',
     // Delete Node
     '删除节点': 'ノードを削除',
-    // Confirm Config
-    '确认配置': '設定を確認',
     // Submit Config
     '提交配置': '設定を送信',
     // Handler
@@ -964,8 +922,6 @@ const messages: Record<string, string> = {
     '覆盖': '上書き',
     // Append
     '追加': '追記',
-    // Deploying...
-    '部署中...': 'デプロイ中...',
     // Redeploy
     '重部署': '再デプロイ',
     // New Job
@@ -1182,8 +1138,6 @@ const messages: Record<string, string> = {
     '延迟': '遅延',
     // Expired
     '过期': '期限切れ',
-    // View join command
-    '查看接入命令': '参加コマンドを表示',
     // Press Enter to add:
     '按 Enter 添加:': 'Enter で追加:',
     // Usage:
@@ -1232,16 +1186,12 @@ const messages: Record<string, string> = {
     '进入目录': 'ディレクトリを開く',
     // Change Permissions
     '修改权限': '権限を変更',
-    // Permissions (octal)
-    '权限 (八进制)': '権限（8 進数）',
     // Enter file permissions
     '请输入文件权限': 'ファイルの権限を入力',
     // Three octal digits, e.g. 755, 644
     '三位八进制数，例如：755、644': '8 進数 3 桁（例: 755、644）',
     // Common permissions:
     '常用权限:': 'よく使う権限:',
-    // Saving...
-    '修改中...': '権限を変更中...',
     // File Name
     '文件名称': 'ファイル名',
     // Enter the file name
@@ -1250,16 +1200,12 @@ const messages: Record<string, string> = {
     '文件内容': 'ファイルの内容',
     // Enter file content...
     '请输入文件内容...': 'ファイルの内容を入力...',
-    // Creating...
-    '新建中...': '作成中...',
     // {0} selected
     '选中的 {0} 项': '選択中 {0} 件',
     // Delete
     '确定要删除': '削除の確認',
     // Contains directories; the directories and their contents will be deleted;
     '包含目录，目录及其内容将被删除；': 'ディレクトリが含まれます。その内容ごと削除されます。',
-    // Deleting...
-    '删除中...': '削除中...',
     // Enter the folder name
     '请输入目录名称': 'ディレクトリ名を入力',
     // Failed to load the file
@@ -1296,10 +1242,6 @@ const messages: Record<string, string> = {
     '请输入目录名，如：output': 'ディレクトリ名を入力（例: output）',
     // Only a directory name is allowed, without / or other path separators
     '只能输入目录名，不允许包含 / 等路径分隔符': 'ディレクトリ名のみ入力できます。/ などの区切り文字は使えません',
-    // Extracting...
-    '解压中...': '展開中...',
-    // Start Extracting
-    '开始解压': '展開を開始',
     // "{0}" is already in the upload queue
     '「{0}」已在上传队列中': '「{0}」はすでにアップロード待ちです',
     // Upload failed, leftover files have been cleaned up
@@ -1318,14 +1260,8 @@ const messages: Record<string, string> = {
     '确定要压缩': '圧縮の確認',
     // The archive will be saved in the current directory
     '压缩后的文件将保存在当前目录': '圧縮したファイルは現在のディレクトリに保存されます',
-    // Compressing...
-    '压缩中...': '圧縮中...',
-    // Start Compressing
-    '开始压缩': '圧縮を開始',
     // File saved
     '文件保存成功': 'ファイルは正常に保存されました',
-    // Save File
-    '保存文件': 'ファイルを保存',
     // Generating request parameters…
     '正在生成请求参数…': 'リクエストパラメータを生成中…',
     // This request changes server state, please confirm before executing.
@@ -1366,10 +1302,6 @@ const messages: Record<string, string> = {
     '如：MacBook Touch ID': '例: MacBook Touch ID',
     // Make sure your device supports Passkey (Touch ID, Face ID or a security key).
     '请确保您的设备支持 Passkey（如 Touch ID、Face ID 或安全密钥）。': 'お使いのデバイスが Passkey に対応していることを確認してください（Touch ID、Face ID、セキュリティキーなど）。',
-    // Registering...
-    '绑定中...': '登録中...',
-    // Start Registration
-    '开始绑定': 'バインディングの開始',
     // Delete Member
     '删除成员': 'メンバーを削除',
     // Delete member <strong class="text-slate-900">{0}</strong>? This only removes it from the config file, the home directory is kept.
@@ -1486,8 +1418,6 @@ const messages: Record<string, string> = {
     '成员添加成功': 'メンバーが正常に追加されました',
     // The username cannot be changed
     '用户名不可修改': 'ユーザー名は変更できません',
-    // (leave empty to keep unchanged)
-    '(留空则保持不变)': '(空欄の場合は変更しません)',
     // Enter the home directory (optional)
     '请输入家目录（可选）': 'ホームディレクトリを入力（省略可）',
     // Enter a member description (optional)
@@ -1690,14 +1620,10 @@ const messages: Record<string, string> = {
     '请输入优先级（可选）': '優先順位を入力してください (オプション)',
     // Enter a route description (optional)
     '请输入路由描述（可选）': 'ルートの説明を入力してください (オプション)',
-    // URI (one per line)
-    'URI（每行一个）': 'URI (1 行に 1 つ)',
     // Enter a URI (wildcards supported)
     '请输入 URI（支持通配符）': 'URI を入力してください (ワイルドカードをサポート)',
     // e.g. /api/v1/* or /api/v2/*
     '例如：/api/v1/* 或 /api/v2/*': '例: /api/v1/* または /api/v2/*',
-    // Host (one per line, empty matches all)
-    'Host（每行一个，留空匹配所有）': 'ホスト (1 行に 1 つ、すべてに一致させるには空白のままにします)',
     // e.g. example.com or *.example.com
     '例如：example.com 或 *.example.com': '例: example.com または *.example.com',
     // WebSocket Proxy
@@ -1736,10 +1662,6 @@ const messages: Record<string, string> = {
     'SNI 域名': 'SNI ドメイン名',
     // Enter SNI (one per line)
     '请输入 SNI（每行一个）': 'SNI を入力してください (1 行に 1 つ)',
-    // One domain per line, wildcards supported, e.g. example.com or *.example.com
-    '每行一个域名，支持通配符，例如：example.com 或 *.example.com': '1 行に 1 つのドメイン名、ワイルドカードがサポートされています (例: example.com または *.example.com)。',
-    // One domain per line, or separated by commas.
-    '每行一个域名，也支持用英文逗号分隔。': '1 行に 1 つのドメイン名をカンマで区切って入力します。',
     // Certificate Content
     '证书内容': '証明書の内容',
     // Enter the certificate content in PEM format
@@ -1806,8 +1728,6 @@ const messages: Record<string, string> = {
     '暂无可配置访问授权的路由': '現在、アクセス許可を構成するルートはありません。',
     // key-auth Plugin Config
     'key-auth 插件配置': 'キー認証プラグインの設定',
-    // Configure route authentication plugin parameters
-    '配置路由认证插件参数': 'ルーティング認証プラグインのパラメータを構成する',
     // e.g. token
     '例如：token': '例: トークン',
     // Clients pass the Consumer API Key through this header
@@ -1846,8 +1766,6 @@ const messages: Record<string, string> = {
     '配置已应用': '設定が適用されました',
     // View and edit the running Caddy JSON config directly
     '直接查看和编辑 Caddy 的 JSON 运行配置': 'Caddy の JSON 実行構成を直接表示および編集します',
-    // Submitting...
-    '提交中...': '送信中...',
     // View and edit the JSON config
     '查看和编辑 JSON 配置': 'JSON 構成の表示と編集',
     // The submission goes through
@@ -2328,17 +2246,11 @@ const messages: Record<string, string> = {
     '直接粘贴 compose.yml，或从左侧应用市场选择模板后回填': 'compose.yml を直接貼り付けるか、左側のアプリケーション マーケットからテンプレートを選択して埋め戻します。',
     // Paste compose.yml, or fill in from the marketplace
     '粘贴 compose.yml，或从应用市场回填': 'compose.yml を貼り付けるか、App Market からバックフィルします。',
-    // Standalone Container
-    '单机容器': 'スタンドアロンコンテナ',
     '单机部署': 'スタンドアロンデプロイ',
-    // Swarm is not enabled on this node
-    '当前节点未启用 Swarm': '現在のノードでは Swarm が有効になっていません',
     // Swarm Service
     'Swarm 服务': 'スウォームサービス',
     // Additional Files
     '附加文件': '添付ファイル',
-    // (optional, extracted into the project directory before deploy)
-    '（选填，部署前解压到项目目录）': '(オプションで、展開前にプロジェクト ディレクトリに解凍します)',
     // Enter the zip download URL
     '请输入 zip 下载 URL': 'zip ダウンロード URL を入力してください',
     // or
@@ -2347,12 +2259,6 @@ const messages: Record<string, string> = {
     'URL 与上传文件二选一，仅支持 .zip 格式': 'URL とアップロードされたファイルのどちらかを選択します。.zip 形式のみがサポートされています',
     // In Swarm mode additional files are only written to the manager node; for sharing across nodes configure the container data root as NFS or other shared storage
     'Swarm 模式下，附加文件仅落盘到管理节点；如需各节点共享，请将容器数据根目录配置为 NFS 等共享存储': 'Swarm モードでは、追加ファイルは管理ノードにのみ配置されます。すべてのノードを共有する必要がある場合は、コンテナ データのルート ディレクトリを NFS などの共有ストレージとして構成してください。',
-    // (KEY=VALUE, used for Compose variable interpolation)
-    '（KEY=VALUE，用于 Compose 变量插值）': '(Compose 変数補間の場合は KEY=VALUE)',
-    // Rebuilding...
-    '重建中...': '再構築中...',
-    // Loading...
-    '读取中...': '読んでいます...',
     // Rebuild with This Config
     '使用此配置重建': 'この構成で再構築します',
     // Update and Rebuild
@@ -2485,10 +2391,6 @@ const messages: Record<string, string> = {
     '请输入容器名': 'コンテナ名を入力してください',
     // Script Content
     '脚本内容': 'スクリプトの内容',
-    // Enter the script content
-    '请输入脚本内容': 'スクリプトの内容を入力してください',
-    // e.g. #!/bin/bash
-    '例如：#!/bin/bash': '例: #!/bin/bash',
     // When enabled the job runs on schedule
     '启用后任务将按计划执行': '有効にすると、タスクはスケジュールどおりに実行されます',
     // Execution History
@@ -2899,16 +2801,12 @@ const messages: Record<string, string> = {
     '留空则使用 custom:latest': 'Custom:latest を使用するには空白のままにします',
     // Enter the Dockerfile content
     '请输入 Dockerfile 内容': 'Dockerfile の内容を入力してください',
-    // Start Build
-    '开始构建': '構築を開始する',
     // Docker Hub (default)
     'Docker Hub（默认）': 'Docker ハブ (デフォルト)',
     // (no mirror configured)
     '（未配置加速器）': '(アクセラレータが設定されていません)',
     // Enter the image name to search
     '请输入要搜索的镜像名称': '検索したいイメージ名を入力してください',
-    // Searching
-    '搜索中': '検索中',
     // Official Image
     '官方镜像': '公式イメージ',
     // Official
@@ -2921,8 +2819,6 @@ const messages: Record<string, string> = {
     '未指定 tag 时默认拉取 latest；选择私有仓库时不需要重复填写仓库地址。': 'タグを指定しない場合は latest を取得します。プライベートレジストリを選択した場合、レジストリアドレスを再入力する必要はありません。',
     // Will pull
     '最终将拉取': '結局引っ張るだろう',
-    // Start Pull
-    '开始拉取': '引っ張り始める',
     // Aliyun
     '阿里云': 'アリババクラウド',
     // Tencent Cloud
@@ -2955,14 +2851,10 @@ const messages: Record<string, string> = {
     'host (主机)': 'ホスト',
     // overlay
     'overlay (覆盖)': 'オーバーレイ',
-    // Subnet CIDR (optional)
-    '子网 CIDR（可选）': 'サブネット CIDR (オプション)',
     // Enter the subnet CIDR
     '请输入子网 CIDR': 'サブネットCIDRを入力してください',
     // Edit Registry
     '编辑镜像仓库': 'イメージリポジトリの編集',
-    // New Registry
-    '新建镜像仓库': '新しいイメージ レジストリを作成する',
     // Registry updated
     '仓库更新成功': 'レジストリが正常に更新されました',
     // Registry added
@@ -2991,10 +2883,6 @@ const messages: Record<string, string> = {
     '命名空间': '名前空間',
     // Enter the namespace (optional)
     '请输入命名空间（可选）': '名前空間を入力してください (オプション)',
-    // The image will be pushed as:
-    '镜像将被推送为:': 'イメージは次のようにプッシュされます。',
-    // Start Push
-    '开始推送': '押し始める',
     // Volume created
     '数据卷创建成功': 'データボリュームが正常に作成されました',
     // New Volume
@@ -3025,8 +2913,6 @@ const messages: Record<string, string> = {
     '通过 Web 终端连接到远程服务器': 'Web端末経由でリモートサーバーに接続',
     // Web Terminal Connection
     'Web 终端连接': 'Web端末接続',
-    // Failed to get the process list
-    '获取进程列表失败': 'プロセスリストの取得に失敗しました',
     // Force kill gives the process no chance to clean up and may cause data loss.
     '强制终止不会给进程清理资源的机会，可能导致数据丢失。': '強制終了すると、プロセスにリソースをクリーンアップする機会が与えられず、データが失われる可能性があります。',
     // The process receives a termination signal and can clean up before exiting.
@@ -3037,12 +2923,8 @@ const messages: Record<string, string> = {
     '确定要强制终止 <strong class="text-slate-900">{0}</strong>（PID {1}）吗？{2}': '<strong class="text-slate-900">{0}</strong>（PID {1}）を強制終了してもよろしいですか？{2}',
     // Are you sure you want to terminate <strong class="text-slate-900">{0}</strong> (PID {1})? {2}
     '确定要终止 <strong class="text-slate-900">{0}</strong>（PID {1}）吗？{2}': '<strong class="text-slate-900">{0}</strong>（PID {1}）を終了してもよろしいですか？{2}',
-    // Confirm Kill
-    '确认终止': '終了の確認',
     // Termination signal sent
     '已发送终止信号': '終了信号が送信されました',
-    // Failed to kill the process
-    '终止进程失败': 'プロセスの終了に失敗しました',
     // View local processes and resource usage, kill them as needed
     '查看本机进程与资源占用，并可按需终止': 'ローカルプロセスとリソースの使用状況を表示し、必要に応じて終了します',
     // Search process name, PID, parent PID, user or command line...
@@ -3287,10 +3169,6 @@ const messages: Record<string, string> = {
     '请输入凭据描述': '資格情報の説明を入力してください',
     // SSH Username
     'SSH 登录用户名': 'SSHログインユーザー名',
-    // (either password or private key)
-    '(与私钥二选一)': '(秘密鍵があるものを選択してください)',
-    // (takes precedence over the password)
-    '(优先于密码)': '(パスワードを優先します)',
     // PEM private key, key authentication takes precedence when set
     'PEM 格式私钥，设置后优先使用私钥认证': 'PEM形式の秘密鍵。設定後は、最初に秘密鍵認証が使用されます。',
     // Edit SSH Host
@@ -3313,8 +3191,6 @@ const messages: Record<string, string> = {
     '选择凭据': '認証情報の選択',
     // Use the username stored in the credential
     '使用凭据中保存的用户名': '認証情報に保存されているユーザー名を使用する',
-    // (optional, takes precedence over the password)
-    '(可选，优先于密码)': '(オプション、パスワードより優先されます)',
     // Service details not found
     '未找到服务详情': 'サービスの詳細が見つかりません',
     // Service ID
@@ -3405,8 +3281,6 @@ const messages: Record<string, string> = {
     '目标副本数': '目標レプリカ数',
     // Currently running replicas:
     '当前运行中副本：': '現在稼働中のレプリカ数：',
-    // Confirm Scaling
-    '确认扩缩容': '伸縮を確認する',
     // The old service is deleted and recreated after updating, it is briefly unavailable
     '更新配置后将会删除旧服务并重新创建，期间服务短暂不可用': '構成の更新後、古いサービスは削除されて再作成され、その間サービスは一時的に利用できなくなります。',
     // Skips compose.yml, re-derive Compose from the running service state
@@ -3415,12 +3289,6 @@ const messages: Record<string, string> = {
     'Swarm 服务配置更新成功，已重建服务': 'Swarm サービス構成が正常に更新され、サービスが再構築されました。',
     // Config reloaded
     '配置已重载': '設定がリロードされました',
-    // Failed to reload the config
-    '配置重载失败': '構成のリロードに失敗しました',
-    // Config saved, listen address changes require a restart
-    '配置已保存，监听地址变更需重启生效': '設定が保存されました。リスニング アドレスへの変更を有効にするには、再起動する必要があります。',
-    // Failed to save the config
-    '保存配置失败': '設定の保存に失敗しました',
     // Manage server, auth, gateway and container options by group
     '按分组管理服务器、认证、网关与容器参数': 'サーバー、認証、ゲートウェイ、コンテナのパラメータをグループごとに管理',
     // Server, Auth, Gateway and Container
@@ -3603,8 +3471,6 @@ const messages: Record<string, string> = {
     '标准请求体结构预览': '標準リクエストボディ構造のプレビュー',
     // Generated by the backend from the actual alert when sending, no template content is stored in the config.
     '发送时由后端根据实际告警自动生成，配置中无需保存模板内容。': '送信時には、実際のアラームに基づいてバックエンドによって自動的に生成されるため、テンプレートの内容を設定に保存する必要はありません。',
-    // Request Body Template (JSON)
-    '请求体模板（JSON）': 'リクエスト本文テンプレート（JSON）',
     // Leave empty to send the standard isrvd event JSON
     '留空则发送 isrvd 标准事件 JSON': 'isrvd 標準イベント JSON を送信するには空白のままにします',
     // Add Channel
@@ -3801,10 +3667,6 @@ const messages: Record<string, string> = {
     '已吊销': '取り消された',
     // Online
     '在线': 'オンライン',
-    // List nodes
-    '查询节点列表': 'ノード一覧を表示',
-    // Update node
-    '更新节点': 'ノードを更新',
     // Revoke Node
     '吊销节点': 'ノードを取り消す',
     // Revoke node <strong class="text-slate-900">{0}</strong>? The token becomes invalid and disconnects immediately, the node must be deleted and registered again.
@@ -3879,8 +3741,6 @@ const messages: Record<string, string> = {
     'host:port；只填端口时默认指向节点本机 127.0.0.1': 'host:port。ポートのみの場合はノード自身の 127.0.0.1 を指します',
     // e.g. SSH
     '如：SSH': '例：SSH',
-    // Save Forward
-    '保存转发': '転送を保存',
     // Enter the node name
     '请输入节点名称': 'ノード名を入力してください',
     // 1–64 characters, only used to tell nodes apart in the UI
@@ -3899,22 +3759,8 @@ const messages: Record<string, string> = {
     '点击右上角「接入节点」生成令牌，并在受管机上以 agent 模式启动': '右上の「ノードを追加」をクリックしてトークンを生成し、管理対象ホストを agent モードで起動してください',
     // Run mode
     '运行模式': '実行モード',
-    // Standalone mode
-    '单机模式': 'スタンドアロンモード',
     // Center mode
     '中控模式': 'コントローラーモード',
-    // Managed mode
-    '受控模式': '管理対象モード',
-    // Server URL
-    '服务器地址': 'サーバー URL',
-    // HTTP(S) URL of the center, without a path or query parameters
-    '中控服务器的 HTTP(S) 地址，不含路径或查询参数': 'コントローラーの HTTP(S) URL（パスやクエリパラメーターは含めません）',
-    // Connection token
-    '连接 token': '接続トークン',
-    // Use the token generated by the center; only one client per token may be online
-    '直接填写中控生成的 token；同一 token 仅允许一个客户端在线': 'コントローラーが生成したトークンを入力してください。同じトークンでオンラインにできるクライアントは 1 つだけです',
-    // Managed mode exposes no public port. Verify the URL and token; after restarting, access is only available through the center
-    '受控模式不开放对外端口；请确认地址与 token 正确，重启后只能通过中控访问': '管理対象モードでは外部ポートを公開しません。URL とトークンが正しいことを確認してください。再起動後はコントローラー経由でのみアクセスできます',
     // Config saved; run mode, connection and listen address changes require a restart
     '配置已保存，运行模式、连接参数和监听地址变更需重启生效': '設定を保存しました。実行モード、接続パラメーター、リッスンアドレスの変更は再起動後に反映されます',
     // The token is shown only when created. Save it securely; it does not expire and permits only one client online.
