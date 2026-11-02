@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"isrvd/server/i18n"
 
@@ -24,7 +25,8 @@ import (
 
 const (
 	maxAuditBufferSize = 100      // 内存缓冲最大条数
-	maxAuditBodySize   = 64 << 10 // 单次审计最多读取 64 KiB 请求体
+	maxAuditBodySize   = 64 << 10 // 审计日志中请求体最多保留 64 KiB（脱敏后截断）
+	maxAuditParseSize  = 4 << 20  // JSON/表单请求体脱敏解析的最大读取量 4 MiB，超出部分丢弃
 )
 
 // sensitiveFields 审计请求体与 URI 中需要脱敏的字段名
@@ -182,11 +184,17 @@ func (s *AuditService) BodyRead(r *http.Request) string {
 		return "[Multipart Omitted]"
 	}
 
+	isJSON := strings.Contains(contentType, "json")
+	isForm := strings.HasPrefix(contentType, "application/x-www-form-urlencoded")
+	if !isJSON && !isForm {
+		return "[Body Omitted]"
+	}
+
 	original := r.Body
 	if original == nil {
 		return ""
 	}
-	raw, err := io.ReadAll(io.LimitReader(original, maxAuditBodySize+1))
+	raw, err := io.ReadAll(io.LimitReader(original, maxAuditParseSize+1))
 	r.Body = struct {
 		io.Reader
 		io.Closer
@@ -198,19 +206,30 @@ func (s *AuditService) BodyRead(r *http.Request) string {
 		return "[Body Read Failed]"
 	}
 
-	truncated := len(raw) > maxAuditBodySize
+	truncated := len(raw) > maxAuditParseSize
 	if truncated {
-		raw = raw[:maxAuditBodySize]
+		raw = raw[:maxAuditParseSize]
 	}
 
 	var body string
-	switch {
-	case strings.Contains(contentType, "json"):
-		body = maskSensitiveJSON(string(raw))
-	case strings.HasPrefix(contentType, "application/x-www-form-urlencoded"):
+	if isJSON {
+		body = maskSensitiveJSON(raw)
+	} else {
+		if truncated {
+			// 丢弃末尾可能不完整的键值对
+			raw = raw[:max(bytes.LastIndexByte(raw, '&'), 0)]
+		}
 		body = maskSensitiveForm(string(raw))
-	default:
-		body = "[Body Omitted]"
+	}
+
+	// 脱敏后的结果按审计上限截断，避免切断多字节字符
+	if len(body) > maxAuditBodySize {
+		n := maxAuditBodySize
+		for n > 0 && !utf8.RuneStart(body[n]) {
+			n--
+		}
+		body = body[:n]
+		truncated = true
 	}
 	if truncated {
 		body += " [Truncated]"
@@ -232,8 +251,6 @@ func (s *AuditService) Close() error {
 	return s.store.Close()
 }
 
-// ---- 内部方法 ----------------------------------------------------------------
-
 // loadRecent 启动时从今日文件尾部读取最近 maxAuditBufferSize 条到内存。
 // 使用 TailLines 反向读取，避免加载整个日志文件。
 func (s *AuditService) loadRecent() {
@@ -254,66 +271,7 @@ func (s *AuditService) loadRecent() {
 	}
 }
 
-// maskSensitiveValue 对敏感字段完全脱敏，不保留秘密首尾字符。
-func maskSensitiveValue(key, value string) string {
-	if isSensitiveField(key) {
-		return "[REDACTED]"
-	}
-	return value
-}
-
-func isSensitiveField(key string) bool {
-	for _, field := range sensitiveFields {
-		if strings.EqualFold(key, field) {
-			return true
-		}
-	}
-	return false
-}
-
-// maskSensitiveJSON 对 JSON 字符串中的敏感字段进行脱敏
-func maskSensitiveJSON(jsonStr string) string {
-	var data any
-	if json.Unmarshal([]byte(jsonStr), &data) != nil {
-		return "[Invalid JSON Omitted]"
-	}
-	data = maskValue(data)
-	result, _ := json.Marshal(data)
-	return string(result)
-}
-
-// maskSensitiveForm 对 URL 编码表单中的敏感字段进行脱敏。
-func maskSensitiveForm(raw string) string {
-	values, err := url.ParseQuery(raw)
-	if err != nil {
-		return "[Invalid Form Omitted]"
-	}
-	for key, items := range values {
-		for i, value := range items {
-			items[i] = maskSensitiveValue(key, value)
-		}
-	}
-	return values.Encode()
-}
-
-// maskValue 递归脱敏任意 JSON 对象和数组；敏感字段无论值类型都完全遮蔽。
-func maskValue(value any) any {
-	switch data := value.(type) {
-	case map[string]any:
-		for key, item := range data {
-			if isSensitiveField(key) {
-				data[key] = "[REDACTED]"
-			} else {
-				data[key] = maskValue(item)
-			}
-		}
-	case []any:
-		for i, item := range data {
-			data[i] = maskValue(item)
-		}
-	}
-	return value
-}
+// ─── 辅助函数 ───
 
 // auditUsername 获取审计日志中的操作人。
 // 登录等匿名路由没有认证上下文时，尝试从 JSON 请求体读取 username，仍为空则按请求语言标记为匿名。
@@ -332,7 +290,15 @@ func auditUsername(authUsername, body string, r *http.Request) string {
 	return i18n.TR(r, "匿名")
 }
 
-// ─── 辅助函数 ───
+// isSensitiveField 判断字段名是否需要脱敏（忽略大小写）。
+func isSensitiveField(key string) bool {
+	for _, field := range sensitiveFields {
+		if strings.EqualFold(key, field) {
+			return true
+		}
+	}
+	return false
+}
 
 // maskSensitiveURI 隐藏查询参数中的密钥，保留其他参数的顺序和原始编码。
 func maskSensitiveURI(uri string) string {
@@ -347,12 +313,91 @@ func maskSensitiveURI(uri string) string {
 		if err != nil {
 			continue
 		}
-		for _, field := range sensitiveFields {
-			if strings.EqualFold(name, field) {
-				parts[i] = key + "=******"
-				break
-			}
+		if isSensitiveField(name) {
+			parts[i] = key + "=******"
 		}
 	}
 	return path + "?" + strings.Join(parts, "&")
+}
+
+// maskSensitiveJSON 流式脱敏 JSON 中的敏感字段。
+// 输入被截断或中途非法时，保留已解析出的前部内容（输出可能不是合法 JSON）；
+// 敏感字段无论值类型都只输出 [REDACTED]，被截断的敏感值同样不会泄露。
+func maskSensitiveJSON(raw []byte) string {
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
+	tok, err := dec.Token()
+	if err != nil {
+		return "[Invalid JSON Omitted]"
+	}
+	var sb strings.Builder
+	_ = writeMaskedJSON(dec, &sb, tok)
+	return sb.String()
+}
+
+// writeMaskedJSON 递归输出以 tok 开头的 JSON 值，遇到解析错误即返回。
+func writeMaskedJSON(dec *json.Decoder, sb *strings.Builder, tok json.Token) error {
+	delim, ok := tok.(json.Delim)
+	if !ok {
+		value, _ := json.Marshal(tok)
+		sb.Write(value)
+		return nil
+	}
+
+	isObject := delim == '{'
+	sb.WriteRune(rune(delim))
+	for i := 0; dec.More(); i++ {
+		if i > 0 {
+			sb.WriteByte(',')
+		}
+		tok, err := dec.Token()
+		if err != nil {
+			return err
+		}
+		if isObject {
+			key, _ := tok.(string)
+			quoted, _ := json.Marshal(key)
+			sb.Write(quoted)
+			sb.WriteByte(':')
+			if isSensitiveField(key) {
+				sb.WriteString(`"[REDACTED]"`)
+				var skip json.RawMessage
+				if err := dec.Decode(&skip); err != nil {
+					return err
+				}
+				continue
+			}
+			if tok, err = dec.Token(); err != nil {
+				return err
+			}
+		}
+		if err := writeMaskedJSON(dec, sb, tok); err != nil {
+			return err
+		}
+	}
+	if _, err := dec.Token(); err != nil {
+		return err
+	}
+	if isObject {
+		sb.WriteByte('}')
+	} else {
+		sb.WriteByte(']')
+	}
+	return nil
+}
+
+// maskSensitiveForm 对 URL 编码表单中的敏感字段进行脱敏。
+func maskSensitiveForm(raw string) string {
+	values, err := url.ParseQuery(raw)
+	if err != nil {
+		return "[Invalid Form Omitted]"
+	}
+	for key, items := range values {
+		if isSensitiveField(key) {
+			for i := range items {
+				items[i] = "[REDACTED]"
+			}
+		}
+	}
+	return values.Encode()
 }
