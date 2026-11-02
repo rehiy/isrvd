@@ -3,6 +3,8 @@ package docker
 import (
 	"context"
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 	"time"
 
@@ -210,9 +212,7 @@ func imageDetail(img *image.InspectResponse, history []image.HistoryResponseItem
 	var workingDir string
 	var labels map[string]string
 	if img.Config != nil {
-		for port := range img.Config.ExposedPorts {
-			exposedPorts = append(exposedPorts, port)
-		}
+		exposedPorts = slices.AppendSeq(exposedPorts, maps.Keys(img.Config.ExposedPorts))
 		cmd = img.Config.Cmd
 		entrypoint = img.Config.Entrypoint
 		env = img.Config.Env
@@ -238,8 +238,7 @@ func imageLayerDetails(img *image.InspectResponse, history []image.HistoryRespon
 	}
 	details := make([]*ImageLayerInfo, 0, len(history))
 	digestIdx := 0
-	for i := len(history) - 1; i >= 0; i-- {
-		h := history[i]
+	for _, h := range slices.Backward(history) {
 		cmd := strings.TrimPrefix(h.CreatedBy, "/bin/sh -c #(nop) ")
 		isEmpty := h.Size == 0 && strings.Contains(h.CreatedBy, "#(nop)")
 		info := &ImageLayerInfo{CreatedBy: cmd, Created: time.Unix(h.Created, 0).UTC().Format(time.RFC3339), Empty: isEmpty, Size: h.Size}

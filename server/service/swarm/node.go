@@ -3,7 +3,8 @@ package swarm
 import (
 	"context"
 	"fmt"
-	"sort"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types/swarm"
@@ -111,7 +112,7 @@ func (s *Service) NodeServiceList(ctx context.Context, id string) ([]ServiceInfo
 			result = append(result, serviceInfoFromRaw(service, count))
 		}
 	}
-	sort.Slice(result, func(i, j int) bool { return result[i].Name < result[j].Name })
+	slices.SortFunc(result, func(a, b ServiceInfo) int { return strings.Compare(a.Name, b.Name) })
 	return result, nil
 }
 

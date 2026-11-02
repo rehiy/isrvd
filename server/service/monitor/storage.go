@@ -35,7 +35,7 @@ func readSince(s *jsonl.Store, containerID string, sinceSeconds int64) ([]Record
 		return nil, nil
 	}
 	cutoff := time.Now().Unix() - sinceSeconds
-	return jsonl.DecodeSinceSampled[Record](s, cutoff, "ts", jsonl.StrEq("container_id", containerID), samplePoints)
+	return s.DecodeSinceSampled[Record](cutoff, "ts", jsonl.StrEq("container_id", containerID), samplePoints)
 }
 
 // CleanOldFiles 删除 dir 下所有 *_YYYY-MM-DD.jsonl 中超过 retainDays 天的旧文件

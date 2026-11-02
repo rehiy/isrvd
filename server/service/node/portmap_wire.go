@@ -88,7 +88,6 @@ func (c *bufConn) Read(p []byte) (int, error) {
 func pipe(a, b net.Conn) {
 	var wg sync.WaitGroup
 	cp := func(dst, src net.Conn) {
-		defer wg.Done()
 		if _, err := io.Copy(dst, src); err != nil {
 			_ = a.Close()
 			_ = b.Close()
@@ -96,9 +95,8 @@ func pipe(a, b net.Conn) {
 		}
 		closeWrite(dst)
 	}
-	wg.Add(2)
-	go cp(a, b)
-	go cp(b, a)
+	wg.Go(func() { cp(a, b) })
+	wg.Go(func() { cp(b, a) })
 	wg.Wait()
 	_ = a.Close()
 	_ = b.Close()

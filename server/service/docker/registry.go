@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"isrvd/pkgs/docker"
 	"isrvd/server/config"
@@ -127,7 +128,7 @@ func (s *Service) RegistryDelete(url string) error {
 		if index < 0 {
 			return fmt.Errorf("仓库不存在: %s", url)
 		}
-		dockerConfig.Registries = append(dockerConfig.Registries[:index], dockerConfig.Registries[index+1:]...)
+		dockerConfig.Registries = slices.Delete(dockerConfig.Registries, index, index+1)
 		return nil
 	})
 }
@@ -153,10 +154,7 @@ func (s *Service) ImagePull(ctx context.Context, req ImagePullRequest) (map[stri
 // ─── 辅助函数 ───
 
 func registryIndex(registries []*config.DockerRegistry, url string) int {
-	for i, registry := range registries {
-		if registry != nil && registry.URL == url {
-			return i
-		}
-	}
-	return -1
+	return slices.IndexFunc(registries, func(registry *config.DockerRegistry) bool {
+		return registry != nil && registry.URL == url
+	})
 }

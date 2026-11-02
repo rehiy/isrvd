@@ -229,16 +229,16 @@ func serviceInfoFromRaw(svc swarm.Service, runningTasks int) ServiceInfo {
 func serviceDetailFromRaw(svc swarm.Service, runningTasks int) *ServiceDetail {
 	info := serviceInfoFromRaw(svc, runningTasks)
 	detail := &ServiceDetail{
-		ServiceSpec: ServiceSpec{
-			Name:     info.Name,
-			Image:    info.Image,
-			Mode:     info.Mode,
-			Replicas: info.Replicas,
-		},
 		ID:           info.ID,
 		RunningTasks: info.RunningTasks,
 		CreatedAt:    info.CreatedAt,
 		UpdatedAt:    info.UpdatedAt,
+
+		// 内嵌 ServiceSpec
+		Name:     info.Name,
+		Image:    info.Image,
+		Mode:     info.Mode,
+		Replicas: info.Replicas,
 	}
 	if svc.Spec.TaskTemplate.ContainerSpec != nil {
 		detail.Env = svc.Spec.TaskTemplate.ContainerSpec.Env
@@ -265,7 +265,6 @@ func serviceDetailFromRaw(svc swarm.Service, runningTasks int) *ServiceDetail {
 
 func serviceSpecToRaw(req ServiceSpec) swarm.ServiceSpec {
 	spec := swarm.ServiceSpec{
-		Annotations: swarm.Annotations{Name: req.Name, Labels: req.Labels},
 		TaskTemplate: swarm.TaskSpec{
 			ContainerSpec: &swarm.ContainerSpec{
 				Image: req.Image,
@@ -274,6 +273,10 @@ func serviceSpecToRaw(req ServiceSpec) swarm.ServiceSpec {
 			},
 		},
 		EndpointSpec: &swarm.EndpointSpec{},
+
+		// 内嵌 swarm.Annotations
+		Name:   req.Name,
+		Labels: req.Labels,
 	}
 	if req.Mode == "global" {
 		spec.Mode = swarm.ServiceMode{Global: &swarm.GlobalService{}}

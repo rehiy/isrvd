@@ -7,7 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -122,14 +122,14 @@ func (s *Service) FileList(absPath, relPath string) ([]*FileInfo, error) {
 			ModTime:    time.Unix(f.ModTime, 0),
 		})
 	}
-	sort.Slice(result, func(i, j int) bool {
-		if result[i].IsDir && !result[j].IsDir {
-			return true
+	slices.SortFunc(result, func(a, b *FileInfo) int {
+		if a.IsDir != b.IsDir {
+			if a.IsDir {
+				return -1
+			}
+			return 1
 		}
-		if !result[i].IsDir && result[j].IsDir {
-			return false
-		}
-		return result[i].Name < result[j].Name
+		return strings.Compare(a.Name, b.Name)
 	})
 	return result, nil
 }

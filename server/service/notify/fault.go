@@ -5,7 +5,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"math"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -420,7 +420,7 @@ func caddyCertificateKey(cert CaddyCert) string {
 		for _, uri := range parsed.URIs {
 			names = append(names, "uri:"+uri.String())
 		}
-		sort.Strings(names)
+		slices.Sort(names)
 		identity := parsed.Subject.String() + "\x00" + parsed.PublicKeyAlgorithm.String() + "\x00" + strings.Join(names, "\x00")
 		return fmt.Sprintf("pem:%x", sha256.Sum256([]byte(identity)))
 	default:

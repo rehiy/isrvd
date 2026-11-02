@@ -23,7 +23,7 @@ type portListener struct {
 	nodeID string
 	proto  string
 	port   int
-	target atomic.Value // string
+	target atomic.Pointer[string]
 	closer interface{ Close() error }
 
 	mu     sync.Mutex
@@ -32,7 +32,7 @@ type portListener struct {
 }
 
 func (l *portListener) targetAddr() string {
-	return l.target.Load().(string)
+	return *l.target.Load()
 }
 
 // track 登记一条客户端连接；监听已关闭或并发达到上限时拒绝。
@@ -139,7 +139,7 @@ func (s *Service) NodePortMapUpdate(id string, req *PortMapRequest) (*NodeInfo, 
 		}
 	}
 	for _, r := range rules {
-		s.listeners[portKey{r.Proto, r.Listen}].target.Store(r.Target)
+		s.listeners[portKey{r.Proto, r.Listen}].target.Store(new(r.Target))
 	}
 	logger.Info("端口转发已更新", "id", id, "count", len(rules))
 	return s.nodeInfo(updated), nil
@@ -189,7 +189,7 @@ func (s *Service) portmapStopWhere(match func(*portListener) bool) {
 func (s *Service) portmapStart(nodeID string, f PortMap) error {
 	addr := net.JoinHostPort(s.portmap.BindAddr(), strconv.Itoa(f.Listen))
 	l := &portListener{nodeID: nodeID, proto: f.Proto, port: f.Listen, conns: map[net.Conn]struct{}{}}
-	l.target.Store(f.Target)
+	l.target.Store(new(f.Target))
 	switch f.Proto {
 	case ProtoTCP:
 		ln, err := net.Listen("tcp", addr)

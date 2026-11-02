@@ -143,7 +143,7 @@ func (s *Store) LoadJobLogs(id string, limit int) []*JobLog {
 	}
 
 	filter := jsonl.StrEq("jobId", id)
-	entries, err := jsonl.DecodeTailDays[JobLog](s.logStore, cronLogRetainDays, limit, filter)
+	entries, err := s.logStore.DecodeTailDays[JobLog](cronLogRetainDays, limit, filter)
 	if err != nil {
 		logger.Warn("读取计划任务日志失败", "error", err)
 		return nil

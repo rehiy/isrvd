@@ -2,11 +2,12 @@
 package local
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"os"
 	"runtime"
-	"sort"
+	"slices"
 	"sync"
 	"time"
 
@@ -85,9 +86,7 @@ func ProcessList(ctx context.Context) ([]*ProcessInfo, error) {
 	)
 
 	for _, proc := range procs {
-		wg.Add(1)
-		go func(proc *process.Process) {
-			defer wg.Done()
+		wg.Go(func() {
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
@@ -95,18 +94,15 @@ func ProcessList(ctx context.Context) ([]*ProcessInfo, error) {
 			mu.Lock()
 			list = append(list, info)
 			mu.Unlock()
-		}(proc)
+		})
 	}
 
 	wg.Wait()
 	applyProcessRates(list, time.Now())
 	applyGPUUsage(ctx, list)
 
-	sort.Slice(list, func(i, j int) bool {
-		if list[i].MemoryRSS == list[j].MemoryRSS {
-			return list[i].PID < list[j].PID
-		}
-		return list[i].MemoryRSS > list[j].MemoryRSS
+	slices.SortFunc(list, func(a, b *ProcessInfo) int {
+		return cmp.Or(cmp.Compare(b.MemoryRSS, a.MemoryRSS), cmp.Compare(a.PID, b.PID))
 	})
 
 	return list, nil

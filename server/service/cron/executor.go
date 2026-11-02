@@ -265,7 +265,7 @@ func runLocalJob(parent context.Context, job *Job) (string, error) {
 // parseVolumeLines 将换行分隔的 /host:/container[:ro] 字符串转为 Docker mount 列表
 func parseVolumeLines(s string) []mount.Mount {
 	var result []mount.Mount
-	for _, line := range strings.Split(s, "\n") {
+	for line := range strings.SplitSeq(s, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue

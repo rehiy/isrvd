@@ -1,13 +1,16 @@
 package docker
 
 import (
+	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"math"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -61,9 +64,7 @@ func (s *Service) ContainerList(ctx context.Context, all bool, filterJSON ...str
 		}
 		networks := make([]string, 0)
 		if ct.NetworkSettings != nil {
-			for netName := range ct.NetworkSettings.Networks {
-				networks = append(networks, netName)
-			}
+			networks = slices.AppendSeq(networks, maps.Keys(ct.NetworkSettings.Networks))
 		}
 		result = append(result, &ContainerInfo{
 			ID:       docker.ShortID(ct.ID),
@@ -155,28 +156,28 @@ func (s *Service) ContainerInspect(ctx context.Context, id string) (*ContainerDe
 		})
 	}
 	return &ContainerDetail{
-		ContainerSpec: ContainerSpec{
-			Image:      info.Config.Image,
-			Cmd:        info.Config.Cmd,
-			Env:        info.Config.Env,
-			Ports:      ports,
-			Volumes:    volumes,
-			Network:    string(info.HostConfig.NetworkMode),
-			Restart:    string(info.HostConfig.RestartPolicy.Name),
-			Memory:     info.HostConfig.Memory / (1024 * 1024),
-			Cpus:       float64(info.HostConfig.NanoCPUs) / 1e9,
-			Workdir:    info.Config.WorkingDir,
-			User:       info.Config.User,
-			Hostname:   info.Config.Hostname,
-			Privileged: info.HostConfig.Privileged,
-			CapAdd:     []string(info.HostConfig.CapAdd),
-			CapDrop:    []string(info.HostConfig.CapDrop),
-		},
 		ID:        docker.ShortID(info.ID),
 		Name:      strings.TrimPrefix(info.Name, "/"),
 		State:     info.State.Status,
 		CreatedAt: info.Created,
 		Labels:    info.Config.Labels,
+
+		// 内嵌 ContainerSpec
+		Image:      info.Config.Image,
+		Cmd:        info.Config.Cmd,
+		Env:        info.Config.Env,
+		Ports:      ports,
+		Volumes:    volumes,
+		Network:    string(info.HostConfig.NetworkMode),
+		Restart:    string(info.HostConfig.RestartPolicy.Name),
+		Memory:     info.HostConfig.Memory / (1024 * 1024),
+		Cpus:       float64(info.HostConfig.NanoCPUs) / 1e9,
+		Workdir:    info.Config.WorkingDir,
+		User:       info.Config.User,
+		Hostname:   info.Config.Hostname,
+		Privileged: info.HostConfig.Privileged,
+		CapAdd:     []string(info.HostConfig.CapAdd),
+		CapDrop:    []string(info.HostConfig.CapDrop),
 	}, nil
 }
 
@@ -372,17 +373,15 @@ func (s *Service) containerCreateConfig(req ContainerSpec) (*container.Config, *
 			hostPort := hostPortSpec
 			hostIP := "0.0.0.0"
 			proto := "tcp"
-			if idx := strings.LastIndex(hostPortSpec, "/"); idx >= 0 {
-				hostPort = hostPortSpec[:idx]
-				proto = hostPortSpec[idx+1:]
+			if before, after, ok := strings.CutLast(hostPortSpec, "/"); ok {
+				hostPort = before
+				proto = after
 			}
-			if idx := strings.LastIndex(hostPort, ":"); idx >= 0 {
-				hostIP = hostPort[:idx]
-				hostPort = hostPort[idx+1:]
+			if before, after, ok := strings.CutLast(hostPort, ":"); ok {
+				hostIP = before
+				hostPort = after
 			}
-			if idx := strings.Index(containerPort, "/"); idx >= 0 {
-				containerPort = containerPort[:idx]
-			}
+			containerPort, _, _ = strings.Cut(containerPort, "/")
 			port := nat.Port(containerPort + "/" + proto)
 			portBindings[port] = []nat.PortBinding{{HostIP: hostIP, HostPort: hostPort}}
 			exposedPorts[port] = struct{}{}
@@ -406,7 +405,7 @@ func (s *Service) containerCreateConfig(req ContainerSpec) (*container.Config, *
 
 func (s *Service) buildMount(containerName string, vol VolumeMapping) (mount.Mount, error) {
 	mountType := strings.ToLower(strings.TrimSpace(vol.Type))
-	source := firstNonEmpty(vol.Source, vol.HostPath)
+	source := cmp.Or(vol.Source, vol.HostPath)
 	if source == "" {
 		return mount.Mount{}, fmt.Errorf("挂载源不能为空")
 	}
@@ -441,7 +440,7 @@ func (s *Service) resolveBindSource(containerName, source string) (string, error
 	if s.docker.Remote() {
 		return bindSource, nil // 挂载源位于远程主机，本机无法检查
 	}
-	if _, err := os.Stat(bindSource); err != nil && !os.IsNotExist(err) {
+	if _, err := os.Stat(bindSource); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return "", fmt.Errorf("检查挂载源失败: %w", err)
 	}
 	return bindSource, nil
@@ -505,15 +504,9 @@ func containerStatsResponse(id string, v container.StatsResponse, top *container
 			}
 		}
 	}
-	blockDetail := make([]*StatsBlockDetail, 0, len(blockDetailMap))
-	for _, detail := range blockDetailMap {
-		blockDetail = append(blockDetail, detail)
-	}
-	sort.Slice(blockDetail, func(i, j int) bool {
-		if blockDetail[i].Major != blockDetail[j].Major {
-			return blockDetail[i].Major < blockDetail[j].Major
-		}
-		return blockDetail[i].Minor < blockDetail[j].Minor
+	blockDetail := slices.AppendSeq(make([]*StatsBlockDetail, 0, len(blockDetailMap)), maps.Values(blockDetailMap))
+	slices.SortFunc(blockDetail, func(a, b *StatsBlockDetail) int {
+		return cmp.Or(cmp.Compare(a.Major, b.Major), cmp.Compare(a.Minor, b.Minor))
 	})
 
 	name := strings.TrimPrefix(v.Name, "/")
@@ -567,15 +560,6 @@ func inferMountType(source string) string {
 		return string(mount.TypeBind)
 	}
 	return string(mount.TypeVolume)
-}
-
-func firstNonEmpty(values ...string) string {
-	for _, v := range values {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
 }
 
 func getCPUFreq() float64 {

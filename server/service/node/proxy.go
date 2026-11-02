@@ -73,8 +73,7 @@ func proxyError(w http.ResponseWriter, r *http.Request, err error) {
 		return // 浏览器已断开，无需响应
 	}
 	status, message := http.StatusBadGateway, "节点请求失败"
-	var netErr net.Error
-	if errors.Is(err, context.DeadlineExceeded) || (errors.As(err, &netErr) && netErr.Timeout()) {
+	if netErr, ok := errors.AsType[net.Error](err); errors.Is(err, context.DeadlineExceeded) || (ok && netErr.Timeout()) {
 		status, message = http.StatusGatewayTimeout, "节点响应超时"
 	}
 	logger.Warn("节点代理失败", "method", r.Method, "path", r.URL.Path, "error", err)

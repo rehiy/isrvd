@@ -48,9 +48,7 @@ func (s *Service) StartSelfUpgrade() error {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 270*time.Second)
 	selfUpgrade.cancel = cancel
-	selfUpgrade.wg.Add(1)
-	go func() {
-		defer selfUpgrade.wg.Done()
+	selfUpgrade.wg.Go(func() {
 		defer func() {
 			cancel()
 			selfUpgrade.Lock()
@@ -80,7 +78,7 @@ func (s *Service) StartSelfUpgrade() error {
 		if err := u.Restart(); err != nil {
 			logger.Error("upgrade restart failed", "error", err)
 		}
-	}()
+	})
 	return nil
 }
 

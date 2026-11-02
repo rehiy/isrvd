@@ -5,7 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"runtime"
+	"slices"
 	"sync"
 	"time"
 
@@ -155,11 +157,9 @@ func NewService(parent context.Context, dockerRaw *docker.DockerService) *Servic
 
 	// 启动后立即清理一次过期日志，并启动每日清理协程
 	s.store.CleanOld()
-	s.workers.Add(1)
-	go func() {
-		defer s.workers.Done()
+	s.workers.Go(func() {
 		s.runLogCleaner(cleanCtx)
-	}()
+	})
 
 	return s
 }
@@ -451,10 +451,7 @@ func (s *Service) unregister(id string) {
 
 // persist 将当前 jobs 及加载时被跳过的任务持久化到 cron.yml（调用前须持有锁）
 func (s *Service) persist() error {
-	jobs := make([]*Job, 0, len(s.jobs)+len(s.skipped))
-	for _, j := range s.jobs {
-		jobs = append(jobs, j)
-	}
+	jobs := slices.AppendSeq(make([]*Job, 0, len(s.jobs)+len(s.skipped)), maps.Values(s.jobs))
 	jobs = append(jobs, s.skipped...)
 	return s.store.SaveJobs(jobs)
 }

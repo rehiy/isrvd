@@ -1,5 +1,7 @@
 package monitor
 
+import "slices"
+
 import "strings"
 
 // 不应该显示的磁盘设备名前缀
@@ -58,10 +60,8 @@ func isMountExcluded(mountpoint, fstype string) bool {
 		return true
 	}
 	// 精确路径匹配（用于 Docker 挂载的单个配置文件）
-	for _, exact := range excludeMountExact {
-		if mountpoint == exact {
-			return true
-		}
+	if slices.Contains(excludeMountExact, mountpoint) {
+		return true
 	}
 	// 目录前缀匹配
 	for _, prefix := range excludeMountPrefixes {

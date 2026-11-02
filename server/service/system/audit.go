@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -100,8 +101,7 @@ func (s *AuditService) LogAdd(entry AuditLog) {
 	}
 	if len(s.buffer) >= maxAuditBufferSize {
 		// 复用固定容量缓冲区，移除最旧记录后由 append 覆盖尾部引用。
-		copy(s.buffer, s.buffer[1:])
-		s.buffer = s.buffer[:maxAuditBufferSize-1]
+		s.buffer = slices.Delete(s.buffer, 0, 1)
 	}
 	s.buffer = append(s.buffer, entry)
 
@@ -120,8 +120,7 @@ func (s *AuditService) LogList(username string, limit int) []AuditLog {
 	defer s.mu.RUnlock()
 
 	var result []AuditLog
-	for i := len(s.buffer) - 1; i >= 0; i-- {
-		entry := s.buffer[i]
+	for _, entry := range slices.Backward(s.buffer) {
 		if username != "" && entry.Username != username {
 			continue
 		}
@@ -250,8 +249,8 @@ func (s *AuditService) loadRecent() {
 	// DecodeTail 返回顺序为"由新到旧"，buffer 期望"由旧到新"
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	for i := len(entries) - 1; i >= 0; i-- {
-		s.buffer = append(s.buffer, entries[i])
+	for _, entry := range slices.Backward(entries) {
+		s.buffer = append(s.buffer, entry)
 	}
 }
 

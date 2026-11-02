@@ -48,10 +48,8 @@ func (s *Service) Probe(ctx context.Context, probes map[string]func(context.Cont
 		mu sync.Mutex
 	)
 
-	wg.Add(len(tasks))
 	for _, t := range tasks {
-		go func(t probeTask) {
-			defer wg.Done()
+		wg.Go(func() {
 			ok := t.fn(probeCtx)
 			mu.Lock()
 			switch t.name {
@@ -69,7 +67,7 @@ func (s *Service) Probe(ctx context.Context, probes map[string]func(context.Cont
 				resp.Node = ok
 			}
 			mu.Unlock()
-		}(t)
+		})
 	}
 	wg.Wait()
 
