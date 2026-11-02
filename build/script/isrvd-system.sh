@@ -19,6 +19,7 @@ SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 ROLE_DIR="/etc/systemd/system/${SERVICE_NAME}.service.d"
 ROLE_FILE="$ROLE_DIR/installer.conf"
 DOCKER_DATA_DIR="/srv/data"
+DATA_DIR_CHOSEN=0
 
 SERVICE_AREA="auto"
 SYSTEM_COMPONENTS=""
@@ -130,8 +131,10 @@ parse_options() {
     select_components
     if [ "${#COMPONENT_NAMES[@]}" -gt 0 ]; then
         set_component_data_dir "${data:-$DOCKER_DATA_DIR}"
-    else
-        [ -z "$data" ] || fail "--data requires a gateway selection"
+        DATA_DIR_CHOSEN=1
+    elif [ -n "$data" ]; then
+        resolve_data_dir "$data"
+        DATA_DIR_CHOSEN=1
     fi
 }
 
@@ -345,7 +348,7 @@ rollback_install() {
         rm -f "$BIN_LINK"
     fi
     if [ "$INSTALL_DIR_CREATED" -eq 1 ]; then rm -rf -- "$INSTALL_DIR"; fi
-    echo "[error] Installation rolled back; component data preserved: $DOCKER_DATA_DIR" >&2
+    echo "[error] Installation rolled back; data preserved: $DOCKER_DATA_DIR" >&2
 }
 
 install_binary() {
@@ -373,8 +376,8 @@ install_binary() {
     INSTALL_DIR_CREATED=1
     INSTALL_IN_PROGRESS=1
     files_install
+    [ "$DATA_DIR_CHOSEN" -eq 0 ] || configure_root_directory
     if [ "${#COMPONENT_NAMES[@]}" -gt 0 ]; then
-        configure_root_directory
         install_components
         configure_binary_components
     fi
@@ -459,20 +462,26 @@ preflight_components() {
     done
 }
 
-set_component_data_dir() {
-    local data="$1" install_dir resolved paths
+resolve_data_dir() {
+    local data="$1" install_dir
     [[ "$data" = /* && "$data" != *:* && "$data" != *\\* && ! "$data" =~ [[:cntrl:]] && ! "$data" =~ (^|/)\.\.?(/|$) ]] \
-        || fail "Component data must be an absolute directory without dot segments, colons, backslashes or control characters"
-    data=$(realpath -m -- "$data") || fail "Cannot resolve component data directory (realpath is required)"
+        || fail "Data directory must be an absolute directory without dot segments, colons, backslashes or control characters"
+    data=$(realpath -m -- "$data") || fail "Cannot resolve data directory (realpath is required)"
     install_dir=$(realpath -m -- "$INSTALL_DIR") || fail "Cannot resolve installation directory"
-    [ "$data" != / ] || fail "Component data must not use the root directory"
+    [ "$data" != / ] || fail "Data directory must not use the root directory"
     [[ "$data" != "$install_dir" && "$data" != "$install_dir/"* && "$install_dir" != "$data/"* ]] \
-        || fail "Component data must not overlap the installation directory"
-    [ ! -e "$data" ] || [ -d "$data" ] || fail "Component data path is not a directory"
+        || fail "Data directory must not overlap the installation directory"
+    [ ! -e "$data" ] || [ -d "$data" ] || fail "Data path is not a directory"
+    DOCKER_DATA_DIR="$data"
+}
+
+set_component_data_dir() {
+    local data resolved paths
+    resolve_data_dir "$1"
+    data="$DOCKER_DATA_DIR"
     paths=("$data/"{etcd,caddy,caddy-config,conf/components/caddy.json,conf/components/apisix.yaml})
     resolved=$(realpath -m -- "${paths[@]}") || fail "Cannot resolve component data paths"
     [ "$resolved" = "$(printf '%s\n' "${paths[@]}")" ] || fail "Component data paths must not be redirected by symbolic links"
-    DOCKER_DATA_DIR="$data"
     COMPONENT_CONFIG_DIR="$data/conf/components"
 }
 
@@ -602,11 +611,12 @@ EOF
     done
 }
 
-# 让 isrvd 自身数据（audit、monitor 等）与组件共用 --data 指定的目录，仅安装时写入。
+# 让 isrvd 自身数据（audit、monitor 等）与组件共用 --data 指定的目录，仅安装时写入；保留配置文件原有权限与属主。
 configure_root_directory() {
     local tmp
     [ -f "$CONFIG_FILE" ] && [ ! -L "$CONFIG_FILE" ] || fail "Expected a regular config file: $CONFIG_FILE"
     tmp=$(mktemp "$INSTALL_DIR/.config.XXXXXX")
+    cp -p -- "$CONFIG_FILE" "$tmp" || { rm -f "$tmp"; fail "Cannot copy config file attributes: $CONFIG_FILE"; }
     if ! ROOT_DIRECTORY="$DOCKER_DATA_DIR" awk '
         function root_config() {
             value = ENVIRON["ROOT_DIRECTORY"]
@@ -621,7 +631,6 @@ configure_root_directory() {
         rm -f "$tmp"
         fail "Expected server.rootDirectory in $CONFIG_FILE"
     fi
-    chmod 600 "$tmp"
     mv "$tmp" "$CONFIG_FILE"
 }
 
@@ -841,7 +850,7 @@ No gateway is selected by default; omit --components to install only isrvd, with
 --components optionally selects caddy or apisix (APISIX + etcd).
 --components none is still accepted for compatibility with existing commands.
 Standalone etcd and component combinations are not supported for new installations.
---data PATH selects the data directory for install only (default: /srv/data); it is used by components and written to server.rootDirectory in config.yml.
+--data PATH selects the data directory for install only (default: /srv/data), with or without a gateway. It is written to server.rootDirectory in config.yml, so isrvd's own data and the components share it.
 The directory must be absolute, non-root and outside $INSTALL_DIR; component subpaths must not redirect via symlinks.
 Components run in separate host-network containers; APISIX automatically installs its etcd dependency.
 Component admin APIs and etcd listen only on 127.0.0.1; gateways use ports 80/443.
@@ -859,7 +868,7 @@ Interrupted component updates block further updates; restore backups or use unin
 Updates preserve the installed component key, role and actual bind mounts; inconsistent data paths abort before stopping components.
 Changing --data in an install command does not migrate an existing deployment. Centers use portmap.range and portmap.bind in $CONFIG_FILE.
 
-Config: $CONFIG_FILE; component data: $DOCKER_DATA_DIR.
+Config: $CONFIG_FILE; data: $DOCKER_DATA_DIR.
 Uninstall deletes $INSTALL_DIR including config.yml; back it up first.
 EOF
 }

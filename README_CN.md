@@ -72,7 +72,7 @@ Docker 版默认管理员账号为 `admin` / `admin`，首次登录成功后会�
 
 安装拆为两个独立脚本，无需互相下载或加载；均可使用 `--auto`（默认）、`--cn`、`--global` 选择软件源：
 
-- **系统服务 + 组件容器（`isrvd-system.sh`）**：isrvd 以 systemd 服务运行；默认不选网关，直接执行 `install`、不传 `--components` 即仅安装 isrvd。可按需用 `--components caddy|apisix` 选择网关：`caddy` 安装独立 Caddy 容器、不带 etcd，`apisix` 自动安装独立 APISIX 和 etcd 容器。首页再次点击已选网关即可取消选择；`--components none` 仅保留为旧命令兼容。新安装不支持独立 etcd 或逗号分隔的组件组合；历史部署中所属组件仍可更新和卸载。组件使用 host 网络，管理接口和 etcd 仅监听 `127.0.0.1`，数据默认保存在 `/srv/data`，安装时可用 `--data PATH` 自定义数据目录（同时写入 isrvd 的 `server.rootDirectory`，isrvd 自身数据与组件共用该目录）。不选择网关时无需 Docker，也不接受 `--data`。
+- **系统服务 + 组件容器（`isrvd-system.sh`）**：isrvd 以 systemd 服务运行；默认不选网关，直接执行 `install`、不传 `--components` 即仅安装 isrvd。可按需用 `--components caddy|apisix` 选择网关：`caddy` 安装独立 Caddy 容器、不带 etcd，`apisix` 自动安装独立 APISIX 和 etcd 容器。首页再次点击已选网关即可取消选择；`--components none` 仅保留为旧命令兼容。新安装不支持独立 etcd 或逗号分隔的组件组合；历史部署中所属组件仍可更新和卸载。组件使用 host 网络，管理接口和 etcd 仅监听 `127.0.0.1`，数据默认保存在 `/srv/data`，安装时可用 `--data PATH` 自定义数据目录（同时写入 isrvd 的 `server.rootDirectory`，isrvd 自身数据与组件共用该目录）。不选择网关时无需 Docker；此时 `--data` 仍可用，仅设置 isrvd 自身的数据目录。
 - **全容器化（`isrvd-docker.sh`）**：自动准备 Docker、单节点 Swarm 和可挂载的 overlay 网络 `sdnet`，运行所选 `isrvd:tag` 一体化镜像。默认 tag 为 `slim`；内置 `caddy`、`apisix` 标签自动匹配端口布局，自定义标签用 `--variant slim|caddy|apisix` 指定布局。
 
 ```bash
@@ -94,7 +94,7 @@ bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docke
 
 `isrvd-system.sh install --caddy` / `--apisix` 现在选择独立组件；需要一体化容器请使用 `isrvd-docker.sh install --caddy` / `--apisix`。`--systemd`、`--docker` 在各自脚本中可省略。Docker 版容器名为 `isrvd`，独立组件名为 `isrvd-caddy`、`isrvd-apisix`、`isrvd-etcd`。
 
-组件数据目录须为非根绝对路径，不能包含 `.`、`..` 路径段、冒号、反斜杠或控制字符，也不能与 `/usr/local/isrvd` 安装目录重叠；脚本用 `realpath` 解析路径，组件子目录及配置文件不能通过符号链接重定向。Caddy 使用该目录下的 `caddy`（证书等存储）和 `caddy-config`（运行配置），etcd 使用 `etcd`，组件启动配置位于 `conf/components`；isrvd 主配置仍为 `/usr/local/isrvd/config.yml`。`--data` 仅用于新安装，不会迁移已有数据。
+数据目录须为非根绝对路径，不能包含 `.`、`..` 路径段、冒号、反斜杠或控制字符，也不能与 `/usr/local/isrvd` 安装目录重叠；脚本用 `realpath` 解析路径，选择网关时，组件子目录及配置文件不能通过符号链接重定向。Caddy 使用该目录下的 `caddy`（证书等存储）和 `caddy-config`（运行配置），etcd 使用 `etcd`，组件启动配置位于 `conf/components`；isrvd 主配置仍为 `/usr/local/isrvd/config.yml`。`--data` 仅用于新安装，不会迁移已有数据。
 
 更新和卸载必须使用对应脚本，不再自动切换部署方式：`isrvd-system.sh update` 更新二进制及所属组件，从所属容器的实际 bind 挂载恢复组件数据目录，挂载不一致时在停服前中止；`isrvd-docker.sh update` 重建主容器。保留已有配置和角色；Docker 更新保留镜像 tag，也可用 `isrvd-docker.sh update --tag YOUR_PUBLISHED_TAG --variant apisix` 更换标签；容器替换失败时恢复旧容器。组件沿用安装时固定的镜像版本，不自动跨版本升级。`isrvd-system.sh uninstall` 删除系统服务及所属组件，保留实际组件数据目录；`isrvd-docker.sh uninstall` 只删除主容器，保留 `/srv/data`。系统服务卸载前请先备份 `/usr/local/isrvd/config.yml`。
 
