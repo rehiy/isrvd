@@ -374,6 +374,7 @@ install_binary() {
     INSTALL_IN_PROGRESS=1
     files_install
     if [ "${#COMPONENT_NAMES[@]}" -gt 0 ]; then
+        configure_root_directory
         install_components
         configure_binary_components
     fi
@@ -601,6 +602,29 @@ EOF
     done
 }
 
+# 让 isrvd 自身数据（audit、monitor 等）与组件共用 --data 指定的目录，仅安装时写入。
+configure_root_directory() {
+    local tmp
+    [ -f "$CONFIG_FILE" ] && [ ! -L "$CONFIG_FILE" ] || fail "Expected a regular config file: $CONFIG_FILE"
+    tmp=$(mktemp "$INSTALL_DIR/.config.XXXXXX")
+    if ! ROOT_DIRECTORY="$DOCKER_DATA_DIR" awk '
+        function root_config() {
+            value = ENVIRON["ROOT_DIRECTORY"]
+            gsub(/"/, "\\\"", value)
+            print "  rootDirectory: \"" value "\""
+        }
+        /^[^[:space:]#]/ { section = $0 }
+        section ~ /^server:/ && /^[[:space:]]+rootDirectory:/ { if (!done) root_config(); done = 1; next }
+        { print }
+        END { if (!done) exit 1 }
+    ' "$CONFIG_FILE" > "$tmp"; then
+        rm -f "$tmp"
+        fail "Expected server.rootDirectory in $CONFIG_FILE"
+    fi
+    chmod 600 "$tmp"
+    mv "$tmp" "$CONFIG_FILE"
+}
+
 configure_binary_components() {
     local tmp apisix=0 caddy=0
     [[ " ${COMPONENT_NAMES[*]} " != *" apisix "* ]] || apisix=1
@@ -817,7 +841,7 @@ No gateway is selected by default; omit --components to install only isrvd, with
 --components optionally selects caddy or apisix (APISIX + etcd).
 --components none is still accepted for compatibility with existing commands.
 Standalone etcd and component combinations are not supported for new installations.
---data PATH selects the component data directory for install only (default: /srv/data).
+--data PATH selects the data directory for install only (default: /srv/data); it is used by components and written to server.rootDirectory in config.yml.
 The directory must be absolute, non-root and outside $INSTALL_DIR; component subpaths must not redirect via symlinks.
 Components run in separate host-network containers; APISIX automatically installs its etcd dependency.
 Component admin APIs and etcd listen only on 127.0.0.1; gateways use ports 80/443.
