@@ -200,7 +200,7 @@ func (s *Service) CertDelete(ctx context.Context, key string) error {
 	})
 }
 
-// ─── 证书缓存（运行时已签发证书，内部方法）───
+// ─── 证书缓存（运行时已签发证书）───
 
 // scanCertCache 扫描 Caddy storage root 下的证书缓存，返回 cached 类型的 CertForm 列表。
 // 接收已读取的 cfg 避免重复请求。

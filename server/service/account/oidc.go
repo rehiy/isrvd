@@ -182,7 +182,7 @@ func (s *Service) OIDCExchange(code string) (*LoginResponse, error) {
 	return s.issueLoginToken(config.Current(), username)
 }
 
-// ─── 内部方法 ──────────
+// ─── 内部方法 ───
 
 // oidcProviderCache 缓存 OIDC Provider，避免每次请求都重新拉取元数据
 type oidcProviderCache struct {
