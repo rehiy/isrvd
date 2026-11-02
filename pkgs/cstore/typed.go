@@ -47,7 +47,7 @@ func (t *TypedStore[T]) Set(val T) error {
 // T 为指针类型时自动分配内层对象，避免传 **T 给 go-yaml 导致类型不匹配。
 func unmarshalVal[T any](data []byte, v *T) error {
 	rv := reflect.ValueOf(v).Elem() // *T → T
-	if rv.Kind() == reflect.Ptr {
+	if rv.Kind() == reflect.Pointer {
 		if rv.IsNil() {
 			rv.Set(reflect.New(rv.Type().Elem()))
 		}

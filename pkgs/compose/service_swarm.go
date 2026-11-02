@@ -1,6 +1,7 @@
 package compose
 
 import (
+	"cmp"
 	"fmt"
 	"strconv"
 	"strings"
@@ -17,12 +18,8 @@ func ServiceToSwarmSpec(project *types.Project, svc types.ServiceConfig) (swarm.
 		return swarm.ServiceSpec{}, fmt.Errorf("service %q 缺少 image", svc.Name)
 	}
 
-	name := defaultString(svc.Name, svc.ContainerName)
+	name := cmp.Or(svc.Name, svc.ContainerName)
 	spec := swarm.ServiceSpec{
-		Annotations: swarm.Annotations{
-			Name:   name,
-			Labels: buildServiceLabels(project, svc, nil),
-		},
 		TaskTemplate: swarm.TaskSpec{
 			ContainerSpec: &swarm.ContainerSpec{
 				Image:          svc.Image,
@@ -43,6 +40,10 @@ func ServiceToSwarmSpec(project *types.Project, svc types.ServiceConfig) (swarm.
 			},
 		},
 		EndpointSpec: &swarm.EndpointSpec{},
+
+		// 内嵌 swarm.Annotations
+		Name:   name,
+		Labels: buildServiceLabels(project, svc, nil),
 	}
 
 	if len(svc.DNS) > 0 || len(svc.DNSOpts) > 0 || len(svc.DNSSearch) > 0 {
@@ -91,8 +92,8 @@ func applySwarmPorts(svc types.ServiceConfig, spec *swarm.ServiceSpec) {
 			continue
 		}
 		publishedStr := p.Published
-		if idx := strings.LastIndex(publishedStr, ":"); idx >= 0 {
-			publishedStr = publishedStr[idx+1:]
+		if _, after, ok := strings.CutLast(publishedStr, ":"); ok {
+			publishedStr = after
 		}
 		published, _ := strconv.Atoi(publishedStr)
 		if published == 0 {

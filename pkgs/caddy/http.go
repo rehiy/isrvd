@@ -1,6 +1,7 @@
 package caddy
 
 import (
+	"strings"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -366,11 +367,11 @@ func BasicAuthFromHandler(h Handler) (realm string, accounts []BasicAuthAccount,
 
 func (d Duration) value() (string, bool) {
 	value := string(d)
-	if len(value) >= len(durationNumberPrefix) && value[:len(durationNumberPrefix)] == durationNumberPrefix {
-		return value[len(durationNumberPrefix):], true
+	if number, ok := strings.CutPrefix(value, durationNumberPrefix); ok {
+		return number, true
 	}
-	if len(value) >= len(durationStringPrefix) && value[:len(durationStringPrefix)] == durationStringPrefix {
-		return value[len(durationStringPrefix):], false
+	if text, ok := strings.CutPrefix(value, durationStringPrefix); ok {
+		return text, false
 	}
 	return value, false
 }

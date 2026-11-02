@@ -3,6 +3,7 @@ package compose
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -114,7 +115,7 @@ func EnvEnsure(installDir string) error {
 	envPath := filepath.Join(installDir, EnvFileName)
 	if _, err := os.Stat(envPath); err == nil {
 		return nil
-	} else if !os.IsNotExist(err) {
+	} else if !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("检查 .env 失败: %w", err)
 	}
 	if err := os.WriteFile(envPath, []byte(""), 0644); err != nil {
@@ -135,7 +136,7 @@ func EnvStateRead(installDir string) (EnvState, error) {
 		return EnvState{}, nil
 	}
 	data, err := os.ReadFile(filepath.Join(installDir, EnvFileName))
-	if os.IsNotExist(err) {
+	if errors.Is(err, os.ErrNotExist) {
 		return EnvState{}, nil
 	}
 	if err != nil {
@@ -151,7 +152,7 @@ func EnvStateRestore(installDir string, state EnvState) error {
 	}
 	path := filepath.Join(installDir, EnvFileName)
 	if !state.Exists {
-		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("恢复 .env 缺失状态失败: %w", err)
 		}
 		return nil

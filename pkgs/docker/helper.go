@@ -43,12 +43,12 @@ func (s *DockerService) resolveSelfContainerID(ctx context.Context) string {
 	selfMounts := make(map[string]bool)
 	if data, err := os.ReadFile("/proc/self/mountinfo"); err == nil {
 		for line := range strings.SplitSeq(string(data), "\n") {
-			parts := strings.SplitN(line, " - ", 2)
-			if len(parts) != 2 {
+			preText, postText, found := strings.Cut(line, " - ")
+			if !found {
 				continue
 			}
-			pre := strings.Fields(parts[0])
-			post := strings.Fields(parts[1])
+			pre := strings.Fields(preText)
+			post := strings.Fields(postText)
 			if len(pre) < 5 || pre[4] != "/" || len(post) < 3 || post[0] != "overlay" {
 				continue
 			}
@@ -151,9 +151,7 @@ func buildDockerfileTar(dockerfile string) (*bytes.Buffer, error) {
 func registryHost(registryURL string) string {
 	host := strings.TrimPrefix(registryURL, "https://")
 	host = strings.TrimPrefix(host, "http://")
-	if idx := strings.Index(host, "/"); idx >= 0 {
-		host = host[:idx]
-	}
+	host, _, _ = strings.Cut(host, "/")
 	return host
 }
 

@@ -276,7 +276,7 @@ func fileModePerm(mode string) string {
 // parseFindOutput 解析 find -printf 输出
 func parseFindOutput(dirPath, output string) *ContainerFileListResult {
 	result := &ContainerFileListResult{Path: dirPath, Files: []ContainerFileInfo{}}
-	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
+	for line := range strings.SplitSeq(strings.TrimSpace(output), "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -320,7 +320,7 @@ func parseFindOutput(dirPath, output string) *ContainerFileListResult {
 // parseLsOutput 简单解析 ls -la 输出（回退方案）
 func parseLsOutput(dirPath, output string) *ContainerFileListResult {
 	result := &ContainerFileListResult{Path: dirPath, Files: []ContainerFileInfo{}}
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "total") {
 			continue
@@ -332,9 +332,9 @@ func parseLsOutput(dirPath, output string) *ContainerFileListResult {
 		modeStr := fields[0]
 		name := strings.Join(fields[8:], " ")
 		linkTarget := ""
-		if idx := strings.Index(name, " -> "); idx >= 0 {
-			linkTarget = name[idx+4:]
-			name = name[:idx]
+		if before, after, ok := strings.Cut(name, " -> "); ok {
+			linkTarget = after
+			name = before
 		}
 		if name == "." || name == ".." {
 			continue

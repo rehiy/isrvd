@@ -285,14 +285,13 @@ func mergeKnownAndExtras(known any, extras map[string]json.RawMessage) ([]byte, 
 		return nil, err
 	}
 	// known 必为 JSON 对象，否则不合并
-	end := bytes.LastIndexByte(knownRaw, '}')
-	if end < 0 {
+	prefix, _, ok := bytes.CutLast(knownRaw, []byte("}"))
+	if !ok {
 		return knownRaw, nil
 	}
 
 	var buf bytes.Buffer
 	buf.Grow(len(knownRaw) + 64*len(extras))
-	prefix := knownRaw[:end]
 	buf.Write(prefix)
 	// 如果 {} 之间有内容（即有已知字段），首个 extra 前需要加逗号
 	needComma := len(bytes.TrimSpace(prefix)) > 1 // `{` 之后还有内容

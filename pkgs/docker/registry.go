@@ -25,10 +25,8 @@ func (s *DockerService) ReplaceRegistries(registries []*RegistryConfig) {
 // 匹配规则：提取 imageRef 的 host 部分，与已配置仓库的 host 对比
 func (s *DockerService) RegistryAuth(imageRef string) string {
 	// 提取 host：取第一个 "/" 之前的部分
-	host := imageRef
-	if idx := strings.Index(host, "/"); idx >= 0 {
-		host = host[:idx]
-	} else {
+	host, _, found := strings.Cut(imageRef, "/")
+	if !found {
 		// 无 "/" 说明是纯镜像名（如 "nginx:latest"），属于 Docker Hub，不匹配私有仓库
 		return ""
 	}

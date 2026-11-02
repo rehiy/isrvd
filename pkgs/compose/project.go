@@ -9,6 +9,7 @@ package compose
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"maps"
@@ -192,11 +193,8 @@ func ProjectValidateWithoutEnvFiles(ctx context.Context, content string, envCont
 func projectEnvironment(extra map[string]string) map[string]string {
 	env := make(map[string]string)
 	for _, e := range os.Environ() {
-		for i := 0; i < len(e); i++ {
-			if e[i] == '=' {
-				env[e[:i]] = e[i+1:]
-				break
-			}
+		if k, v, ok := strings.Cut(e, "="); ok {
+			env[k] = v
 		}
 	}
 	maps.Copy(env, extra)
@@ -215,7 +213,7 @@ func projectEnvironmentWithEnvFile(ctx context.Context, extra map[string]string,
 				return nil, fmt.Errorf("解析 %s 失败: %w", envFilePath, perr)
 			}
 			maps.Copy(env, fileEnv)
-		} else if !os.IsNotExist(err) {
+		} else if !errors.Is(err, os.ErrNotExist) {
 			slog.DebugContext(ctx, "read project .env failed", "path", envFilePath, "error", err)
 		}
 	}

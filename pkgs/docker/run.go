@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"slices"
 	"context"
 	"fmt"
 	"strings"
@@ -46,7 +47,7 @@ func (s *DockerService) ContainerRunScript(ctx context.Context, opts ScriptRunOp
 	scriptInContainer := scriptDir + scriptName
 
 	// 仅保留调用方指定的挂载；脚本通过 Docker Copy API 写入，兼容容器化部署和远程 daemon。
-	mounts := append([]mount.Mount(nil), opts.Mounts...)
+	mounts := slices.Clone(opts.Mounts)
 
 	containerName := fmt.Sprintf("%s-%x", namePrefix, time.Now().UnixNano())
 	containerCfg := &container.Config{

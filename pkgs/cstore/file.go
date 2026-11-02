@@ -3,6 +3,7 @@ package cstore
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -43,7 +44,7 @@ func (f *FileStore) Get(key string) ([]byte, error) {
 func (f *FileStore) read(key string) ([]byte, error) {
 	data, err := os.ReadFile(f.path(key))
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, os.ErrNotExist) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("cstore/file: 读取 %s 失败: %w", key, err)
@@ -89,7 +90,7 @@ func (f *FileStore) write(key string, value []byte) error {
 	mode := os.FileMode(0600)
 	if info, err := os.Stat(p); err == nil {
 		mode = info.Mode().Perm()
-	} else if !os.IsNotExist(err) {
+	} else if !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
 	temp, err := os.CreateTemp(filepath.Dir(p), ".cstore-*")

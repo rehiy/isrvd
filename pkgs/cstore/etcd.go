@@ -26,8 +26,10 @@ func newEtcdStore(uri string, opt options) (*EtcdStore, error) {
 	// url.Parse 不支持逗号分隔的多个 host:port，先取出 host 段，再用占位 host 解析其余部分
 	rest := uri[len("etcd://"):]
 	authority := rest[:strings.IndexAny(rest+"/", "/?")]
-	at := strings.LastIndex(authority, "@") + 1
-	userinfo, hosts := authority[:at], authority[at:]
+	userinfo, hosts := "", authority
+	if before, after, ok := strings.CutLast(authority, "@"); ok {
+		userinfo, hosts = before+"@", after
+	}
 	if hosts == "" {
 		return nil, fmt.Errorf("cstore/etcd: URI 缺少 endpoints")
 	}
@@ -43,7 +45,7 @@ func newEtcdStore(uri string, opt options) (*EtcdStore, error) {
 	}
 
 	var endpoints []string
-	for _, host := range strings.Split(hosts, ",") {
+	for host := range strings.SplitSeq(hosts, ",") {
 		if host = strings.TrimSpace(host); host != "" {
 			endpoints = append(endpoints, scheme+"://"+host)
 		}
@@ -117,7 +119,7 @@ func (e *EtcdStore) getFromFallback(key string) ([]byte, error) {
 	}
 	data, err := os.ReadFile(e.fallbackPath(key))
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, os.ErrNotExist) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("cstore/etcd: 读取 fallback %s 失败: %w", key, err)

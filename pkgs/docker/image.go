@@ -187,8 +187,8 @@ func (s *DockerService) ImageInspect(ctx context.Context, id string) (*image.Ins
 func (s *DockerService) ImagePush(ctx context.Context, imageRef, registryURL, namespace string) (string, string, error) {
 	// 提取镜像的短名称
 	imageName := imageRef
-	if idx := strings.LastIndex(imageName, "/"); idx >= 0 {
-		imageName = imageName[idx+1:]
+	if _, after, ok := strings.CutLast(imageName, "/"); ok {
+		imageName = after
 	}
 
 	// 构建完整的目标镜像引用

@@ -2,6 +2,7 @@ package compose
 
 import (
 	"maps"
+	"slices"
 	"strings"
 
 	"github.com/compose-spec/compose-go/v2/types"
@@ -48,11 +49,7 @@ func CollectNetworks(project *types.Project) []string {
 			set[resolveNetworkName(project, k)] = struct{}{}
 		}
 	}
-	result := make([]string, 0, len(set))
-	for k := range set {
-		result = append(result, k)
-	}
-	return result
+	return slices.AppendSeq(make([]string, 0, len(set)), maps.Keys(set))
 }
 
 // envToSlice 将 compose MappingWithEquals 转为 KEY=VALUE 列表
@@ -81,22 +78,13 @@ func sliceToEnv(env []string) types.MappingWithEquals {
 		if e == "" {
 			continue
 		}
-		if idx := strings.Index(e, "="); idx > 0 {
-			v := e[idx+1:]
-			result[e[:idx]] = &v
+		if k, v, ok := strings.Cut(e, "="); ok && k != "" {
+			result[k] = &v
 		} else {
 			result[e] = nil
 		}
 	}
 	return result
-}
-
-// defaultString 若 v 为空则返回 def
-func defaultString(v, def string) string {
-	if v == "" {
-		return def
-	}
-	return v
 }
 
 // serviceMounts 将 Compose 挂载统一转换为 Docker SDK 挂载配置。
@@ -128,9 +116,7 @@ func serviceMounts(volumes []types.ServiceVolumeConfig) []mount.Mount {
 // extraLabels 用于追加额外的标签键值对（如 docker 专用的 container-number、oneoff）。
 func buildServiceLabels(project *types.Project, svc types.ServiceConfig, extraLabels map[string]string) map[string]string {
 	labels := make(map[string]string, len(svc.Labels)+2+len(extraLabels))
-	for k, v := range svc.Labels {
-		labels[k] = v
-	}
+	maps.Copy(labels, svc.Labels)
 	if project != nil && project.Name != "" {
 		labels[ComposeProjectLabel] = project.Name
 	}

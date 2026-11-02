@@ -1,8 +1,10 @@
 package compose
 
 import (
+	"cmp"
 	"context"
 	"fmt"
+	"maps"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -132,9 +134,7 @@ func ProjectFromDockerInspects(infos []container.InspectResponse, imageConfigs m
 			return nil, err
 		}
 		services[serviceName] = svc
-		for k, v := range networks {
-			projectNetworks[k] = v
-		}
+		maps.Copy(projectNetworks, networks)
 	}
 	if len(services) == 0 {
 		return nil, fmt.Errorf("compose project %s 未找到可接管服务容器", projectName)
@@ -166,45 +166,45 @@ func serviceFromDockerInspect(info container.InspectResponse, imageConfig *v1.Do
 		Name:          serviceName,
 		ContainerName: containerName,
 		Restart:       restartPolicy(string(info.HostConfig.RestartPolicy.Name)),
-		ContainerSpec: types.ContainerSpec{
-			Image:             info.Config.Image,
-			Command:           types.ShellCommand(diffCmd(info.Config.Cmd, imageConfig)),
-			Entrypoint:        entrypoint,
-			Environment:       sliceToEnv(diffEnv(info.Config.Env, imageConfig)),
-			DomainName:        info.Config.Domainname,
-			WorkingDir:        diffString(info.Config.WorkingDir, imageConfig, func(c *v1.DockerOCIImageConfig) string { return c.WorkingDir }),
-			User:              diffString(info.Config.User, imageConfig, func(c *v1.DockerOCIImageConfig) string { return c.User }),
-			Hostname:          hostname,
-			Privileged:        info.HostConfig.Privileged,
-			CgroupParent:      info.HostConfig.CgroupParent,
-			Cgroup:            diffDefaultString(string(info.HostConfig.CgroupnsMode), "private"),
-			CapAdd:            []string(info.HostConfig.CapAdd),
-			CapDrop:           []string(info.HostConfig.CapDrop),
-			ExtraHosts:        extraHostsToMap(info.HostConfig.ExtraHosts),
-			GroupAdd:          info.HostConfig.GroupAdd,
-			Init:              info.HostConfig.Init,
-			Ipc:               diffDefaultString(string(info.HostConfig.IpcMode), "private"),
-			Isolation:         string(info.HostConfig.Isolation),
-			OomKillDisable:    info.HostConfig.OomKillDisable != nil && *info.HostConfig.OomKillDisable,
-			Pid:               string(info.HostConfig.PidMode),
-			PidsLimit:         int64Value(info.HostConfig.PidsLimit),
-			Runtime:           diffDefaultString(info.HostConfig.Runtime, "runc"),
-			SecurityOpt:       info.HostConfig.SecurityOpt,
-			ShmSize:           diffDefaultShmSize(info.HostConfig.ShmSize),
-			Tmpfs:             tmpfsToList(info.HostConfig.Tmpfs),
-			Ulimits:           inspectUlimits(info.HostConfig.Ulimits),
-			Uts:               string(info.HostConfig.UTSMode),
-			ReadOnly:          info.HostConfig.ReadonlyRootfs,
-			StopSignal:        diffString(info.Config.StopSignal, imageConfig, func(c *v1.DockerOCIImageConfig) string { return c.StopSignal }),
-			Sysctls:           types.Mapping(info.HostConfig.Sysctls),
-			DeviceCgroupRules: info.HostConfig.DeviceCgroupRules,
-			Devices:           inspectDeviceMappings(info.HostConfig.Devices),
-			Labels:            diffLabels(info.Config.Labels, imageConfig),
-		},
-		WorkloadSpec: types.WorkloadSpec{
-			Tty:       info.Config.Tty,
-			StdinOpen: info.Config.OpenStdin,
-		},
+
+		// 内嵌 types.ContainerSpec
+		Image:             info.Config.Image,
+		Command:           types.ShellCommand(diffCmd(info.Config.Cmd, imageConfig)),
+		Entrypoint:        entrypoint,
+		Environment:       sliceToEnv(diffEnv(info.Config.Env, imageConfig)),
+		DomainName:        info.Config.Domainname,
+		WorkingDir:        diffString(info.Config.WorkingDir, imageConfig, func(c *v1.DockerOCIImageConfig) string { return c.WorkingDir }),
+		User:              diffString(info.Config.User, imageConfig, func(c *v1.DockerOCIImageConfig) string { return c.User }),
+		Hostname:          hostname,
+		Privileged:        info.HostConfig.Privileged,
+		CgroupParent:      info.HostConfig.CgroupParent,
+		Cgroup:            diffDefaultString(string(info.HostConfig.CgroupnsMode), "private"),
+		CapAdd:            []string(info.HostConfig.CapAdd),
+		CapDrop:           []string(info.HostConfig.CapDrop),
+		ExtraHosts:        extraHostsToMap(info.HostConfig.ExtraHosts),
+		GroupAdd:          info.HostConfig.GroupAdd,
+		Init:              info.HostConfig.Init,
+		Ipc:               diffDefaultString(string(info.HostConfig.IpcMode), "private"),
+		Isolation:         string(info.HostConfig.Isolation),
+		OomKillDisable:    info.HostConfig.OomKillDisable != nil && *info.HostConfig.OomKillDisable,
+		Pid:               string(info.HostConfig.PidMode),
+		PidsLimit:         int64Value(info.HostConfig.PidsLimit),
+		Runtime:           diffDefaultString(info.HostConfig.Runtime, "runc"),
+		SecurityOpt:       info.HostConfig.SecurityOpt,
+		ShmSize:           diffDefaultShmSize(info.HostConfig.ShmSize),
+		Tmpfs:             tmpfsToList(info.HostConfig.Tmpfs),
+		Ulimits:           inspectUlimits(info.HostConfig.Ulimits),
+		Uts:               string(info.HostConfig.UTSMode),
+		ReadOnly:          info.HostConfig.ReadonlyRootfs,
+		StopSignal:        diffString(info.Config.StopSignal, imageConfig, func(c *v1.DockerOCIImageConfig) string { return c.StopSignal }),
+		Sysctls:           types.Mapping(info.HostConfig.Sysctls),
+		DeviceCgroupRules: info.HostConfig.DeviceCgroupRules,
+		Devices:           inspectDeviceMappings(info.HostConfig.Devices),
+		Labels:            diffLabels(info.Config.Labels, imageConfig),
+
+		// 内嵌 types.WorkloadSpec
+		Tty:       info.Config.Tty,
+		StdinOpen: info.Config.OpenStdin,
 	}
 
 	applyInspectDNS(&svc, info)
@@ -218,7 +218,7 @@ func serviceFromDockerInspect(info container.InspectResponse, imageConfig *v1.Do
 }
 
 func dockerInspectName(info container.InspectResponse) string {
-	return defaultString(strings.TrimPrefix(info.Name, "/"), info.ID)
+	return cmp.Or(strings.TrimPrefix(info.Name, "/"), info.ID)
 }
 
 func dockerComposeServiceName(info container.InspectResponse) string {
@@ -282,7 +282,7 @@ func applyInspectPorts(svc *types.ServiceConfig, info container.InspectResponse,
 	seen := map[string]struct{}{}
 	for containerPort, bindings := range info.HostConfig.PortBindings {
 		target := parsePort(containerPort.Port())
-		proto := defaultString(containerPort.Proto(), "tcp")
+		proto := cmp.Or(containerPort.Proto(), "tcp")
 		if len(bindings) == 0 {
 			continue
 		}
@@ -482,9 +482,9 @@ func extraHostsToMap(hosts []string) types.HostsList {
 	}
 	result := types.HostsList{}
 	for _, host := range hosts {
-		parts := strings.SplitN(host, ":", 2)
-		if len(parts) == 2 && parts[0] != "" && parts[1] != "" {
-			result[parts[0]] = append(result[parts[0]], parts[1])
+		name, addr, ok := strings.Cut(host, ":")
+		if ok && name != "" && addr != "" {
+			result[name] = append(result[name], addr)
 		}
 	}
 	if len(result) == 0 {
@@ -531,9 +531,7 @@ func sliceEqual(a, b []string) bool {
 
 // parsePort 解析 "8080" 或 "8080/tcp" 为端口号
 func parsePort(s string) uint32 {
-	if i := strings.Index(s, "/"); i >= 0 {
-		s = s[:i]
-	}
+	s, _, _ = strings.Cut(s, "/")
 	n, _ := strconv.Atoi(s)
 	if n < 0 {
 		return 0

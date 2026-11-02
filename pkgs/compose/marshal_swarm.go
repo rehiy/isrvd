@@ -1,6 +1,7 @@
 package compose
 
 import (
+	"cmp"
 	"fmt"
 	"strconv"
 	"strings"
@@ -21,29 +22,29 @@ func ProjectFromSwarmInspect(svc swarm.Service, containerDir string) (*types.Pro
 		return nil, fmt.Errorf("swarm 服务数据不完整")
 	}
 
-	name := defaultString(spec.Name, svc.ID)
+	name := cmp.Or(spec.Name, svc.ID)
 	composeSvc := types.ServiceConfig{
 		Name: name,
-		ContainerSpec: types.ContainerSpec{
-			Image:       cs.Image,
-			Environment: sliceToEnv(cs.Env),
-			Entrypoint:  types.ShellCommand(cs.Command),
-			Command:     types.ShellCommand(cs.Args),
-			WorkingDir:  cs.Dir,
-			User:        cs.User,
-			Hostname:    cs.Hostname,
-			ExtraHosts:  swarmExtraHostsToMap(cs.Hosts),
-			ReadOnly:    cs.ReadOnly,
-			StopSignal:  cs.StopSignal,
-			Sysctls:     types.Mapping(cs.Sysctls),
-			CapAdd:      cs.CapabilityAdd,
-			CapDrop:     cs.CapabilityDrop,
-			Labels:      spec.Labels,
-		},
-		WorkloadSpec: types.WorkloadSpec{
-			Tty:       cs.TTY,
-			StdinOpen: cs.OpenStdin,
-		},
+
+		// 内嵌 types.ContainerSpec
+		Image:       cs.Image,
+		Environment: sliceToEnv(cs.Env),
+		Entrypoint:  types.ShellCommand(cs.Command),
+		Command:     types.ShellCommand(cs.Args),
+		WorkingDir:  cs.Dir,
+		User:        cs.User,
+		Hostname:    cs.Hostname,
+		ExtraHosts:  swarmExtraHostsToMap(cs.Hosts),
+		ReadOnly:    cs.ReadOnly,
+		StopSignal:  cs.StopSignal,
+		Sysctls:     types.Mapping(cs.Sysctls),
+		CapAdd:      cs.CapabilityAdd,
+		CapDrop:     cs.CapabilityDrop,
+		Labels:      spec.Labels,
+
+		// 内嵌 types.WorkloadSpec
+		Tty:       cs.TTY,
+		StdinOpen: cs.OpenStdin,
 	}
 
 	if cs.DNSConfig != nil {
@@ -73,8 +74,8 @@ func ProjectFromSwarmInspect(svc swarm.Service, containerDir string) (*types.Pro
 			composeSvc.Ports = append(composeSvc.Ports, types.ServicePortConfig{
 				Target:    p.TargetPort,
 				Published: strconv.Itoa(int(p.PublishedPort)),
-				Protocol:  defaultString(string(p.Protocol), "tcp"),
-				Mode:      defaultString(string(p.PublishMode), "ingress"),
+				Protocol:  cmp.Or(string(p.Protocol), "tcp"),
+				Mode:      cmp.Or(string(p.PublishMode), "ingress"),
 			})
 		}
 	}

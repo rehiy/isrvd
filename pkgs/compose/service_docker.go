@@ -1,6 +1,7 @@
 package compose
 
 import (
+	"cmp"
 	"fmt"
 	"strconv"
 	"strings"
@@ -28,7 +29,7 @@ func ServiceToDockerCreateSpec(project *types.Project, svc types.ServiceConfig) 
 		return DockerCreateSpec{}, fmt.Errorf("service %q 缺少 image", svc.Name)
 	}
 
-	name := defaultString(svc.ContainerName, svc.Name)
+	name := cmp.Or(svc.ContainerName, svc.Name)
 	spec := DockerCreateSpec{
 		Name: name,
 		Config: &container.Config{
@@ -64,20 +65,20 @@ func ServiceToDockerCreateSpec(project *types.Project, svc types.ServiceConfig) 
 			PidMode:        container.PidMode(svc.Pid),
 			ReadonlyRootfs: svc.ReadOnly,
 			RestartPolicy:  container.RestartPolicy{Name: container.RestartPolicyMode(restartPolicyName(svc.Restart))},
-			Resources: container.Resources{
-				CgroupParent:      svc.CgroupParent,
-				DeviceCgroupRules: svc.DeviceCgroupRules,
-				Devices:           dockerDeviceMappings(svc.Devices),
-				OomKillDisable:    boolPtr(svc.OomKillDisable),
-				PidsLimit:         int64Ptr(svc.PidsLimit),
-				Ulimits:           dockerUlimits(svc.Ulimits),
-			},
-			Runtime:     svc.Runtime,
-			SecurityOpt: svc.SecurityOpt,
-			ShmSize:     int64(svc.ShmSize),
-			Sysctls:     map[string]string(svc.Sysctls),
-			Tmpfs:       tmpfsMap(svc.Tmpfs),
-			UTSMode:     container.UTSMode(svc.Uts),
+			Runtime:        svc.Runtime,
+			SecurityOpt:    svc.SecurityOpt,
+			ShmSize:        int64(svc.ShmSize),
+			Sysctls:        map[string]string(svc.Sysctls),
+			Tmpfs:          tmpfsMap(svc.Tmpfs),
+			UTSMode:        container.UTSMode(svc.Uts),
+
+			// 内嵌 container.Resources
+			CgroupParent:      svc.CgroupParent,
+			DeviceCgroupRules: svc.DeviceCgroupRules,
+			Devices:           dockerDeviceMappings(svc.Devices),
+			OomKillDisable:    boolPtr(svc.OomKillDisable),
+			PidsLimit:         int64Ptr(svc.PidsLimit),
+			Ulimits:           dockerUlimits(svc.Ulimits),
 		},
 	}
 
@@ -123,9 +124,9 @@ func applyDockerExpose(svc types.ServiceConfig, containerConfig *container.Confi
 	for _, raw := range svc.Expose {
 		proto := "tcp"
 		port := raw
-		if idx := strings.LastIndex(raw, "/"); idx >= 0 {
-			port = raw[:idx]
-			proto = raw[idx+1:]
+		if before, after, ok := strings.CutLast(raw, "/"); ok {
+			port = before
+			proto = after
 		}
 		containerConfig.ExposedPorts[nat.Port(port+"/"+proto)] = struct{}{}
 	}
@@ -143,15 +144,15 @@ func applyDockerPorts(svc types.ServiceConfig, containerConfig *container.Config
 		if p.Target == 0 {
 			continue
 		}
-		proto := defaultString(strings.ToLower(p.Protocol), "tcp")
+		proto := cmp.Or(strings.ToLower(p.Protocol), "tcp")
 		host := p.Published
 		hostIP := "0.0.0.0"
 		if p.HostIP != "" && p.HostIP != "0.0.0.0" {
 			hostIP = p.HostIP
 		}
-		if idx := strings.LastIndex(host, ":"); idx >= 0 {
-			hostIP = host[:idx]
-			host = host[idx+1:]
+		if before, after, ok := strings.CutLast(host, ":"); ok {
+			hostIP = before
+			host = after
 		}
 		port := nat.Port(strconv.Itoa(int(p.Target)) + "/" + proto)
 		portBindings[port] = append(portBindings[port], nat.PortBinding{HostIP: hostIP, HostPort: host})
@@ -248,8 +249,8 @@ func dockerDeviceMappings(devices []types.DeviceMapping) []container.DeviceMappi
 	for _, dev := range devices {
 		result = append(result, container.DeviceMapping{
 			PathOnHost:        dev.Source,
-			PathInContainer:   defaultString(dev.Target, dev.Source),
-			CgroupPermissions: defaultString(dev.Permissions, "rwm"),
+			PathInContainer:   cmp.Or(dev.Target, dev.Source),
+			CgroupPermissions: cmp.Or(dev.Permissions, "rwm"),
 		})
 	}
 	return result
