@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"isrvd/pkgs/secretbox"
+	"isrvd/pkgs/helper"
 	"isrvd/server/config"
 )
 
@@ -13,21 +13,21 @@ import (
 // 无前缀的值视为历史明文，下次保存时自动加密。
 
 func secretAEAD() (cipher.AEAD, error) {
-	return secretbox.NewAEAD("isrvd-webssh", config.Current().Server.JWTSecret)
+	return helper.NewSecretAEAD("isrvd-webssh", config.Current().Server.JWTSecret)
 }
 
 func sealSecret(aead cipher.AEAD, plain string) (string, error) {
 	if plain == "" {
 		return "", nil
 	}
-	return secretbox.Seal(aead, plain)
+	return helper.SealSecret(aead, plain)
 }
 
 func openSecret(aead cipher.AEAD, value string) (string, error) {
-	if !strings.HasPrefix(value, secretbox.Prefix) {
+	if !strings.HasPrefix(value, helper.SecretPrefix) {
 		return value, nil
 	}
-	plain, err := secretbox.Open(aead, value)
+	plain, err := helper.OpenSecret(aead, value)
 	if err != nil {
 		return "", errors.New("SSH 认证信息解密失败，JWT 密钥可能已变更")
 	}
