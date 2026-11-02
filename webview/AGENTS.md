@@ -398,6 +398,39 @@ webview/src/
 
 同模块普通导入在前、`type` 导入在后紧邻。批量整理：`cd webview && python3 scripts/sort-imports.py --dry-run`，或使用 `npm run format:check` 检查、`npm run format` 修复。
 
+#### 1.14.1 控制流语句与请求错误（强制）
+
+**控制流写法**
+
+- `if` / `else if` / `else` / `try` / `catch` / `finally` 必须带 `{}`，不得省略花括号，也不得写成单行；`else`、`catch`、`finally` 与前一个 `}` 同行。
+- 例外：`catch` 后没有任何内容（包括注释）时，写成 `catch {}`，可放在同一行；有注释或语句时仍按多行展开。
+- 模板（`<template>`）里的事件处理不得内联 `if` / `try` 等多行语句，抽成 `<script>` 里的方法再引用，如 `@update:model-value="onToggleMatchHeaders"`。
+
+```ts
+// ✅
+if (!this.canList) {
+    return
+}
+try {
+    await api.xxx()
+} catch {} finally {
+    this.loading = false
+}
+
+// ❌
+if (!this.canList) return
+try { await api.xxx() } catch { /* ... */ }
+```
+
+**请求错误提示**
+
+- 请求失败的提示由 `service/client.ts` 的响应拦截器统一弹出一次，页面 `catch` 中不得再重复调用 `showNotification('error', ...)`，也不要再展示 `error.message`。
+- 新代码中，页面不需要做失败后的善后（关弹窗、重置状态等）时，直接 `await` 即可，不要为了吞错误而新增空 `catch {}`：已提示过的请求错误由 `main.ts` 的 `unhandledrejection` 与 `app.config.errorHandler` 兜底静默，其他错误（代码缺陷）照常抛出。
+- 需要失败后善后时才保留 `catch`；只需恢复状态时用 `try/finally`。
+- 存量代码中保留的空 `catch {}` 都是有意为之，不要批量删除。删除前必须确认：`try` 里是带拦截器的请求（不是 `JSON.parse` 等本地操作）；调用方没有 `await 之后依赖失败继续执行` 的逻辑，函数本身也没有靠返回 `false` 表示失败；`try` 之后若有收尾语句（如 `modalLoading = false`），改写为 `try/finally`，不能直接去掉。
+- 前端本地校验、剪贴板、`JSON.parse` 等非请求类失败，仍需自行提示。
+- 确认框的 `onConfirm` 抛错时，`stores/ui.ts` 的 `handleConfirm` 会在 `finally` 中关闭确认框。
+
 ### 1.15 终端能力
 
 系统终端与容器终端统一走 `@/component/terminal`（`TerminalPanel` 组件 + `WsTerminal` / `TerminalAdapter`），禁止页面直接创建 Terminal/WebSocket 实例
@@ -674,5 +707,7 @@ npm run format:check                     # import 排序/格式检查（dry-run�
 python3 scripts/review-style.py          # 前端样式一致性辅助检查
 npm run build                            # Vite 生产构建
 ```
+
+提交前另需人工确认：新增的 `if` / `try` / `catch` / `finally` 符合 1.14.1（带 `{}`、不单行），页面 `catch` 中没有重复的请求失败提示。
 
 `npm run format` 会直接修复 import/ESLint；仅在需要改写文件时使用。`review-style.py` 只有 ERROR 阻断，WARN 需人工确认。
