@@ -185,7 +185,7 @@ class SystemProcessInfoView extends Vue {
 
     // ─── 数据加载 ───
 
-    async loadProcesses(silent = false) {
+    async loadProcesses() {
         if (!this.canList || this.polling) return
 
         this.polling = true
@@ -196,9 +196,7 @@ class SystemProcessInfoView extends Vue {
             if (!this.showGPUColumn) {
                 this.showGPUColumn = this.processes.some(process => this.usesGPU(process))
             }
-        } catch {
-            if (!silent) this.portal.showNotification('error', this.$t('获取进程列表失败'))
-        } finally {
+        } catch {} finally {
             this.loading = false
             this.polling = false
         }
@@ -206,7 +204,7 @@ class SystemProcessInfoView extends Vue {
 
     startPoll() {
         if (this.pollTimer) return
-        this.pollTimer = setInterval(() => this.loadProcesses(true), POLL_INTERVAL)
+        this.pollTimer = setInterval(() => this.loadProcesses(), POLL_INTERVAL)
     }
 
     stopPoll() {
@@ -238,9 +236,7 @@ class SystemProcessInfoView extends Vue {
                     await api.localProcessKill(proc.pid, force)
                     this.portal.showNotification('success', this.$t('已发送终止信号'))
                     await this.loadProcesses()
-                } catch {
-                    this.portal.showNotification('error', this.$t('终止进程失败'))
-                }
+                } catch {}
             }
         })
     }

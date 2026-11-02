@@ -31,9 +31,7 @@ class ConfigLayout extends Vue {
         try {
             await this.config.load(true)
             this.portal.showNotification('success', this.$t('配置已重载'))
-        } catch {
-            this.portal.showNotification('error', this.config.error || this.$t('配置重载失败'))
-        }
+        } catch {}
     }
 
     async saveConfig() {
@@ -42,9 +40,7 @@ class ConfigLayout extends Vue {
             await this.config.saveAll()
             await this.portal.refresh()
             this.portal.showNotification('success', this.$t('配置已保存，运行模式、连接参数和监听地址变更需重启生效'))
-        } catch {
-            this.portal.showNotification('error', this.config.error || this.$t('保存配置失败'))
-        }
+        } catch {}
     }
 
     // ─── 生命周期 ───
