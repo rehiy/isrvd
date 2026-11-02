@@ -3,6 +3,7 @@ package apisix
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"isrvd/pkgs/apisix"
@@ -134,11 +135,9 @@ func (s *Service) WhitelistUserCreate(ctx context.Context, req WhitelistUserCrea
 		return nil, fmt.Errorf("获取路由详情失败: %w", err)
 	}
 	consumers := apisix.RouteWhitelist(route)
-	for _, c := range consumers {
-		if c == username {
-			// 已在授权列表中，直接返回当前路由
-			return route, nil
-		}
+	if slices.Contains(consumers, username) {
+		// 已在授权列表中，直接返回当前路由
+		return route, nil
 	}
 	consumers = append(consumers, username)
 	if err := s.client.RouteConsumerRestrictionUpdate(ctx, routeID, consumers, req.KeyAuth); err != nil {

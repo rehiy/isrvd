@@ -3,6 +3,7 @@ package caddy
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/rehiy/libgo/secure"
 
@@ -154,18 +155,15 @@ func (s *Service) BasicAuthUserDelete(ctx context.Context, server string, routeI
 		}
 
 		realm, accounts, _ := caddy.BasicAuthFromHandler(route.Handle[authIdx])
-		filtered := accounts[:0]
-		for _, account := range accounts {
-			if account.Username != username {
-				filtered = append(filtered, account)
-			}
-		}
+		filtered := slices.DeleteFunc(accounts, func(account caddy.BasicAuthAccount) bool {
+			return account.Username == username
+		})
 		if len(filtered) == len(accounts) {
 			return fmt.Errorf("用户 %q 不存在", username)
 		}
 
 		if len(filtered) == 0 {
-			route.Handle = append(route.Handle[:authIdx], route.Handle[authIdx+1:]...)
+			route.Handle = slices.Delete(route.Handle, authIdx, authIdx+1)
 			applyForwardHeader(route, "")
 		} else {
 			route.Handle[authIdx] = caddy.HandlerBasicAuth(realm, filtered)
@@ -205,12 +203,10 @@ func (s *Service) BasicAuthConfigUpdate(ctx context.Context, server string, rout
 // ─── 辅助函数 ───
 
 func findAuthIndex(route *caddy.Route) int {
-	for i, h := range route.Handle {
-		if _, _, ok := caddy.BasicAuthFromHandler(h); ok {
-			return i
-		}
-	}
-	return -1
+	return slices.IndexFunc(route.Handle, func(h caddy.Handler) bool {
+		_, _, ok := caddy.BasicAuthFromHandler(h)
+		return ok
+	})
 }
 
 // extractForwardHeader 从 handle 链中读取 forward-user 注入的 Header 名；未配置返回空串。
@@ -231,10 +227,8 @@ func extractForwardHeader(handles []caddy.Handler) string {
 					}
 				}
 			case []string:
-				for _, s := range v {
-					if s == authUserIDVar {
-						return headerName
-					}
+				if slices.Contains(v, authUserIDVar) {
+					return headerName
 				}
 			}
 		}
@@ -249,14 +243,9 @@ func extractForwardHeader(handles []caddy.Handler) string {
 // handler 插入位置：authentication 之后、其余 handler 之前。
 func applyForwardHeader(route *caddy.Route, headerName string) {
 	// 移除已有的 forward-user handler（含 authUserIDVar 的 headers handler）
-	filtered := route.Handle[:0]
-	for _, h := range route.Handle {
-		if h["handler"] == "headers" && extractForwardHeader([]caddy.Handler{h}) != "" {
-			continue
-		}
-		filtered = append(filtered, h)
-	}
-	route.Handle = filtered
+	route.Handle = slices.DeleteFunc(route.Handle, func(h caddy.Handler) bool {
+		return h["handler"] == "headers" && extractForwardHeader([]caddy.Handler{h}) != ""
+	})
 
 	if headerName == "" {
 		return

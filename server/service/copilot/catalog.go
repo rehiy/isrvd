@@ -2,10 +2,11 @@
 package copilot
 
 import (
+	"cmp"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -138,11 +139,8 @@ func parseOpenAPI(data []byte) (*openAPISpec, error) {
 			})
 		}
 	}
-	sort.Slice(spec.ops, func(i, j int) bool {
-		if spec.ops[i].Path != spec.ops[j].Path {
-			return spec.ops[i].Path < spec.ops[j].Path
-		}
-		return spec.ops[i].Method < spec.ops[j].Method
+	slices.SortFunc(spec.ops, func(a, b openAPIOp) int {
+		return cmp.Or(strings.Compare(a.Path, b.Path), strings.Compare(a.Method, b.Method))
 	})
 	return spec, nil
 }
@@ -160,7 +158,7 @@ func (spec *openAPISpec) catalog() *OpenAPILookupResult {
 	for name, count := range counts {
 		tags = append(tags, OpenAPITagInfo{Name: name, Count: count})
 	}
-	sort.Slice(tags, func(i, j int) bool { return tags[i].Name < tags[j].Name })
+	slices.SortFunc(tags, func(a, b OpenAPITagInfo) int { return strings.Compare(a.Name, b.Name) })
 	return &OpenAPILookupResult{
 		Mode: "catalog",
 		Hint: "指定 tag 或 q 查看接口列表，再用准确的 path 与 method 取请求/响应字段。路径均相对于 /api。",

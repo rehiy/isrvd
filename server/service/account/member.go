@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
+	"strings"
 
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/secure"
@@ -49,7 +50,7 @@ func (s *Service) MemberList() []*MemberInfo {
 	for _, m := range config.Current().Members {
 		list = append(list, s.memberInfoBuild(m))
 	}
-	sort.Slice(list, func(i, j int) bool { return list[i].Username < list[j].Username })
+	slices.SortFunc(list, func(a, b *MemberInfo) int { return strings.Compare(a.Username, b.Username) })
 	return list
 }
 
@@ -99,12 +100,12 @@ func (s *Service) MemberCreate(req MemberUpsertRequest) error {
 			Password:      hashedPassword,
 			HomeDirectory: home,
 			Description:   req.Description,
-			Permissions:   append([]string(nil), req.Permissions...),
+			Permissions:   slices.Clone(req.Permissions),
 		}
 		return nil
 	}); err != nil {
 		if homeCreated {
-			if removeErr := os.Remove(home); removeErr != nil && !os.IsNotExist(removeErr) {
+			if removeErr := os.Remove(home); removeErr != nil && !errors.Is(removeErr, os.ErrNotExist) {
 				logman.Warn("Rollback member home failed", "home", home, "error", removeErr)
 			}
 		}
@@ -154,11 +155,11 @@ func (s *Service) MemberUpdate(username string, req MemberUpsertRequest) error {
 		}
 		member.HomeDirectory = home
 		member.Description = req.Description
-		member.Permissions = append([]string(nil), req.Permissions...)
+		member.Permissions = slices.Clone(req.Permissions)
 		return nil
 	}); err != nil {
 		if homeCreated {
-			if removeErr := os.Remove(home); removeErr != nil && !os.IsNotExist(removeErr) {
+			if removeErr := os.Remove(home); removeErr != nil && !errors.Is(removeErr, os.ErrNotExist) {
 				logman.Warn("Rollback member home failed", "home", home, "error", removeErr)
 			}
 		}
@@ -244,7 +245,7 @@ func (s *Service) PasswordChange(username string, req ChangePasswordRequest) err
 
 // memberInfoBuild 从配置构建成员信息（确保权限不为 nil）
 func (s *Service) memberInfoBuild(m *config.MemberConfig) *MemberInfo {
-	permissions := append([]string(nil), m.Permissions...)
+	permissions := slices.Clone(m.Permissions)
 	if permissions == nil {
 		permissions = []string{}
 	}
@@ -279,7 +280,7 @@ func (s *Service) homeDirEnsure(home, username string) (string, bool, error) {
 	}
 	if err := os.Mkdir(home, 0755); err == nil {
 		return home, true, nil
-	} else if !os.IsExist(err) {
+	} else if !errors.Is(err, os.ErrExist) {
 		return "", false, err
 	}
 	info, err := os.Stat(home)

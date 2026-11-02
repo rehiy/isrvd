@@ -6,7 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sort"
+	"maps"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -70,14 +71,8 @@ func (s *Service) ServerList(ctx context.Context) ([]ServerView, error) {
 		return []ServerView{}, nil
 	}
 
-	names := make([]string, 0, len(cfg.Apps.HTTP.Servers))
-	for name := range cfg.Apps.HTTP.Servers {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-
-	result := make([]ServerView, 0, len(names))
-	for _, name := range names {
+	result := make([]ServerView, 0, len(cfg.Apps.HTTP.Servers))
+	for _, name := range slices.Sorted(maps.Keys(cfg.Apps.HTTP.Servers)) {
 		if srv := cfg.Apps.HTTP.Servers[name]; srv != nil {
 			result = append(result, serverView(name, srv))
 		}
@@ -172,18 +167,18 @@ func (s *Service) ServerDelete(ctx context.Context, ref string) error {
 
 func serverView(name string, srv *caddy.HTTPServer) ServerView {
 	view := ServerView{
-		ID:   encodeServerID(name),
-		Name: name,
-		ServerForm: ServerForm{
-			Listen:         append([]string{}, srv.Listen...),
-			Protocols:      append([]string(nil), srv.Protocols...),
-			StrictSNIHost:  cloneBool(srv.StrictSNIHost),
-			IdleTimeout:    srv.IdleTimeout.String(),
-			ReadTimeout:    srv.ReadTimeout.String(),
-			WriteTimeout:   srv.WriteTimeout.String(),
-			MaxHeaderBytes: srv.MaxHeaderBytes,
-		},
+		ID:         encodeServerID(name),
+		Name:       name,
 		RouteCount: len(srv.Routes),
+
+		// 内嵌 ServerForm
+		Listen:         append([]string{}, srv.Listen...),
+		Protocols:      append([]string(nil), srv.Protocols...),
+		StrictSNIHost:  cloneBool(srv.StrictSNIHost),
+		IdleTimeout:    srv.IdleTimeout.String(),
+		ReadTimeout:    srv.ReadTimeout.String(),
+		WriteTimeout:   srv.WriteTimeout.String(),
+		MaxHeaderBytes: srv.MaxHeaderBytes,
 	}
 	if srv.AutomaticHTTPS != nil {
 		view.AutomaticHTTPS = &ServerAutomaticHTTPSForm{
@@ -313,8 +308,8 @@ func serverNameFromRef(ref string) (string, error) {
 		return DefaultServerName, nil
 	}
 	name := ref
-	if strings.HasPrefix(ref, serverIDPrefix) {
-		raw, err := base64.RawURLEncoding.DecodeString(strings.TrimPrefix(ref, serverIDPrefix))
+	if after, ok := strings.CutPrefix(ref, serverIDPrefix); ok {
+		raw, err := base64.RawURLEncoding.DecodeString(after)
 		if err != nil {
 			return "", fmt.Errorf("%w: id 无法解码", ErrServerNameInvalid)
 		}

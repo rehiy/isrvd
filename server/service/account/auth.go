@@ -2,9 +2,10 @@ package account
 
 import (
 	"fmt"
+	"maps"
 	"net"
 	"net/http"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -166,8 +167,7 @@ func ServiceToken() (string, error) {
 	if len(names) == 0 {
 		return "", fmt.Errorf("没有创始人成员，无法签发受管机令牌")
 	}
-	sort.Strings(names)
-	return (&Service{}).createJWT(snapshot, names[0], jwt.MapClaims{"type": "api", "name": "node-agent"})
+	return (&Service{}).createJWT(snapshot, slices.Min(names), jwt.MapClaims{"type": "api", "name": "node-agent"})
 }
 
 func (s *Service) jwtCheck(snapshot *config.Snapshot, r *http.Request, allowQueryToken bool) (string, string) {
@@ -248,9 +248,7 @@ func (s *Service) createJWT(snapshot *config.Snapshot, username string, extra jw
 		"iat": time.Now().Unix(),
 		"pwd": pwd,
 	}
-	for k, v := range extra {
-		claims[k] = v
-	}
+	maps.Copy(claims, extra)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenStr, err := token.SignedString([]byte(snapshot.Server.JWTSecret))

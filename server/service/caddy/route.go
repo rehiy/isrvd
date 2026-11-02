@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"slices"
 
 	"isrvd/pkgs/caddy"
 )
@@ -136,7 +137,7 @@ func (s *Service) RouteDelete(ctx context.Context, server string, index int) err
 		if _, err := getRoute(srv, index); err != nil {
 			return err
 		}
-		srv.Routes = append(srv.Routes[:index], srv.Routes[index+1:]...)
+		srv.Routes = slices.Delete(srv.Routes, index, index+1)
 		return nil
 	})
 }
@@ -302,13 +303,9 @@ func (s *Service) GlobalUpdate(ctx context.Context, req GlobalForm) error {
 				auto.OnDemand["permission"] = permission
 			}
 
-			globalPolicyIdx := -1
-			for i, policy := range auto.Policies {
-				if len(policy.Subjects) == 0 {
-					globalPolicyIdx = i
-					break
-				}
-			}
+			globalPolicyIdx := slices.IndexFunc(auto.Policies, func(policy caddy.TLSPolicy) bool {
+				return len(policy.Subjects) == 0
+			})
 			if globalPolicyIdx >= 0 {
 				policy := &auto.Policies[globalPolicyIdx]
 				policy.OnDemand = req.OnDemandTLS

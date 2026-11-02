@@ -3,9 +3,12 @@ package caddy
 import (
 	"context"
 	"crypto/x509"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -182,12 +185,12 @@ func (s *Service) CertDelete(ctx context.Context, key string) error {
 			if tls.Certificates == nil || index < 0 || index >= len(tls.Certificates.LoadFiles) {
 				return fmt.Errorf("证书不存在")
 			}
-			tls.Certificates.LoadFiles = append(tls.Certificates.LoadFiles[:index], tls.Certificates.LoadFiles[index+1:]...)
+			tls.Certificates.LoadFiles = slices.Delete(tls.Certificates.LoadFiles, index, index+1)
 		case CertSourcePEM:
 			if tls.Certificates == nil || index < 0 || index >= len(tls.Certificates.LoadPEM) {
 				return fmt.Errorf("证书不存在")
 			}
-			tls.Certificates.LoadPEM = append(tls.Certificates.LoadPEM[:index], tls.Certificates.LoadPEM[index+1:]...)
+			tls.Certificates.LoadPEM = slices.Delete(tls.Certificates.LoadPEM, index, index+1)
 		case CertSourceAutomate:
 			if !removeAutomateSubject(tls, index) {
 				return fmt.Errorf("证书不存在")
@@ -216,8 +219,8 @@ func (s *Service) scanCertCache(cfg *caddy.Config) ([]CertForm, error) {
 	certsDir := filepath.Join(storageRoot, "certificates")
 	var result []CertForm
 
-	err := filepath.Walk(certsDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info == nil || info.IsDir() {
+	err := filepath.WalkDir(certsDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d == nil || d.IsDir() {
 			return nil
 		}
 		if !strings.HasSuffix(path, ".crt") {
@@ -237,7 +240,7 @@ func (s *Service) scanCertCache(cfg *caddy.Config) ([]CertForm, error) {
 		return nil
 	})
 
-	if err != nil && !os.IsNotExist(err) {
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return nil, fmt.Errorf("扫描证书缓存失败: %w", err)
 	}
 	return result, nil
@@ -252,17 +255,16 @@ func buildCertKey(source string, index int) string {
 }
 
 func parseCertKey(key string) (string, int, error) {
-	parts := strings.SplitN(key, "-", 2)
-	if len(parts) != 2 {
+	source, indexText, ok := strings.Cut(key, "-")
+	if !ok {
 		return "", 0, fmt.Errorf("无效的证书 key: %s", key)
 	}
-	source := parts[0]
 	if source != CertSourceFile && source != CertSourcePEM && source != CertSourceAutomate {
 		return "", 0, fmt.Errorf("不支持的证书来源: %s", source)
 	}
-	idx, err := strconv.Atoi(parts[1])
+	idx, err := strconv.Atoi(indexText)
 	if err != nil || idx < 0 {
-		return "", 0, fmt.Errorf("无效的证书下标: %s", parts[1])
+		return "", 0, fmt.Errorf("无效的证书下标: %s", indexText)
 	}
 	return source, idx, nil
 }
@@ -347,7 +349,7 @@ func removeAutomateSubject(tls *caddy.TLSApp, index int) bool {
 		policy := &tls.Automation.Policies[pi]
 		for si := range policy.Subjects {
 			if cur == index {
-				policy.Subjects = append(policy.Subjects[:si], policy.Subjects[si+1:]...)
+				policy.Subjects = slices.Delete(policy.Subjects, si, si+1)
 				return true
 			}
 			cur++

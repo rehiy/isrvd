@@ -477,9 +477,7 @@ func (s *Service) updateCredentialState(username, credIDStr string, signCount ui
 		}
 		for _, credential := range member.Passkeys {
 			if credential != nil && credential.IDBase64 == credIDStr {
-				if signCount > credential.SignCount {
-					credential.SignCount = signCount
-				}
+				credential.SignCount = max(credential.SignCount, signCount)
 				credential.BackupState = backupState
 				return nil
 			}

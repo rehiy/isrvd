@@ -6,13 +6,14 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+	"uuid"
 
-	"github.com/google/uuid"
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/secure"
 	"github.com/rehiy/libgo/strutil"
@@ -194,7 +195,7 @@ func (s *Service) historyStore(target, name string) (*cstore.TypedStore[[]Histor
 		return nil, nil, err
 	}
 	migrate := false
-	if _, err := os.Lstat(filepath.Join(dir, file)); os.IsNotExist(err) {
+	if _, err := os.Lstat(filepath.Join(dir, file)); errors.Is(err, os.ErrNotExist) {
 		legacy, err := config.OpenData[[]HistoryRecord](historyKey(target, name))
 		if err != nil {
 			return nil, nil, err
@@ -236,7 +237,7 @@ func (s *Service) historySave(store *cstore.TypedStore[[]HistoryRecord], target,
 	defer func() {
 		if !committed {
 			for _, path := range created {
-				if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+				if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
 					logman.Warn("Compose history version rollback failed", "name", name, "error", err)
 				}
 			}
@@ -290,7 +291,7 @@ func (s *Service) historyCleanup(target, name string, records []HistoryRecord) {
 		if !ok || err != nil || parsed.String() != id {
 			continue
 		}
-		if err := os.Remove(filepath.Join(dir, entry.Name())); err != nil && !os.IsNotExist(err) {
+		if err := os.Remove(filepath.Join(dir, entry.Name())); err != nil && !errors.Is(err, os.ErrNotExist) {
 			logman.Warn("Compose history version cleanup failed", "name", name, "error", err)
 		}
 	}
@@ -319,7 +320,7 @@ func (s *Service) historyVersionStore(target, name, id string) (*cstore.TypedSto
 func historyFileStore(dir, file string) (cstore.Store, error) {
 	for _, path := range []string{dir, filepath.Join(dir, file)} {
 		info, err := os.Lstat(path)
-		if err != nil && !os.IsNotExist(err) {
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
 			return nil, err
 		}
 		if err == nil && info.Mode()&os.ModeSymlink != 0 {
