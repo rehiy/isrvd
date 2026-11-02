@@ -34,7 +34,6 @@ export default toNative(ToggleCard)
     <div class="toggle-row">
       <div>
         <span class="text-sm text-slate-600">{{ label }}</span>
-        <!-- eslint-disable-next-line vue/no-v-html -->
         <p v-if="hasDesc" class="text-xs text-slate-400 mt-0.5">
           <slot name="desc">
             {{ desc }}
@@ -63,7 +62,6 @@ export default toNative(ToggleCard)
   <div v-else class="toggle-row">
     <div>
       <span class="text-sm text-slate-600">{{ label }}</span>
-      <!-- eslint-disable-next-line vue/no-v-html -->
       <p v-if="hasDesc" class="text-xs text-slate-400 mt-0.5">
         <slot name="desc">
           {{ desc }}
