@@ -19,6 +19,7 @@ class ContainerTerminal extends Vue {
     portal = usePortal()
 
     @Ref readonly containerRef!: HTMLDivElement
+    @Ref readonly contentRef!: HTMLDivElement
 
     container: DockerContainerInfo | null = null
     adapter: TerminalAdapter | null = null
@@ -31,7 +32,7 @@ class ContainerTerminal extends Vue {
 
     async mounted() {
         await this.loadContainer()
-        this.$nextTick(() => this.filePane.initialize(this.containerRef?.clientHeight ?? 600))
+        this.$nextTick(() => this.filePane.initialize(this.contentRef?.clientHeight ?? 600))
     }
 
     unmounted() {
@@ -130,7 +131,7 @@ export default toNative(ContainerTerminal)
       </div>
 
       <!-- 主内容区：终端 + 分隔条 + 文件管理 -->
-      <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div ref="contentRef" class="flex-1 flex flex-col min-h-0 overflow-hidden">
         <!-- 终端 -->
         <div class="terminal-pane">
           <TerminalPanel v-if="adapter" :adapter="adapter" />

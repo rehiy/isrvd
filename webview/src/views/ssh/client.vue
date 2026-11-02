@@ -19,6 +19,7 @@ class SSHClientPage extends Vue {
     portal = usePortal()
 
     @Ref readonly containerRef!: HTMLDivElement
+    @Ref readonly contentRef!: HTMLDivElement
 
     host: SSHHostInfo | null = null
     adapter: TerminalAdapter | null = null
@@ -31,7 +32,7 @@ class SSHClientPage extends Vue {
     async mounted() {
         await this.loadHost()
         this.adapter = new WsTerminal(wsUrl(`ssh/to/${encodeURIComponent(this.hostId)}?token=${this.portal.token || ''}`))
-        this.$nextTick(() => this.filePane.initialize(this.containerRef?.clientHeight ?? 600))
+        this.$nextTick(() => this.filePane.initialize(this.contentRef?.clientHeight ?? 600))
     }
 
     unmounted() {
@@ -85,7 +86,7 @@ export default toNative(SSHClientPage)
       </div>
 
       <!-- 主内容区：终端 + 分隔条 + 文件管理 -->
-      <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div ref="contentRef" class="flex-1 flex flex-col min-h-0 overflow-hidden">
         <!-- 终端 -->
         <div class="terminal-pane">
           <TerminalPanel v-if="adapter" :adapter="adapter" />

@@ -8,8 +8,9 @@ export class SplitPane {
     private moveHandler: ((event: MouseEvent) => void) | null = null
     private endHandler: (() => void) | null = null
 
+    // 文件面板初始占内容区高度的 60%（终端:文件 = 4:6）。
     initialize(containerHeight: number) {
-        this.height = Math.floor(containerHeight * 0.4)
+        this.height = Math.floor(containerHeight * 0.6)
     }
 
     start(event: MouseEvent, container?: HTMLElement) {
