@@ -25,8 +25,10 @@ import (
 
 const (
 	maxAuditBufferSize = 100      // 内存缓冲最大条数
-	maxAuditBodySize   = 64 << 10 // 审计日志中请求体最多保留 64 KiB（脱敏后截断）
-	maxAuditParseSize  = 4 << 20  // JSON/表单请求体脱敏解析的最大读取量 4 MiB，超出部分丢弃
+	maxAuditBodySize   = 64 << 10 // 审计日志中请求体最多保留 64 KiB（脱敏并裁剪后）
+	maxAuditParseSize  = 4 << 20  // JSON/表单请求体最多读取并解析 4 MiB，超出则整体省略
+	maxAuditValueSize  = 512      // 单个字符串值默认最多保留 512 字节，超出部分裁剪以保持结构完整
+	maxAuditItems      = 50       // 单个数组最多保留末尾的元素数
 )
 
 // sensitiveFields 审计请求体与 URI 中需要脱敏的字段名
@@ -206,33 +208,17 @@ func (s *AuditService) BodyRead(r *http.Request) string {
 		return "[Body Read Failed]"
 	}
 
-	truncated := len(raw) > maxAuditParseSize
-	if truncated {
-		raw = raw[:maxAuditParseSize]
+	// 超过解析上限无法完整 decode，整体省略
+	if len(raw) > maxAuditParseSize {
+		return "[Body Too Large Omitted]"
 	}
 
-	var body string
 	if isJSON {
-		body = maskSensitiveJSON(raw)
-	} else {
-		if truncated {
-			// 丢弃末尾可能不完整的键值对
-			raw = raw[:max(bytes.LastIndexByte(raw, '&'), 0)]
-		}
-		body = maskSensitiveForm(string(raw))
+		return maskSensitiveJSON(raw)
 	}
-
-	// 脱敏后的结果按审计上限截断，避免切断多字节字符
+	body := maskSensitiveForm(string(raw))
 	if len(body) > maxAuditBodySize {
-		n := maxAuditBodySize
-		for n > 0 && !utf8.RuneStart(body[n]) {
-			n--
-		}
-		body = body[:n]
-		truncated = true
-	}
-	if truncated {
-		body += " [Truncated]"
+		body = trimUTF8(body, maxAuditBodySize) + " [Truncated]"
 	}
 	return body
 }
@@ -320,70 +306,68 @@ func maskSensitiveURI(uri string) string {
 	return path + "?" + strings.Join(parts, "&")
 }
 
-// maskSensitiveJSON 流式脱敏 JSON 中的敏感字段。
-// 输入被截断或中途非法时，保留已解析出的前部内容（输出可能不是合法 JSON）；
-// 敏感字段无论值类型都只输出 [REDACTED]，被截断的敏感值同样不会泄露。
+// trimUTF8 将 s 截断到不超过 n 字节，且不切断多字节字符。
+func trimUTF8(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	for n > 0 && !utf8.RuneStart(s[n]) {
+		n--
+	}
+	return s[:n]
+}
+
+// trimValue 将超过 limit 字节的字符串裁剪，保留前部内容并加上截断标记。
+func trimValue(s string, limit int) string {
+	if len(s) <= limit {
+		return s
+	}
+	return trimUTF8(s, limit) + "…[Truncated]"
+}
+
+// maskSensitiveJSON 脱敏 JSON：敏感字段输出 [REDACTED]，超长字符串和数组被裁剪，
+// 因此结果结构完整且始终是合法 JSON。输出仍超过 maxAuditBodySize 时逐级收紧字符串上限重试。
 func maskSensitiveJSON(raw []byte) string {
 	dec := json.NewDecoder(bytes.NewReader(raw))
 	dec.UseNumber()
-	tok, err := dec.Token()
-	if err != nil {
+	var data any
+	if dec.Decode(&data) != nil {
 		return "[Invalid JSON Omitted]"
 	}
-	var sb strings.Builder
-	_ = writeMaskedJSON(dec, &sb, tok)
-	return sb.String()
+	var out []byte
+	for limit := maxAuditValueSize; limit >= 8; limit /= 4 {
+		data = maskValue(data, limit)
+		if out, _ = json.Marshal(data); len(out) <= maxAuditBodySize {
+			return string(out)
+		}
+	}
+	return `{"[Truncated]":true}`
 }
 
-// writeMaskedJSON 递归输出以 tok 开头的 JSON 值，遇到解析错误即返回。
-func writeMaskedJSON(dec *json.Decoder, sb *strings.Builder, tok json.Token) error {
-	delim, ok := tok.(json.Delim)
-	if !ok {
-		value, _ := json.Marshal(tok)
-		sb.Write(value)
-		return nil
-	}
-
-	isObject := delim == '{'
-	sb.WriteRune(rune(delim))
-	for i := 0; dec.More(); i++ {
-		if i > 0 {
-			sb.WriteByte(',')
-		}
-		tok, err := dec.Token()
-		if err != nil {
-			return err
-		}
-		if isObject {
-			key, _ := tok.(string)
-			quoted, _ := json.Marshal(key)
-			sb.Write(quoted)
-			sb.WriteByte(':')
+// maskValue 递归脱敏并裁剪 JSON 值；敏感字段无论值类型都完全遮蔽，字符串最多保留 limit 字节。
+func maskValue(value any, limit int) any {
+	switch data := value.(type) {
+	case map[string]any:
+		for key, item := range data {
 			if isSensitiveField(key) {
-				sb.WriteString(`"[REDACTED]"`)
-				var skip json.RawMessage
-				if err := dec.Decode(&skip); err != nil {
-					return err
-				}
-				continue
-			}
-			if tok, err = dec.Token(); err != nil {
-				return err
+				data[key] = "[REDACTED]"
+			} else {
+				data[key] = maskValue(item, limit)
 			}
 		}
-		if err := writeMaskedJSON(dec, sb, tok); err != nil {
-			return err
+	case []any:
+		if len(data) > maxAuditItems {
+			// 保留末尾元素（如聊天历史中最新的消息），截断标记放在开头
+			data = append([]any{"[Truncated]"}, data[len(data)-maxAuditItems:]...)
 		}
+		for i, item := range data {
+			data[i] = maskValue(item, limit)
+		}
+		return data
+	case string:
+		return trimValue(data, limit)
 	}
-	if _, err := dec.Token(); err != nil {
-		return err
-	}
-	if isObject {
-		sb.WriteByte('}')
-	} else {
-		sb.WriteByte(']')
-	}
-	return nil
+	return value
 }
 
 // maskSensitiveForm 对 URL 编码表单中的敏感字段进行脱敏。
@@ -393,9 +377,11 @@ func maskSensitiveForm(raw string) string {
 		return "[Invalid Form Omitted]"
 	}
 	for key, items := range values {
-		if isSensitiveField(key) {
-			for i := range items {
+		for i, item := range items {
+			if isSensitiveField(key) {
 				items[i] = "[REDACTED]"
+			} else {
+				items[i] = trimValue(item, maxAuditValueSize)
 			}
 		}
 	}
