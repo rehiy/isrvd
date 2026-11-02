@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -216,8 +216,8 @@ func persistSnapshot(snapshot *Snapshot) error {
 			members = append(members, member)
 		}
 	}
-	sort.Slice(members, func(i, j int) bool {
-		return members[i].Username < members[j].Username
+	slices.SortFunc(members, func(a, b *MemberConfig) int {
+		return strings.Compare(a.Username, b.Username)
 	})
 
 	conf := &Config{
@@ -295,9 +295,7 @@ func watchConfigChanges(ctx context.Context) {
 	watchMu.Lock()
 	watching = true
 	watchMu.Unlock()
-	watchWG.Add(1)
-	go func() {
-		defer watchWG.Done()
+	watchWG.Go(func() {
 		for ev := range ch {
 			switch ev.Type {
 			case cstore.EventPut:
@@ -316,7 +314,7 @@ func watchConfigChanges(ctx context.Context) {
 				logman.Warn("Config deleted", "key", ev.Key)
 			}
 		}
-	}()
+	})
 }
 
 // envOrDefault 返回去除首尾空白的环境变量值，未设置或去除空白后为空时返回 fallback。

@@ -85,8 +85,7 @@ func (g *gateway) nodeConnect() http.Handler {
 func decode(w http.ResponseWriter, r *http.Request, v any) bool {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
-		var tooLarge *http.MaxBytesError
-		if errors.As(err, &tooLarge) {
+		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
 			fail(w, r, http.StatusRequestEntityTooLarge, "请求体过大")
 			return false
 		}

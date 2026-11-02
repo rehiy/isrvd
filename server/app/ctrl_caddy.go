@@ -377,8 +377,8 @@ func respondCaddyError(c *gin.Context, err error, fallbackStatus ...int) {
 	if len(fallbackStatus) > 0 {
 		status = fallbackStatus[0]
 	}
-	var upstreamErr *pkgCaddy.HTTPError
-	var transportErr *url.Error
+	upstreamErr, isUpstream := errors.AsType[*pkgCaddy.HTTPError](err)
+	_, isTransport := errors.AsType[*url.Error](err)
 	switch {
 	case errors.Is(err, context.DeadlineExceeded):
 		status = http.StatusGatewayTimeout
@@ -388,13 +388,13 @@ func respondCaddyError(c *gin.Context, err error, fallbackStatus ...int) {
 		status = http.StatusNotFound
 	case errors.Is(err, caddy.ErrServerExists), errors.Is(err, caddy.ErrDefaultServer), errors.Is(err, caddy.ErrLastServer):
 		status = http.StatusConflict
-	case errors.As(err, &upstreamErr):
+	case isUpstream:
 		if upstreamErr.StatusCode >= http.StatusBadRequest && upstreamErr.StatusCode < http.StatusInternalServerError {
 			status = upstreamErr.StatusCode
 		} else {
 			status = http.StatusBadGateway
 		}
-	case errors.As(err, &transportErr):
+	case isTransport:
 		status = http.StatusBadGateway
 	}
 	respondError(c, status, err.Error())

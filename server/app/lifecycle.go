@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"slices"
 	"syscall"
 	"time"
 
@@ -157,7 +158,7 @@ func (app *App) reload() {
 		return
 	}
 	config.Publish(candidate)
-	app.wsConfig.AllowedOrigins = append([]string(nil), candidate.Server.AllowedOrigins...)
+	app.wsConfig.AllowedOrigins = slices.Clone(candidate.Server.AllowedOrigins)
 
 	oldDockerRaw := app.dockerSvc.Raw()
 	if app.servicesCancel != nil {

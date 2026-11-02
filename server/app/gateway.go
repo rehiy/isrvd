@@ -33,7 +33,8 @@ func GatewayRoutes() (queryToken, nodeModules []string) {
 		if route.QueryToken && route.Method == http.MethodGet {
 			queryToken = append(queryToken, APINamespace+route.Path)
 		}
-		module := strings.SplitN(route.Path, "/", 3)[1]
+		_, rest, _ := strings.Cut(route.Path, "/")
+		module, _, _ := strings.Cut(rest, "/")
 		if !slices.Contains(centerModules, module) && !slices.Contains(nodeModules, module) {
 			nodeModules = append(nodeModules, module)
 		}

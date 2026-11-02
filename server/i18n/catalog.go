@@ -1,8 +1,10 @@
 package i18n
 
 import (
+	"cmp"
+	"maps"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -50,11 +52,8 @@ func (c *catalog) add(source, translation string) {
 // sortTemplates 字面量越长的模板越具体，优先命中，避免通用模板抢先匹配；
 // 长度相同时按模式字典序，保证登记顺序（map 遍历顺序）不影响结果
 func (c *catalog) sortTemplates() {
-	sort.Slice(c.tmpls, func(i, j int) bool {
-		if c.tmpls[i].literal != c.tmpls[j].literal {
-			return c.tmpls[i].literal > c.tmpls[j].literal
-		}
-		return c.tmpls[i].pattern.String() < c.tmpls[j].pattern.String()
+	slices.SortFunc(c.tmpls, func(a, b tmplEntry) int {
+		return cmp.Or(cmp.Compare(b.literal, a.literal), strings.Compare(a.pattern.String(), b.pattern.String()))
 	})
 }
 
@@ -79,12 +78,7 @@ func (c *catalog) lookup(segment string) (string, bool) {
 
 // sources 返回词典里登记的全部原文（含模板），按字典序排列
 func (c *catalog) sources() []string {
-	keys := make([]string, 0, len(c.entries))
-	for key := range c.entries {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
+	return slices.Sorted(maps.Keys(c.entries))
 }
 
 // verbPattern 匹配支持的占位符：%s / %d / %v / %w / %q / %T / %%

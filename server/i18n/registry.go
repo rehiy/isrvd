@@ -1,7 +1,8 @@
 package i18n
 
 import (
-	"sort"
+	"maps"
+	"slices"
 	"strings"
 	"sync"
 )
@@ -62,12 +63,7 @@ func Languages() []Lang {
 	mu.RLock()
 	defer mu.RUnlock()
 
-	langs := make([]Lang, 0, len(catalogs))
-	for code := range catalogs {
-		langs = append(langs, code)
-	}
-	sort.Slice(langs, func(i, j int) bool { return langs[i] < langs[j] })
-	return langs
+	return slices.Sorted(maps.Keys(catalogs))
 }
 
 // Known 判断是否是已登记的语言
@@ -95,11 +91,11 @@ func resolveTag(tag string) Lang {
 		if lang, ok := tagIndex[tag]; ok {
 			return lang
 		}
-		i := strings.LastIndexByte(tag, '-')
-		if i < 0 {
+		before, _, found := strings.CutLast(tag, "-")
+		if !found {
 			break
 		}
-		tag = tag[:i]
+		tag = before
 	}
 	return ""
 }

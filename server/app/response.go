@@ -39,8 +39,7 @@ func respondError(c *gin.Context, statusCode int, message string) {
 }
 
 func respondBindError(c *gin.Context, err error) {
-	var maxBytesErr *http.MaxBytesError
-	if errors.As(err, &maxBytesErr) {
+	if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
 		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用上传功能")
 		return
 	}

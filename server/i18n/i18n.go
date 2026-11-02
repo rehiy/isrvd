@@ -31,15 +31,15 @@ func Parse(spec string) Lang {
 	var best Lang
 	var bestQ = -1.0
 
-	for _, item := range strings.Split(spec, ",") {
+	for item := range strings.SplitSeq(spec, ",") {
 		item = strings.TrimSpace(item)
 		if item == "" {
 			continue
 		}
 		tag, q := item, 1.0
-		if i := strings.IndexByte(item, ';'); i >= 0 {
-			tag = strings.TrimSpace(item[:i])
-			if value, err := strconv.ParseFloat(strings.TrimPrefix(strings.TrimSpace(item[i+1:]), "q="), 64); err == nil {
+		if tagPart, qPart, ok := strings.Cut(item, ";"); ok {
+			tag = strings.TrimSpace(tagPart)
+			if value, err := strconv.ParseFloat(strings.TrimPrefix(strings.TrimSpace(qPart), "q="), 64); err == nil {
 				q = value
 			}
 		}

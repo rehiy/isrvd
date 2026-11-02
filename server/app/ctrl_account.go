@@ -1,10 +1,12 @@
 package app
 
 import (
+	"cmp"
 	"errors"
+	"maps"
 	"net/http"
 	"net/url"
-	"sort"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 
@@ -238,15 +240,9 @@ func (app *App) accountTOTPDisable(c *gin.Context) {
 
 // accountRouteList 返回所有已注册路由及其权限元信息
 func (app *App) accountRouteList(c *gin.Context) {
-	routes := make([]Route, 0, len(app.routeIndex))
-	for _, route := range app.routeIndex {
-		routes = append(routes, route)
-	}
-	sort.Slice(routes, func(i, j int) bool {
-		if routes[i].Module != routes[j].Module {
-			return routes[i].Module < routes[j].Module
-		}
-		return routes[i].Key < routes[j].Key
+	routes := slices.Collect(maps.Values(app.routeIndex))
+	slices.SortFunc(routes, func(a, b Route) int {
+		return cmp.Or(cmp.Compare(a.Module, b.Module), cmp.Compare(a.Key, b.Key))
 	})
 	respondSuccess(c, "ok", routes)
 }

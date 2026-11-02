@@ -20,10 +20,11 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -567,19 +568,19 @@ func collectTypeDefinitionsFromFile(filename string) {
 func extractPkgNameFromPath(filename string) string {
 	// 处理 service 目录（如 service/account/member.go → account）
 	svcMarker := "/" + filepath.ToSlash(cfg.ServiceDir) + "/"
-	if idx := strings.Index(filename, svcMarker); idx != -1 {
-		rest := filename[idx+len(svcMarker):]
-		subDir := strings.SplitN(rest, "/", 2)[0]
+	if _, after, ok := strings.Cut(filename, svcMarker); ok {
+		rest := after
+		subDir, _, _ := strings.Cut(rest, "/")
 		return subDir
 	}
 
 	// 处理额外的类型目录
 	for _, dir := range cfg.TypeDirs {
 		marker := "/" + filepath.ToSlash(dir) + "/"
-		if idx := strings.Index(filename, marker); idx != -1 {
-			rest := filename[idx+len(marker):]
+		if _, after, ok := strings.Cut(filename, marker); ok {
+			rest := after
 			// 如果 rest 中还有子目录，取第一层作为包名
-			if subDir := strings.SplitN(rest, "/", 2)[0]; !strings.HasSuffix(subDir, ".go") {
+			if subDir, _, _ := strings.Cut(rest, "/"); !strings.HasSuffix(subDir, ".go") {
 				return subDir
 			}
 			// 否则直接用目录名作为包名（如 config/types.go → config）
@@ -663,11 +664,10 @@ func analyzeHandler(r *RouteDef) {
 	}
 
 	// 找到 handler 对应的 ctrl_*.go 文件
-	handlerParts := strings.SplitN(r.Handler, ".", 2)
-	if len(handlerParts) != 2 {
+	_, funcName, ok := strings.Cut(r.Handler, ".")
+	if !ok {
 		return
 	}
-	funcName := handlerParts[1]
 
 	ctrlDir := filepath.Join(projectRoot, cfg.CtrlDir)
 
@@ -1107,13 +1107,11 @@ func resolveCallReturnType(call *ast.CallExpr, filename string) string {
 // 例如: pkgApisix.Consumer → apisix.Consumer
 func resolveImportAlias(filename, typeName string) string {
 	// 检查是否包含 "."，且第一部分可能是导入别名
-	idx := strings.Index(typeName, ".")
-	if idx == -1 {
+	alias, suffix, found := strings.Cut(typeName, ".")
+	if !found {
 		return typeName
 	}
-
-	alias := typeName[:idx]
-	typeSuffix := typeName[idx:] // 包含 "."
+	typeSuffix := "." + suffix // 包含 "."
 
 	// 从文件中提取导入别名映射
 	importMap := extractImportAliases(filename)
@@ -1159,8 +1157,8 @@ func extractImportAliases(filename string) map[string]string {
 
 // inferPkgFromVar 从变量名推断包名
 func inferPkgFromVar(filename, varName string) string {
-	if strings.HasSuffix(varName, "Svc") {
-		return strings.ToLower(strings.TrimSuffix(varName, "Svc"))
+	if before, ok := strings.CutSuffix(varName, "Svc"); ok {
+		return strings.ToLower(before)
 	}
 	return ""
 }
@@ -1214,8 +1212,8 @@ func resolveReturnType(svcFilename, pkgName, retType string) string {
 	// 重新组装: pkgName.[]TypeName 格式
 	if slicePrefix != "" {
 		// 将 "pkg.TypeName" → "pkg.[]TypeName"
-		if dotIdx := strings.LastIndex(inner, "."); dotIdx != -1 {
-			return inner[:dotIdx+1] + slicePrefix + inner[dotIdx+1:]
+		if before, after, ok := strings.CutLast(inner, "."); ok {
+			return before + "." + slicePrefix + after
 		}
 		return slicePrefix + inner
 	}
@@ -1257,11 +1255,8 @@ func findMethodReturnTypeInFile(filename, methodName string) string {
 
 // extractHandlerName 从 Handler 字符串提取函数名
 func extractHandlerName(handler string) string {
-	parts := strings.SplitN(handler, ".", 2)
-	if len(parts) == 2 {
-		return parts[1]
-	}
-	return ""
+	_, name, _ := strings.Cut(handler, ".")
+	return name
 }
 
 // extractQueryParam 提取 Query/PostForm 参数
@@ -1408,13 +1403,9 @@ func resolveStructSchema(typeName string, localTypes map[string]string, ctrlFile
 	}
 
 	// 3. 检查是否为带包名的类型
-	parts := strings.SplitN(typeName, ".", 2)
-	var pkgAlias, structName string
-	if len(parts) == 2 {
-		pkgAlias = parts[0]
-		structName = parts[1]
-	} else {
-		structName = typeName
+	pkgAlias, structName, hasPkg := strings.Cut(typeName, ".")
+	if !hasPkg {
+		pkgAlias, structName = "", typeName
 	}
 
 	// 4. 从缓存中查找
@@ -1629,8 +1620,8 @@ func extractFieldComments(filename string, st *ast.StructType) map[string]string
 		// 1. 检查字段所在行的行内注释（trailing comment）
 		if fieldLine <= len(lines) {
 			lineText := lines[fieldLine-1] // 数组索引从 0 开始
-			if idx := strings.Index(lineText, "//"); idx >= 0 {
-				commentText := strings.TrimSpace(lineText[idx+2:])
+			if _, after, ok := strings.Cut(lineText, "//"); ok {
+				commentText := strings.TrimSpace(after)
 				// 排除 tag 定义部分，只取注释
 				for _, name := range field.Names {
 					comments[name.Name] = commentText
@@ -1651,9 +1642,9 @@ func extractFieldComments(filename string, st *ast.StructType) map[string]string
 					// 1. "FieldName 描述" - 明确指定字段名
 					// 2. "描述" - 直接是描述
 					for _, name := range field.Names {
-						if strings.HasPrefix(commentText, name.Name+" ") {
+						if after, ok := strings.CutPrefix(commentText, name.Name+" "); ok {
 							// 格式："FieldName 描述"
-							comments[name.Name] = strings.TrimPrefix(commentText, name.Name+" ")
+							comments[name.Name] = after
 						} else if comments[name.Name] == "" {
 							// 格式："描述"（假设短注释是描述，且没有被行内注释设置过）
 							comments[name.Name] = commentText
@@ -1702,7 +1693,7 @@ func extractFieldInfo(fieldName string, field *ast.Field) FieldInfo {
 
 func parseFieldsString(name string, s string) *SchemaInfo {
 	info := &SchemaInfo{TypeName: name}
-	for _, field := range strings.Split(s, ";") {
+	for field := range strings.SplitSeq(s, ";") {
 		if field == "" {
 			continue
 		}
@@ -1758,13 +1749,7 @@ func buildOpenAPI() *OpenAPI {
 	}
 
 	// 排序模块名
-	var moduleNames []string
-	for m := range modules {
-		moduleNames = append(moduleNames, m)
-	}
-	sort.Strings(moduleNames)
-
-	for _, mod := range moduleNames {
+	for _, mod := range slices.Sorted(maps.Keys(modules)) {
 		for _, r := range modules[mod] {
 			addPathItem(oa, r, allSchemas)
 		}
@@ -1844,10 +1829,8 @@ func buildProperty(goType string, allSchemas map[string]*SchemaInfo) map[string]
 			return map[string]any{"type": "string"}
 		}
 		// 尝试引用其他 schema
-		parts := strings.SplitN(goType, ".", 2)
-		if len(parts) == 2 {
-			refName := parts[0] + "." + parts[1]
-			return map[string]any{"$ref": "#/components/schemas/" + sanitizeRef(refName)}
+		if _, _, ok := strings.Cut(goType, "."); ok {
+			return map[string]any{"$ref": "#/components/schemas/" + sanitizeRef(goType)}
 		}
 		// 未知类型默认为 object
 		return map[string]any{"type": "object"}
@@ -1861,10 +1844,9 @@ func normalizeSchemaName(s string) string {
 	s = strings.TrimPrefix(s, "[]")
 	s = strings.TrimPrefix(s, "*")
 
-	parts := strings.SplitN(s, ".", 2)
-	if len(parts) == 2 {
-		if normalized := normalizeAliasToDir(parts[0]); normalized != "" {
-			return normalized + "." + parts[1]
+	if alias, name, ok := strings.Cut(s, "."); ok {
+		if normalized := normalizeAliasToDir(alias); normalized != "" {
+			return normalized + "." + name
 		}
 	}
 	return s
@@ -1933,9 +1915,7 @@ func buildResponseSchema(r RouteDef, allSchemas map[string]*SchemaInfo) map[stri
 // buildDataSchema 根据 Go 类型字符串生成 data 字段的 schema
 func buildDataSchema(typeName string, allSchemas map[string]*SchemaInfo) map[string]any {
 	// 处理带包名的 slice 类型，如 account.[]*MemberInfo
-	if idx := strings.Index(typeName, ".[]"); idx != -1 {
-		pkgName := typeName[:idx]
-		elemType := typeName[idx+3:]                 // 跳过 ".[]" (3个字符)
+	if pkgName, elemType, ok := strings.Cut(typeName, ".[]"); ok {
 		elemType = strings.TrimPrefix(elemType, "*") // 去除指针前缀
 
 		// 判断是否是基本类型
@@ -1978,8 +1958,8 @@ func buildDataSchema(typeName string, allSchemas map[string]*SchemaInfo) map[str
 	}
 
 	// 处理不带包名的 slice 类型，如 []*MemberInfo 或 []string
-	if strings.HasPrefix(typeName, "[]") {
-		elemType := strings.TrimPrefix(typeName, "[]")
+	if after, ok := strings.CutPrefix(typeName, "[]"); ok {
+		elemType := after
 		elemType = strings.TrimPrefix(elemType, "*") // 去除指针前缀
 
 		// 判断是否是基本类型
