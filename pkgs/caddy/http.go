@@ -1,10 +1,10 @@
 package caddy
 
 import (
-	"strings"
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 )
 

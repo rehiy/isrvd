@@ -1,9 +1,9 @@
 package docker
 
 import (
-	"slices"
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
