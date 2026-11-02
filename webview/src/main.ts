@@ -28,10 +28,17 @@ window.addEventListener('unhandledrejection', event => {
         event.preventDefault()
     }
 })
-app.config.errorHandler = (error, _instance, info) => {
-    if (!isNotifiedError(error)) {
-        console.error(`[${info}]`, error)
+// 设置 errorHandler 后 Vue 不再输出默认的 dev 警告（含组件调用栈）与抛错，这里手动补回组件来源
+app.config.errorHandler = (error, instance, info) => {
+    if (isNotifiedError(error)) {
+        return
     }
+    if (import.meta.env.DEV) {
+        const source = instance?.$options?.__file || instance?.$options?.name || 'unknown'
+        console.error(`Unhandled error during execution of ${info}\n  at <${source}>`, error)
+        return
+    }
+    console.error(`[${info}]`, error)
 }
 
 // 设置路由守卫（在 Pinia 初始化之后）
