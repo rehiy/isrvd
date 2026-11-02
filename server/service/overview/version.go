@@ -1,17 +1,9 @@
 package overview
 
 import (
-	"archive/tar"
-	"compress/gzip"
 	"context"
 	"errors"
-	"fmt"
-	"io"
 	"net/http"
-	"net/url"
-	"os"
-	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -23,10 +15,14 @@ import (
 	"isrvd/server/config"
 )
 
+// 本文件是升级源与版本展示：升级服务地址、站点类型（国内/海外）、最新版本缓存。
+// 不依赖 upgrade.go；升级的执行见 upgrade.go。
+
 const (
+	// upgradeServer 升级服务；area=cn 时它会优先下发国内镜像的升级包
 	upgradeServer = "https://isrvd.rehiy.com/update/"
 
-	// countryCodeURL 国家代码探测服务，与 build/script/isrvd.sh 保持一致
+	// countryCodeURL 国家代码探测服务，与 build/script 下的安装脚本保持一致
 	countryCodeURL = "https://ipip.rehi.org/country_code"
 
 	// updaterImageCN 中国大陆使用的 docker-updater 镜像（CNB 镜像源）
@@ -53,20 +49,10 @@ var (
 
 var (
 	countryCacheMu       sync.Mutex
-	cachedUpdaterImage   string
-	countryCacheTime     time.Time
+	cachedChina          bool
+	countryCacheTime     time.Time // 零值表示尚未探测成功
 	countryCacheDuration = 6 * time.Hour
 )
-
-// executablePath 启动时记录，避免升级替换后 /proc/self/exe 失效
-var executablePath, _ = os.Executable()
-
-var upgradeHTTPClient = &http.Client{Timeout: 30 * time.Second, CheckRedirect: func(req *http.Request, via []*http.Request) error {
-	if len(via) >= 10 {
-		return errors.New("too many upgrade redirects")
-	}
-	return validateUpgradeURL(req.URL)
-}}
 
 // CheckVersion 从升级服务器检测最新版本，带缓存
 func (s *Service) CheckVersion(ctx context.Context) *VersionInfo {
@@ -74,155 +60,11 @@ func (s *Service) CheckVersion(ctx context.Context) *VersionInfo {
 	defer cancel()
 	info := fetchLatestVersion(ctx)
 	info.Current = config.Version
-	info.UpdaterImage = resolveUpdaterImage(ctx)
+	info.UpdaterImage = updaterImageGlobal
+	if inChina(ctx) {
+		info.UpdaterImage = updaterImageCN
+	}
 	return &info
-}
-
-var (
-	selfUpgradeMu       sync.Mutex
-	selfUpgradeCancel   context.CancelFunc
-	selfUpgradeDone     chan struct{}
-	selfUpgradeStopping bool
-)
-
-// StartSelfUpgrade 在后台升级，重复请求不再启动第二次升级。
-func (s *Service) StartSelfUpgrade() error {
-	selfUpgradeMu.Lock()
-	defer selfUpgradeMu.Unlock()
-	if selfUpgradeStopping {
-		return context.Canceled
-	}
-	if selfUpgradeCancel == nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 270*time.Second)
-		selfUpgradeCancel = cancel
-		selfUpgradeDone = make(chan struct{})
-		go s.runSelfUpgrade(ctx, cancel)
-	}
-	return nil
-}
-
-// StopSelfUpgrade 取消请求并等待实际工作退出，确保关闭不打断文件替换。
-func (s *Service) StopSelfUpgrade() {
-	selfUpgradeMu.Lock()
-	selfUpgradeStopping = true
-	done := selfUpgradeDone
-	if selfUpgradeCancel != nil {
-		selfUpgradeCancel()
-	}
-	selfUpgradeMu.Unlock()
-	if done != nil {
-		<-done
-	}
-}
-
-func (s *Service) runSelfUpgrade(ctx context.Context, cancel context.CancelFunc) {
-	logger := logman.Named("upgrade")
-	defer func() {
-		cancel()
-		selfUpgradeMu.Lock()
-		selfUpgradeCancel = nil
-		close(selfUpgradeDone)
-		selfUpgradeDone = nil
-		selfUpgradeMu.Unlock()
-		if recovered := recover(); recovered != nil {
-			logger.Error("upgrade panicked", "error", recovered)
-		}
-	}()
-	if err := s.ApplySelfUpgrade(ctx); err != nil {
-		if errors.Is(err, upgrade.ErrNoUpdate) {
-			logger.Info("no update available")
-		} else {
-			logger.Error("upgrade failed", "error", err)
-		}
-		return
-	}
-	time.Sleep(500 * time.Millisecond)
-	if err := s.RestartSelf(); err != nil {
-		logger.Error("upgrade restart failed", "error", err)
-	}
-}
-
-// ApplySelfUpgrade 只适配 tar.gz 解压；检查、下载、校验、替换及回滚复用 libgo。
-func (s *Service) ApplySelfUpgrade(ctx context.Context) error {
-	if executablePath == "" {
-		return fmt.Errorf("获取可执行文件路径失败")
-	}
-	binaryName := "isrvd-" + runtime.GOOS + "-" + runtime.GOARCH
-	if runtime.GOOS == "windows" {
-		binaryName += ".exe"
-	}
-	u := upgrade.NewUpdaterContext(ctx, upgradeServer, config.Version)
-	u.TargetPath = executablePath
-	u.HTTPClient = upgradeHTTPClient
-	u.Download = func(pkgURL, outputPath string) (string, error) {
-		pkg, err := url.Parse(pkgURL)
-		if err != nil {
-			return "", err
-		}
-		if err := validateUpgradeURL(pkg); err != nil {
-			return "", err
-		}
-		client := *u.HTTPClient
-		client.Timeout = 0 // 下载使用整项升级的上下文期限。
-		req := &request.Client{Method: http.MethodGet, Url: pkgURL}
-		res, err := req.DoContext(ctx, &client)
-		if err != nil {
-			return "", err
-		}
-		defer res.Body.Close()
-		if res.StatusCode != http.StatusOK {
-			return "", fmt.Errorf("download returned HTTP %d", res.StatusCode)
-		}
-		reader, err := gzip.NewReader(res.Body)
-		if err != nil {
-			return "", err
-		}
-		defer reader.Close()
-		limited := &io.LimitedReader{R: reader, N: 512 << 20}
-		tr := tar.NewReader(limited)
-		for {
-			if err := ctx.Err(); err != nil {
-				return "", err
-			}
-			hdr, err := tr.Next()
-			if err != nil {
-				if err == io.EOF {
-					return "", fmt.Errorf("archive: %s not found", binaryName)
-				}
-				return "", err
-			}
-			if hdr.Size > limited.N {
-				return "", errors.New("upgrade archive exceeds 512 MiB")
-			}
-			if hdr.Typeflag == tar.TypeReg && filepath.Base(hdr.Name) == binaryName {
-				return request.SaveStream(tr, outputPath)
-			}
-		}
-	}
-	return u.Apply()
-}
-
-func validateUpgradeURL(u *url.URL) error {
-	if u.Scheme != "https" || u.User != nil || (u.Port() != "" && u.Port() != "443") {
-		return errors.New("untrusted upgrade URL")
-	}
-	switch u.Hostname() {
-	case "isrvd.rehiy.com", "github.com", "release-assets.githubusercontent.com", "objects.githubusercontent.com":
-		return nil
-	}
-	return errors.New("untrusted upgrade URL")
-}
-
-// RestartSelf 重启当前进程
-func (s *Service) RestartSelf() error {
-	selfUpgradeMu.Lock()
-	defer selfUpgradeMu.Unlock()
-	if selfUpgradeStopping {
-		return context.Canceled
-	}
-	u := upgrade.NewUpdater("", "")
-	u.TargetPath = executablePath
-	return u.Restart()
 }
 
 // ─── 辅助函数 ───
@@ -237,7 +79,6 @@ func fetchLatestVersion(ctx context.Context) VersionInfo {
 	}
 
 	u := upgrade.NewUpdaterContext(ctx, upgradeServer, config.Version)
-	u.HTTPClient = upgradeHTTPClient
 	info, err := u.Check()
 	if ctx.Err() != nil {
 		return cachedVersion
@@ -253,28 +94,26 @@ func fetchLatestVersion(ctx context.Context) VersionInfo {
 	return cachedVersion
 }
 
-// resolveUpdaterImage 根据 IP 国家代码选择 docker-updater 镜像，带内存缓存。
-// 国家代码为 CN 时使用 CNB 镜像源，其余情况使用默认镜像；探测失败时回退到默认镜像。
-func resolveUpdaterImage(ctx context.Context) string {
+// inChina 由本机出口 IP 的国家代码判定是否位于中国大陆，带内存缓存。
+// 升级下载源与 docker-updater 镜像都据此选择；探测失败时按海外处理。
+func inChina(ctx context.Context) bool {
 	countryCacheMu.Lock()
 	defer countryCacheMu.Unlock()
 
-	if cachedUpdaterImage != "" && time.Since(countryCacheTime) < countryCacheDuration {
-		return cachedUpdaterImage
+	if !countryCacheTime.IsZero() && time.Since(countryCacheTime) < countryCacheDuration {
+		return cachedChina
 	}
 
-	image := updaterImageGlobal
 	client := request.Client{Method: http.MethodGet, Url: countryCodeURL, Headers: request.Header{"User-Agent": "isrvd"}, Timeout: 8 * time.Second}
 	code, err := client.RequestContext(ctx)
 	if ctx.Err() != nil {
-		return image
+		return false
 	}
 	if err != nil {
 		logman.Warn("country code detect failed", "error", err)
-	} else if strings.EqualFold(strings.TrimSpace(string(code)), "CN") {
-		image = updaterImageCN
 	}
 
-	cachedUpdaterImage, countryCacheTime = image, time.Now()
-	return image
+	cachedChina = err == nil && strings.EqualFold(strings.TrimSpace(string(code)), "CN")
+	countryCacheTime = time.Now()
+	return cachedChina
 }
