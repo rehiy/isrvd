@@ -50,7 +50,10 @@ class PreviewModal extends Vue {
     }
 
     handleLoaded() { this.loading = false }
-    handleError() { this.loading = false; this.error = this.$t('文件加载失败') }
+    handleError() {
+        this.loading = false
+        this.error = this.$t('文件加载失败')
+    }
 
     resetPreview() {
         this.previewUrl = ''

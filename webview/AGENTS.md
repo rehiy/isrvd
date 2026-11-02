@@ -402,7 +402,8 @@ webview/src/
 
 **控制流写法**
 
-- `if` / `else if` / `else` / `try` / `catch` / `finally` 必须带 `{}`，不得省略花括号，也不得写成单行；`else`、`catch`、`finally` 与前一个 `}` 同行。
+- `if` / `else if` / `else` / `for` / `while` / `do` / `try` / `catch` / `finally` 必须带 `{}`，不得省略花括号，也不得写成单行；`else`、`catch`、`finally` 与前一个 `}` 同行。
+- 例外：整个函数（方法、getter、箭头函数）写在一行且只有一条语句时可保持单行，如 `get total() { return this.items.length }`；一行内用 `;` 串联多条语句不属于例外，必须展开。
 - 例外：`catch` 后没有任何内容（包括注释）时，写成 `catch {}`，可放在同一行；有注释或语句时仍按多行展开。
 - 模板（`<template>`）里的事件处理不得内联 `if` / `try` 等多行语句，抽成 `<script>` 里的方法再引用，如 `@update:model-value="onToggleMatchHeaders"`。
 
@@ -708,6 +709,6 @@ python3 scripts/review-style.py          # 前端样式一致性辅助检查
 npm run build                            # Vite 生产构建
 ```
 
-提交前另需人工确认：新增的 `if` / `try` / `catch` / `finally` 符合 1.14.1（带 `{}`、不单行），页面 `catch` 中没有重复的请求失败提示。
+提交前另需人工确认：新增的 `if` / `for` / `while` / `try` / `catch` / `finally` 符合 1.14.1（带 `{}`、不单行），页面 `catch` 中没有重复的请求失败提示。
 
 `npm run format` 会直接修复 import/ESLint；仅在需要改写文件时使用。`review-style.py` 只有 ERROR 阻断，WARN 需人工确认。

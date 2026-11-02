@@ -211,7 +211,9 @@ function printResult(value) {
   if (Array.isArray(value) && value.length > 0 && value.every(item => item && typeof item === 'object' && !Array.isArray(item))) {
     const keys = Object.keys(value[0]);
     console.log(`[${value.length}]{${keys.join(',')}}:`);
-    for (const item of value) console.log('  ' + keys.map(key => encodeCell(item[key])).join(','));
+    for (const item of value) {
+        console.log('  ' + keys.map(key => encodeCell(item[key])).join(','));
+    }
     return;
   }
   console.log(JSON.stringify(value));

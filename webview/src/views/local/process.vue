@@ -165,8 +165,12 @@ class SystemProcessInfoView extends Vue {
             }
         }
 
-        for (const process of this.sortProcesses(roots)) appendBranch(process, 0)
-        for (const process of this.sortProcesses(processes)) appendBranch(process, 0)
+        for (const process of this.sortProcesses(roots)) {
+            appendBranch(process, 0)
+        }
+        for (const process of this.sortProcesses(processes)) {
+            appendBranch(process, 0)
+        }
         return rows
     }
 

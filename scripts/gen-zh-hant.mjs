@@ -66,8 +66,12 @@ const toTW = OpenCC.Converter({ from: 'cn', to: 'tw' })
 /** 简体原文 → 繁體译文：术语表 → 上下文规则 → 字形转换 */
 const convert = (text) => {
     let out = text
-    for (const [cn, tw] of TERMS) out = out.split(cn).join(tw)
-    for (const [pattern, tw] of RULES) out = out.replace(pattern, tw)
+    for (const [cn, tw] of TERMS) {
+        out = out.split(cn).join(tw)
+    }
+    for (const [pattern, tw] of RULES) {
+        out = out.replace(pattern, tw)
+    }
     return toTW(out).replace(/籤發/g, '簽發')
 }
 

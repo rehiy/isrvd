@@ -23,7 +23,9 @@ function base64urlToBuffer(base64url: string): ArrayBuffer {
     const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/')
     const bin = atob(base64)
     const buf = new Uint8Array(bin.length)
-    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i)
+    for (let i = 0; i < bin.length; i++) {
+        buf[i] = bin.charCodeAt(i)
+    }
     return buf.buffer
 }
 

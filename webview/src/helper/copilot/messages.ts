@@ -40,7 +40,9 @@ export function groupAssistantProcesses(messages: Message[], isRunning: boolean)
             return
         }
         const group = { id: first.id, messages: progress, active: isRunning && index === turns.length - 1, hasAnswer }
-        for (const message of progress) groups.set(message.id, group)
+        for (const message of progress) {
+            groups.set(message.id, group)
+        }
     })
     return groups
 }

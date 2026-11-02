@@ -30,7 +30,9 @@ class ContainerSelect extends Vue {
     // ─── 方法 ───
     networkColor(network: string) {
         let hash = 0
-        for (let i = 0; i < network.length; i++) hash = ((hash << 5) - hash + network.charCodeAt(i)) | 0
+        for (let i = 0; i < network.length; i++) {
+            hash = ((hash << 5) - hash + network.charCodeAt(i)) | 0
+        }
         return this.colorPalette[Math.abs(hash) % this.colorPalette.length]
     }
 

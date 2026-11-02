@@ -328,7 +328,9 @@ class RouteEditModal extends Vue {
             if (vals.length === 0) {
                 rows.push({ key: k, value: '' })
             } else {
-                for (const v of vals) rows.push({ key: k, value: v })
+                for (const v of vals) {
+                    rows.push({ key: k, value: v })
+                }
             }
         }
         return rows
@@ -565,13 +567,21 @@ class RouteEditModal extends Vue {
         const addMap = m.add as Record<string, string[]> | undefined
         const delArr = m.delete as string[] | undefined
         if (setMap) {
-            for (const [k, v] of Object.entries(setMap)) ops.push({ op: 'set', field: k, value: Array.isArray(v) ? v[0] || '' : String(v) })
+            for (const [k, v] of Object.entries(setMap)) {
+                ops.push({ op: 'set', field: k, value: Array.isArray(v) ? v[0] || '' : String(v) })
+            }
         }
         if (addMap) {
-            for (const [k, v] of Object.entries(addMap)) for (const val of (Array.isArray(v) ? v : [v])) ops.push({ op: 'add', field: k, value: String(val) })
+            for (const [k, v] of Object.entries(addMap)) {
+                for (const val of (Array.isArray(v) ? v : [v])) {
+                    ops.push({ op: 'add', field: k, value: String(val) })
+                }
+            }
         }
         if (delArr) {
-            for (const f of delArr) ops.push({ op: 'delete', field: f, value: '' })
+            for (const f of delArr) {
+                ops.push({ op: 'delete', field: f, value: '' })
+            }
         }
         return ops
     }

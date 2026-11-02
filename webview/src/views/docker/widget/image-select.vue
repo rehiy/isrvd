@@ -30,7 +30,9 @@ class ImageSelect extends Vue {
     // ─── 方法 ───
     domainColor(domain: string) {
         let hash = 0
-        for (let i = 0; i < domain.length; i++) hash = ((hash << 5) - hash + domain.charCodeAt(i)) | 0
+        for (let i = 0; i < domain.length; i++) {
+            hash = ((hash << 5) - hash + domain.charCodeAt(i)) | 0
+        }
         return this.colorPalette[Math.abs(hash) % this.colorPalette.length]
     }
 

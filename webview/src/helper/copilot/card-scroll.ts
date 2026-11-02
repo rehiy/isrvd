@@ -12,7 +12,9 @@ const scrollGroups = new WeakMap<HTMLElement, { cards: Set<ScrollCard>; dispose:
 
 export function bindCardAutoCollapse(element: HTMLElement, canCollapse: () => boolean, collapse: () => void): () => void {
     let root = element.parentElement
-    while (root && !/^(auto|scroll)$/.test(getComputedStyle(root).overflowY)) root = root.parentElement
+    while (root && !/^(auto|scroll)$/.test(getComputedStyle(root).overflowY)) {
+        root = root.parentElement
+    }
     if (!root) {
         return () => {}
     }
@@ -67,7 +69,9 @@ function installScrollListener(root: HTMLElement, cards: Set<ScrollCard>) {
             return
         }
 
-        for (const { card } of collapsing) card.collapse()
+        for (const { card } of collapsing) {
+            card.collapse()
+        }
         await nextTick()
         const removedHeight = collapsing.reduce((total, { card, height }) => total + height - card.element.getBoundingClientRect().height, 0)
         // 显式设置原位置减去缩短的高度，也兼容浏览器已进行的滚动锚定补偿。

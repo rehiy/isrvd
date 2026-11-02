@@ -72,13 +72,22 @@ const UploadNodeItem = defineComponent({
                             cancelled > 0 ? h('span', { class: 'text-slate-300 ml-1.5' }, t('{0} 已取消', cancelled)) : null,
                         ]),
                         depth === 0 && !allFinished
-                            ? actionBtn(t('取消上传'), 'fa-xmark', (e) => { e.stopPropagation(); emit('cancel') })
+                            ? actionBtn(t('取消上传'), 'fa-xmark', (e) => {
+                                e.stopPropagation()
+                                emit('cancel')
+                            })
                             : null,
                         depth === 0 && hasFailed
-                            ? actionBtn(t('重试失败项'), 'fa-rotate-right', (e) => { e.stopPropagation(); emit('retry') })
+                            ? actionBtn(t('重试失败项'), 'fa-rotate-right', (e) => {
+                                e.stopPropagation()
+                                emit('retry')
+                            })
                             : null,
                         depth === 0 && hasCancelled
-                            ? actionBtn(t('清理已取消'), 'fa-broom', (e) => { e.stopPropagation(); emit('clearCancelled') })
+                            ? actionBtn(t('清理已取消'), 'fa-broom', (e) => {
+                                e.stopPropagation()
+                                emit('clearCancelled')
+                            })
                             : null,
                     ]),
                     dir.expanded
@@ -288,7 +297,9 @@ class Upload extends Vue {
             return
         }
         node.cancelled = true
-        for (const child of node.children) this.markNodeCancelled(child)
+        for (const child of node.children) {
+            this.markNodeCancelled(child)
+        }
     }
 
     private scheduleClear(delay: number) {
@@ -341,7 +352,13 @@ class Upload extends Vue {
             clearTimeout(this.clearTimer)
             this.clearTimer = null
         }
-        for (const f of failed) { f.percent = 0; f.done = false; f.error = ''; f.cancelled = false; f.controller = undefined }
+        for (const f of failed) {
+            f.percent = 0
+            f.done = false
+            f.error = ''
+            f.cancelled = false
+            f.controller = undefined
+        }
         this.pendingBatches++
         this.uploadVersion++
         this.uploadQueue = this.uploadQueue.then(() => this.doUploadFiles(failed))

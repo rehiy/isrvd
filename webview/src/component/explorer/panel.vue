@@ -121,7 +121,10 @@ class ExplorerPanel extends Vue {
     get selectedFiles(): FileInfo[] { return this.files.filter(f => this.selectedPaths.includes(f.path)) }
     get selectedCount(): number { return this.selectedPaths.length }
 
-    mounted() { this.currentPath = this.initialPath || '/'; this.loadFiles() }
+    mounted() {
+        this.currentPath = this.initialPath || '/'
+        this.loadFiles()
+    }
 
     async loadFiles(path?: string) {
         const target = path ?? this.currentPath
@@ -142,16 +145,25 @@ class ExplorerPanel extends Vue {
         }
     }
 
-    refresh() { this.clearSelection(); this.loadFiles() }
+    refresh() {
+        this.clearSelection()
+        this.loadFiles()
+    }
 
     debouncedLoadFiles() {
         if (this.refreshDebounceTimer) {
             clearTimeout(this.refreshDebounceTimer)
         }
-        this.refreshDebounceTimer = setTimeout(() => { this.refreshDebounceTimer = null; this.loadFiles() }, 300)
+        this.refreshDebounceTimer = setTimeout(() => {
+            this.refreshDebounceTimer = null
+            this.loadFiles()
+        }, 300)
     }
 
-    navigate(path: string) { this.clearSelection(); this.loadFiles(path) }
+    navigate(path: string) {
+        this.clearSelection()
+        this.loadFiles(path)
+    }
     fileOpenPath(file: FileInfo): string { return file.openPath || resolveLinkOpenPath(file) }
     openFile(file: FileInfo): FileInfo {
         const openPath = this.fileOpenPath(file)

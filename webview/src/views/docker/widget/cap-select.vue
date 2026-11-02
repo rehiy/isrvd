@@ -74,7 +74,9 @@ class CapSelect extends Vue {
     get capIndex(): Record<string, CapCategory> {
         const map: Record<string, CapCategory> = {}
         for (const cat of this.capabilityCategories) {
-            for (const c of cat.caps) map[c.name] = cat
+            for (const c of cat.caps) {
+                map[c.name] = cat
+            }
         }
         return map
     }

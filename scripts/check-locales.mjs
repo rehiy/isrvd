@@ -76,7 +76,9 @@ const loadLang = (code) => {
     const names = go ? (LANG_FILES[code] ?? []) : [`${code}.ts`]
     const entries = new Map()
     for (const name of names) {
-        for (const [k, v] of readFile(join(dir, name)).entries) entries.set(k, v)
+        for (const [k, v] of readFile(join(dir, name)).entries) {
+            entries.set(k, v)
+        }
     }
     return entries
 }
@@ -106,7 +108,10 @@ if (worklist) {
 // ─── 检查 ───
 
 let problems = 0
-const line = (text) => { console.log(text); problems++ }
+const line = (text) => {
+    console.log(text)
+    problems++
+}
 
 for (const code of codes.sort()) {
     const entries = loadLang(code)
@@ -137,20 +142,28 @@ for (const code of codes.sort()) {
     }
     if (stale.length) {
         line(`  ✗ 多余 ${stale.length} 条（英文词典里已无此原文，多为改文案后遗留）`)
-        for (const k of stale.slice(0, 8)) line(`      ${k}`)
+        for (const k of stale.slice(0, 8)) {
+            line(`      ${k}`)
+        }
     }
     if (empty.length) {
         line(`  ✗ 空译文 ${empty.length} 条`)
-        for (const [k] of empty.slice(0, 8)) line(`      ${k}`)
+        for (const [k] of empty.slice(0, 8)) {
+            line(`      ${k}`)
+        }
     }
     if (badPlaceholder.length) {
         line(`  ✗ 占位符与原文不一致 ${badPlaceholder.length} 条`)
-        for (const [k, v] of badPlaceholder.slice(0, 8)) line(`      ${k} => ${v}`)
+        for (const [k, v] of badPlaceholder.slice(0, 8)) {
+            line(`      ${k} => ${v}`)
+        }
     }
     // 繁體与简体同形的词条属正常（如「退出」「路由」），只在非繁體语言里提示
     if (identity.length && code !== 'zh-Hant') {
         line(`  ! 译文与中文原文完全相同 ${identity.length} 条，需人工确认是否已翻译`)
-        for (const [k] of identity.slice(0, 8)) line(`      ${k}`)
+        for (const [k] of identity.slice(0, 8)) {
+            line(`      ${k}`)
+        }
     }
 }
 
