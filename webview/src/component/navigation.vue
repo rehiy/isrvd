@@ -320,13 +320,13 @@ export default toNative(NavigationBar)
               <i class="fas fa-desktop"></i>
               <span>{{ $t('系统监控') }}</span>
             </router-link>
-            <router-link v-if="portal.hasPerm('GET /api/filer/files')" to="/local/explorer" class="nav-link" :class="{ 'nav-link-active': isActive('/local/explorer') }">
-              <i class="fas fa-folder-open"></i>
-              <span>{{ $t('文件管理') }}</span>
-            </router-link>
             <router-link v-if="portal.hasPerm('GET /api/local/processes')" to="/local/process" class="nav-link" :class="{ 'nav-link-active': isActive('/local/process') }">
               <i class="fas fa-microchip"></i>
               <span>{{ $t('进程管理') }}</span>
+            </router-link>
+            <router-link v-if="portal.hasPerm('GET /api/filer/files')" to="/local/explorer" class="nav-link" :class="{ 'nav-link-active': isActive('/local/explorer') }">
+              <i class="fas fa-folder-open"></i>
+              <span>{{ $t('文件管理') }}</span>
             </router-link>
             <router-link v-if="portal.hasPerm('GET /api/shell')" to="/local/shell" class="nav-link" :class="{ 'nav-link-active': isActive('/local/shell') }">
               <i class="fas fa-terminal"></i>

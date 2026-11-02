@@ -26,6 +26,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '系统监控' }
   },
   {
+    path: '/local/process',
+    name: 'local-process',
+    component: () => import('@/views/local/process.vue'),
+    meta: { title: '进程管理' }
+  },
+  {
     path: '/local/explorer',
     name: 'local-explorer',
     component: () => import('@/views/local/explorer.vue'),
@@ -36,12 +42,6 @@ const routes: RouteRecordRaw[] = [
     name: 'local-shell',
     component: () => import('@/views/local/shell.vue'),
     meta: { title: 'Shell 终端' }
-  },
-  {
-    path: '/local/process',
-    name: 'local-process',
-    component: () => import('@/views/local/process.vue'),
-    meta: { title: '进程管理' }
   },
   {
     path: '/ssh',

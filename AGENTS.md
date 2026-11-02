@@ -312,7 +312,7 @@ docs/
 
 ## 7) 路由与导航
 
-- `/overview` 概览；本机能力为 `/local/monitor`、`/local/explorer`、`/local/process`、`/local/shell`
+- `/overview` 概览；本机能力为 `/local/monitor`、`/local/process`、`/local/explorer`、`/local/shell`
 - SSH：`/ssh/hosts`、`/ssh/credentials`、`/ssh/host/:id`
 - APISIX：`/apisix/routes`、`/apisix/upstreams`、`/apisix/plugin-configs`、`/apisix/ssls`、`/apisix/consumers`、`/apisix/whitelist`
 - Caddy：`/caddy/servers`、`/caddy/routes`、`/caddy/certs`、`/caddy/global`、`/caddy/basic-auth`、`/caddy/raw`
