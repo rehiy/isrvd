@@ -17,22 +17,22 @@ type PluginConfig struct {
 
 // PluginConfigList 获取所有 Plugin Config 列表
 func (c *Client) PluginConfigList(ctx context.Context) ([]PluginConfig, error) {
-	return requestResourceList[PluginConfig](ctx, c, "/plugin_configs", "解析 Plugin Config 列表失败")
+	return c.requestResourceList[PluginConfig](ctx, "/plugin_configs", "解析 Plugin Config 列表失败")
 }
 
 // PluginConfigInspect 获取单个 Plugin Config 详情
 func (c *Client) PluginConfigInspect(ctx context.Context, configID string) (*PluginConfig, error) {
-	return requestResource[PluginConfig](ctx, c, http.MethodGet, "/plugin_configs/"+url.PathEscape(configID), nil, "解析 Plugin Config 详情失败")
+	return c.requestResource[PluginConfig](ctx, http.MethodGet, "/plugin_configs/"+url.PathEscape(configID), nil, "解析 Plugin Config 详情失败")
 }
 
 // PluginConfigCreate 创建 Plugin Config
 func (c *Client) PluginConfigCreate(ctx context.Context, req PluginConfig) (*PluginConfig, error) {
-	return requestResource[PluginConfig](ctx, c, http.MethodPut, "/plugin_configs/"+url.PathEscape(req.ID), buildPluginConfigBody(req), "解析 Plugin Config 详情失败")
+	return c.requestResource[PluginConfig](ctx, http.MethodPut, "/plugin_configs/"+url.PathEscape(req.ID), buildPluginConfigBody(req), "解析 Plugin Config 详情失败")
 }
 
 // PluginConfigUpdate 更新 Plugin Config
 func (c *Client) PluginConfigUpdate(ctx context.Context, configID string, req PluginConfig) (*PluginConfig, error) {
-	return requestResource[PluginConfig](ctx, c, http.MethodPut, "/plugin_configs/"+url.PathEscape(configID), buildPluginConfigBody(req), "解析 Plugin Config 详情失败")
+	return c.requestResource[PluginConfig](ctx, http.MethodPut, "/plugin_configs/"+url.PathEscape(configID), buildPluginConfigBody(req), "解析 Plugin Config 详情失败")
 }
 
 // PluginConfigDelete 删除 Plugin Config

@@ -38,22 +38,22 @@ type Route struct {
 
 // RouteList 获取所有路由列表
 func (c *Client) RouteList(ctx context.Context) ([]Route, error) {
-	return requestResourceList[Route](ctx, c, "/routes", "解析路由列表失败")
+	return c.requestResourceList[Route](ctx, "/routes", "解析路由列表失败")
 }
 
 // RouteInspect 获取单条路由详情
 func (c *Client) RouteInspect(ctx context.Context, routeID string) (*Route, error) {
-	return requestResource[Route](ctx, c, http.MethodGet, "/routes/"+url.PathEscape(routeID), nil, "解析路由详情失败")
+	return c.requestResource[Route](ctx, http.MethodGet, "/routes/"+url.PathEscape(routeID), nil, "解析路由详情失败")
 }
 
 // RouteCreate 创建路由
 func (c *Client) RouteCreate(ctx context.Context, req Route) (*Route, error) {
-	return requestResource[Route](ctx, c, http.MethodPost, "/routes", buildRouteBody(req), "解析路由详情失败")
+	return c.requestResource[Route](ctx, http.MethodPost, "/routes", buildRouteBody(req), "解析路由详情失败")
 }
 
 // RouteUpdate 更新路由
 func (c *Client) RouteUpdate(ctx context.Context, routeID string, req Route) (*Route, error) {
-	return requestResource[Route](ctx, c, http.MethodPut, "/routes/"+url.PathEscape(routeID), buildRouteBody(req), "解析路由详情失败")
+	return c.requestResource[Route](ctx, http.MethodPut, "/routes/"+url.PathEscape(routeID), buildRouteBody(req), "解析路由详情失败")
 }
 
 // RouteStatusPatch 仅更新路由的启用/禁用状态（1=启用 0=禁用）
@@ -97,7 +97,7 @@ func (c *Client) RouteWhitelistInspect(ctx context.Context) ([]Route, error) {
 
 // RouteConsumerRestrictionUpdate 更新路由的 consumer-restriction 白名单
 func (c *Client) RouteConsumerRestrictionUpdate(ctx context.Context, routeID string, consumers []string, keyAuth map[string]any) error {
-	raw, err := requestResource[map[string]any](ctx, c, http.MethodGet, "/routes/"+url.PathEscape(routeID), nil, "解析路由详情失败")
+	raw, err := c.requestResource[map[string]any](ctx, http.MethodGet, "/routes/"+url.PathEscape(routeID), nil, "解析路由详情失败")
 	if err != nil {
 		return err
 	}

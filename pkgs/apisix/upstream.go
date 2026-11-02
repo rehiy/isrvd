@@ -27,22 +27,22 @@ type Upstream struct {
 
 // UpstreamList 获取所有 Upstream 列表
 func (c *Client) UpstreamList(ctx context.Context) ([]Upstream, error) {
-	return requestResourceList[Upstream](ctx, c, "/upstreams", "解析 Upstream 列表失败")
+	return c.requestResourceList[Upstream](ctx, "/upstreams", "解析 Upstream 列表失败")
 }
 
 // UpstreamInspect 获取单条 Upstream 详情
 func (c *Client) UpstreamInspect(ctx context.Context, upstreamID string) (*Upstream, error) {
-	return requestResource[Upstream](ctx, c, http.MethodGet, "/upstreams/"+url.PathEscape(upstreamID), nil, "解析 Upstream 详情失败")
+	return c.requestResource[Upstream](ctx, http.MethodGet, "/upstreams/"+url.PathEscape(upstreamID), nil, "解析 Upstream 详情失败")
 }
 
 // UpstreamCreate 创建 Upstream
 func (c *Client) UpstreamCreate(ctx context.Context, req Upstream) (*Upstream, error) {
-	return requestResource[Upstream](ctx, c, http.MethodPost, "/upstreams", buildUpstreamBody(req), "解析 Upstream 详情失败")
+	return c.requestResource[Upstream](ctx, http.MethodPost, "/upstreams", buildUpstreamBody(req), "解析 Upstream 详情失败")
 }
 
 // UpstreamUpdate 更新 Upstream
 func (c *Client) UpstreamUpdate(ctx context.Context, upstreamID string, req Upstream) (*Upstream, error) {
-	return requestResource[Upstream](ctx, c, http.MethodPut, "/upstreams/"+url.PathEscape(upstreamID), buildUpstreamBody(req), "解析 Upstream 详情失败")
+	return c.requestResource[Upstream](ctx, http.MethodPut, "/upstreams/"+url.PathEscape(upstreamID), buildUpstreamBody(req), "解析 Upstream 详情失败")
 }
 
 // UpstreamDelete 删除 Upstream

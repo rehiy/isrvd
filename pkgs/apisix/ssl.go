@@ -19,22 +19,22 @@ type SSL struct {
 
 // SSLList 获取所有 SSL 证书列表
 func (c *Client) SSLList(ctx context.Context) ([]SSL, error) {
-	return requestResourceList[SSL](ctx, c, "/ssls", "解析 SSL 证书列表失败")
+	return c.requestResourceList[SSL](ctx, "/ssls", "解析 SSL 证书列表失败")
 }
 
 // SSLInspect 获取单个 SSL 证书详情
 func (c *Client) SSLInspect(ctx context.Context, sslID string) (*SSL, error) {
-	return requestResource[SSL](ctx, c, http.MethodGet, "/ssls/"+url.PathEscape(sslID), nil, "解析 SSL 证书详情失败")
+	return c.requestResource[SSL](ctx, http.MethodGet, "/ssls/"+url.PathEscape(sslID), nil, "解析 SSL 证书详情失败")
 }
 
 // SSLCreate 创建 SSL 证书
 func (c *Client) SSLCreate(ctx context.Context, req SSL) (*SSL, error) {
-	return requestResource[SSL](ctx, c, http.MethodPost, "/ssls", buildSSLBody(req), "解析 SSL 证书详情失败")
+	return c.requestResource[SSL](ctx, http.MethodPost, "/ssls", buildSSLBody(req), "解析 SSL 证书详情失败")
 }
 
 // SSLUpdate 更新 SSL 证书
 func (c *Client) SSLUpdate(ctx context.Context, sslID string, req SSL) (*SSL, error) {
-	return requestResource[SSL](ctx, c, http.MethodPatch, "/ssls/"+url.PathEscape(sslID), buildSSLBody(req), "解析 SSL 证书详情失败")
+	return c.requestResource[SSL](ctx, http.MethodPatch, "/ssls/"+url.PathEscape(sslID), buildSSLBody(req), "解析 SSL 证书详情失败")
 }
 
 // SSLDelete 删除 SSL 证书

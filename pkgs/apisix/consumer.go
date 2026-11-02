@@ -32,7 +32,7 @@ type Consumer struct {
 
 // ConsumerList 获取所有 Consumer 列表
 func (c *Client) ConsumerList(ctx context.Context) ([]Consumer, error) {
-	result, err := requestResourceList[Consumer](ctx, c, "/consumers", "解析 Consumer 列表失败")
+	result, err := c.requestResourceList[Consumer](ctx, "/consumers", "解析 Consumer 列表失败")
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (c *Client) ConsumerList(ctx context.Context) ([]Consumer, error) {
 
 // ConsumerRaw 获取指定 Consumer 的完整（未脱敏）数据
 func (c *Client) ConsumerRaw(ctx context.Context, username string) (*Consumer, error) {
-	return requestResource[Consumer](ctx, c, http.MethodGet, "/consumers/"+url.PathEscape(username), nil, "解析 Consumer 失败")
+	return c.requestResource[Consumer](ctx, http.MethodGet, "/consumers/"+url.PathEscape(username), nil, "解析 Consumer 失败")
 }
 
 // ConsumerUpdate 更新 Consumer，支持传入完整 plugins，
