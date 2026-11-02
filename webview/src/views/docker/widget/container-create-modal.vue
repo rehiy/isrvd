@@ -55,20 +55,16 @@ class ContainerCreateModal extends Vue {
 
     // ─── 方法 ───
     async loadImages() {
-        try {
-            const res = await api.dockerImageList(false)
-            this.images = res.payload || []
-        } catch {}
+        const res = await api.dockerImageList(false)
+        this.images = res.payload || []
     }
 
     async loadNetworks() {
-        try {
-            const res = await api.dockerNetworkList()
-            this.networks = res.payload || []
-            if (!this.formData.network && this.networks.some(n => n.name === 'sdnet')) {
-                this.formData.network = 'sdnet'
-            }
-        } catch {}
+        const res = await api.dockerNetworkList()
+        this.networks = res.payload || []
+        if (!this.formData.network && this.networks.some(n => n.name === 'sdnet')) {
+            this.formData.network = 'sdnet'
+        }
     }
 
     show() {
@@ -117,17 +113,33 @@ class ContainerCreateModal extends Vue {
         if (this.formData.network) {
             svc.networks = [this.formData.network]
         }
-        if (this.formData.workdir) svc.working_dir = this.formData.workdir
-        if (this.formData.user) svc.user = this.formData.user
-        if (this.formData.hostname) svc.hostname = this.formData.hostname
-        if (this.formData.privileged) svc.privileged = true
-        if (this.formData.capAdd.length > 0) svc.cap_add = this.formData.capAdd
-        if (this.formData.capDrop.length > 0) svc.cap_drop = this.formData.capDrop
+        if (this.formData.workdir) {
+            svc.working_dir = this.formData.workdir
+        }
+        if (this.formData.user) {
+            svc.user = this.formData.user
+        }
+        if (this.formData.hostname) {
+            svc.hostname = this.formData.hostname
+        }
+        if (this.formData.privileged) {
+            svc.privileged = true
+        }
+        if (this.formData.capAdd.length > 0) {
+            svc.cap_add = this.formData.capAdd
+        }
+        if (this.formData.capDrop.length > 0) {
+            svc.cap_drop = this.formData.capDrop
+        }
 
         if (this.formData.memory || this.formData.cpus) {
             const limits: Record<string, unknown> = {}
-            if (this.formData.memory) limits.memory = `${this.formData.memory}m`
-            if (this.formData.cpus) limits.cpus = parseFloat(this.formData.cpus)
+            if (this.formData.memory) {
+                limits.memory = `${this.formData.memory}m`
+            }
+            if (this.formData.cpus) {
+                limits.cpus = parseFloat(this.formData.cpus)
+            }
             svc.deploy = { resources: { limits } }
         }
 
@@ -156,7 +168,9 @@ class ContainerCreateModal extends Vue {
         }
 
         const content = this.buildYamlFromForm()
-        if (!content) return
+        if (!content) {
+            return
+        }
 
         this.modalLoading = true
         try {
@@ -164,8 +178,9 @@ class ContainerCreateModal extends Vue {
             this.portal.showNotification('success', this.$t('容器创建成功'))
             this.isOpen = false
             this.$emit('success')
-        } catch {}
-        this.modalLoading = false
+        } finally {
+            this.modalLoading = false
+        }
     }
 }
 

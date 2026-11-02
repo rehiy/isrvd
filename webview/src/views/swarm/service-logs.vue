@@ -51,10 +51,8 @@ class ServiceLogs extends Vue {
     }
 
     async loadServiceName() {
-        try {
-            const res = await api.swarmServiceInspect(this.serviceId)
-            this.serviceName = res.payload?.name || ''
-        } catch { /* 忽略，名称仅用于展示 */ }
+        const res = await api.swarmServiceInspect(this.serviceId)
+        this.serviceName = res.payload?.name || ''
     }
 
     // ─── 生命周期 ───

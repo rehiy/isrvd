@@ -93,7 +93,9 @@ class ExplorerPanel extends Vue {
 
     get filteredFiles(): FileInfo[] {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.files
+        if (!keyword) {
+            return this.files
+        }
         return this.files.filter(f =>
             f.name.toLowerCase().includes(keyword) ||
             f.path.toLowerCase().includes(keyword) ||
@@ -102,7 +104,9 @@ class ExplorerPanel extends Vue {
     }
 
     get pathParts(): { label: string; path: string }[] {
-        if (!this.currentPath || this.currentPath === '/') return []
+        if (!this.currentPath || this.currentPath === '/') {
+            return []
+        }
         return this.currentPath.split('/').filter(Boolean).map((part, index, arr) => ({
             label: part,
             path: '/' + arr.slice(0, index + 1).join('/'),
@@ -133,13 +137,17 @@ class ExplorerPanel extends Vue {
         } catch {
             this.error = this.$t('加载失败')
             this.files = []
-        } finally { this.loading = false }
+        } finally {
+            this.loading = false
+        }
     }
 
     refresh() { this.clearSelection(); this.loadFiles() }
 
     debouncedLoadFiles() {
-        if (this.refreshDebounceTimer) clearTimeout(this.refreshDebounceTimer)
+        if (this.refreshDebounceTimer) {
+            clearTimeout(this.refreshDebounceTimer)
+        }
         this.refreshDebounceTimer = setTimeout(() => { this.refreshDebounceTimer = null; this.loadFiles() }, 300)
     }
 
@@ -166,41 +174,65 @@ class ExplorerPanel extends Vue {
 
     async calcDirSize(file: FileInfo) {
         const openPath = this.fileOpenPath(file)
-        if (!file.isDir || !this.adapter.dirSize || this.calculatingDirs.has(openPath)) return
+        if (!file.isDir || !this.adapter.dirSize || this.calculatingDirs.has(openPath)) {
+            return
+        }
         this.calculatingDirs.add(openPath)
         try {
             const size = await this.adapter.dirSize(openPath)
-            if (size !== null) { file.size = size; this.calculatedDirs.add(openPath) }
-        } catch {} finally { this.calculatingDirs.delete(openPath) }
+            if (size !== null) {
+                file.size = size
+                this.calculatedDirs.add(openPath)
+            }
+        } finally {
+            this.calculatingDirs.delete(openPath)
+        }
     }
 
     async download(file: FileInfo) {
         this.downloadingFile = file.name
-        try { downloadBlob(await this.adapter.download(this.fileOpenPath(file)), file.name) }
-        finally { this.downloadingFile = '' }
+        try {
+            downloadBlob(await this.adapter.download(this.fileOpenPath(file)), file.name)
+        } finally {
+            this.downloadingFile = ''
+        }
     }
 
     startDelete(file: FileInfo) { this.deleteModalRef?.show(this.adapter, file) }
-    startBatchDelete() { if (this.selectedCount > 0) this.deleteModalRef?.show(this.adapter, this.selectedFiles) }
+    startBatchDelete() {
+        if (this.selectedCount > 0) {
+            this.deleteModalRef?.show(this.adapter, this.selectedFiles)
+        }
+    }
 
     startMkdir() { this.mkdirMode = true }
-    cancelMkdir() { if (!this.mkdirLoading) this.mkdirMode = false }
+    cancelMkdir() {
+        if (!this.mkdirLoading) {
+            this.mkdirMode = false
+        }
+    }
     async confirmMkdir(name: string) {
         const dirName = name.trim()
-        if (this.mkdirLoading || !dirName) return
+        if (this.mkdirLoading || !dirName) {
+            return
+        }
         this.mkdirLoading = true
         try {
             await this.adapter.mkdir(this.currentPath.replace(/\/+$/, '') + '/' + dirName)
             this.portal.showNotification('success', this.$t('创建成功'))
             this.mkdirMode = false
             this.loadFiles()
-        } catch {} finally {
+        } finally {
             this.mkdirLoading = false
         }
     }
 
     startRename(file: FileInfo) { this.renameModalRef?.show(this.adapter, file) }
-    startBatchMove() { if (this.selectedCount > 0) this.renameModalRef?.show(this.adapter, this.selectedFiles) }
+    startBatchMove() {
+        if (this.selectedCount > 0) {
+            this.renameModalRef?.show(this.adapter, this.selectedFiles)
+        }
+    }
     startChmod(file: FileInfo) { this.chmodModalRef?.show(this.adapter, file) }
     startModify(file: FileInfo) { this.modifyModalRef?.show(this.adapter, this.openFile(file)) }
     startPreview(file: FileInfo) { this.previewModalRef?.show(this.adapter, this.openFile(file)) }
@@ -211,8 +243,12 @@ class ExplorerPanel extends Vue {
 }
 
 function resolveLinkOpenPath(file: FileInfo): string {
-    if (!file.isLink || !file.linkTarget) return file.path
-    if (file.linkTarget.startsWith('/')) return normalizeExplorerPath(file.linkTarget)
+    if (!file.isLink || !file.linkTarget) {
+        return file.path
+    }
+    if (file.linkTarget.startsWith('/')) {
+        return normalizeExplorerPath(file.linkTarget)
+    }
     const parent = file.path.replace(/\/[^/]*$/, '') || '/'
     return normalizeExplorerPath(`${parent}/${file.linkTarget}`)
 }
@@ -221,8 +257,13 @@ function normalizeExplorerPath(path: string): string {
     const absolute = path.startsWith('/')
     const parts: string[] = []
     for (const part of path.split('/')) {
-        if (!part || part === '.') continue
-        if (part === '..') { parts.pop(); continue }
+        if (!part || part === '.') {
+            continue
+        }
+        if (part === '..') {
+            parts.pop()
+            continue
+        }
         parts.push(part)
     }
     return `${absolute ? '/' : ''}${parts.join('/')}` || '/'

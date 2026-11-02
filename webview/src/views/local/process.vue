@@ -56,7 +56,9 @@ class SystemProcessInfoView extends Vue {
         }
 
         const visibleProcesses = this.processes.filter(process => visiblePIDs.has(process.pid))
-        if (!this.showParentTree) return this.sortProcesses(visibleProcesses).map(process => ({ process, depth: 0 }))
+        if (!this.showParentTree) {
+            return this.sortProcesses(visibleProcesses).map(process => ({ process, depth: 0 }))
+        }
         return this.flattenProcessTree(visibleProcesses)
     }
 
@@ -104,14 +106,20 @@ class SystemProcessInfoView extends Vue {
 
     formatCPUTime(milliseconds: number) {
         const seconds = Math.floor(milliseconds / 1000)
-        if (seconds < 60) return `${seconds}s`
+        if (seconds < 60) {
+            return `${seconds}s`
+        }
         const minutes = Math.floor(seconds / 60)
-        if (minutes < 60) return `${minutes}m ${seconds % 60}s`
+        if (minutes < 60) {
+            return `${minutes}m ${seconds % 60}s`
+        }
         return `${Math.floor(minutes / 60)}h ${minutes % 60}m`
     }
 
     formatStartTime(ts: number) {
-        if (!ts) return '-'
+        if (!ts) {
+            return '-'
+        }
         return new Date(ts).toLocaleString('zh-CN', { hour12: false })
     }
 
@@ -147,7 +155,9 @@ class SystemProcessInfoView extends Vue {
         const rows: ProcessTreeRow[] = []
         const visited = new Set<number>()
         const appendBranch = (process: SystemProcessInfo, depth: number) => {
-            if (visited.has(process.pid)) return
+            if (visited.has(process.pid)) {
+                return
+            }
             visited.add(process.pid)
             rows.push({ process, depth })
             for (const child of this.sortProcesses(childrenByPPID.get(process.pid) || [])) {
@@ -171,7 +181,9 @@ class SystemProcessInfoView extends Vue {
             } else {
                 comparison = (a[this.sortKey] || 0) - (b[this.sortKey] || 0)
             }
-            if (comparison !== 0) return comparison * direction
+            if (comparison !== 0) {
+                return comparison * direction
+            }
             if (this.sortKey === 'cpuPercent' && a.memoryRss !== b.memoryRss) {
                 return (a.memoryRss - b.memoryRss) * direction
             }
@@ -186,7 +198,9 @@ class SystemProcessInfoView extends Vue {
     // ─── 数据加载 ───
 
     async loadProcesses() {
-        if (!this.canList || this.polling) return
+        if (!this.canList || this.polling) {
+            return
+        }
 
         this.polling = true
         this.loading = true
@@ -196,19 +210,23 @@ class SystemProcessInfoView extends Vue {
             if (!this.showGPUColumn) {
                 this.showGPUColumn = this.processes.some(process => this.usesGPU(process))
             }
-        } catch {} finally {
+        } finally {
             this.loading = false
             this.polling = false
         }
     }
 
     startPoll() {
-        if (this.pollTimer) return
+        if (this.pollTimer) {
+            return
+        }
         this.pollTimer = setInterval(() => this.loadProcesses(), POLL_INTERVAL)
     }
 
     stopPoll() {
-        if (!this.pollTimer) return
+        if (!this.pollTimer) {
+            return
+        }
         clearInterval(this.pollTimer)
         this.pollTimer = null
     }
@@ -216,7 +234,9 @@ class SystemProcessInfoView extends Vue {
     // ─── 操作 ───
 
     openKill(proc: SystemProcessInfo, force = false) {
-        if (!this.canKill) return
+        if (!this.canKill) {
+            return
+        }
 
         const tip = force
             ? this.$t('强制终止不会给进程清理资源的机会，可能导致数据丢失。')
@@ -232,11 +252,9 @@ class SystemProcessInfoView extends Vue {
             confirmText: this.$t('确认{0}', force ? this.$t('强制终止') : this.$t('终止')),
             danger: true,
             onConfirm: async () => {
-                try {
-                    await api.localProcessKill(proc.pid, force)
-                    this.portal.showNotification('success', this.$t('已发送终止信号'))
-                    await this.loadProcesses()
-                } catch {}
+                await api.localProcessKill(proc.pid, force)
+                this.portal.showNotification('success', this.$t('已发送终止信号'))
+                await this.loadProcesses()
             }
         })
     }

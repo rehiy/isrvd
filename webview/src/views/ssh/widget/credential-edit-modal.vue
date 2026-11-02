@@ -41,7 +41,9 @@ class CredentialEditModal extends Vue {
             try {
                 const res = await api.sshCredentialInspect(cred.id)
                 const detail = res.payload
-                if (!detail) throw new Error('凭据详情为空')
+                if (!detail) {
+                    throw new Error('凭据详情为空')
+                }
                 this.formData = {
                     name: detail.name,
                     description: detail.description,
@@ -61,7 +63,9 @@ class CredentialEditModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.formData.name?.trim() || !this.formData.user?.trim()) return
+        if (!this.formData.name?.trim() || !this.formData.user?.trim()) {
+            return
+        }
         this.modalLoading = true
         try {
             if (this.isEdit) {
@@ -73,8 +77,9 @@ class CredentialEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch {}
-        this.modalLoading = false
+        } finally {
+            this.modalLoading = false
+        }
     }
 }
 

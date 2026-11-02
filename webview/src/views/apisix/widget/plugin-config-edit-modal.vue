@@ -100,8 +100,9 @@ class PluginConfigEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch {}
-        this.modalLoading = false
+        } finally {
+            this.modalLoading = false
+        }
     }
 }
 

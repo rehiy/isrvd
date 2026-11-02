@@ -31,25 +31,27 @@ class ContainerLogs extends Vue {
 
     // ─── 方法 ───
     async loadContainer() {
-        try {
-            const res = await api.dockerContainerList(true)
-            this.container = (res.payload || []).find((c: DockerContainerInfo) => c.id === this.containerId) ?? null
-            if (!this.container) {
-                this.portal.showNotification('error', this.$t('容器不存在'))
-                this.$router.push('/docker/containers')
-                return
-            }
-            this.loadLogs()
-        } catch {}
+        const res = await api.dockerContainerList(true)
+        this.container = (res.payload || []).find((c: DockerContainerInfo) => c.id === this.containerId) ?? null
+        if (!this.container) {
+            this.portal.showNotification('error', this.$t('容器不存在'))
+            this.$router.push('/docker/containers')
+            return
+        }
+        this.loadLogs()
     }
 
     async loadLogs() {
-        if (!this.container) return
+        if (!this.container) {
+            return
+        }
         await this.logs.load(async () => (await api.dockerContainerLogs(this.containerId, this.logs.tail)).payload?.logs || [])
     }
 
     startStream() {
-        if (!this.container) return
+        if (!this.container) {
+            return
+        }
         this.logs.start(
             `docker/container/${encodeURIComponent(this.containerId)}/logs/stream`,
             this.portal.token ?? '',

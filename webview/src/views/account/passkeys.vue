@@ -69,7 +69,9 @@ class AccountPasskeys extends Vue {
     }
 
     async handleRegisterPasskey() {
-        if (this.registerLoading) return
+        if (this.registerLoading) {
+            return
+        }
         this.registerLoading = true
         try {
             await registerPasskey(this.registerDisplayName || undefined)
@@ -83,19 +85,25 @@ class AccountPasskeys extends Vue {
 
     // ─── 重命名 ───
     startRename(cred: PasskeyCredential) {
-        if (this.renameLoading) return
+        if (this.renameLoading) {
+            return
+        }
         this.renamingCredId = cred.idBase64
         this.renameValue = cred.displayName || ''
     }
 
     cancelRename() {
-        if (this.renameLoading) return
+        if (this.renameLoading) {
+            return
+        }
         this.renamingCredId = ''
         this.renameValue = ''
     }
 
     async confirmRename(cred: PasskeyCredential) {
-        if (this.renameLoading || this.renamingCredId !== cred.idBase64) return
+        if (this.renameLoading || this.renamingCredId !== cred.idBase64) {
+            return
+        }
         const name = this.renameValue.trim()
         if (!name || name === cred.displayName) {
             this.cancelRename()
@@ -122,11 +130,9 @@ class AccountPasskeys extends Vue {
             confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
-                try {
-                    await api.accountPasskeyDeleteCredential(credentialId)
-                    this.portal.showNotification('success', this.$t('Passkey 凭证已删除'))
-                    await this.loadPasskeyCredentials()
-                } catch {}
+                await api.accountPasskeyDeleteCredential(credentialId)
+                this.portal.showNotification('success', this.$t('Passkey 凭证已删除'))
+                await this.loadPasskeyCredentials()
             }
         })
     }}

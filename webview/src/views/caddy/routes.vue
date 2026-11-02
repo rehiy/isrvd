@@ -62,7 +62,9 @@ class CaddyRoutes extends Vue {
 
     get filteredRoutes() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.routes
+        if (!keyword) {
+            return this.routes
+        }
         return this.routes.filter((r: RouteWithServer) => {
             const m = r.match?.[0]
             const handler = this.getTerminalHandler(r)
@@ -119,10 +121,14 @@ class CaddyRoutes extends Vue {
             if (this.canListServers) {
                 try {
                     const servers = (await api.caddyServerList()).payload || []
-                    if (requestID !== this.loadRequestID) return
+                    if (requestID !== this.loadRequestID) {
+                        return
+                    }
                     this.servers = servers
                 } catch {
-                    if (requestID !== this.loadRequestID) return
+                    if (requestID !== this.loadRequestID) {
+                        return
+                    }
                     this.servers = []
                 }
             } else {
@@ -132,11 +138,15 @@ class CaddyRoutes extends Vue {
                 const routes = (await api.caddyRouteList(server.name)).payload || []
                 return routes.map(route => ({ ...route, serverID: server.id, serverName: server.name }))
             }))
-            if (requestID !== this.loadRequestID) return
+            if (requestID !== this.loadRequestID) {
+                return
+            }
             this.routes = routesByServer.flat()
             this.collapsedHosts = []
-        } catch {} finally {
-            if (requestID === this.loadRequestID) this.loading = false
+        } finally {
+            if (requestID === this.loadRequestID) {
+                this.loading = false
+            }
         }
     }
 
@@ -179,13 +189,17 @@ class CaddyRoutes extends Vue {
     }
 
     getTerminalHandler(r: CaddyRoute): CaddyHandler | undefined {
-        if (!r.handle?.length) return undefined
+        if (!r.handle?.length) {
+            return undefined
+        }
         return r.handle[r.handle.length - 1]
     }
 
     getHandlerSummary(r: CaddyRoute) {
         const h = this.getTerminalHandler(r)
-        if (!h) return '-'
+        if (!h) {
+            return '-'
+        }
         switch (h.handler) {
             case 'reverse_proxy': {
                 const ups = (h.upstreams as Array<{ dial: string }> | undefined) || []
@@ -199,9 +213,15 @@ class CaddyRoutes extends Vue {
 
     getHandlerTagClass(r: CaddyRoute) {
         const kind = this.getTerminalHandler(r)?.handler
-        if (kind === 'reverse_proxy') return 'bg-indigo-50 text-indigo-700'
-        if (kind === 'file_server') return 'bg-emerald-50 text-emerald-700'
-        if (kind === 'static_response') return 'bg-amber-50 text-amber-700'
+        if (kind === 'reverse_proxy') {
+            return 'bg-indigo-50 text-indigo-700'
+        }
+        if (kind === 'file_server') {
+            return 'bg-emerald-50 text-emerald-700'
+        }
+        if (kind === 'static_response') {
+            return 'bg-amber-50 text-amber-700'
+        }
         return 'bg-slate-100 text-slate-500'
     }
 
@@ -215,11 +235,9 @@ class CaddyRoutes extends Vue {
             confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
-                try {
-                    await api.caddyRouteDelete(route.index, route.serverName)
-                    this.portal.showNotification('success', this.$t('删除成功'))
-                    this.loadRoutes()
-                } catch {}
+                await api.caddyRouteDelete(route.index, route.serverName)
+                this.portal.showNotification('success', this.$t('删除成功'))
+                this.loadRoutes()
             }
         })
     }

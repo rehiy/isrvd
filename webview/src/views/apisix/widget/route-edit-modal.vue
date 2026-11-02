@@ -106,15 +106,25 @@ class RouteEditModal extends Vue {
 
     get routeValidationMessage() {
         const mode = this.formData.upstream_mode
-        if (mode === 'upstream_id') return this.formData.upstream_id.trim() ? '' : this.$t('请选择要引用的上游对象')
-        if (mode !== 'nodes') return ''
+        if (mode === 'upstream_id') {
+            return this.formData.upstream_id.trim() ? '' : this.$t('请选择要引用的上游对象')
+        }
+        if (mode !== 'nodes') {
+            return ''
+        }
 
         const node = this.formData.upstream_nodes[0] || this.createUpstreamNode()
         const hasHost = !!node.host.trim()
         const hasPort = !!String(node.port).trim()
-        if (!hasHost && !hasPort) return this.$t('请填写上游主机和端口')
-        if (hasHost !== hasPort) return this.$t('上游主机和端口需要同时填写')
-        if (hasPort && !/^\d+$/.test(String(node.port).trim())) return this.$t('上游端口必须为数字')
+        if (!hasHost && !hasPort) {
+            return this.$t('请填写上游主机和端口')
+        }
+        if (hasHost !== hasPort) {
+            return this.$t('上游主机和端口需要同时填写')
+        }
+        if (hasPort && !/^\d+$/.test(String(node.port).trim())) {
+            return this.$t('上游端口必须为数字')
+        }
 
         return ''
     }
@@ -124,7 +134,9 @@ class RouteEditModal extends Vue {
         const items = f.upstream_mode === 'nodes'
             ? upstreamAdvancedSummary(f.upstream_scheme, f.upstream_pass_host, f.upstream_host, [f.timeout_connect, f.timeout_send, f.timeout_read].some(v => Number(v) > 0))
             : []
-        if (f.enable_websocket) items.unshift(this.$t('WebSocket 代理'))
+        if (f.enable_websocket) {
+            items.unshift(this.$t('WebSocket 代理'))
+        }
         return items.join(' · ')
     }
 
@@ -186,11 +198,15 @@ class RouteEditModal extends Vue {
     updateUpstreamNode(index: number, field: 'host' | 'port', value: string) {
         const next = [...this.formData.upstream_nodes]
         const node = next[index]
-        if (!node) return
+        if (!node) {
+            return
+        }
         node[field] = value
         if (field === 'host' && value.trim()) {
             const port = (this.getPortsByHost(value)[0] || '').split('/')[0].split(':').pop() || ''
-            if (port) node.port = port
+            if (port) {
+                node.port = port
+            }
         }
         this.formData.upstream_nodes = next
     }
@@ -209,7 +225,9 @@ class RouteEditModal extends Vue {
         } catch {}
 
         this.containers = []
-        if (!this.canLoadDockerContainers) return
+        if (!this.canLoadDockerContainers) {
+            return
+        }
         try {
             const res = await api.dockerContainerList()
             this.containers = (res.payload || []).filter(c => c.state === 'running')
@@ -270,10 +288,18 @@ class RouteEditModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.formData.name.trim()) return this.portal.showNotification('error', this.$t('路由名称不能为空'))
-        if (!this.formData.uris.split('\n').map(s => s.trim()).filter(Boolean).length) return this.portal.showNotification('error', this.$t('URI 不能为空'))
-        if (this.$refs.pluginPanel?.pluginsJsonError) return this.portal.showNotification('error', this.$t('请修正 Plugin JSON 格式错误'))
-        if (this.routeValidationMessage) return this.portal.showNotification('error', this.routeValidationMessage)
+        if (!this.formData.name.trim()) {
+            return this.portal.showNotification('error', this.$t('路由名称不能为空'))
+        }
+        if (!this.formData.uris.split('\n').map(s => s.trim()).filter(Boolean).length) {
+            return this.portal.showNotification('error', this.$t('URI 不能为空'))
+        }
+        if (this.$refs.pluginPanel?.pluginsJsonError) {
+            return this.portal.showNotification('error', this.$t('请修正 Plugin JSON 格式错误'))
+        }
+        if (this.routeValidationMessage) {
+            return this.portal.showNotification('error', this.routeValidationMessage)
+        }
 
         if (this.formData.upstream_mode === 'nodes') {
             const message = upstreamHostError(this.formData.upstream_pass_host, this.formData.upstream_host)
@@ -296,7 +322,7 @@ class RouteEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch {} finally {
+        } finally {
             this.modalLoading = false
         }
     }

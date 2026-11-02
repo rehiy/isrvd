@@ -25,7 +25,9 @@ class SSHHosts extends Vue {
     // ─── 计算属性 ───
     get filteredHosts() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.hosts
+        if (!keyword) {
+            return this.hosts
+        }
         return this.hosts.filter((h: SSHHostInfo) =>
             (h.name || '').toLowerCase().includes(keyword) ||
             (h.addr || '').toLowerCase().includes(keyword) ||
@@ -66,11 +68,9 @@ class SSHHosts extends Vue {
             confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
-                try {
-                    await api.sshHostDelete(host.id)
-                    this.portal.showNotification('success', this.$t('主机删除成功'))
-                    this.loadHosts()
-                } catch {}
+                await api.sshHostDelete(host.id)
+                this.portal.showNotification('success', this.$t('主机删除成功'))
+                this.loadHosts()
             }
         })
     }

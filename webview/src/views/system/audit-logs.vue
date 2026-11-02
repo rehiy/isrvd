@@ -32,7 +32,9 @@ class AuditLogs extends Vue {
 
     // ─── 计算属性 ───
     get detailBody(): string {
-        if (!this.detailLog?.body) return ''
+        if (!this.detailLog?.body) {
+            return ''
+        }
         try {
             let parsed = JSON.parse(this.detailLog.body)
             parsed = this.unwrapJson(parsed)
@@ -58,7 +60,9 @@ class AuditLogs extends Vue {
             list = list.filter(log => log.username === this.selectedUsername)
         }
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return list
+        if (!keyword) {
+            return list
+        }
         return list.filter((log: AuditLog) =>
             (log.username || '').toLowerCase().includes(keyword) ||
             (log.method || '').toLowerCase().includes(keyword) ||
@@ -84,7 +88,7 @@ class AuditLogs extends Vue {
         try {
             const res = await api.systemAuditLogs()
             this.logs = res.payload || []
-        } catch {} finally {
+        } finally {
             this.loading = false
         }
     }
@@ -109,7 +113,9 @@ class AuditLogs extends Vue {
 
     unwrapJson(parsed: unknown): unknown {
         if (typeof parsed === 'string') {
-            try { return JSON.parse(parsed) } catch {}
+            try {
+                return JSON.parse(parsed)
+            } catch {}
         }
         return parsed
     }

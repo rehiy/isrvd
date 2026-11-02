@@ -24,7 +24,9 @@ class ModifyModal extends Vue {
     formData = { filename: '', content: '', path: '' }
 
     async show(adapter: ExplorerAdapter, file: FileInfo) {
-        if (this.saving) return
+        if (this.saving) {
+            return
+        }
         const generation = ++this.loadGeneration
         this.adapter = adapter
         this.formData.path = file.path
@@ -34,11 +36,17 @@ class ModifyModal extends Vue {
         this.loading = true
         try {
             const content = await adapter.readFile(file.path)
-            if (generation === this.loadGeneration && this.isOpen) this.formData.content = content
+            if (generation === this.loadGeneration && this.isOpen) {
+                this.formData.content = content
+            }
         } catch {
-            if (generation === this.loadGeneration) this.isOpen = false
+            if (generation === this.loadGeneration) {
+                this.isOpen = false
+            }
         } finally {
-            if (generation === this.loadGeneration) this.loading = false
+            if (generation === this.loadGeneration) {
+                this.loading = false
+            }
         }
     }
 
@@ -48,7 +56,9 @@ class ModifyModal extends Vue {
     }
 
     async handleConfirm() {
-        if (this.loading || !this.isOpen || !this.adapter) return
+        if (this.loading || !this.isOpen || !this.adapter) {
+            return
+        }
         this.loading = true
         this.saving = true
         try {
@@ -56,7 +66,7 @@ class ModifyModal extends Vue {
             this.portal.showNotification('success', this.$t('文件保存成功'))
             this.$emit('success')
             this.isOpen = false
-        } catch {} finally {
+        } finally {
             this.loading = false
             this.saving = false
         }

@@ -31,7 +31,9 @@ class NodeEditModal extends Vue {
 
     async handleConfirm() {
         const name = this.name.trim()
-        if (!name) return
+        if (!name) {
+            return
+        }
 
         this.modalLoading = true
         try {
@@ -39,8 +41,9 @@ class NodeEditModal extends Vue {
             this.portal.showNotification('success', this.$t('节点已重命名'))
             this.isOpen = false
             this.$emit('success')
-        } catch {}
-        this.modalLoading = false
+        } finally {
+            this.modalLoading = false
+        }
     }
 }
 

@@ -141,14 +141,26 @@ class RouteEditModal extends Vue {
                     const headers = this.listToHeaders(this.matchHeaderList)
                     const protocol = this.formData.protocol || undefined
                     const matchSet: Record<string, unknown> = {}
-                    if (hosts.length) matchSet.host = hosts
-                    if (paths.length) matchSet.path = paths
-                    if (methods.length) matchSet.method = methods
-                    if (headers) matchSet.header = headers
-                    if (protocol) matchSet.protocol = protocol
+                    if (hosts.length) {
+                        matchSet.host = hosts
+                    }
+                    if (paths.length) {
+                        matchSet.path = paths
+                    }
+                    if (methods.length) {
+                        matchSet.method = methods
+                    }
+                    if (headers) {
+                        matchSet.header = headers
+                    }
+                    if (protocol) {
+                        matchSet.protocol = protocol
+                    }
                     const match = Object.keys(matchSet).length ? [matchSet] : undefined
                     const payload: Record<string, unknown> = { handle }
-                    if (match) payload.match = match
+                    if (match) {
+                        payload.match = match
+                    }
                     this.rawJson = JSON.stringify(payload, null, 2)
                 } catch {
                     this.rawJson = '{\n  "handle": []\n}'
@@ -171,57 +183,94 @@ class RouteEditModal extends Vue {
                     }
                     if (f.fastcgi) {
                         const transport: Record<string, unknown> = { protocol: 'fastcgi' }
-                        if (f.fastcgiRoot.trim()) transport.root = f.fastcgiRoot.trim()
+                        if (f.fastcgiRoot.trim()) {
+                            transport.root = f.fastcgiRoot.trim()
+                        }
                         terminalHandler.transport = transport
                     } else if (f.dialTimeout.trim() || f.readTimeout.trim() || f.writeTimeout.trim()) {
                         const transport: Record<string, unknown> = { protocol: 'http' }
-                        if (f.dialTimeout.trim()) transport.dial_timeout = f.dialTimeout.trim()
-                        if (f.readTimeout.trim()) transport.response_header_timeout = f.readTimeout.trim()
-                        if (f.writeTimeout.trim()) transport.write_timeout = f.writeTimeout.trim()
+                        if (f.dialTimeout.trim()) {
+                            transport.dial_timeout = f.dialTimeout.trim()
+                        }
+                        if (f.readTimeout.trim()) {
+                            transport.response_header_timeout = f.readTimeout.trim()
+                        }
+                        if (f.writeTimeout.trim()) {
+                            transport.write_timeout = f.writeTimeout.trim()
+                        }
                         terminalHandler.transport = transport
                     }
                     const rewrite = this.buildProxyRewriteRaw()
-                    if (rewrite) terminalHandler.rewrite = rewrite
+                    if (rewrite) {
+                        terminalHandler.rewrite = rewrite
+                    }
                 }
                 break
             }
             case 'file_server': {
                 terminalHandler = { handler: 'file_server' }
-                if (f.root.trim()) terminalHandler.root = f.root.trim()
-                if (f.browse) terminalHandler.browse = {}
+                if (f.root.trim()) {
+                    terminalHandler.root = f.root.trim()
+                }
+                if (f.browse) {
+                    terminalHandler.browse = {}
+                }
                 break
             }
             case 'static_response': {
                 terminalHandler = { handler: 'static_response' }
-                if (f.statusCode) terminalHandler.status_code = f.statusCode
-                if (f.body) terminalHandler.body = f.body
+                if (f.statusCode) {
+                    terminalHandler.status_code = f.statusCode
+                }
+                if (f.body) {
+                    terminalHandler.body = f.body
+                }
                 break
             }
             case 'rewrite': {
                 terminalHandler = { handler: 'rewrite' }
-                if (f.rewriteUri.trim()) terminalHandler.uri = f.rewriteUri.trim()
-                if (f.stripPathPrefix.trim()) terminalHandler.strip_path_prefix = f.stripPathPrefix.trim()
-                if (f.stripPathSuffix.trim()) terminalHandler.strip_path_suffix = f.stripPathSuffix.trim()
+                if (f.rewriteUri.trim()) {
+                    terminalHandler.uri = f.rewriteUri.trim()
+                }
+                if (f.stripPathPrefix.trim()) {
+                    terminalHandler.strip_path_prefix = f.stripPathPrefix.trim()
+                }
+                if (f.stripPathSuffix.trim()) {
+                    terminalHandler.strip_path_suffix = f.stripPathSuffix.trim()
+                }
                 if (f.uriSubstringFind.trim()) {
                     terminalHandler.uri_substring = [{ find: f.uriSubstringFind.trim(), replace: f.uriSubstringReplace.trim() }]
                 }
                 break
             }
         }
-        if (!terminalHandler) return ''
+        if (!terminalHandler) {
+            return ''
+        }
         const buildOps = (ops: CaddyHeaderOp[]) => {
             const set: Record<string, string[]> = {}
             const add: Record<string, string[]> = {}
             const del: string[] = []
             ops.forEach(op => {
-                if (op.op === 'set') set[op.field] = [op.value]
-                else if (op.op === 'add') { add[op.field] = add[op.field] || []; add[op.field].push(op.value) }
-                else if (op.op === 'delete') del.push(op.field)
+                if (op.op === 'set') {
+                    set[op.field] = [op.value]
+                } else if (op.op === 'add') {
+                    add[op.field] = add[op.field] || []
+                    add[op.field].push(op.value)
+                } else if (op.op === 'delete') {
+                    del.push(op.field)
+                }
             })
             const out: Record<string, unknown> = {}
-            if (Object.keys(set).length) out.set = set
-            if (Object.keys(add).length) out.add = add
-            if (del.length) out.delete = del
+            if (Object.keys(set).length) {
+                out.set = set
+            }
+            if (Object.keys(add).length) {
+                out.add = add
+            }
+            if (del.length) {
+                out.delete = del
+            }
             return out
         }
         const handles: unknown[] = []
@@ -231,23 +280,41 @@ class RouteEditModal extends Vue {
             const respOps = f.responseHeaders.filter(op => op.field.trim())
             if (reqOps.length || respOps.length) {
                 const hh: Record<string, unknown> = { handler: 'headers' }
-                if (reqOps.length) hh.request = buildOps(reqOps)
-                if (respOps.length) hh.response = buildOps(respOps)
+                if (reqOps.length) {
+                    hh.request = buildOps(reqOps)
+                }
+                if (respOps.length) {
+                    hh.response = buildOps(respOps)
+                }
                 handles.push(hh)
             }
         }
         handles.push(terminalHandler)
-        try { return JSON.stringify(handles, null, 2) } catch { return '' }
+        try {
+            return JSON.stringify(handles, null, 2)
+        } catch {
+            return ''
+        }
     }
 
     buildProxyRewriteRaw(): Record<string, unknown> | null {
         const f = this.formData
-        if (!f.proxyRewriteEnabled) return null
+        if (!f.proxyRewriteEnabled) {
+            return null
+        }
         const rewrite: Record<string, unknown> = {}
-        if (f.proxyRewriteMethod.trim()) rewrite.method = f.proxyRewriteMethod.trim().toUpperCase()
-        if (f.proxyRewriteUri.trim()) rewrite.uri = f.proxyRewriteUri.trim()
-        if (f.proxyStripPathPrefix.trim()) rewrite.strip_path_prefix = f.proxyStripPathPrefix.trim()
-        if (f.proxyStripPathSuffix.trim()) rewrite.strip_path_suffix = f.proxyStripPathSuffix.trim()
+        if (f.proxyRewriteMethod.trim()) {
+            rewrite.method = f.proxyRewriteMethod.trim().toUpperCase()
+        }
+        if (f.proxyRewriteUri.trim()) {
+            rewrite.uri = f.proxyRewriteUri.trim()
+        }
+        if (f.proxyStripPathPrefix.trim()) {
+            rewrite.strip_path_prefix = f.proxyStripPathPrefix.trim()
+        }
+        if (f.proxyStripPathSuffix.trim()) {
+            rewrite.strip_path_suffix = f.proxyStripPathSuffix.trim()
+        }
         if (f.proxyUriSubstringFind.trim()) {
             rewrite.uri_substring = [{ find: f.proxyUriSubstringFind.trim(), replace: f.proxyUriSubstringReplace.trim() }]
         }
@@ -271,9 +338,15 @@ class RouteEditModal extends Vue {
         const headers: Record<string, string[]> = {}
         for (const row of list) {
             const k = row.key.trim()
-            if (!k) continue
-            if (!headers[k]) headers[k] = []
-            if (row.value.trim()) headers[k].push(row.value.trim())
+            if (!k) {
+                continue
+            }
+            if (!headers[k]) {
+                headers[k] = []
+            }
+            if (row.value.trim()) {
+                headers[k].push(row.value.trim())
+            }
         }
         return Object.keys(headers).length ? headers : undefined
     }
@@ -284,6 +357,14 @@ class RouteEditModal extends Vue {
 
     removeMatchHeaderRow(idx: number) {
         this.matchHeaderList.splice(idx, 1)
+    }
+
+    onToggleMatchHeaders(enabled: boolean) {
+        if (!enabled) {
+            this.matchHeaderList = []
+        } else if (!this.matchHeaderList.length) {
+            this.addMatchHeaderRow()
+        }
     }
     // ─── 请求头/响应头中间件操作 ───
     addHeaderOp(target: 'request' | 'response') {
@@ -303,7 +384,9 @@ class RouteEditModal extends Vue {
     syncSelectedUpstream() {
         const host = this.formData.upstreamHost.trim()
         const port = this.formData.upstreamPort.trim()
-        if (!host) return
+        if (!host) {
+            return
+        }
         const lines = this.formData.upstreams.split('\n').map(t => t.trim()).filter(Boolean)
         const upstream = port ? `${host}:${port}` : host
         this.formData.upstreams = [upstream, ...lines.slice(1)].join('\n')
@@ -312,7 +395,9 @@ class RouteEditModal extends Vue {
     setUpstreamHost(host: string) {
         this.formData.upstreamHost = host
         const port = (this.getPortsByHost(host)[0] || '').split('/')[0].split(':').pop() || ''
-        if (port) this.formData.upstreamPort = port
+        if (port) {
+            this.formData.upstreamPort = port
+        }
         this.syncSelectedUpstream()
     }
 
@@ -330,11 +415,11 @@ class RouteEditModal extends Vue {
 
     async loadContainers() {
         this.containers = []
-        if (!this.canLoadDockerContainers) return
-        try {
-            const res = await api.dockerContainerList()
-            this.containers = (res.payload || []).filter(c => c.state === 'running')
-        } catch {}
+        if (!this.canLoadDockerContainers) {
+            return
+        }
+        const res = await api.dockerContainerList()
+        this.containers = (res.payload || []).filter(c => c.state === 'running')
     }
 
     show(route: CaddyRoute | null, server = '') {
@@ -376,7 +461,11 @@ class RouteEditModal extends Vue {
             if (workHandles.length > 1) {
                 // 复杂路由无法解析，降级到 raw 模式
                 this.formData.kind = 'raw'
-                try { this.rawJson = JSON.stringify({ match: route.match, handle: handles }, null, 2) } catch { this.rawJson = '' }
+                try {
+                    this.rawJson = JSON.stringify({ match: route.match, handle: handles }, null, 2)
+                } catch {
+                    this.rawJson = ''
+                }
                 this.rawDirty = true
                 this.isOpen = true
                 return
@@ -441,7 +530,11 @@ class RouteEditModal extends Vue {
                 default: {
                     // 未知 handler 类型，降级到 raw 模式
                     this.formData.kind = 'raw'
-                    try { this.rawJson = JSON.stringify({ match: route.match, handle: handles }, null, 2) } catch { this.rawJson = '' }
+                    try {
+                        this.rawJson = JSON.stringify({ match: route.match, handle: handles }, null, 2)
+                    } catch {
+                        this.rawJson = ''
+                    }
                     this.rawDirty = true
                     this.isOpen = true
                     return
@@ -450,8 +543,12 @@ class RouteEditModal extends Vue {
             // 解析 headers 中间件
             if (headersHandler) {
                 const hh = headersHandler as CaddyHandlerHeaders
-                if (hh.request) this.formData.requestHeaders = this.parseHeadersOps(hh.request)
-                if (hh.response) this.formData.responseHeaders = this.parseHeadersOps(hh.response)
+                if (hh.request) {
+                    this.formData.requestHeaders = this.parseHeadersOps(hh.request)
+                }
+                if (hh.response) {
+                    this.formData.responseHeaders = this.parseHeadersOps(hh.response)
+                }
                 this.formData.enableHeaders = true
             }
         } else {
@@ -467,9 +564,15 @@ class RouteEditModal extends Vue {
         const setMap = m.set as Record<string, string[]> | undefined
         const addMap = m.add as Record<string, string[]> | undefined
         const delArr = m.delete as string[] | undefined
-        if (setMap) for (const [k, v] of Object.entries(setMap)) ops.push({ op: 'set', field: k, value: Array.isArray(v) ? v[0] || '' : String(v) })
-        if (addMap) for (const [k, v] of Object.entries(addMap)) for (const val of (Array.isArray(v) ? v : [v])) ops.push({ op: 'add', field: k, value: String(val) })
-        if (delArr) for (const f of delArr) ops.push({ op: 'delete', field: f, value: '' })
+        if (setMap) {
+            for (const [k, v] of Object.entries(setMap)) ops.push({ op: 'set', field: k, value: Array.isArray(v) ? v[0] || '' : String(v) })
+        }
+        if (addMap) {
+            for (const [k, v] of Object.entries(addMap)) for (const val of (Array.isArray(v) ? v : [v])) ops.push({ op: 'add', field: k, value: String(val) })
+        }
+        if (delArr) {
+            for (const f of delArr) ops.push({ op: 'delete', field: f, value: '' })
+        }
         return ops
     }
 
@@ -507,11 +610,21 @@ class RouteEditModal extends Vue {
         const headers = this.listToHeaders(this.matchHeaderList)
         const protocol = this.formData.protocol || undefined
         const matchSet: Record<string, unknown> = {}
-        if (hosts.length) matchSet.host = hosts
-        if (paths.length) matchSet.path = paths
-        if (methods.length) matchSet.method = methods
-        if (headers) matchSet.header = headers
-        if (protocol) matchSet.protocol = protocol
+        if (hosts.length) {
+            matchSet.host = hosts
+        }
+        if (paths.length) {
+            matchSet.path = paths
+        }
+        if (methods.length) {
+            matchSet.method = methods
+        }
+        if (headers) {
+            matchSet.header = headers
+        }
+        if (protocol) {
+            matchSet.protocol = protocol
+        }
         const match = Object.keys(matchSet).length ? [matchSet] : undefined
 
         const rawStr = this.buildRawFromCurrent()
@@ -535,7 +648,9 @@ class RouteEditModal extends Vue {
 
     async handleConfirm() {
         const payload = this.buildPayload()
-        if (!payload) return
+        if (!payload) {
+            return
+        }
 
         this.modalLoading = true
         try {
@@ -548,7 +663,7 @@ class RouteEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch {} finally {
+        } finally {
             this.modalLoading = false
         }
     }
@@ -612,7 +727,7 @@ export default toNative(RouteEditModal)
           v-model="enableMatchHeaders"
           :label="$t('匹配请求头')"
           :desc="$t('仅转发包含指定请求头的请求，留空匹配所有')"
-          @update:model-value="(v: boolean) => { if (!v) matchHeaderList = []; else if (!matchHeaderList.length) addMatchHeaderRow() }"
+          @update:model-value="onToggleMatchHeaders"
         >
           <div class="space-y-2">
             <div v-for="(entry, idx) in matchHeaderList" :key="idx" class="flex gap-2 items-center">

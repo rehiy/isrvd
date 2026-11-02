@@ -62,8 +62,12 @@ class SSLEditModal extends Vue {
             snis: this.parseSnis(),
             status: Number(this.formData.status)
         }
-        if (this.formData.cert.trim()) payload.cert = this.formData.cert.trim()
-        if (this.formData.key.trim()) payload.key = this.formData.key.trim()
+        if (this.formData.cert.trim()) {
+            payload.cert = this.formData.cert.trim()
+        }
+        if (this.formData.key.trim()) {
+            payload.key = this.formData.key.trim()
+        }
         return payload
     }
 
@@ -92,7 +96,7 @@ class SSLEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch {} finally {
+        } finally {
             this.modalLoading = false
         }
     }

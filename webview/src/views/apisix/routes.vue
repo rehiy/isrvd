@@ -35,7 +35,9 @@ class Routes extends Vue {
     // ─── 计算属性 ───
     get filteredRoutes() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.routes
+        if (!keyword) {
+            return this.routes
+        }
         return this.routes.filter((r: ApisixRoute) => {
             return (
                 (r.name || '').toLowerCase().includes(keyword) ||
@@ -70,8 +72,11 @@ class Routes extends Vue {
             const host = this.getRouteGroupHost(route)
             const stat = hostStats.get(host) || { count: 0, active: 0, disabled: 0 }
             stat.count += 1
-            if (route.status === 1) stat.active += 1
-            else stat.disabled += 1
+            if (route.status === 1) {
+                stat.active += 1
+            } else {
+                stat.disabled += 1
+            }
             hostStats.set(host, stat)
         }
 
@@ -81,7 +86,9 @@ class Routes extends Vue {
             const host = this.getRouteGroupHost(route)
             if (this.groupByHost && host !== previousHost) {
                 const stat = hostStats.get(host)
-                if (stat) rows.push({ type: 'host', key: `host-${host}`, host, count: stat.count, active: stat.active, disabled: stat.disabled })
+                if (stat) {
+                    rows.push({ type: 'host', key: `host-${host}`, host, count: stat.count, active: stat.active, disabled: stat.disabled })
+                }
                 previousHost = host
             }
             rows.push({ type: 'route', key: `route-${route.id || index}`, host, route })
@@ -94,7 +101,7 @@ class Routes extends Vue {
         this.loading = true
         try {
             this.routes = (await api.apisixRouteList()).payload || []
-        } catch {} finally {
+        } finally {
             this.loading = false
         }
     }
@@ -128,14 +135,20 @@ class Routes extends Vue {
     }
 
     getRouteUpstreamTagClass(r: ApisixRoute) {
-        if (r.upstream_id) return 'bg-emerald-50 text-emerald-700'
-        if (normalizeUpstreamNodes(r.upstream).length > 0) return 'bg-indigo-50 text-indigo-700'
+        if (r.upstream_id) {
+            return 'bg-emerald-50 text-emerald-700'
+        }
+        if (normalizeUpstreamNodes(r.upstream).length > 0) {
+            return 'bg-indigo-50 text-indigo-700'
+        }
         return 'bg-slate-100 text-slate-500'
     }
 
     toggleStatus(route: ApisixRoute) {
         const id = route.id
-        if (!id) return
+        if (!id) {
+            return
+        }
         const ns = route.status === 1 ? 0 : 1
         const label = ns === 1 ? this.$t('启用') : this.$t('禁用')
         this.portal.showConfirm({
@@ -154,7 +167,9 @@ class Routes extends Vue {
 
     deleteRoute(route: ApisixRoute) {
         const id = route.id
-        if (!id) return
+        if (!id) {
+            return
+        }
         this.portal.showConfirm({
             title: this.$t('删除路由'),
             message: this.$t('确定要删除路由 <strong class="text-slate-900">{0}</strong> 吗？此操作不可恢复。', route.name || id),

@@ -23,11 +23,9 @@ class NodeActions extends Vue {
             confirmText: this.$t('确认吊销'),
             danger: true,
             onConfirm: async () => {
-                try {
-                    await api.nodeRevoke(node.id)
-                    this.portal.showNotification('success', this.$t('节点已吊销'))
-                    this.$emit('success')
-                } catch {}
+                await api.nodeRevoke(node.id)
+                this.portal.showNotification('success', this.$t('节点已吊销'))
+                this.$emit('success')
             }
         })
     }
@@ -42,11 +40,9 @@ class NodeActions extends Vue {
             confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
-                try {
-                    await api.nodeDelete(node.id)
-                    this.portal.showNotification('success', this.$t('节点已删除'))
-                    this.$emit('success')
-                } catch {}
+                await api.nodeDelete(node.id)
+                this.portal.showNotification('success', this.$t('节点已删除'))
+                this.$emit('success')
             }
         })
     }

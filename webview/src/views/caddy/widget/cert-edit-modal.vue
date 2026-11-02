@@ -64,7 +64,9 @@ class CertEditModal extends Vue {
     }
 
     setSource(source: CaddyCertSource) {
-        if (this.isEditMode) return
+        if (this.isEditMode) {
+            return
+        }
         this.formData.source = source
     }
 
@@ -102,9 +104,15 @@ class CertEditModal extends Vue {
                     return null
                 }
                 cert.certificate = f.certificate.trim()
-                if (f.keyContent.trim()) cert.keyContent = f.keyContent.trim()
-                if (tags.length) cert.tags = tags
-                if (f.format.trim()) cert.format = f.format.trim()
+                if (f.keyContent.trim()) {
+                    cert.keyContent = f.keyContent.trim()
+                }
+                if (tags.length) {
+                    cert.tags = tags
+                }
+                if (f.format.trim()) {
+                    cert.format = f.format.trim()
+                }
                 break
             case 'pem':
                 if (!f.certificate.trim()) {
@@ -116,8 +124,12 @@ class CertEditModal extends Vue {
                     return null
                 }
                 cert.certificate = f.certificate
-                if (f.keyContent.trim()) cert.keyContent = f.keyContent
-                if (tags.length) cert.tags = tags
+                if (f.keyContent.trim()) {
+                    cert.keyContent = f.keyContent
+                }
+                if (tags.length) {
+                    cert.tags = tags
+                }
                 break
             case 'automate':
                 if (!f.subject.trim()) {
@@ -132,7 +144,9 @@ class CertEditModal extends Vue {
 
     async handleConfirm() {
         const payload = this.buildPayload()
-        if (!payload) return
+        if (!payload) {
+            return
+        }
 
         this.modalLoading = true
         try {
@@ -145,7 +159,7 @@ class CertEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch {} finally {
+        } finally {
             this.modalLoading = false
         }
     }

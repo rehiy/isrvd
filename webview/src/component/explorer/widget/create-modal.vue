@@ -26,14 +26,16 @@ class CreateModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.formData.name.trim() || !this.adapter) return
+        if (!this.formData.name.trim() || !this.adapter) {
+            return
+        }
         this.loading = true
         try {
             const path = this.currentPath.replace(/\/+$/, '') + '/' + this.formData.name.trim()
             await this.adapter.createFile?.(path, this.formData.content)
             this.$emit('success')
             this.isOpen = false
-        } catch {} finally {
+        } finally {
             this.loading = false
         }
     }

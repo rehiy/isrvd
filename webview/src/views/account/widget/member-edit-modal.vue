@@ -88,7 +88,9 @@ class MemberEditModal extends Vue {
 
     // ─── 方法 ───
     async loadRoutes() {
-        if (this.routeGroups.length > 0) return
+        if (this.routeGroups.length > 0) {
+            return
+        }
         this.routesLoading = true
         try {
             const res = await api.accountRouteList()
@@ -96,14 +98,18 @@ class MemberEditModal extends Vue {
             // 收集非具体权限路由（匿名/登录即可），自动勾选且不可取消
             const autoPerms = new Set<string>()
             for (const item of items) {
-                if (item.access !== RouteAccessPerm) autoPerms.add(item.key)
+                if (item.access !== RouteAccessPerm) {
+                    autoPerms.add(item.key)
+                }
             }
             this.autoPerms = autoPerms
             // 按 module 分组，保持模块顺序
             const moduleOrder = Object.keys(MODULE_META)
             const groupMap = new Map<string, RouteItem[]>()
             for (const item of items) {
-                if (!groupMap.has(item.module)) groupMap.set(item.module, [])
+                if (!groupMap.has(item.module)) {
+                    groupMap.set(item.module, [])
+                }
                 groupMap.get(item.module)?.push({ key: item.key, label: item.label || item.key, access: item.access })
             }
             // 按预定义顺序排列模块，未知模块追加到末尾
@@ -160,7 +166,9 @@ class MemberEditModal extends Vue {
     }
 
     togglePerm(key: string) {
-        if (this.autoPerms.has(key)) return
+        if (this.autoPerms.has(key)) {
+            return
+        }
         if (this.permSet.has(key)) {
             this.permSet.delete(key)
             this.formData.permissions = this.formData.permissions.filter(k => k !== key)
@@ -213,7 +221,9 @@ class MemberEditModal extends Vue {
     toggleGroup(routes: RouteItem[]) {
         // 只操作非自动权限的路由
         const manualRoutes = routes.filter(r => !this.autoPerms.has(r.key)).map(r => r.key)
-        if (manualRoutes.length === 0) return
+        if (manualRoutes.length === 0) {
+            return
+        }
         const allChecked = manualRoutes.every(k => this.permSet.has(k))
         if (allChecked) {
             const removeSet = new Set(manualRoutes)
@@ -235,7 +245,9 @@ class MemberEditModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.formData.username?.trim()) return
+        if (!this.formData.username?.trim()) {
+            return
+        }
         if (!this.isEdit && !this.formData.password?.trim()) {
             this.portal.showNotification('warning', this.$t('请填写登录密码'))
             return
@@ -251,7 +263,6 @@ class MemberEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch {
         } finally {
             this.modalLoading = false
         }

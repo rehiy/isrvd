@@ -35,7 +35,9 @@ class HostEditModal extends Vue {
 
     // ─── 方法 ───
     async loadCredentials() {
-        if (this.credentials.length > 0) return // 已加载过
+        if (this.credentials.length > 0) {
+            return
+        } // 已加载过
         this.credentialsLoading = true
         try {
             const res = await api.sshCredentialList()
@@ -76,8 +78,12 @@ class HostEditModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.formData.name?.trim() || !this.formData.addr?.trim()) return
-        if (!this.formData.credentialId && !this.formData.user?.trim()) return
+        if (!this.formData.name?.trim() || !this.formData.addr?.trim()) {
+            return
+        }
+        if (!this.formData.credentialId && !this.formData.user?.trim()) {
+            return
+        }
         
         this.modalLoading = true
         try {
@@ -104,8 +110,9 @@ class HostEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch {}
-        this.modalLoading = false
+        } finally {
+            this.modalLoading = false
+        }
     }
 }
 

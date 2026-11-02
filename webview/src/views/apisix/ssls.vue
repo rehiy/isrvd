@@ -26,7 +26,9 @@ class SSLs extends Vue {
 
     get filteredSSLs() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.ssls
+        if (!keyword) {
+            return this.ssls
+        }
         return this.ssls.filter((ssl: ApisixSSL) =>
             (ssl.id || '').toLowerCase().includes(keyword) ||
             (ssl.snis || []).some((sni: string) => sni.toLowerCase().includes(keyword))
@@ -42,7 +44,7 @@ class SSLs extends Vue {
         this.loading = true
         try {
             this.ssls = this.sortSSLs((await api.apisixSSLList()).payload || [])
-        } catch {} finally {
+        } finally {
             this.loading = false
         }
     }
@@ -61,8 +63,12 @@ class SSLs extends Vue {
 
     getSNISummary(ssl: ApisixSSL) {
         const snis = ssl.snis || []
-        if (snis.length === 0) return '-'
-        if (snis.length === 1) return snis[0]
+        if (snis.length === 0) {
+            return '-'
+        }
+        if (snis.length === 1) {
+            return snis[0]
+        }
         return this.$t('{0} 等 {1} 个域名', snis[0], snis.length)
     }
 
@@ -78,7 +84,9 @@ class SSLs extends Vue {
 
     deleteSSL(ssl: ApisixSSL) {
         const id = ssl.id
-        if (!id) return
+        if (!id) {
+            return
+        }
         this.portal.showConfirm({
             title: this.$t('删除证书'),
             message: this.$t('确定要删除证书 <strong class="text-slate-900">{0}</strong> 吗？正在被 SNI 使用时可能影响 HTTPS 访问。', this.getPrimarySNI(ssl)),

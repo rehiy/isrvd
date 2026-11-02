@@ -27,15 +27,18 @@ class NetworkCreateModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.formData.name?.trim()) return
+        if (!this.formData.name?.trim()) {
+            return
+        }
         this.modalLoading = true
         try {
             await api.dockerNetworkCreate(this.formData)
             this.portal.showNotification('success', this.$t('网络创建成功'))
             this.isOpen = false
             this.$emit('success')
-        } catch {}
-        this.modalLoading = false
+        } finally {
+            this.modalLoading = false
+        }
     }}
 
 export default toNative(NetworkCreateModal)

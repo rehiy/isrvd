@@ -51,7 +51,9 @@ class RegistryEditModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.formData.name?.trim() || !this.formData.url?.trim()) return
+        if (!this.formData.name?.trim() || !this.formData.url?.trim()) {
+            return
+        }
         this.modalLoading = true
         try {
             if (this.isEdit) {
@@ -63,8 +65,9 @@ class RegistryEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch {}
-        this.modalLoading = false
+        } finally {
+            this.modalLoading = false
+        }
     }
 }
 

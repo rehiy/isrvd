@@ -28,7 +28,9 @@ class RegistryPushModal extends Vue {
         const tags: string[] = []
         for (const img of this.localImages) {
             for (const tag of img.repoTags) {
-                if (tag !== '<none>:<none>') tags.push(tag)
+                if (tag !== '<none>:<none>') {
+                    tags.push(tag)
+                }
             }
         }
         return tags
@@ -39,16 +41,16 @@ class RegistryPushModal extends Vue {
         const ns = this.pushForm.namespace ? this.pushForm.namespace + '/' : ''
         let imageName = this.pushForm.image || 'image:tag'
         const lastSlash = imageName.lastIndexOf('/')
-        if (lastSlash >= 0) imageName = imageName.substring(lastSlash + 1)
+        if (lastSlash >= 0) {
+            imageName = imageName.substring(lastSlash + 1)
+        }
         return registry + '/' + ns + imageName
     }
 
     // ─── 方法 ───
     async loadLocalImages() {
-        try {
-            const res = await api.dockerImageList(false)
-            this.localImages = (res.payload || []).filter((img: DockerImageInfo) => img.repoTags && img.repoTags.length > 0)
-        } catch {}
+        const res = await api.dockerImageList(false)
+        this.localImages = (res.payload || []).filter((img: DockerImageInfo) => img.repoTags && img.repoTags.length > 0)
     }
 
     show(allRegistries: DockerRegistryInfo[], registry: DockerRegistryInfo | null = null, prefillImage = '') {
@@ -63,15 +65,18 @@ class RegistryPushModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.pushForm.image.trim() || !this.pushForm.registryUrl.trim()) return
+        if (!this.pushForm.image.trim() || !this.pushForm.registryUrl.trim()) {
+            return
+        }
         this.modalLoading = true
         try {
             await api.dockerImagePush(this.pushForm.image, this.pushForm.registryUrl, this.pushForm.namespace.trim())
             this.portal.showNotification('success', this.$t('镜像推送成功'))
             this.isOpen = false
             this.$emit('success')
-        } catch {}
-        this.modalLoading = false
+        } finally {
+            this.modalLoading = false
+        }
     }
 }
 

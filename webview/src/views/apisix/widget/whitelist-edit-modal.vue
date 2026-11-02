@@ -46,14 +46,20 @@ class WhitelistEditModal extends Vue {
     }
 
     get confirmText() {
-        if (this.isEdit && this.whitelistConsumers.length === 0) return this.$t('删除授权')
+        if (this.isEdit && this.whitelistConsumers.length === 0) {
+            return this.$t('删除授权')
+        }
         return this.isEdit ? this.$t('保存') : this.$t('添加')
     }
 
     get selectableRoutes() {
-        if (this.isEdit && this.editingRoute) return [this.editingRoute]
+        if (this.isEdit && this.editingRoute) {
+            return [this.editingRoute]
+        }
         return this.routes.filter(route => {
-            if (!route.id) return false
+            if (!route.id) {
+                return false
+            }
             const plugins = route.plugins || {}
             return !plugins['consumer-restriction']
         })
@@ -69,7 +75,9 @@ class WhitelistEditModal extends Vue {
             hide_credentials: this.formData.hideCredentials,
         }
         const query = this.formData.keyAuthQuery.trim()
-        if (query) config.query = query
+        if (query) {
+            config.query = query
+        }
         return config
     }
 
@@ -107,7 +115,7 @@ class WhitelistEditModal extends Vue {
                 this.routes = routesRes.payload || []
                 this.consumers = consumersRes.payload || []
             }
-        } catch {} finally {
+        } finally {
             this.modalLoading = false
         }
     }
@@ -117,7 +125,9 @@ class WhitelistEditModal extends Vue {
         return this.keyAuthConsumers
             .filter(consumer => !this.whitelistConsumers.includes(consumer.username))
             .filter(consumer => {
-                if (!q) return true
+                if (!q) {
+                    return true
+                }
                 return consumer.username.toLowerCase().includes(q) || (consumer.desc || '').toLowerCase().includes(q)
             })
             .slice(0, 8)
@@ -132,8 +142,12 @@ class WhitelistEditModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.formData.routeId) return this.portal.showNotification('error', this.$t('请选择要配置访问授权的路由'))
-        if (!this.isEdit && this.whitelistConsumers.length === 0) return this.portal.showNotification('error', this.$t('授权用户不能为空'))
+        if (!this.formData.routeId) {
+            return this.portal.showNotification('error', this.$t('请选择要配置访问授权的路由'))
+        }
+        if (!this.isEdit && this.whitelistConsumers.length === 0) {
+            return this.portal.showNotification('error', this.$t('授权用户不能为空'))
+        }
 
         this.modalLoading = true
         try {
@@ -145,7 +159,7 @@ class WhitelistEditModal extends Vue {
             this.portal.showNotification('success', this.whitelistConsumers.length > 0 ? this.$t('访问授权更新成功') : this.$t('访问授权删除成功'))
             this.isOpen = false
             this.$emit('success')
-        } catch {} finally {
+        } finally {
             this.modalLoading = false
         }
     }

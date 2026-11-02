@@ -26,7 +26,9 @@ class CaddyCerts extends Vue {
 
     get filteredCerts() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.certs
+        if (!keyword) {
+            return this.certs
+        }
         return this.certs.filter((c: CaddyCert) =>
             (c.subject || '').toLowerCase().includes(keyword) ||
             (c.certificate || '').toLowerCase().includes(keyword) ||
@@ -72,29 +74,47 @@ class CaddyCerts extends Vue {
     }
 
     certSummary(cert: CaddyCert) {
-        if (cert.subject) return cert.subject
-        if (cert.source === 'file') return cert.certificate || '-'
+        if (cert.subject) {
+            return cert.subject
+        }
+        if (cert.source === 'file') {
+            return cert.certificate || '-'
+        }
         return cert.certificate?.split('\n')[0].trim() || this.$t('(空)')
     }
 
     certExpireClass(notAfter?: string) {
-        if (!notAfter) return 'text-slate-400'
+        if (!notAfter) {
+            return 'text-slate-400'
+        }
         const days = (new Date(notAfter).getTime() - Date.now()) / 86400000
-        if (days < 0) return 'text-red-600 font-medium'
-        if (days < 30) return 'text-amber-600 font-medium'
+        if (days < 0) {
+            return 'text-red-600 font-medium'
+        }
+        if (days < 30) {
+            return 'text-amber-600 font-medium'
+        }
         return 'text-emerald-600'
     }
 
     certExpireLabel(notAfter?: string) {
-        if (!notAfter) return '-'
+        if (!notAfter) {
+            return '-'
+        }
         const days = Math.floor((new Date(notAfter).getTime() - Date.now()) / 86400000)
-        if (days < 0) return this.$t('已过期 {0} 天', -days)
-        if (days === 0) return this.$t('今日过期')
+        if (days < 0) {
+            return this.$t('已过期 {0} 天', -days)
+        }
+        if (days === 0) {
+            return this.$t('今日过期')
+        }
         return this.$t('{0} 天后到期', days)
     }
 
     deleteCert(cert: CaddyCert) {
-        if (!cert.key) return
+        if (!cert.key) {
+            return
+        }
         this.portal.showConfirm({
             title: this.$t('删除证书'),
             message: this.$t('确定要删除证书 <strong class="text-slate-900">{0}</strong> 吗？此操作不可恢复。', this.certSummary(cert)),
@@ -103,11 +123,9 @@ class CaddyCerts extends Vue {
             confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
-                try {
-                    await api.caddyCertDelete(cert.key as string)
-                    this.portal.showNotification('success', this.$t('删除成功'))
-                    this.loadCerts()
-                } catch {}
+                await api.caddyCertDelete(cert.key as string)
+                this.portal.showNotification('success', this.$t('删除成功'))
+                this.loadCerts()
             }        })
     }
 

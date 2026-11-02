@@ -27,7 +27,9 @@ class Upstreams extends Vue {
 
     get filteredUpstreams() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.upstreams
+        if (!keyword) {
+            return this.upstreams
+        }
         return this.upstreams.filter((upstream: ApisixUpstream) => {
             const nodes = this.getUpstreamNodes(upstream).toLowerCase()
             return (
@@ -49,7 +51,7 @@ class Upstreams extends Vue {
         this.loading = true
         try {
             this.upstreams = this.sortUpstreams((await api.apisixUpstreamList()).payload || [])
-        } catch {} finally {
+        } finally {
             this.loading = false
         }
     }
@@ -64,17 +66,27 @@ class Upstreams extends Vue {
 
     getUpstreamNodes(upstream: ApisixUpstream) {
         const nodes = normalizeUpstreamNodes(upstream)
-        if (nodes.length === 0) return this.$t('未配置')
+        if (nodes.length === 0) {
+            return this.$t('未配置')
+        }
         const first = nodes[0]
         const firstLabel = `${first.host || '-'}:${first.port || '-'}`
-        if (nodes.length === 1) return firstLabel
+        if (nodes.length === 1) {
+            return firstLabel
+        }
         return this.$t('{0} 等 {1} 个节点', firstLabel, nodes.length)
     }
 
     getUpstreamTypeClass(type?: string) {
-        if (type === 'chash') return 'bg-emerald-50 text-emerald-700'
-        if (type === 'ewma') return 'bg-cyan-50 text-cyan-700'
-        if (type === 'least_conn') return 'bg-amber-50 text-amber-700'
+        if (type === 'chash') {
+            return 'bg-emerald-50 text-emerald-700'
+        }
+        if (type === 'ewma') {
+            return 'bg-cyan-50 text-cyan-700'
+        }
+        if (type === 'least_conn') {
+            return 'bg-amber-50 text-amber-700'
+        }
         return 'bg-indigo-50 text-indigo-700'
     }
 
@@ -82,7 +94,9 @@ class Upstreams extends Vue {
 
     deleteUpstream(upstream: ApisixUpstream) {
         const id = upstream.id
-        if (!id) return
+        if (!id) {
+            return
+        }
         this.portal.showConfirm({
             title: this.$t('删除上游'),
             message: this.$t('确定要删除上游 <strong class="text-slate-900">{0}</strong> 吗？仍被路由引用时 APISIX 可能拒绝删除。', upstream.name || id),

@@ -27,7 +27,9 @@ class NodeCreateModal extends Vue {
 
     // ─── 计算属性 ───
     get installCommand() {
-        if (!this.token) return ''
+        if (!this.token) {
+            return ''
+        }
         return `export ISRVD_MODE=agent\nexport ISRVD_CENTER_URL=${this.shellQuote(centerUrl())}\nexport ISRVD_NODE_TOKEN=${this.shellQuote(this.token)}\nbash <(curl -sL https://isrvd.rehiy.com/install/) install`
     }
 
@@ -47,14 +49,17 @@ class NodeCreateModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.name.trim() || this.modalLoading) return
+        if (!this.name.trim() || this.modalLoading) {
+            return
+        }
         this.modalLoading = true
         try {
             const res = await api.nodeCreate({ name: this.name.trim() })
             this.token = res.payload?.token || ''
             this.$emit('success')
-        } catch {}
-        this.modalLoading = false
+        } finally {
+            this.modalLoading = false
+        }
     }
 
     async copyCommand(command: string) {

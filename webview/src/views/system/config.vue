@@ -20,7 +20,9 @@ class ConfigLayout extends Vue {
 
     // 刷新/关闭页面时提醒未保存改动（浏览器原生弹窗）
     onBeforeUnload = (event: BeforeUnloadEvent) => {
-        if (!this.canUpdate || !this.config.hasUnsaved()) return
+        if (!this.canUpdate || !this.config.hasUnsaved()) {
+            return
+        }
         event.preventDefault()
         event.returnValue = ''
     }
@@ -28,25 +30,25 @@ class ConfigLayout extends Vue {
     // ─── 方法 ───
 
     async reloadConfig() {
-        try {
-            await this.config.load(true)
-            this.portal.showNotification('success', this.$t('配置已重载'))
-        } catch {}
+        await this.config.load(true)
+        this.portal.showNotification('success', this.$t('配置已重载'))
     }
 
     async saveConfig() {
-        if (this.config.saving) return
-        try {
-            await this.config.saveAll()
-            await this.portal.refresh()
-            this.portal.showNotification('success', this.$t('配置已保存，运行模式、连接参数和监听地址变更需重启生效'))
-        } catch {}
+        if (this.config.saving) {
+            return
+        }
+        await this.config.saveAll()
+        await this.portal.refresh()
+        this.portal.showNotification('success', this.$t('配置已保存，运行模式、连接参数和监听地址变更需重启生效'))
     }
 
     // ─── 生命周期 ───
     mounted() {
         // 草稿在 store 中常驻，仅在首次进入时加载，避免站内往返导致未保存改动被覆盖
-        if (this.canView && !this.config.loaded) this.config.load()
+        if (this.canView && !this.config.loaded) {
+            this.config.load()
+        }
         window.addEventListener('beforeunload', this.onBeforeUnload)
     }
 

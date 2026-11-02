@@ -26,14 +26,17 @@ class ServiceScaleModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.service) return
+        if (!this.service) {
+            return
+        }
         this.loading = true
         try {
             await api.swarmServiceAction(this.service.id, 'scale', this.replicas)
             this.isOpen = false
             this.$emit('success')
-        } catch {}
-        this.loading = false
+        } finally {
+            this.loading = false
+        }
     }
 }
 

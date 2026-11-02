@@ -121,7 +121,9 @@ class ServerEditModal extends Vue {
 
     async handleConfirm() {
         const config = this.buildPayload()
-        if (!config) return
+        if (!config) {
+            return
+        }
 
         this.loading = true
         try {
@@ -135,7 +137,7 @@ class ServerEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch {} finally {
+        } finally {
             this.loading = false
         }
     }

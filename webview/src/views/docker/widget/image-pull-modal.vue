@@ -35,25 +35,23 @@ class ImagePullModal extends Vue {
 
     get pullPreview() {
         const image = this.formData.image.trim() || 'image:latest'
-        if (!this.isRegistryMode) return image
+        if (!this.isRegistryMode) {
+            return image
+        }
         return `${this.formData.source}/${image}`
     }
 
     // ─── 方法 ───
     async loadDaemonInfo() {
-        try {
-            const res = await api.dockerInfo()
-            const info = res.payload
-            this.daemonMirrors = info?.registryMirrors || []
-            this.indexServerAddress = info?.indexServerAddress || ''
-        } catch {}
+        const res = await api.dockerInfo()
+        const info = res.payload
+        this.daemonMirrors = info?.registryMirrors || []
+        this.indexServerAddress = info?.indexServerAddress || ''
     }
 
     async loadRegistries() {
-        try {
-            const res = await api.dockerRegistryList()
-            this.registries = res.payload || []
-        } catch {}
+        const res = await api.dockerRegistryList()
+        this.registries = res.payload || []
     }
 
     show(source = '') {
@@ -67,14 +65,15 @@ class ImagePullModal extends Vue {
 
     async handleConfirm() {
         const imageRef = this.formData.image.trim()
-        if (!imageRef) return
+        if (!imageRef) {
+            return
+        }
         this.modalLoading = true
         try {
             await api.dockerImagePull(imageRef, this.formData.source, '')
             this.portal.showNotification('success', this.$t('镜像拉取成功'))
             this.isOpen = false
             this.$emit('success')
-        } catch {
         } finally {
             this.modalLoading = false
         }

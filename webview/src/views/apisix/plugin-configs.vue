@@ -26,7 +26,9 @@ class PluginConfigs extends Vue {
 
     get filteredConfigs() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.configs
+        if (!keyword) {
+            return this.configs
+        }
         return this.configs.filter((config: ApisixPluginConfig) => {
             const plugins = this.getPluginNames(config).join(' ').toLowerCase()
             return (
@@ -46,7 +48,7 @@ class PluginConfigs extends Vue {
         this.loading = true
         try {
             this.configs = this.sortConfigs((await api.apisixPluginConfigList()).payload || [])
-        } catch {} finally {
+        } finally {
             this.loading = false
         }
     }
@@ -67,7 +69,9 @@ class PluginConfigs extends Vue {
 
     deleteConfig(config: ApisixPluginConfig) {
         const id = config.id
-        if (!id) return
+        if (!id) {
+            return
+        }
         this.portal.showConfirm({
             title: this.$t('删除插件配置'),
             message: this.$t('确定要删除插件配置 <strong class="text-slate-900">{0}</strong> 吗？仍被路由引用时 APISIX 可能拒绝删除。', id),

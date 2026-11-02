@@ -44,7 +44,9 @@ class PluginConfigPanel extends Vue {
     @Watch('plugins', { deep: true })
     onPluginsChanged() {
         try {
-            if (JSON.stringify(JSON.parse(this.pluginsJson || '{}')) === JSON.stringify(this.plugins)) return
+            if (JSON.stringify(JSON.parse(this.pluginsJson || '{}')) === JSON.stringify(this.plugins)) {
+                return
+            }
         } catch {}
         this.syncJsonFromPlugins()
     }
@@ -90,11 +92,15 @@ class PluginConfigPanel extends Vue {
     }
 
     buildPluginDefault(schema: { properties?: Record<string, { type: string; default?: unknown }>; required?: string[] }) {
-        if (!schema?.properties) return {}
+        if (!schema?.properties) {
+            return {}
+        }
         const required = new Set(schema.required || [])
         const result: Record<string, unknown> = {}
         for (const [key, def] of Object.entries(schema.properties)) {
-            if (key === 'disable') continue
+            if (key === 'disable') {
+                continue
+            }
             if (required.has(key) || def.default !== undefined) {
                 result[key] = def.default !== undefined ? def.default : (TYPE_DEFAULTS[def.type] ?? null)
             }
@@ -131,14 +137,17 @@ class PluginConfigPanel extends Vue {
     async onImportRouteChange() {
         this.importRoutePlugins = {}
         this.selectedImportPlugins = new Set()
-        if (!this.importRouteId) return
+        if (!this.importRouteId) {
+            return
+        }
         this.importRoutePluginsLoading = true
         try {
             const src = (await api.apisixRouteInspect(this.importRouteId)).payload?.plugins || {}
             this.importRoutePlugins = src
             this.selectedImportPlugins = new Set(Object.keys(src))
-        } catch {}
-        this.importRoutePluginsLoading = false
+        } finally {
+            this.importRoutePluginsLoading = false
+        }
     }
 
     toggleImportPlugin(name: string) {
@@ -148,8 +157,12 @@ class PluginConfigPanel extends Vue {
     }
 
     importPluginsFromRoute() {
-        if (!this.importRouteId) return this.portal.showNotification('warning', this.$t('请先选择要导入的路由'))
-        if (!this.selectedImportPlugins.size) return this.portal.showNotification('warning', this.$t('请至少勾选一个插件'))
+        if (!this.importRouteId) {
+            return this.portal.showNotification('warning', this.$t('请先选择要导入的路由'))
+        }
+        if (!this.selectedImportPlugins.size) {
+            return this.portal.showNotification('warning', this.$t('请至少勾选一个插件'))
+        }
         const toImport = Object.fromEntries(
             [...this.selectedImportPlugins]
                 .filter(n => this.importRoutePlugins[n] !== undefined)

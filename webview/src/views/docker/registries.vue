@@ -26,7 +26,9 @@ class Registries extends Vue {
 
     get filteredRegistries() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.registries
+        if (!keyword) {
+            return this.registries
+        }
         return this.registries.filter((registry: DockerRegistryInfo) =>
             (registry.name || '').toLowerCase().includes(keyword) ||
             (registry.url || '').toLowerCase().includes(keyword) ||
@@ -37,7 +39,9 @@ class Registries extends Vue {
 
     get showDockerHub() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return true
+        if (!keyword) {
+            return true
+        }
         const candidates = [
             'docker hub',
             'docker.io',
@@ -52,12 +56,10 @@ class Registries extends Vue {
 
     // ─── 方法 ───
     async loadDaemonInfo() {
-        try {
-            const res = await api.dockerInfo()
-            const info = res.payload
-            this.daemonMirrors = info?.registryMirrors || []
-            this.indexServerAddress = info?.indexServerAddress || ''
-        } catch {}
+        const res = await api.dockerInfo()
+        const info = res.payload
+        this.daemonMirrors = info?.registryMirrors || []
+        this.indexServerAddress = info?.indexServerAddress || ''
     }
 
     async loadRegistries() {
@@ -86,11 +88,9 @@ class Registries extends Vue {
             confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
-                try {
-                    await api.dockerRegistryDelete(reg.url)
-                    this.portal.showNotification('success', this.$t('仓库删除成功'))
-                    this.loadRegistries()
-                } catch {}
+                await api.dockerRegistryDelete(reg.url)
+                this.portal.showNotification('success', this.$t('仓库删除成功'))
+                this.loadRegistries()
             }
         })
     }

@@ -30,7 +30,9 @@ class Consumers extends Vue {
     // ─── 计算属性 ───
     get filteredConsumers() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.consumers
+        if (!keyword) {
+            return this.consumers
+        }
         return this.consumers.filter((c: ApisixConsumer) =>
             (c.username || '').toLowerCase().includes(keyword) ||
             (c.desc || '').toLowerCase().includes(keyword)
@@ -44,7 +46,7 @@ class Consumers extends Vue {
             const [consRes, wlRes] = await Promise.all([api.apisixConsumerList(), api.apisixWhitelistInspect()])
             this.consumers = consRes.payload || []
             this.whitelist = wlRes.payload || []
-        } catch {} finally {
+        } finally {
             this.loading = false
         }
     }

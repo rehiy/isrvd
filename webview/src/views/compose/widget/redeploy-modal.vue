@@ -118,17 +118,25 @@ class RedeployModal extends Vue {
     }
 
     async loadHistory() {
-        if (this.historyLoading) return
+        if (this.historyLoading) {
+            return
+        }
         const generation = this.loadGeneration
         this.historyLoading = true
         this.historyError = false
         try {
             const history = (await api.composeHistoryList(this.target, this.resolvedName)).payload || []
-            if (generation === this.loadGeneration && this.isOpen) this.history = history
+            if (generation === this.loadGeneration && this.isOpen) {
+                this.history = history
+            }
         } catch {
-            if (generation === this.loadGeneration && this.isOpen) this.historyError = true
+            if (generation === this.loadGeneration && this.isOpen) {
+                this.historyError = true
+            }
         } finally {
-            if (generation === this.loadGeneration) this.historyLoading = false
+            if (generation === this.loadGeneration) {
+                this.historyLoading = false
+            }
         }
     }
 
@@ -143,9 +151,13 @@ class RedeployModal extends Vue {
                 : this.target === 'docker'
                 ? await api.composeDockerInspect(this.resolvedName, force)
                 : await api.composeSwarmInspect(this.resolvedName, force)
-            if (generation !== this.loadGeneration || !this.isOpen) return
+            if (generation !== this.loadGeneration || !this.isOpen) {
+                return
+            }
             const payload = res.payload
-            if (!payload) throw new Error('配置内容为空')
+            if (!payload) {
+                throw new Error('配置内容为空')
+            }
             this.composeContent = payload.content || ''
             this.envContent = payload.envContent || ''
             this.loadedContent = this.composeContent
@@ -155,10 +167,16 @@ class RedeployModal extends Vue {
             this.loadedRevision = revision
             this.composeFileModTime = payload.fileModTime || 0
             this.composeSource = payload.source || ''
-            if (this.target === 'docker') this.resolvedName = payload.projectName || this.resolvedName
-            if (force) this.portal.showNotification('success', this.$t('已从运行态重新反推 Compose 配置'))
+            if (this.target === 'docker') {
+                this.resolvedName = payload.projectName || this.resolvedName
+            }
+            if (force) {
+                this.portal.showNotification('success', this.$t('已从运行态重新反推 Compose 配置'))
+            }
         } catch {
-            if (generation !== this.loadGeneration || !this.isOpen) return
+            if (generation !== this.loadGeneration || !this.isOpen) {
+                return
+            }
             this.selectedRevision = this.loadedRevision
             this.loadError = true
         } finally {
@@ -169,7 +187,9 @@ class RedeployModal extends Vue {
     }
 
     async requestLoad(force = false, revision = '') {
-        if (this.modalLoading) return
+        if (this.modalLoading) {
+            return
+        }
         this.selectedRevision = this.loadedRevision
         if (this.dirty) {
             this.pendingSwitch = { force, revision }
@@ -181,7 +201,9 @@ class RedeployModal extends Vue {
 
     async discardAndLoad() {
         const next = this.pendingSwitch
-        if (!next || this.modalLoading) return
+        if (!next || this.modalLoading) {
+            return
+        }
         this.pendingSwitch = null
         await this.loadCompose(next.force, next.revision)
     }
@@ -192,7 +214,9 @@ class RedeployModal extends Vue {
     }
 
     async handleConfirm() {
-        if (this.modalLoading || this.pendingSwitch || !this.composeContent.trim()) return
+        if (this.modalLoading || this.pendingSwitch || !this.composeContent.trim()) {
+            return
+        }
         const generation = this.loadGeneration
         this.modalLoading = true
         this.submitting = true
@@ -207,9 +231,11 @@ class RedeployModal extends Vue {
                 await api.composeSwarmRedeploy(this.resolvedName, data)
             }
             this.portal.showNotification('success', this.successMessage)
-            if (generation === this.loadGeneration) this.isOpen = false
+            if (generation === this.loadGeneration) {
+                this.isOpen = false
+            }
             this.$emit('success')
-        } catch {} finally {
+        } finally {
             if (generation === this.loadGeneration) {
                 this.modalLoading = false
                 this.submitting = false

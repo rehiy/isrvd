@@ -25,7 +25,9 @@ class CaddyServers extends Vue {
 
     get filteredServers() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.servers
+        if (!keyword) {
+            return this.servers
+        }
         return this.servers.filter(server =>
             `${server.name} ${(server.listen || []).join(' ')} ${(server.protocols || []).join(' ')}`.toLowerCase().includes(keyword)
         )
@@ -35,7 +37,7 @@ class CaddyServers extends Vue {
         this.loading = true
         try {
             this.servers = (await api.caddyServerList()).payload || []
-        } catch {} finally {
+        } finally {
             this.loading = false
         }
     }
@@ -54,7 +56,9 @@ class CaddyServers extends Vue {
     }
 
     async openEditModal(server: CaddyServerInfo) {
-        if (this.editingServer) return
+        if (this.editingServer) {
+            return
+        }
         const id = this.serverID(server)
         this.editingServer = id
         try {
@@ -64,7 +68,7 @@ class CaddyServers extends Vue {
                 return
             }
             this.editModalRef?.show(detail)
-        } catch {} finally {
+        } finally {
             this.editingServer = ''
         }
     }
@@ -86,17 +90,23 @@ class CaddyServers extends Vue {
     }
 
     autoHTTPSLabel(server: CaddyServerInfo) {
-        if (!server.automatic_https) return this.$t('默认')
+        if (!server.automatic_https) {
+            return this.$t('默认')
+        }
         return server.automatic_https.disable ? this.$t('已禁用') : this.$t('已启用')
     }
 
     autoHTTPSClass(server: CaddyServerInfo) {
-        if (!server.automatic_https) return 'text-slate-500'
+        if (!server.automatic_https) {
+            return 'text-slate-500'
+        }
         return server.automatic_https.disable ? 'text-red-500 font-medium' : 'text-emerald-600 font-medium'
     }
 
     deleteServer(server: CaddyServerInfo) {
-        if (!this.canDeleteServer(server)) return
+        if (!this.canDeleteServer(server)) {
+            return
+        }
         const id = this.serverID(server)
         this.portal.showConfirm({
             title: this.$t('删除服务'),
@@ -106,11 +116,9 @@ class CaddyServers extends Vue {
             confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
-                try {
-                    await api.caddyServerDelete(id)
-                    this.portal.showNotification('success', this.$t('服务删除成功'))
-                    this.loadServers()
-                } catch {}
+                await api.caddyServerDelete(id)
+                this.portal.showNotification('success', this.$t('服务删除成功'))
+                this.loadServers()
             }
         })
     }

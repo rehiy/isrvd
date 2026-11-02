@@ -41,7 +41,9 @@ class Whitelist extends Vue {
 
     get filteredWhitelist() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.whitelist
+        if (!keyword) {
+            return this.whitelist
+        }
         return this.whitelist.filter((r: ApisixRoute) =>
             (r.name || '').toLowerCase().includes(keyword) ||
             (r.id || '').toLowerCase().includes(keyword) ||
@@ -53,7 +55,7 @@ class Whitelist extends Vue {
         this.loading = true
         try {
             this.whitelist = (await api.apisixWhitelistInspect()).payload || []
-        } catch {} finally {
+        } finally {
             this.loading = false
         }
     }
@@ -86,13 +88,21 @@ class Whitelist extends Vue {
 
     async handleAddUser() {
         const route = this.addUser.route
-        if (!route?.id) return
+        if (!route?.id) {
+            return
+        }
 
         const username = this.addUser.newUsername.trim()
         const key = this.addUser.newKey.trim()
-        if (!username) return this.portal.showNotification('error', this.$t('请输入用户名'))
-        if (!key) return this.portal.showNotification('error', this.$t('请输入 key-auth key'))
-        if ((route.consumers || []).includes(username)) return this.portal.showNotification('error', this.$t('用户 "{0}" 已在授权列表中', username))
+        if (!username) {
+            return this.portal.showNotification('error', this.$t('请输入用户名'))
+        }
+        if (!key) {
+            return this.portal.showNotification('error', this.$t('请输入 key-auth key'))
+        }
+        if ((route.consumers || []).includes(username)) {
+            return this.portal.showNotification('error', this.$t('用户 "{0}" 已在授权列表中', username))
+        }
 
         const routeKeyAuth = (route.plugins?.['key-auth'] as Record<string, unknown>) || {}
         const keyAuthConfig = {
@@ -107,7 +117,7 @@ class Whitelist extends Vue {
             this.portal.showNotification('success', this.$t('用户 "{0}" 已创建并加入授权列表', username))
             this.addUser.open = false
             this.loadWhitelist()
-        } catch {} finally {
+        } finally {
             this.addUser.loading = false
         }
     }

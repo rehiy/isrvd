@@ -30,15 +30,18 @@ class ImageBuildModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.buildDockerfile.trim()) return
+        if (!this.buildDockerfile.trim()) {
+            return
+        }
         this.modalLoading = true
         try {
             await api.dockerImageBuild(this.buildDockerfile, this.buildTag)
             this.portal.showNotification('success', this.$t('镜像构建成功'))
             this.isOpen = false
             this.$emit('success')
-        } catch {}
-        this.modalLoading = false
+        } finally {
+            this.modalLoading = false
+        }
     }
 }
 

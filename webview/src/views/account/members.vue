@@ -26,7 +26,9 @@ class Members extends Vue {
 
     get filteredMembers() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.members
+        if (!keyword) {
+            return this.members
+        }
         return this.members.filter((m: MemberInfo) =>
             (m.username || '').toLowerCase().includes(keyword) ||
             (m.description || '').toLowerCase().includes(keyword) ||
@@ -63,11 +65,9 @@ class Members extends Vue {
             confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
-                try {
-                    await api.accountMemberDelete(m.username)
-                    this.portal.showNotification('success', this.$t('成员删除成功'))
-                    this.loadMembers()
-                } catch {}
+                await api.accountMemberDelete(m.username)
+                this.portal.showNotification('success', this.$t('成员删除成功'))
+                this.loadMembers()
             }
         })
     }

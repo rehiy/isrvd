@@ -25,7 +25,9 @@ class SSHCredentials extends Vue {
     // ─── 计算属性 ───
     get filteredCredentials() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.credentials
+        if (!keyword) {
+            return this.credentials
+        }
         return this.credentials.filter((c: SSHCredentialInfo) =>
             (c.name || '').toLowerCase().includes(keyword) ||
             (c.user || '').toLowerCase().includes(keyword) ||
@@ -61,11 +63,9 @@ class SSHCredentials extends Vue {
             confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
-                try {
-                    await api.sshCredentialDelete(cred.id)
-                    this.portal.showNotification('success', this.$t('凭据删除成功'))
-                    this.loadCredentials()
-                } catch {}
+                await api.sshCredentialDelete(cred.id)
+                this.portal.showNotification('success', this.$t('凭据删除成功'))
+                this.loadCredentials()
             }
         })
     }

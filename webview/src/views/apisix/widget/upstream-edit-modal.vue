@@ -5,18 +5,18 @@ import { usePortal } from '@/stores'
 
 import api from '@/service/api'
 import type {
-  ApisixRouteUpstreamFormNode,
-  ApisixUpstream,
-  ApisixUpstreamCreate,
-  ApisixUpstreamHashOn,
-  ApisixUpstreamPassHost,
-  ApisixUpstreamScheme,
-  ApisixUpstreamType,
-  ApisixUpstreamUpdate,
-  DockerContainerInfo
+    ApisixRouteUpstreamFormNode,
+    ApisixUpstream,
+    ApisixUpstreamCreate,
+    ApisixUpstreamHashOn,
+    ApisixUpstreamPassHost,
+    ApisixUpstreamScheme,
+    ApisixUpstreamType,
+    ApisixUpstreamUpdate,
+    DockerContainerInfo
 } from '@/service/types'
 
-import { normalizeUpstreamFormNodes, normalizeUpstreamScheme, normalizeUpstreamType, upstreamAdvancedSummary, upstreamHostError, UPSTREAM_SCHEME_OPTIONS } from '@/helper/apisix'
+import { normalizeUpstreamFormNodes, normalizeUpstreamScheme, normalizeUpstreamType, UPSTREAM_SCHEME_OPTIONS, upstreamAdvancedSummary, upstreamHostError } from '@/helper/apisix'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -127,7 +127,9 @@ class UpstreamEditModal extends Vue {
     }
 
     removeNode(index: number) {
-        if (this.formData.nodes.length <= 1) return
+        if (this.formData.nodes.length <= 1) {
+            return
+        }
         this.formData.nodes.splice(index, 1)
     }
 
@@ -137,17 +139,23 @@ class UpstreamEditModal extends Vue {
 
     updateNode(index: number, field: 'host' | 'port', value: string) {
         const node = this.formData.nodes[index]
-        if (!node) return
+        if (!node) {
+            return
+        }
         node[field] = value
         if (field === 'host' && value.trim()) {
             const port = (this.getPortsByHost(value)[0] || '').split('/')[0].split(':').pop() || ''
-            if (port) node.port = port
+            if (port) {
+                node.port = port
+            }
         }
     }
 
     async loadContainers() {
         this.containers = []
-        if (!this.canLoadDockerContainers) return
+        if (!this.canLoadDockerContainers) {
+            return
+        }
         try {
             const res = await api.dockerContainerList()
             this.containers = (res.payload || []).filter(c => c.state === 'running')
@@ -172,7 +180,9 @@ class UpstreamEditModal extends Vue {
             nodes
         }
 
-        if (this.formData.pass_host === 'rewrite') payload.upstream_host = this.formData.upstream_host.trim()
+        if (this.formData.pass_host === 'rewrite') {
+            payload.upstream_host = this.formData.upstream_host.trim()
+        }
 
         const connect = Number(this.formData.timeout_connect) || 0
         const send = Number(this.formData.timeout_send) || 0
@@ -183,7 +193,9 @@ class UpstreamEditModal extends Vue {
 
         if (this.formData.type === 'chash') {
             payload.hash_on = this.formData.hash_on
-            if (this.formData.key.trim()) payload.key = this.formData.key.trim()
+            if (this.formData.key.trim()) {
+                payload.key = this.formData.key.trim()
+            }
         }
 
         return payload
@@ -217,7 +229,7 @@ class UpstreamEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch {} finally {
+        } finally {
             this.modalLoading = false
         }
     }

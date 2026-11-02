@@ -43,7 +43,9 @@ class Images extends Vue {
 
     get filteredImages() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.images
+        if (!keyword) {
+            return this.images
+        }
         return this.images.filter((image: DockerImageInfo) => {
             const tags = (image.repoTags || []).join(' ')
             const digests = (image.repoDigests || []).join(' ')
@@ -69,10 +71,8 @@ class Images extends Vue {
     }
 
     async loadRegistries() {
-        try {
-            const res = await api.dockerRegistryList()
-            this.registries = res.payload || []
-        } catch {}
+        const res = await api.dockerRegistryList()
+        this.registries = res.payload || []
     }
 
     openPush(image: DockerImageInfo) {
@@ -83,7 +83,9 @@ class Images extends Vue {
     // 提取镜像名称（去掉 registry host 和 tag）
     // 例: "registry.com/nginx:latest" → "nginx", "localhost:5000/nginx:v1.0" → "nginx"
     extractImageName(ref: string): string {
-        if (!ref || ref === '<none>:<none>') return ''
+        if (!ref || ref === '<none>:<none>') {
+            return ''
+        }
         // 去掉 digest 或 tag（: 后是 tag，@ 后是 digest；端口号的 : 通过检查 / 来区分）
         let repo = ref
         const atIdx = ref.indexOf('@')
@@ -97,7 +99,9 @@ class Images extends Vue {
         }
         // 去掉 registry host（第一段含 . 或 : 即为 host）
         const slashIdx = repo.indexOf('/')
-        if (slashIdx === -1) return repo
+        if (slashIdx === -1) {
+            return repo
+        }
         const first = repo.substring(0, slashIdx)
         return (first.includes('.') || first.includes(':')) ? repo.substring(slashIdx + 1) : repo
     }
@@ -106,7 +110,9 @@ class Images extends Vue {
     getImageName(img: DockerImageInfo): string {
         if (img.repoTags && img.repoTags.length > 0) {
             const tag = img.repoTags.find(t => t && t !== '<none>:<none>')
-            if (tag) return this.extractImageName(tag)
+            if (tag) {
+                return this.extractImageName(tag)
+            }
         }
         if (img.repoDigests && img.repoDigests.length > 0) {
             const digest = img.repoDigests[0]
@@ -152,11 +158,9 @@ class Images extends Vue {
             confirmText: this.$t('确认拉取'),
             danger: false,
             onConfirm: async () => {
-                try {
-                    await api.dockerImagePull(pullImageRef, registryUrl, '')
-                    this.portal.showNotification('success', this.$t('镜像拉取成功'))
-                    this.loadImages()
-                } catch {}
+                await api.dockerImagePull(pullImageRef, registryUrl, '')
+                this.portal.showNotification('success', this.$t('镜像拉取成功'))
+                this.loadImages()
             }
         })
     }

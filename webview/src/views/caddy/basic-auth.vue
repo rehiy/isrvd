@@ -39,7 +39,9 @@ class CaddyBasicAuth extends Vue {
 
     get filteredRoutes() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.routes
+        if (!keyword) {
+            return this.routes
+        }
         return this.routes.filter(r =>
             (r.name || '').toLowerCase().includes(keyword) ||
             r.users.some(u => u.username.toLowerCase().includes(keyword))
@@ -54,10 +56,14 @@ class CaddyBasicAuth extends Vue {
         this.routes = []
         try {
             const routes = (await api.caddyBasicAuthList(server)).payload || []
-            if (requestID !== this.loadRequestID || selection !== this.selectedServer) return
+            if (requestID !== this.loadRequestID || selection !== this.selectedServer) {
+                return
+            }
             this.routes = routes
-        } catch {} finally {
-            if (requestID === this.loadRequestID) this.loading = false
+        } finally {
+            if (requestID === this.loadRequestID) {
+                this.loading = false
+            }
         }
     }
 
@@ -107,7 +113,9 @@ class CaddyBasicAuth extends Vue {
             return ups.map(u => u.dial).join(', ') || 'reverse_proxy'
         }
         const fs = r.handlers?.find(h => h.handler === 'file_server')
-        if (fs) return 'file_server'
+        if (fs) {
+            return 'file_server'
+        }
         return r.handlers?.map(h => h.handler).join(', ') || '—'
     }
 

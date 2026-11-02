@@ -41,8 +41,12 @@ class BasicAuthEditModal extends Vue {
     form = defaultForm()
 
     get title() {
-        if (this.mode === 'edit') return this.$t('编辑认证配置')
-        if (this.mode === 'addUser') return this.$t('添加认证账号')
+        if (this.mode === 'edit') {
+            return this.$t('编辑认证配置')
+        }
+        if (this.mode === 'addUser') {
+            return this.$t('添加认证账号')
+        }
         return this.$t('添加认证配置')
     }
 
@@ -87,7 +91,7 @@ class BasicAuthEditModal extends Vue {
             const [authRes, routeRes] = await Promise.all([api.caddyBasicAuthList(this.targetServer), api.caddyRouteList(this.targetServer)])
             this.authRoutes = authRes.payload || []
             this.routes = routeRes.payload || []
-        } catch {} finally {
+        } finally {
             this.loading = false
         }
     }
@@ -147,22 +151,34 @@ class BasicAuthEditModal extends Vue {
 
     updateEditingUsers(value: string | string[]) {
         const route = this.editingRoute
-        if (!route || !Array.isArray(value)) return
+        if (!route || !Array.isArray(value)) {
+            return
+        }
         const allowed = new Set(route.users.map(user => user.username))
         this.form.users = value.filter(username => allowed.has(username))
     }
 
     async handleConfirm() {
-        if (this.mode === 'setup') return this.handleSetup()
-        if (this.mode === 'addUser') return this.handleAddUser()
+        if (this.mode === 'setup') {
+            return this.handleSetup()
+        }
+        if (this.mode === 'addUser') {
+            return this.handleAddUser()
+        }
         return this.handleEdit()
     }
 
     async handleSetup() {
         const { routeIndex, username, password, realm } = this.form
-        if (routeIndex < 0) return this.portal.showNotification('error', this.$t('请选择目标路由'))
-        if (!username.trim()) return this.portal.showNotification('error', this.$t('请输入用户名'))
-        if (!password) return this.portal.showNotification('error', this.$t('请输入密码'))
+        if (routeIndex < 0) {
+            return this.portal.showNotification('error', this.$t('请选择目标路由'))
+        }
+        if (!username.trim()) {
+            return this.portal.showNotification('error', this.$t('请输入用户名'))
+        }
+        if (!password) {
+            return this.portal.showNotification('error', this.$t('请输入密码'))
+        }
 
         this.loading = true
         try {
@@ -175,15 +191,19 @@ class BasicAuthEditModal extends Vue {
             this.portal.showNotification('success', this.$t('认证配置成功'))
             this.open = false
             this.$emit('success')
-        } catch {} finally {
+        } finally {
             this.loading = false
         }
     }
 
     async handleAddUser() {
         const { routeIndex, username, password, realm } = this.form
-        if (!username.trim()) return this.portal.showNotification('error', this.$t('请输入用户名'))
-        if (!password) return this.portal.showNotification('error', this.$t('请输入密码'))
+        if (!username.trim()) {
+            return this.portal.showNotification('error', this.$t('请输入用户名'))
+        }
+        if (!password) {
+            return this.portal.showNotification('error', this.$t('请输入密码'))
+        }
 
         this.loading = true
         try {
@@ -196,14 +216,16 @@ class BasicAuthEditModal extends Vue {
             this.portal.showNotification('success', this.$t('账号 "{0}" 添加成功', username.trim()))
             this.open = false
             this.$emit('success')
-        } catch {} finally {
+        } finally {
             this.loading = false
         }
     }
 
     async handleEdit() {
         const route = this.editingRoute
-        if (!route) return this.portal.showNotification('error', this.$t('路由不存在'))
+        if (!route) {
+            return this.portal.showNotification('error', this.$t('路由不存在'))
+        }
         const { routeIndex, realm, users } = this.form
         const removedUsers = route.users.map(user => user.username).filter(name => !users.includes(name))
 
@@ -219,7 +241,7 @@ class BasicAuthEditModal extends Vue {
             this.portal.showNotification('success', this.$t('配置更新成功'))
             this.open = false
             this.$emit('success')
-        } catch {} finally {
+        } finally {
             this.loading = false
         }
     }

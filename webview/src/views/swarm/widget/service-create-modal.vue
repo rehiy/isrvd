@@ -85,8 +85,9 @@ class ServiceCreateModal extends Vue {
             })
             this.isOpen = false
             this.$emit('success')
-        } catch {}
-        this.loading = false
+        } finally {
+            this.loading = false
+        }
     }
 }
 

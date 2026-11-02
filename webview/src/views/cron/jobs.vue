@@ -34,7 +34,9 @@ class CronJobs extends Vue {
 
     get filteredJobs() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.jobs
+        if (!keyword) {
+            return this.jobs
+        }
         return this.jobs.filter(j =>
             j.name.toLowerCase().includes(keyword) ||
             j.id.toLowerCase().includes(keyword) ||
@@ -49,14 +51,22 @@ class CronJobs extends Vue {
     formatTime = formatLocalTime
 
     runtimeStatusText(job: CronJob): string {
-        if (job.runtimeStatus === 'scheduled') return this.$t('调度中')
-        if (job.runtimeStatus === 'unregistered') return this.$t('未注册')
+        if (job.runtimeStatus === 'scheduled') {
+            return this.$t('调度中')
+        }
+        if (job.runtimeStatus === 'unregistered') {
+            return this.$t('未注册')
+        }
         return this.$t('已禁用')
     }
 
     runtimeStatusClass(job: CronJob): string {
-        if (job.runtimeStatus === 'scheduled') return 'text-emerald-600 font-medium hover:text-emerald-700'
-        if (job.runtimeStatus === 'unregistered') return 'text-amber-600 font-medium hover:text-amber-700'
+        if (job.runtimeStatus === 'scheduled') {
+            return 'text-emerald-600 font-medium hover:text-emerald-700'
+        }
+        if (job.runtimeStatus === 'unregistered') {
+            return 'text-amber-600 font-medium hover:text-amber-700'
+        }
         return 'text-slate-400 hover:text-slate-500'
     }
 
@@ -85,7 +95,7 @@ class CronJobs extends Vue {
         try {
             const res = await api.cronJobList()
             this.jobs = res.payload?.jobs || []
-        } catch {} finally {
+        } finally {
             this.loading = false
         }
     }
@@ -119,20 +129,20 @@ class CronJobs extends Vue {
     }
 
     async toggleEnabled(job: CronJob) {
-        try {
-            await api.cronJobStatusPatch(job.id, !job.enabled)
-            this.portal.showNotification('success', job.enabled ? this.$t('任务已禁用') : this.$t('任务已启用'))
-            await this.loadJobs()
-        } catch {}
+        await api.cronJobStatusPatch(job.id, !job.enabled)
+        this.portal.showNotification('success', job.enabled ? this.$t('任务已禁用') : this.$t('任务已启用'))
+        await this.loadJobs()
     }
 
     async runNow(job: CronJob) {
-        if (this.runningJobs.has(job.id)) return
+        if (this.runningJobs.has(job.id)) {
+            return
+        }
         this.runningJobs.add(job.id)
         try {
             await api.cronJobRun(job.id)
             this.portal.showNotification('success', this.$t('任务 "{0}" 已触发', job.name))
-        } catch {} finally {
+        } finally {
             this.runningJobs.delete(job.id)
         }
     }
