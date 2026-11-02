@@ -32,25 +32,33 @@ class NodeSwitcher extends Vue {
     }
 
     get label() {
-        if (!this.viewingNode) return this.$t('本机')
+        if (!this.viewingNode) {
+            return this.$t('本机')
+        }
         return this.portal.nodes.find(n => n.id === this.portal.currentNodeId)?.name || this.$t('节点')
     }
 
     // ─── 监听器 ───
     @Watch('visible', { immediate: true })
     onVisibleChange(visible: boolean) {
-        if (visible) this.portal.nodeLoad(true)
+        if (visible) {
+            this.portal.nodeLoad(true)
+        }
     }
 
     @Watch('menuOpen')
     onMenuOpenChange(open: boolean) {
-        if (open) this.portal.nodeLoad(true)
+        if (open) {
+            this.portal.nodeLoad(true)
+        }
     }
 
     // ─── 方法 ───
     select(id: string) {
         this.menuOpen = false
-        if (id === this.portal.currentNodeId) return
+        if (id === this.portal.currentNodeId) {
+            return
+        }
         // 详情页资源属于原节点；中控管理页面切到子节点时也回到概览
         const resetPage = Object.keys(this.$route.params).length > 0 || (id !== '' && isCenterPage(this.$route.path))
         const hash = resetPage ? '#/overview' : window.location.hash

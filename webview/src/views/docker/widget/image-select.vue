@@ -35,38 +35,76 @@ class ImageSelect extends Vue {
     }
 
     domainOf(repoTag: string) {
-        if (!repoTag) return this.$t('本地镜像')
+        if (!repoTag) {
+            return this.$t('本地镜像')
+        }
         const parts = repoTag.split('/')
-        if (parts.length >= 3) return parts[0]
-        if (parts.length === 2 && parts[0].includes('.')) return parts[0]
+        if (parts.length >= 3) {
+            return parts[0]
+        }
+        if (parts.length === 2 && parts[0].includes('.')) {
+            return parts[0]
+        }
         return 'docker.io'
     }
 
     domainIcon(domain: string) {
-        if (domain === 'docker.io') return 'fa-docker fab'
-        if (domain.includes('aliyuncs.com')) return 'fa-cloud fas'
-        if (domain.includes('tencentyun.com')) return 'fa-cloud fas'
-        if (domain === 'ghcr.io') return 'fa-github fab'
-        if (domain === 'gcr.io') return 'fa-google fab'
-        if (domain === 'quay.io') return 'fa-ship fas'
-        if (domain === '本地镜像') return 'fa-home fas'
+        if (domain === 'docker.io') {
+            return 'fa-docker fab'
+        }
+        if (domain.includes('aliyuncs.com')) {
+            return 'fa-cloud fas'
+        }
+        if (domain.includes('tencentyun.com')) {
+            return 'fa-cloud fas'
+        }
+        if (domain === 'ghcr.io') {
+            return 'fa-github fab'
+        }
+        if (domain === 'gcr.io') {
+            return 'fa-google fab'
+        }
+        if (domain === 'quay.io') {
+            return 'fa-ship fas'
+        }
+        if (domain === '本地镜像') {
+            return 'fa-home fas'
+        }
         return 'fa-server fas'
     }
 
     domainLabel(domain: string) {
-        if (domain === 'docker.io') return 'Docker Hub'
-        if (domain.includes('aliyuncs.com')) return this.$t('阿里云')
-        if (domain.includes('tencentyun.com')) return this.$t('腾讯云')
-        if (domain === 'ghcr.io') return 'GitHub'
-        if (domain === 'gcr.io') return 'Google'
-        if (domain === 'quay.io') return 'Quay'
+        if (domain === 'docker.io') {
+            return 'Docker Hub'
+        }
+        if (domain.includes('aliyuncs.com')) {
+            return this.$t('阿里云')
+        }
+        if (domain.includes('tencentyun.com')) {
+            return this.$t('腾讯云')
+        }
+        if (domain === 'ghcr.io') {
+            return 'GitHub'
+        }
+        if (domain === 'gcr.io') {
+            return 'Google'
+        }
+        if (domain === 'quay.io') {
+            return 'Quay'
+        }
         return domain
     }
 
     formatSize(bytes: number) {
-        if (!bytes) return ''
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-        if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+        if (!bytes) {
+            return ''
+        }
+        if (bytes < 1024 * 1024) {
+            return (bytes / 1024).toFixed(1) + ' KB'
+        }
+        if (bytes < 1024 * 1024 * 1024) {
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+        }
         return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB'
     }
 
@@ -80,16 +118,26 @@ class ImageSelect extends Vue {
             ;(groups[domain] ||= { domain, images: [] }).images.push(img)
         }
         return Object.values(groups).sort((a, b) => {
-            if (a.domain === 'docker.io') return -1
-            if (b.domain === 'docker.io') return 1
-            if (a.domain === '本地镜像') return 1
-            if (b.domain === '本地镜像') return -1
+            if (a.domain === 'docker.io') {
+                return -1
+            }
+            if (b.domain === 'docker.io') {
+                return 1
+            }
+            if (a.domain === '本地镜像') {
+                return 1
+            }
+            if (b.domain === '本地镜像') {
+                return -1
+            }
             return a.domain.localeCompare(b.domain)
         })
     }
 
     matchCount(query: string) {
-        if (!query) return this.images.length
+        if (!query) {
+            return this.images.length
+        }
         return this.images.filter(img => img.repoTags?.some(t => t.toLowerCase().includes(query))).length
     }
 }

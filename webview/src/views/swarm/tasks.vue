@@ -35,7 +35,9 @@ class Tasks extends Vue {
             new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
         )
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return list
+        if (!keyword) {
+            return list
+        }
         return list.filter((t: SwarmTask) =>
             (t.id || '').toLowerCase().includes(keyword) ||
             (t.serviceName || '').toLowerCase().includes(keyword) ||
@@ -50,17 +52,31 @@ class Tasks extends Vue {
 
     // ─── 方法 ───
     taskStateClass(state: string) {
-        if (state === 'running' || state === 'complete') return 'text-emerald-600 font-medium'
-        if (state === 'failed' || state === 'rejected') return 'text-red-500 font-medium'
-        if (state === 'pending' || state === 'preparing' || state === 'starting') return 'text-amber-600 font-medium'
+        if (state === 'running' || state === 'complete') {
+            return 'text-emerald-600 font-medium'
+        }
+        if (state === 'failed' || state === 'rejected') {
+            return 'text-red-500 font-medium'
+        }
+        if (state === 'pending' || state === 'preparing' || state === 'starting') {
+            return 'text-amber-600 font-medium'
+        }
         return 'text-slate-500'
     }
 
     taskIconClass(state: string) {
-        if (state === 'running') return 'bg-cyan-400'
-        if (state === 'failed' || state === 'rejected') return 'bg-red-400'
-        if (state === 'complete') return 'bg-blue-400'
-        if (state === 'shutdown') return 'bg-slate-400'
+        if (state === 'running') {
+            return 'bg-cyan-400'
+        }
+        if (state === 'failed' || state === 'rejected') {
+            return 'bg-red-400'
+        }
+        if (state === 'complete') {
+            return 'bg-blue-400'
+        }
+        if (state === 'shutdown') {
+            return 'bg-slate-400'
+        }
         return 'bg-amber-400'
     }
 

@@ -43,9 +43,13 @@ class Dropdown extends Vue {
 
     // ─── 方法 ───
     async computePlacement(immediate = false) {
-        if (!this.containerRef) return
+        if (!this.containerRef) {
+            return
+        }
 
-        if (!immediate) await nextTick()
+        if (!immediate) {
+            await nextTick()
+        }
 
         const rect = this.containerRef.getBoundingClientRect()
         const viewportHeight = window.innerHeight
@@ -103,7 +107,9 @@ class Dropdown extends Vue {
     }
 
     handleClickOutside(e: MouseEvent) {
-        if (!this.containerRef) return
+        if (!this.containerRef) {
+            return
+        }
         const target = e.target as Node
         // 点击在容器外 且 不在面板内
         if (!this.containerRef.contains(target) && !(this.panelRef && this.panelRef.contains(target))) {
@@ -113,8 +119,12 @@ class Dropdown extends Vue {
 
     handleScroll(e: Event) {
         // 如果滚动发生在面板内部，不关闭
-        if (this.panelRef && this.panelRef.contains(e.target as Node)) return
-        if (this.isOpen) this.isOpen = false
+        if (this.panelRef && this.panelRef.contains(e.target as Node)) {
+            return
+        }
+        if (this.isOpen) {
+            this.isOpen = false
+        }
     }
 
     // ─── 生命周期 ───

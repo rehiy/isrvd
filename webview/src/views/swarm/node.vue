@@ -26,7 +26,9 @@ class NodeDetail extends Vue {
 
     // ─── 方法 ───
     async loadDetail() {
-        if (this.loading) return
+        if (this.loading) {
+            return
+        }
         this.loading = true
         try {
             await Promise.allSettled([this.loadNode(), this.loadServices()])
@@ -44,7 +46,9 @@ class NodeDetail extends Vue {
     async loadServices() {
         this.services = []
         this.servicesError = false
-        if (!this.portal.hasPerm('GET /api/swarm/node/:id/services')) return
+        if (!this.portal.hasPerm('GET /api/swarm/node/:id/services')) {
+            return
+        }
         try {
             const res = await api.swarmNodeServiceList(this.nodeId)
             this.services = res.payload ?? []

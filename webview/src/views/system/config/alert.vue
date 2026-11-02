@@ -98,28 +98,40 @@ class ConfigAlert extends Vue {
 
     webhookTemplateValue(hook: WebhookConfig) {
         const selected = this.selectedWebhookTemplates.get(hook)
-        if (selected === 'generic' && !hook.template.trim()) return selected
-        if (selected && this.webhookTemplates.some(item => item.value === selected && item.template === hook.template)) return selected
+        if (selected === 'generic' && !hook.template.trim()) {
+            return selected
+        }
+        if (selected && this.webhookTemplates.some(item => item.value === selected && item.template === hook.template)) {
+            return selected
+        }
         this.selectedWebhookTemplates.delete(hook)
-        if (!hook.template.trim()) return 'generic'
+        if (!hook.template.trim()) {
+            return 'generic'
+        }
         const matches = this.webhookTemplates.filter(item => item.template === hook.template)
         return matches.length === 1 ? matches[0].value : 'custom'
     }
 
     applyWebhookTemplate(hook: WebhookConfig, event: Event) {
         const select = event.target as HTMLSelectElement
-        if (select.value === 'custom') return
+        if (select.value === 'custom') {
+            return
+        }
         if (select.value === 'generic') {
             this.selectedWebhookTemplates.set(hook, 'generic')
             hook.template = ''
-            if (!hook.name.trim()) hook.name = this.$t('通用 Webhook')
+            if (!hook.name.trim()) {
+                hook.name = this.$t('通用 Webhook')
+            }
             return
         }
         const preset = this.webhookTemplates.find(item => item.value === select.value)
         if (preset) {
             this.selectedWebhookTemplates.set(hook, preset.value)
             hook.template = preset.template
-            if (!hook.name.trim()) hook.name = preset.label.replace(/（.*）$/, '')
+            if (!hook.name.trim()) {
+                hook.name = preset.label.replace(/（.*）$/, '')
+            }
         }
     }
 }

@@ -78,7 +78,9 @@ export const interceptors = (
     }
 
     const handleError = async (error: unknown, isBlob = false) => {
-        if (axios.isCancel(error)) return Promise.reject(error)
+        if (axios.isCancel(error)) {
+            return Promise.reject(error)
+        }
         if (typeof error === 'object' && error !== null) {
             notifiedErrors.add(error)
         }
@@ -91,7 +93,9 @@ export const interceptors = (
         if (data instanceof Blob) {
             try {
                 message = (JSON.parse(await data.text()) as APIResponse).message || ''
-            } catch { /* 非 JSON 下载错误使用状态码兜底 */ }
+            } catch {
+                /* 非 JSON 下载错误使用状态码兜底 */
+            }
         } else {
             message = data?.message || ''
         }

@@ -25,7 +25,9 @@ class App extends Vue {
     sidebarCollapsed = false
 
     get browserTitle() {
-        if (!this.portal.username || !this.portal.permissionsLoaded) return 'iSrvd'
+        if (!this.portal.username || !this.portal.permissionsLoaded) {
+            return 'iSrvd'
+        }
         const title = this.portal.title.trim() || 'iSrvd'
         const page = this.$route.meta.title
         return typeof page === 'string' && page ? `${title} · ${this.$t(page)}` : title
@@ -53,7 +55,9 @@ class App extends Vue {
         const params = new URLSearchParams(window.location.search)
         const error = params.get('oidc_error')
         const code = params.get('oidc_code')
-        if (!error && !code) return false
+        if (!error && !code) {
+            return false
+        }
 
         // 立即清除 query，避免刷新时重复处理
         window.history.replaceState({}, document.title, window.location.pathname + window.location.hash)
@@ -65,7 +69,9 @@ class App extends Vue {
 
         try {
             const { payload } = await api.accountOIDCExchange({ code: code ?? '' })
-            if (!payload?.token) return false
+            if (!payload?.token) {
+                return false
+            }
             this.portal.setAuth({ authMode: 'jwt', token: payload.token, username: payload.username })
             await this.portal.refresh()
             return true

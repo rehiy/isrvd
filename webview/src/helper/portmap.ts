@@ -10,7 +10,9 @@ export const portmapPatch = async (nodeId: string, fn: (list: NodePortMap[]) => 
     const res = await api.nodeList()
     const node = (res.payload || []).find(n => n.id === nodeId)
     const next = node ? fn([...(node.portmaps || [])]) : null
-    if (!next) return false
+    if (!next) {
+        return false
+    }
     await api.nodePortMapUpdate(nodeId, { portmaps: next })
     return true
 }

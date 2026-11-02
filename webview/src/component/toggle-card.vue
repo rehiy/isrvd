@@ -18,7 +18,9 @@ class ToggleCard extends Vue {
   }
 
   toggle() {
-    if (this.disabled) return
+    if (this.disabled) {
+      return
+    }
     this.$emit('update:modelValue', !this.modelValue)
   }
 }

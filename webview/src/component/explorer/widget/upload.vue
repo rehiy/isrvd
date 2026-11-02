@@ -180,9 +180,13 @@ class Upload extends Vue {
 
     /** 拖拽落下时调用：传入 FileSystemEntry[] 直接上传 */
     async startDrop(entries: FileSystemEntry[]) {
-        if (entries.length === 0) return
+        if (entries.length === 0) {
+            return
+        }
         const nodes = await buildUploadTree(entries, this.currentPath)
-        if (nodes.length === 0) return
+        if (nodes.length === 0) {
+            return
+        }
         this.startUpload(nodes)
     }
 
@@ -190,7 +194,9 @@ class Upload extends Vue {
 
     onFileInputChange(e: Event) {
         const files = (e.target as HTMLInputElement).files
-        if (!files || files.length === 0) return
+        if (!files || files.length === 0) {
+            return
+        }
         const fileList = Array.from(files)
         ;(e.target as HTMLInputElement).value = ''
         const nodes: UploadNode[] = fileList.map(f => ({
@@ -210,8 +216,13 @@ class Upload extends Vue {
     // ─── 内部上传入口 ─────────────────────────────────────────────────────────
 
     private startUpload(nodes: UploadNode[]) {
-        if (nodes.length === 0) return
-        if (this.clearTimer) { clearTimeout(this.clearTimer); this.clearTimer = null }
+        if (nodes.length === 0) {
+            return
+        }
+        if (this.clearTimer) {
+            clearTimeout(this.clearTimer)
+            this.clearTimer = null
+        }
         const existingNames = new Set(this.uploadNodes.map(n => n.name))
         const newNodes = nodes.filter(n => {
             if (existingNames.has(n.name)) {
@@ -220,7 +231,9 @@ class Upload extends Vue {
             }
             return true
         })
-        if (newNodes.length === 0) return
+        if (newNodes.length === 0) {
+            return
+        }
         this.uploadNodes = [...this.uploadNodes, ...newNodes]
         this.pendingBatches++
         this.uploadQueue = this.uploadQueue.then(() => this.doUpload(newNodes))
@@ -240,7 +253,9 @@ class Upload extends Vue {
         const walk = (items: UploadNode[]) => {
             for (const item of items) {
                 if (item.type === 'dir') {
-                    if (item.cancelled) continue
+                    if (item.cancelled) {
+                        continue
+                    }
                     dirs.add(item.destDir)
                     walk(item.children)
                 }
@@ -251,18 +266,25 @@ class Upload extends Vue {
     }
 
     private isNodeCancelled(node: UploadNode): boolean {
-        if (node.type === 'file') return node.cancelled
+        if (node.type === 'file') {
+            return node.cancelled
+        }
         return node.cancelled || flattenUploadTree(node.children).every(f => f.cancelled)
     }
 
     private isBatchCancelled(files: UploadFileNode[], nodesForDirs?: UploadNode[]): boolean {
-        if (nodesForDirs && nodesForDirs.length > 0 && nodesForDirs.every(n => this.isNodeCancelled(n))) return true
+        if (nodesForDirs && nodesForDirs.length > 0 && nodesForDirs.every(n => this.isNodeCancelled(n))) {
+            return true
+        }
         return files.length > 0 && files.every(f => f.cancelled)
     }
 
     private markNodeCancelled(node: UploadNode) {
         if (node.type === 'file') {
-            if (!node.done) { node.cancelled = true; node.controller?.abort() }
+            if (!node.done) {
+                node.cancelled = true
+                node.controller?.abort()
+            }
             return
         }
         node.cancelled = true
@@ -270,12 +292,18 @@ class Upload extends Vue {
     }
 
     private scheduleClear(delay: number) {
-        if (this.clearTimer) clearTimeout(this.clearTimer)
+        if (this.clearTimer) {
+            clearTimeout(this.clearTimer)
+        }
         this.clearTimer = setTimeout(() => {
             this.clearTimer = null
-            if (this.pendingBatches !== 0) return
+            if (this.pendingBatches !== 0) {
+                return
+            }
             const { allDone } = this.getUploadState()
-            if (!allDone) return
+            if (!allDone) {
+                return
+            }
             this.uploadNodes = []
             this.uploadVersion++
         }, delay)
@@ -283,9 +311,13 @@ class Upload extends Vue {
 
     private finishBatch() {
         this.pendingBatches = Math.max(0, this.pendingBatches - 1)
-        if (this.pendingBatches !== 0) return
+        if (this.pendingBatches !== 0) {
+            return
+        }
         const { allDone, hasFailed } = this.getUploadState()
-        if (!allDone) return
+        if (!allDone) {
+            return
+        }
         this.$emit('done')
         // 成功：1.5s 后关闭；有失败：5s 后关闭（让用户看清错误）
         this.scheduleClear(hasFailed ? 5000 : 1500)
@@ -295,13 +327,20 @@ class Upload extends Vue {
         try {
             await this.adapter.remove(`${fileNode.destDir.replace(/\/+$/, '')}/${fileNode.name}`, false)
             return true
-        } catch { return false }
+        } catch {
+            return false
+        }
     }
 
     private retryFiles(files: UploadFileNode[]) {
         const failed = files.filter(f => !!f.error)
-        if (failed.length === 0) return
-        if (this.clearTimer) { clearTimeout(this.clearTimer); this.clearTimer = null }
+        if (failed.length === 0) {
+            return
+        }
+        if (this.clearTimer) {
+            clearTimeout(this.clearTimer)
+            this.clearTimer = null
+        }
         for (const f of failed) { f.percent = 0; f.done = false; f.error = ''; f.cancelled = false; f.controller = undefined }
         this.pendingBatches++
         this.uploadVersion++
@@ -309,18 +348,25 @@ class Upload extends Vue {
     }
 
     private pruneCancelledFromNode(node: UploadNode): UploadNode[] {
-        if (node.type === 'file') return node.cancelled ? [] : [node]
+        if (node.type === 'file') {
+            return node.cancelled ? [] : [node]
+        }
         node.children = node.children.flatMap(child => this.pruneCancelledFromNode(child))
         return node.children.length > 0 ? [node] : []
     }
 
     private cleanupAfterPrune() {
         if (this.uploadNodes.length === 0) {
-            if (this.clearTimer) { clearTimeout(this.clearTimer); this.clearTimer = null }
+            if (this.clearTimer) {
+                clearTimeout(this.clearTimer)
+                this.clearTimer = null
+            }
             return
         }
         const { allDone, hasFailed } = this.getUploadState()
-        if (allDone) this.scheduleClear(hasFailed ? 5000 : 800)
+        if (allDone) {
+            this.scheduleClear(hasFailed ? 5000 : 800)
+        }
     }
 
     private async doUpload(nodes: UploadNode[]) {
@@ -335,17 +381,29 @@ class Upload extends Vue {
             ...files.map(f => f.destDir),
         ].filter(d => d !== '/'))
         for (const dir of dirsToCreate) {
-            if (this.isBatchCancelled(files, nodesForDirs)) break
-            try { await this.adapter.mkdir(dir) } catch { /* 已存在则忽略 */ }
+            if (this.isBatchCancelled(files, nodesForDirs)) {
+                break
+            }
+            try {
+                await this.adapter.mkdir(dir)
+            } catch {
+                /* 已存在则忽略 */
+            }
         }
 
-        if (this.isBatchCancelled(files, nodesForDirs)) { this.finishBatch(); return }
+        if (this.isBatchCancelled(files, nodesForDirs)) {
+            this.finishBatch()
+            return
+        }
 
         const queue = files.slice()
         const concurrency = Math.max(1, this.concurrency)
 
         const uploadOne = async (fileNode: UploadFileNode) => {
-            if (fileNode.cancelled) { cancelCount++; return }
+            if (fileNode.cancelled) {
+                cancelCount++
+                return
+            }
             const controller = new AbortController()
             fileNode.controller = controller
             try {
@@ -358,24 +416,34 @@ class Upload extends Vue {
                 this.$emit('refresh')
             } catch (err: unknown) {
                 if (axios.isCancel(err) || controller.signal.aborted || fileNode.cancelled) {
-                    fileNode.cancelled = true; cancelCount++
+                    fileNode.cancelled = true
+                    cancelCount++
                 } else {
                     const ok = await this.cleanupPartialFile(fileNode)
-                    if (!ok) cleanupFailCount++
+                    if (!ok) {
+                        cleanupFailCount++
+                    }
                     fileNode.error = ok
                         ? ((err instanceof Error ? err.message : '') || this.$t('上传失败，已尝试清理残留文件'))
                         : ((err instanceof Error ? err.message : '') || this.$t('上传失败，可能残留不完整文件'))
-                    fileNode.done = true; failCount++
+                    fileNode.done = true
+                    failCount++
                 }
-            } finally { fileNode.controller = undefined }
+            } finally {
+                fileNode.controller = undefined
+            }
             this.uploadVersion++
         }
 
         const worker = async () => {
             while (queue.length > 0) {
-                if (this.isBatchCancelled(files, nodesForDirs)) return
+                if (this.isBatchCancelled(files, nodesForDirs)) {
+                    return
+                }
                 const f = queue.shift()
-                if (f) await uploadOne(f)
+                if (f) {
+                    await uploadOne(f)
+                }
             }
         }
         await Promise.all(Array.from({ length: concurrency }, worker))
@@ -395,7 +463,10 @@ class Upload extends Vue {
         this.uploadVersion++
         if (this.pendingBatches === 0) {
             const { allDone, hasFailed } = this.getUploadState()
-            if (allDone) { this.$emit('done'); this.scheduleClear(hasFailed ? 5000 : 800) }
+            if (allDone) {
+                this.$emit('done')
+                this.scheduleClear(hasFailed ? 5000 : 800)
+            }
         }
     }
 

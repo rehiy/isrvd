@@ -44,7 +44,9 @@ const readFile = (file) => {
     const re = go ? ENTRY_GO : ENTRY
     for (const line of readFileSync(file, 'utf8').split('\n')) {
         const m = line.match(re)
-        if (m) entries.set(unquote(m[1]), unquote(m[2]))
+        if (m) {
+            entries.set(unquote(m[1]), unquote(m[2]))
+        }
     }
     return { code: file.replace(/\.ts$/, ''), entries }
 }
@@ -92,7 +94,9 @@ if (worklist) {
     }
     const target = loadLang(worklist)
     for (const [key, enValue] of en) {
-        if (target.has(key)) continue
+        if (target.has(key)) {
+            continue
+        }
         process.stdout.write(`${JSON.stringify({ key, en: enValue })}\n`)
     }
     await new Promise(resolve => process.stdout.end(resolve))
@@ -124,9 +128,13 @@ for (const code of codes.sort()) {
 
     const ratio = en.size ? Math.round(((en.size - missing.length) / en.size) * 100) : 100
     console.log(`${code.padEnd(8)} ${String(entries.size).padStart(5)} 条，覆盖 ${String(ratio).padStart(3)}%，缺失 ${missing.length}`)
-    if (code === 'en') continue
+    if (code === 'en') {
+        continue
+    }
 
-    if (missing.length) line(`  ✗ 缺失 ${missing.length} 条，导出清单：node scripts/check-locales.mjs --worklist ${code}`)
+    if (missing.length) {
+        line(`  ✗ 缺失 ${missing.length} 条，导出清单：node scripts/check-locales.mjs --worklist ${code}`)
+    }
     if (stale.length) {
         line(`  ✗ 多余 ${stale.length} 条（英文词典里已无此原文，多为改文案后遗留）`)
         for (const k of stale.slice(0, 8)) line(`      ${k}`)
@@ -147,4 +155,6 @@ for (const code of codes.sort()) {
 }
 
 console.log(problems ? `\n共 ${problems} 处待处理` : '\n全部语言词条完整')
-if (strict && problems) process.exit(1)
+if (strict && problems) {
+    process.exit(1)
+}

@@ -39,19 +39,25 @@ class OptionMultiSelect extends Vue {
     }
 
     filteredOptions(query: string) {
-        if (!query) return this.options
+        if (!query) {
+            return this.options
+        }
         return this.options.filter(option =>
             option.label.toLowerCase().includes(query) || option.value.toLowerCase().includes(query)
         )
     }
 
     updateValue(value: string | string[]) {
-        if (this.disabled) return
+        if (this.disabled) {
+            return
+        }
         this.$emit('update:modelValue', Array.isArray(value) ? value : [])
     }
 
     toggleOption(value: string) {
-        if (this.disabled || this.isOptionDisabled(value)) return
+        if (this.disabled || this.isOptionDisabled(value)) {
+            return
+        }
         const next = this.modelValue.includes(value)
             ? this.modelValue.filter(item => item !== value)
             : [...this.modelValue, value]

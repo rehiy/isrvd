@@ -49,7 +49,9 @@ class MonitorPage extends Vue {
     // ─── 方法 ───
     private dispatchData(rec: MonitorHostRecord): boolean {
         const { ts, data } = rec
-        if (!data || ts <= this.lastDispatchedTs) return false
+        if (!data || ts <= this.lastDispatchedTs) {
+            return false
+        }
         this.lastDispatchedTs = ts
         // 只更新数据，不更新图表
         this.cpuMemRef?.pushData(data, ts)
@@ -81,7 +83,9 @@ class MonitorPage extends Vue {
     async loadHistory(version = this.dataVersion): Promise<boolean> {
         try {
             const res = await api.overviewMonitor({ type: 'host', since: this.selectedRange })
-            if (this.destroyed || version !== this.dataVersion) return false
+            if (this.destroyed || version !== this.dataVersion) {
+                return false
+            }
             let ok = false
             if (res.payload && Array.isArray(res.payload) && res.payload.length > 0) {
                 const sorted = [...res.payload].sort((a, b) => a.ts - b.ts)
@@ -90,10 +94,14 @@ class MonitorPage extends Vue {
                     ok = this.dispatchData(rec) || ok
                 }
                 // 数据加载完成后，显式更新所有图表
-                if (ok) this.updateCharts()
+                if (ok) {
+                    this.updateCharts()
+                }
             }
             return ok
-        } catch { return false }
+        } catch {
+            return false
+        }
     }
 
     clearAllData() {
@@ -107,7 +115,9 @@ class MonitorPage extends Vue {
     }
 
     async switchTimeRange(range: number) {
-        if (this.selectedRange === range) return
+        if (this.selectedRange === range) {
+            return
+        }
         this.selectedRange = range
         this.loading = true
         this.ready = false
@@ -127,9 +137,13 @@ class MonitorPage extends Vue {
     async loadData(version = this.dataVersion) {
         try {
             const ok = await this.fetchRealtime(version)
-            if (ok) this.ready = true
+            if (ok) {
+                this.ready = true
+            }
             return ok
-        } catch { /* ignore */ }
+        } catch {
+            /* ignore */
+        }
         return false
     }
 
@@ -182,7 +196,10 @@ class MonitorPage extends Vue {
     }
 
     stopPoll() {
-        if (this.pollTimer) { clearInterval(this.pollTimer); this.pollTimer = null }
+        if (this.pollTimer) {
+            clearInterval(this.pollTimer)
+            this.pollTimer = null
+        }
     }
 
     async load() {

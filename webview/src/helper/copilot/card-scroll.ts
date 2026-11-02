@@ -13,7 +13,9 @@ const scrollGroups = new WeakMap<HTMLElement, { cards: Set<ScrollCard>; dispose:
 export function bindCardAutoCollapse(element: HTMLElement, canCollapse: () => boolean, collapse: () => void): () => void {
     let root = element.parentElement
     while (root && !/^(auto|scroll)$/.test(getComputedStyle(root).overflowY)) root = root.parentElement
-    if (!root) return () => {}
+    if (!root) {
+        return () => {}
+    }
 
     let group = scrollGroups.get(root)
     if (!group) {
@@ -37,14 +39,18 @@ function installScrollListener(root: HTMLElement, cards: Set<ScrollCard>) {
     let previousTop = root.scrollTop
     let frame = 0
     const onScroll = () => {
-        if (!frame) frame = requestAnimationFrame(update)
+        if (!frame) {
+            frame = requestAnimationFrame(update)
+        }
     }
     const update = async () => {
         frame = 0
         const scrollTop = root.scrollTop
         const movingDown = scrollTop > previousTop
         previousTop = scrollTop
-        if (!root.clientHeight) return
+        if (!root.clientHeight) {
+            return
+        }
 
         const top = root.getBoundingClientRect().top + root.clientTop
         const collapsing: { card: ScrollCard; height: number }[] = []
@@ -57,7 +63,9 @@ function installScrollListener(root: HTMLElement, cards: Set<ScrollCard>) {
                 collapsing.push({ card, height: rect.height })
             }
         }
-        if (!collapsing.length) return
+        if (!collapsing.length) {
+            return
+        }
 
         for (const { card } of collapsing) card.collapse()
         await nextTick()

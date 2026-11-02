@@ -20,7 +20,9 @@ class ImageDetail extends Vue {
 
     get primaryTag() {
         const tag = this.repoTags.find(t => t && t !== '<none>:<none>')
-        if (tag) return tag
+        if (tag) {
+            return tag
+        }
 
         const digestName = this.digestImageName(this.repoDigests[0] || '')
         return digestName || this.shortHash(this.inspectData?.shortId || this.inspectData?.id || this.imageId) || this.$t('镜像详情')
@@ -43,7 +45,9 @@ class ImageDetail extends Vue {
     }
 
     get labelEntries() {
-        if (!this.inspectData?.labels) return []
+        if (!this.inspectData?.labels) {
+            return []
+        }
         return Object.entries(this.inspectData.labels)
     }
 
@@ -68,21 +72,29 @@ class ImageDetail extends Vue {
     }
 
     shortHash(value: string) {
-        if (!value) return ''
+        if (!value) {
+            return ''
+        }
         const hash = this.stripSha256(value)
         return `sha256:${hash.slice(0, 12)}`
     }
 
     digestImageName(digest: string) {
-        if (!digest) return ''
+        if (!digest) {
+            return ''
+        }
         const atIndex = digest.indexOf('@')
-        if (atIndex <= 0) return ''
+        if (atIndex <= 0) {
+            return ''
+        }
         return digest.slice(0, atIndex)
     }
 
     formatDigest(digest: string) {
         const atIndex = digest.indexOf('@')
-        if (atIndex <= 0) return this.shortHash(digest)
+        if (atIndex <= 0) {
+            return this.shortHash(digest)
+        }
         return `${digest.slice(0, atIndex)}@${this.shortHash(digest.slice(atIndex + 1))}`
     }
 

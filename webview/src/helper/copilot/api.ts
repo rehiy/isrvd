@@ -72,7 +72,9 @@ const callRefs = new Map<string, RegisteredOperation>()
 // callRef 只存在于内存中，刷新页面后失效，模型无法自行拼接 method/path。
 export function registerCopilotAPILookup(payload: unknown): unknown {
     cleanupExpiredCallRefs()
-    if (!isRecord(payload)) return payload
+    if (!isRecord(payload)) {
+        return payload
+    }
 
     if (payload.mode === 'detail') {
         return registerOperationPayload(payload)
@@ -128,13 +130,17 @@ export async function executeCopilotAPI(args: CopilotAPIArgs, mode: CopilotAPIMo
     }
 
     const detail = await ensureOperationDetail(operation)
-    if ('error' in detail) return recordFailure(operation, failureKey, detail.error)
+    if ('error' in detail) {
+        return recordFailure(operation, failureKey, detail.error)
+    }
     if (operation.toolUnsupportedReason) {
         return copilotError('UNSUPPORTED_OPERATION', operation.toolUnsupportedReason, false)
     }
 
     const resolved = resolveCall(operation, args.arguments, mode)
-    if ('error' in resolved) return recordFailure(operation, failureKey, resolved.error)
+    if ('error' in resolved) {
+        return recordFailure(operation, failureKey, resolved.error)
+    }
 
     try {
         const config = { params: resolved.value.query }
@@ -175,8 +181,12 @@ export async function executeCopilotAPI(args: CopilotAPIArgs, mode: CopilotAPIMo
 
 function registerOperationPayload(payload: Record<string, unknown>): Record<string, unknown> {
     const operation = operationFromPayload(payload)
-    if (!operation) return payload
-    if (operation.toolUnsupportedReason) return { ...payload, hint: operation.toolUnsupportedReason }
+    if (!operation) {
+        return payload
+    }
+    if (operation.toolUnsupportedReason) {
+        return { ...payload, hint: operation.toolUnsupportedReason }
+    }
 
     const bytes = new Uint8Array(16)
     globalThis.crypto.getRandomValues(bytes)
@@ -201,7 +211,9 @@ function operationFromPayload(payload: Record<string, unknown>): OpenAPIOperatio
     const method = stringValue(payload.method).toLowerCase()
     const path = stringValue(payload.path)
     const operationId = stringValue(payload.operationId)
-    if (!method || !path || !operationId) return null
+    if (!method || !path || !operationId) {
+        return null
+    }
     return {
         method,
         path,
@@ -216,7 +228,9 @@ function operationFromPayload(payload: Record<string, unknown>): OpenAPIOperatio
 }
 
 async function ensureOperationDetail(operation: RegisteredOperation): Promise<{ value: RegisteredOperation } | { error: Record<string, unknown> }> {
-    if (operation.loaded) return { value: operation }
+    if (operation.loaded) {
+        return { value: operation }
+    }
     try {
         const res = await http.get('copilot/catalog', { params: { path: operation.path, method: operation.method } })
         const payload = res?.payload
@@ -243,21 +257,31 @@ function resolveCall(operation: RegisteredOperation, source: string | undefined,
     }
 
     const parsed = parseBusinessArguments(source)
-    if ('error' in parsed) return { error: copilotError('INVALID_ARGUMENTS', parsed.error, true) }
+    if ('error' in parsed) {
+        return { error: copilotError('INVALID_ARGUMENTS', parsed.error, true) }
+    }
 
     const parameters = operation.parameters || []
     const pathParameters = parameters.filter(parameter => parameter.in === 'path')
     const queryParameters = parameters.filter(parameter => parameter.in === 'query')
     const pathError = validateParameterGroup(parsed.value.path, pathParameters, 'path')
-    if (pathError) return { error: copilotError('INVALID_ARGUMENTS', pathError, true) }
+    if (pathError) {
+        return { error: copilotError('INVALID_ARGUMENTS', pathError, true) }
+    }
     const queryError = validateParameterGroup(parsed.value.query, queryParameters, 'query')
-    if (queryError) return { error: copilotError('INVALID_ARGUMENTS', queryError, true) }
+    if (queryError) {
+        return { error: copilotError('INVALID_ARGUMENTS', queryError, true) }
+    }
 
     const bodyError = validateRequestBody(parsed.value.body, operation.requestBody, operation.requestBodyRequired)
-    if (bodyError) return { error: copilotError('INVALID_ARGUMENTS', bodyError, true) }
+    if (bodyError) {
+        return { error: copilotError('INVALID_ARGUMENTS', bodyError, true) }
+    }
 
     const path = fillPath(operation.path, parsed.value.path)
-    if ('error' in path) return { error: copilotError('INVALID_ARGUMENTS', path.error, true) }
+    if ('error' in path) {
+        return { error: copilotError('INVALID_ARGUMENTS', path.error, true) }
+    }
     const target = path.value.replace(/^\/+/, '')
     if (!target || target.includes('://') || target.split('/').includes('..')) {
         return { error: copilotError('INVALID_ARGUMENTS', t('解析后的 API 路径不是合法的站内路径。'), false) }
@@ -274,18 +298,28 @@ function resolveCall(operation: RegisteredOperation, source: string | undefined,
 }
 
 function parseBusinessArguments(source?: string): { value: BusinessArguments } | { error: string } {
-    if (!source) return { value: { path: {}, query: {} } }
+    if (!source) {
+        return { value: { path: {}, query: {} } }
+    }
     let parsed: unknown
     try {
         parsed = JSON.parse(source)
     } catch {
         return { error: t('arguments 不是合法 JSON。') }
     }
-    if (!isRecord(parsed)) return { error: t('arguments 必须是 JSON 对象。') }
+    if (!isRecord(parsed)) {
+        return { error: t('arguments 必须是 JSON 对象。') }
+    }
     const unknown = Object.keys(parsed).filter(key => !['path', 'query', 'body'].includes(key))
-    if (unknown.length) return { error: `arguments 包含未知字段：${unknown.join(', ')}。` }
-    if (parsed.path !== undefined && !isRecord(parsed.path)) return { error: t('arguments.path 必须是对象。') }
-    if (parsed.query !== undefined && !isRecord(parsed.query)) return { error: t('arguments.query 必须是对象。') }
+    if (unknown.length) {
+        return { error: `arguments 包含未知字段：${unknown.join(', ')}。` }
+    }
+    if (parsed.path !== undefined && !isRecord(parsed.path)) {
+        return { error: t('arguments.path 必须是对象。') }
+    }
+    if (parsed.query !== undefined && !isRecord(parsed.query)) {
+        return { error: t('arguments.query 必须是对象。') }
+    }
     return {
         value: {
             path: isRecord(parsed.path) ? parsed.path : {},
@@ -303,7 +337,9 @@ function canonicalArguments(source?: string): string {
 function validateParameterGroup(values: Record<string, unknown>, parameters: OpenAPIParameter[], group: string): string {
     const allowed = new Set(parameters.map(parameter => stringValue(parameter.name)).filter(Boolean))
     const unknown = Object.keys(values).filter(name => !allowed.has(name))
-    if (unknown.length) return `${group} 包含接口未声明的参数：${unknown.join(', ')}。`
+    if (unknown.length) {
+        return `${group} 包含接口未声明的参数：${unknown.join(', ')}。`
+    }
 
     for (const parameter of parameters) {
         const name = stringValue(parameter.name)
@@ -313,16 +349,22 @@ function validateParameterGroup(values: Record<string, unknown>, parameters: Ope
         }
         if (value !== undefined) {
             const error = validateSchema(value, parameter.schema, `${group}.${name}`)
-            if (error) return error
+            if (error) {
+                return error
+            }
         }
     }
     return ''
 }
 
 function validateRequestBody(body: unknown, schema: unknown, required: boolean): string {
-    if (schema === undefined || schema === null) return body === undefined ? '' : '该接口不接受 body。'
+    if (schema === undefined || schema === null) {
+        return body === undefined ? '' : '该接口不接受 body。'
+    }
     if (body === undefined) {
-        if (required) return 'body 是必填参数。'
+        if (required) {
+            return 'body 是必填参数。'
+        }
         const requiredFields = isRecord(schema) && Array.isArray(schema.required) ? schema.required : []
         return requiredFields.length ? `body 缺少必填字段：${requiredFields.join(', ')}。` : ''
     }
@@ -330,43 +372,65 @@ function validateRequestBody(body: unknown, schema: unknown, required: boolean):
 }
 
 function validateSchema(value: unknown, schema: unknown, path: string): string {
-    if (!isRecord(schema)) return ''
+    if (!isRecord(schema)) {
+        return ''
+    }
     if (Array.isArray(schema.enum) && !schema.enum.some(item => Object.is(item, value))) {
         return `${path} 必须是以下值之一：${schema.enum.map(String).join(', ')}。`
     }
 
     const type = stringValue(schema.type)
     if (type === 'object') {
-        if (!isRecord(value)) return `${path} 必须是对象。`
+        if (!isRecord(value)) {
+            return `${path} 必须是对象。`
+        }
         const properties = isRecord(schema.properties) ? schema.properties : {}
         const required = Array.isArray(schema.required) ? schema.required.map(String) : []
         for (const name of required) {
-            if (value[name] === undefined || value[name] === null || value[name] === '') return `${path}.${name} 是必填字段。`
+            if (value[name] === undefined || value[name] === null || value[name] === '') {
+                return `${path}.${name} 是必填字段。`
+            }
         }
         if (schema.additionalProperties === false) {
             const unknown = Object.keys(value).filter(name => !(name in properties))
-            if (unknown.length) return `${path} 包含未知字段：${unknown.join(', ')}。`
+            if (unknown.length) {
+                return `${path} 包含未知字段：${unknown.join(', ')}。`
+            }
         }
         for (const [name, child] of Object.entries(value)) {
             if (name in properties) {
                 const error = validateSchema(child, properties[name], `${path}.${name}`)
-                if (error) return error
+                if (error) {
+                    return error
+                }
             }
         }
         return ''
     }
     if (type === 'array') {
-        if (!Array.isArray(value)) return `${path} 必须是数组。`
+        if (!Array.isArray(value)) {
+            return `${path} 必须是数组。`
+        }
         for (let index = 0; index < value.length; index++) {
             const error = validateSchema(value[index], schema.items, `${path}[${index}]`)
-            if (error) return error
+            if (error) {
+                return error
+            }
         }
         return ''
     }
-    if (type === 'string' && typeof value !== 'string') return `${path} 必须是字符串。`
-    if (type === 'boolean' && typeof value !== 'boolean') return `${path} 必须是布尔值。`
-    if (type === 'number' && typeof value !== 'number') return `${path} 必须是数字。`
-    if (type === 'integer' && !Number.isInteger(value)) return `${path} 必须是整数。`
+    if (type === 'string' && typeof value !== 'string') {
+        return `${path} 必须是字符串。`
+    }
+    if (type === 'boolean' && typeof value !== 'boolean') {
+        return `${path} 必须是布尔值。`
+    }
+    if (type === 'number' && typeof value !== 'number') {
+        return `${path} 必须是数字。`
+    }
+    if (type === 'integer' && !Number.isInteger(value)) {
+        return `${path} 必须是整数。`
+    }
     return ''
 }
 
@@ -374,7 +438,9 @@ function fillPath(template: string, values: Record<string, unknown>): { value: s
     let path = template
     for (const name of template.match(/\{([^}]+)\}/g)?.map(value => value.slice(1, -1)) || []) {
         const value = values[name]
-        if (value === undefined || value === null || value === '') return { error: `path.${name} 是必填参数。` }
+        if (value === undefined || value === null || value === '') {
+            return { error: `path.${name} 是必填参数。` }
+        }
         path = path.replace(`{${name}}`, encodeURIComponent(String(value)))
     }
     return { value: path }
@@ -405,18 +471,32 @@ function httpError(error: unknown, prefix = ''): Record<string, unknown> {
     const data = error.response?.data
     const detail = isRecord(data) ? stringValue(data.message) : ''
     const message = [prefix, detail || error.message].filter(Boolean).join('：')
-    if (!status) return copilotError('TRANSIENT_FAILURE', message || '网络请求失败。', true)
-    if (status === 400 || status === 422) return copilotError('INVALID_ARGUMENTS', message, true, status)
-    if (status === 401 || status === 403) return copilotError('PERMISSION_DENIED', message, false, status)
-    if (status === 404) return copilotError('RESOURCE_NOT_FOUND', message, true, status)
-    if (status === 409) return copilotError('PRECONDITION_FAILED', message, true, status)
-    if (status === 429 || status >= 500) return copilotError('SERVICE_UNAVAILABLE', message, true, status)
+    if (!status) {
+        return copilotError('TRANSIENT_FAILURE', message || '网络请求失败。', true)
+    }
+    if (status === 400 || status === 422) {
+        return copilotError('INVALID_ARGUMENTS', message, true, status)
+    }
+    if (status === 401 || status === 403) {
+        return copilotError('PERMISSION_DENIED', message, false, status)
+    }
+    if (status === 404) {
+        return copilotError('RESOURCE_NOT_FOUND', message, true, status)
+    }
+    if (status === 409) {
+        return copilotError('PRECONDITION_FAILED', message, true, status)
+    }
+    if (status === 429 || status >= 500) {
+        return copilotError('SERVICE_UNAVAILABLE', message, true, status)
+    }
     return copilotError('EXECUTION_FAILED', message, false, status)
 }
 
 function getOperation(callRef: string): RegisteredOperation | null {
     const operation = callRefs.get(callRef)
-    if (!operation) return null
+    if (!operation) {
+        return null
+    }
     if (operation.expiresAt <= Date.now()) {
         callRefs.delete(callRef)
         return null
@@ -427,7 +507,9 @@ function getOperation(callRef: string): RegisteredOperation | null {
 function cleanupExpiredCallRefs() {
     const now = Date.now()
     for (const [callRef, operation] of callRefs) {
-        if (operation.expiresAt <= now) callRefs.delete(callRef)
+        if (operation.expiresAt <= now) {
+            callRefs.delete(callRef)
+        }
     }
 }
 

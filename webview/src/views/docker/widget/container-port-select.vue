@@ -17,11 +17,15 @@ class ContainerPortSelect extends Vue {
 
     parsePort(raw: string): PortItem | null {
         const [body, proto = 'tcp'] = raw.split('/')
-        if (!body) return null
+        if (!body) {
+            return null
+        }
         // Docker 端口格式：[ip:]publicPort:privatePort
         // IPv6 通配地址可能为 :::8080:80，取最后一段作为端口号
         const port = body.split(':').pop()
-        if (!port || !/^\d+$/.test(port)) return null
+        if (!port || !/^\d+$/.test(port)) {
+            return null
+        }
         return { port, proto }
     }
 
@@ -30,9 +34,13 @@ class ContainerPortSelect extends Vue {
         const result: PortItem[] = []
         for (const raw of this.ports) {
             const item = this.parsePort(raw)
-            if (!item) continue
+            if (!item) {
+                continue
+            }
             const key = item.port + '/' + item.proto
-            if (seen.has(key)) continue
+            if (seen.has(key)) {
+                continue
+            }
             seen.add(key)
             result.push(item)
         }

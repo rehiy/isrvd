@@ -29,8 +29,12 @@ class RenameModal extends Vue {
 
     // 将相对/绝对 target 还原为逻辑绝对路径（仅用于预览）
     toAbs(target: string, file: FileInfo): string {
-        if (!target) return ''
-        if (target.startsWith('/')) return target
+        if (!target) {
+            return ''
+        }
+        if (target.startsWith('/')) {
+            return target
+        }
         const idx = file.path.lastIndexOf('/')
         const dir = idx < 1 ? '/' : file.path.slice(0, idx)
         return dir === '/' ? `/${target}` : `${dir}/${target}`
@@ -38,13 +42,19 @@ class RenameModal extends Vue {
 
     get isValidInput() {
         const v = this.trimmedInput
-        if (!v || v.includes('\\')) return false
-        if (this.files.length > 1 && !this.inputIsDir) return false
+        if (!v || v.includes('\\')) {
+            return false
+        }
+        if (this.files.length > 1 && !this.inputIsDir) {
+            return false
+        }
         if (this.files.length === 1) {
             const file = this.files[0]
             if (file) {
                 const dst = this.toAbs(this.resolveTarget(file), file)
-                if (dst && dst === file.path) return false
+                if (dst && dst === file.path) {
+                    return false
+                }
             }
         }
         return true
@@ -71,7 +81,9 @@ class RenameModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.isValidInput || this.files.length === 0 || !this.adapter) return
+        if (!this.isValidInput || this.files.length === 0 || !this.adapter) {
+            return
+        }
         this.loading = true
         try {
             for (let i = 0; i < this.files.length; i += 5) {

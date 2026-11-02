@@ -22,7 +22,9 @@ export function blobPut(text: string): string {
     blobs.set(id, text)
     if (blobs.size > MAX_BLOBS) {
         const oldest = blobs.keys().next().value
-        if (oldest) blobs.delete(oldest)
+        if (oldest) {
+            blobs.delete(oldest)
+        }
     }
     return id
 }
@@ -31,7 +33,9 @@ export function blobPut(text: string): string {
 export function packToolResult(result: { success: boolean; message: string; payload: unknown }): unknown {
     const sanitized = sanitizeCopilotValue(result)
     const text = JSON.stringify(sanitized)
-    if (text.length <= BLOB_THRESHOLD) return sanitized
+    if (text.length <= BLOB_THRESHOLD) {
+        return sanitized
+    }
 
     const blobId = blobPut(text)
     return {
@@ -90,12 +94,18 @@ function resolvePath(data: unknown, path: string): unknown {
     const tokens = path.match(/[^.[\]]+|\[-?\d+\]/g) ?? []
     let cur: unknown = data
     for (const token of tokens) {
-        if (cur === null || cur === undefined) return undefined
+        if (cur === null || cur === undefined) {
+            return undefined
+        }
         const idx = /^\[(-?\d+)\]$/.exec(token)
         if (idx) {
-            if (!Array.isArray(cur)) return undefined
+            if (!Array.isArray(cur)) {
+                return undefined
+            }
             let i = Number(idx[1])
-            if (i < 0) i = cur.length + i
+            if (i < 0) {
+                i = cur.length + i
+            }
             cur = cur[i]
         } else {
             cur = (cur as Record<string, unknown>)[token]

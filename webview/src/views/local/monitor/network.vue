@@ -36,7 +36,9 @@ class SystemNetwork extends Vue {
     formatMonitorBytes = formatMonitorBytes
 
     physicalInterfaces(list: SystemNetInterface[]) {
-        if (!list) return []
+        if (!list) {
+            return []
+        }
         const virtualPrefixes = ['lo', 'docker', 'veth', 'br-', 'overlay', 'flannel', 'cni', 'tunl', 'dummy', 'virbr']
         return list
             .filter(ni => !virtualPrefixes.some(p => ni.name.startsWith(p)))
@@ -45,7 +47,9 @@ class SystemNetwork extends Vue {
 
     currentRate(name: string, dir: string): number {
         const h = this.netHistory[name]
-        if (!h) return 0
+        if (!h) {
+            return 0
+        }
         const arr = h[dir as keyof TimeSeriesHistory] as number[]
         return arr?.length ? arr[arr.length - 1] : 0
     }
@@ -74,7 +78,9 @@ class SystemNetwork extends Vue {
 
     initNetChart(name: string) {
         const canvas = this.netContainerRef?.querySelector(`[data-iface="${name}"]`) as HTMLCanvasElement | null
-        if (!canvas) return
+        if (!canvas) {
+            return
+        }
         this.netCharts[name]?.destroy()
         const h = this.netHistory[name] || { ts: [], labels: [], recv: [], sent: [] }
         this.netHistory[name] = h
@@ -89,7 +95,9 @@ class SystemNetwork extends Vue {
     updateNetChart(name: string) {
         const chart = this.netCharts[name]
         const h = this.netHistory[name]
-        if (!chart || !h) return
+        if (!chart || !h) {
+            return
+        }
         chart.data.labels = [...h.labels]
         chart.data.datasets[0].data = [...h.recv]
         chart.data.datasets[1].data = [...h.sent]
@@ -120,7 +128,9 @@ class SystemNetwork extends Vue {
         const ifaces = payload.system?.netInterface || []
         const physicalIfaces = this.physicalInterfaces(ifaces)
         this.currentIfaces = physicalIfaces
-        if (!ifaces.length) return
+        if (!ifaces.length) {
+            return
+        }
 
         const nowTime = ts * 1000
 

@@ -60,7 +60,9 @@ export const useSystemStore = defineStore('system', () => {
         if (config) {
             marketplaceUrl.value = config.marketplaceUrl || ''
             openapiEnabled.value = config.openapiEnabled || false
-            if (config.maxEditSize > 0) maxEditSize.value = config.maxEditSize
+            if (config.maxEditSize > 0) {
+                maxEditSize.value = config.maxEditSize
+            }
             toolbarLinks.value = config.links || []
         }
     }
@@ -74,14 +76,22 @@ export const useSystemStore = defineStore('system', () => {
         if (module.includes(' ')) {
             const path = module.split(' ')[1]
             const seg = path?.match(/^\/api\/([^/]+)/)?.[1]
-            if (seg && !checkAvailability(seg)) return false
+            if (seg && !checkAvailability(seg)) {
+                return false
+            }
             const composeTarget = path?.match(/^\/api\/compose\/(docker|swarm)$/)?.[1]
-            if (composeTarget && !checkAvailability(composeTarget)) return false
+            if (composeTarget && !checkAvailability(composeTarget)) {
+                return false
+            }
             return founder || permissions.includes(module)
         }
 
-        if (!checkAvailability(module)) return false
-        if (founder) return true
+        if (!checkAvailability(module)) {
+            return false
+        }
+        if (founder) {
+            return true
+        }
         return permissions.some(key => {
             const path = key.split(' ')[1]
             return path && (path.startsWith(`/api/${module}/`) || path === `/api/${module}`)

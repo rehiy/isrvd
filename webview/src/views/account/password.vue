@@ -29,7 +29,9 @@ class AccountPassword extends Vue {
     get canDisableTOTP() { return this.portal.hasPerm('POST /api/account/2fa/totp/disable') }
 
     async mounted() {
-        if (!this.canViewTOTP) return
+        if (!this.canViewTOTP) {
+            return
+        }
         await this.loadTwoFactorStatus()
         if (!this.twoFactorEnabled && this.canEnableTOTP) {
             await this.handleTOTPBegin()
@@ -59,7 +61,9 @@ class AccountPassword extends Vue {
     }
 
     async handleTOTPEnable() {
-        if (this.twoFactorLoading) return
+        if (this.twoFactorLoading) {
+            return
+        }
         if (!this.totpSetup.code) {
             this.portal.showNotification('error', this.$t('请输入认证器中的验证码'))
             return
@@ -76,7 +80,9 @@ class AccountPassword extends Vue {
     }
 
     async handleTOTPDisable() {
-        if (this.twoFactorLoading) return
+        if (this.twoFactorLoading) {
+            return
+        }
         if (!this.totpDisableCode) {
             this.portal.showNotification('error', this.$t('请输入当前验证码'))
             return
@@ -101,7 +107,9 @@ class AccountPassword extends Vue {
     }
 
     async handleChangePassword() {
-        if (this.passwordLoading) return
+        if (this.passwordLoading) {
+            return
+        }
         if (!this.passwordForm.newPassword) {
             this.portal.showNotification('error', this.$t('请输入新密码'))
             return

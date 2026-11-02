@@ -39,7 +39,9 @@ class TerminalPanel extends Vue {
 
     @Watch('adapter')
     onAdapterChange(next: TerminalAdapter, prev: TerminalAdapter) {
-        if (next === prev) return
+        if (next === prev) {
+            return
+        }
         prev.disconnect()
         this.$nextTick(() => this.connect())
     }

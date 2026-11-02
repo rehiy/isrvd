@@ -27,7 +27,9 @@ class Networks extends Vue {
 
     get filteredNetworks() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.networks
+        if (!keyword) {
+            return this.networks
+        }
         return this.networks.filter((network: DockerNetworkInfo) =>
             network.name.toLowerCase().includes(keyword) ||
             network.id.toLowerCase().includes(keyword) ||

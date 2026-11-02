@@ -23,7 +23,9 @@ export const useNodeStore = defineStore('node', () => {
     let inflight: Promise<void> | null = null
 
     function load(silent = false) {
-        if (!silent) loading.value = true
+        if (!silent) {
+            loading.value = true
+        }
         inflight ??= api.nodeList()
             .then(res => { nodes.value = res.payload || [] })
             .catch(() => {

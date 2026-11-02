@@ -24,8 +24,12 @@ class ChmodModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.formData.mode.trim() || !this.adapter) return
-        if (!/^[0-7]{3,4}$/.test(this.formData.mode)) return
+        if (!this.formData.mode.trim() || !this.adapter) {
+            return
+        }
+        if (!/^[0-7]{3,4}$/.test(this.formData.mode)) {
+            return
+        }
         this.loading = true
         try {
             await this.adapter.chmod(this.formData.path, this.formData.mode)

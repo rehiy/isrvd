@@ -4,13 +4,19 @@ interface MonitorWindowHistory {
 }
 
 export function usagePercent(used: number, total: number): number {
-    if (!total) return 0
+    if (!total) {
+        return 0
+    }
     return parseFloat(((used / total) * 100).toFixed(1))
 }
 
 export function semanticColor(pct: number): string {
-    if (pct >= 90) return 'text-red-500'
-    if (pct >= 70) return 'text-amber-500'
+    if (pct >= 90) {
+        return 'text-red-500'
+    }
+    if (pct >= 70) {
+        return 'text-amber-500'
+    }
     return 'text-emerald-500'
 }
 
@@ -38,14 +44,18 @@ function trimMonitorHistory(
     rangeSeconds: number,
     trimValues: (count: number) => void
 ): void {
-    if (rangeSeconds <= 0 || history.ts.length === 0) return
+    if (rangeSeconds <= 0 || history.ts.length === 0) {
+        return
+    }
 
     const cutoff = latestTs - rangeSeconds
     let trimCount = 0
     while (trimCount < history.ts.length && history.ts[trimCount] < cutoff) {
         trimCount++
     }
-    if (trimCount === 0) return
+    if (trimCount === 0) {
+        return
+    }
 
     history.ts.splice(0, trimCount)
     history.labels.splice(0, trimCount)

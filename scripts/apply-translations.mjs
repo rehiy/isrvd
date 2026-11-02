@@ -44,7 +44,9 @@ const readEntries = (path, re) => {
     const map = new Map()
     for (const line of readFileSync(path, 'utf8').split('\n')) {
         const m = line.match(re)
-        if (m) map.set(unquote(m[1]), unquote(m[2]))
+        if (m) {
+            map.set(unquote(m[1]), unquote(m[2]))
+        }
     }
     return map
 }
@@ -81,7 +83,9 @@ if (target === 'webview') {
     // 按英文词典顺序输出，保留英文原文作为注释
     const lines = []
     for (const [key, enValue] of en) {
-        if (!current.has(key)) continue
+        if (!current.has(key)) {
+            continue
+        }
         lines.push(`    // ${enValue}`.trimEnd())
         lines.push(`    ${quote(key)}: ${quote(current.get(key))},`)
     }

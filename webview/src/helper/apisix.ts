@@ -14,7 +14,9 @@ import { useLocaleStore } from '@/stores'
 import { parseHostPort } from '@/helper/format'
 
 const parseNodeKey = (key: string): ApisixUpstreamNode => {
-    if (!key) return { host: '', port: '' }
+    if (!key) {
+        return { host: '', port: '' }
+    }
     const { host, port } = parseHostPort(key)
     return {
         host,
@@ -25,14 +27,18 @@ const parseNodeKey = (key: string): ApisixUpstreamNode => {
 const DEFAULT_UPSTREAM_TYPE: ApisixUpstreamType = 'roundrobin'
 
 export const normalizeUpstreamType = (type?: string): ApisixUpstreamType => {
-    if (type === 'chash' || type === 'ewma' || type === 'least_conn') return type
+    if (type === 'chash' || type === 'ewma' || type === 'least_conn') {
+        return type
+    }
     return DEFAULT_UPSTREAM_TYPE
 }
 
 const DEFAULT_UPSTREAM_SCHEME: ApisixUpstreamScheme = 'http'
 
 export const normalizeUpstreamScheme = (scheme?: string): ApisixUpstreamScheme => {
-    if (scheme === 'https') return 'https'
+    if (scheme === 'https') {
+        return 'https'
+    }
     return DEFAULT_UPSTREAM_SCHEME
 }
 
@@ -47,16 +53,26 @@ export const upstreamHostError = (passHost: ApisixUpstreamPassHost, host: string
 export const upstreamAdvancedSummary = (scheme: string, passHost: ApisixUpstreamPassHost, host: string, hasTimeout: boolean): string[] => {
     const t = useLocaleStore().t
     const items: string[] = []
-    if (scheme === 'https') items.push(t('HTTPS 回源'))
-    if (passHost === 'node') items.push(t('使用节点 Host'))
-    if (passHost === 'rewrite') items.push(t('指定 Host：{0}', host.trim() || t('未填写')))
-    if (hasTimeout) items.push(t('自定义超时'))
+    if (scheme === 'https') {
+        items.push(t('HTTPS 回源'))
+    }
+    if (passHost === 'node') {
+        items.push(t('使用节点 Host'))
+    }
+    if (passHost === 'rewrite') {
+        items.push(t('指定 Host：{0}', host.trim() || t('未填写')))
+    }
+    if (hasTimeout) {
+        items.push(t('自定义超时'))
+    }
     return items
 }
 
 export const normalizeUpstreamNodes = (upstream?: ApisixUpstreamConfig): ApisixUpstreamNode[] => {
     const nodes = upstream?.nodes
-    if (!nodes) return []
+    if (!nodes) {
+        return []
+    }
 
     if (Array.isArray(nodes)) {
         return nodes
@@ -92,34 +108,50 @@ export const normalizeUpstreamFormNodes = (upstream?: ApisixUpstreamConfig): Api
 }
 
 export const detectRouteUpstreamMode = (route?: Pick<ApisixRoute, 'upstream_id' | 'upstream'>): ApisixRouteUpstreamMode => {
-    if (route?.upstream_id) return 'upstream_id'
-    if (normalizeUpstreamNodes(route?.upstream).length > 0) return 'nodes'
+    if (route?.upstream_id) {
+        return 'upstream_id'
+    }
+    if (normalizeUpstreamNodes(route?.upstream).length > 0) {
+        return 'nodes'
+    }
     return 'none'
 }
 
 export const formatRouteUpstreamSummary = (route: Pick<ApisixRoute, 'upstream_id' | 'upstream'>): string => {
     const t = useLocaleStore().t
-    if (route.upstream_id) return t('引用上游 #{0}', route.upstream_id)
+    if (route.upstream_id) {
+        return t('引用上游 #{0}', route.upstream_id)
+    }
 
     const nodes = normalizeUpstreamNodes(route.upstream)
-    if (nodes.length === 0) return t('未配置')
+    if (nodes.length === 0) {
+        return t('未配置')
+    }
 
     const upstreamType = normalizeUpstreamType(route.upstream?.type)
     const first = nodes[0]
     const firstLabel = `${first.host || '-'}:${first.port || '-'}`
-    if (nodes.length === 1) return `${upstreamType} · ${firstLabel}`
+    if (nodes.length === 1) {
+        return `${upstreamType} · ${firstLabel}`
+    }
     return t('{0} · {1} 等 {2} 个节点', upstreamType, firstLabel, nodes.length)
 }
 
 /** 仅返回节点信息，引用上游时返回完整摘要 */
 export const formatRouteUpstreamNodes = (route: Pick<ApisixRoute, 'upstream_id' | 'upstream'>): string => {
     const t = useLocaleStore().t
-    if (route.upstream_id) return t('引用上游 #{0}', route.upstream_id)
+    if (route.upstream_id) {
+        return t('引用上游 #{0}', route.upstream_id)
+    }
     const nodes = normalizeUpstreamNodes(route.upstream)
-    if (nodes.length === 0) return t('未配置')
+    if (nodes.length === 0) {
+        return t('未配置')
+    }
     const first = nodes[0]
     const firstLabel = `${first.host || '-'}:${first.port || '-'}`
-    if (nodes.length === 1) return firstLabel
+    if (nodes.length === 1) {
+        return firstLabel
+    }
     return t('{0} 等 {1} 个节点', firstLabel, nodes.length)
 }
 
@@ -153,11 +185,15 @@ const buildInlineUpstream = (
     upstreamHost = ''
 ): ApisixUpstreamConfig | undefined => {
     const node = nodes[0]
-    if (!node) return undefined
+    if (!node) {
+        return undefined
+    }
 
     const host = node.host.trim()
     const port = String(node.port).trim()
-    if (!host || !port) return undefined
+    if (!host || !port) {
+        return undefined
+    }
 
     const connect = Number(timeout?.connect) || 0
     const send = Number(timeout?.send) || 0
@@ -170,8 +206,11 @@ const buildInlineUpstream = (
         nodes: [{ host, port: Number(port), weight: 1 }]
     }
 
-    if (passHost === 'rewrite') result.upstream_host = upstreamHost.trim()
-    else delete result.upstream_host
+    if (passHost === 'rewrite') {
+        result.upstream_host = upstreamHost.trim()
+    } else {
+        delete result.upstream_host
+    }
 
     if (connect > 0 || send > 0 || read > 0) {
         result.timeout = { connect: connect || undefined, send: send || undefined, read: read || undefined }
@@ -193,11 +232,17 @@ export const buildRoutePayload = (formData: RouteFormData, baseUpstream?: Apisix
         plugins: formData.plugins || {}
     }
     const urisArr = formData.uris.split('\n').map((s: string) => s.trim()).filter(Boolean)
-    if (urisArr.length > 1) payload.uris = urisArr
-    else if (urisArr.length === 1) payload.uri = urisArr[0]
+    if (urisArr.length > 1) {
+        payload.uris = urisArr
+    } else if (urisArr.length === 1) {
+        payload.uri = urisArr[0]
+    }
     const hostsArr = formData.hosts.split('\n').map((s: string) => s.trim()).filter(Boolean)
-    if (hostsArr.length > 1) payload.hosts = hostsArr
-    else if (hostsArr.length === 1) payload.host = hostsArr[0]
+    if (hostsArr.length > 1) {
+        payload.hosts = hostsArr
+    } else if (hostsArr.length === 1) {
+        payload.host = hostsArr[0]
+    }
 
     if (formData.upstream_mode === 'upstream_id' && formData.upstream_id?.trim()) {
         payload.upstream_id = formData.upstream_id.trim()
@@ -209,7 +254,9 @@ export const buildRoutePayload = (formData: RouteFormData, baseUpstream?: Apisix
             send: formData.timeout_send,
             read: formData.timeout_read
         }, formData.upstream_scheme, formData.upstream_pass_host, formData.upstream_host)
-        if (inlineUpstream) payload.upstream = inlineUpstream
+        if (inlineUpstream) {
+            payload.upstream = inlineUpstream
+        }
     }
 
     return payload

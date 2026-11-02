@@ -26,7 +26,9 @@ export const getThemeMode = (): ThemeMode => {
 export const initTheme = (): void => {
     applyTheme(getThemeMode())
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-        if (getThemeMode() === 'system') applyTheme('system')
+        if (getThemeMode() === 'system') {
+            applyTheme('system')
+        }
     })
 }
 

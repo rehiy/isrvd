@@ -406,12 +406,18 @@ export const setRouterGuard = (
 // 路由守卫：根据权限控制页面访问
 router.beforeEach((to) => {
   // 视角由页面路径决定，无需等待登录或 bootstrap，冷启动也不能挂载中控管理页面
-  if (nodeLocation().id && isCenterPage(to.path)) return { path: '/overview' }
+  if (nodeLocation().id && isCenterPage(to.path)) {
+    return { path: '/overview' }
+  }
 
   // 未登录时放行（由 app.vue 的 v-if 控制显示登录页）
-  if (!_isAuthenticated?.()) return true
+  if (!_isAuthenticated?.()) {
+    return true
+  }
   // 权限尚未加载完成时放行（刷新页面场景，等 loadMe 完成后由导航菜单 v-if 控制）
-  if (!_permsLoaded?.()) return true
+  if (!_permsLoaded?.()) {
+    return true
+  }
 
   const permissions = to.meta.permissions as string[] | undefined
   if (permissions) {
@@ -421,7 +427,9 @@ router.beforeEach((to) => {
   // 从前端路由路径提取模块名（/<module>/...）
   const module = to.path.match(/^\/([^/]+)/)?.[1]
   if (module && !['overview', 'account', 'local'].includes(module)) {
-    if (!_hasPerm?.(module)) return { path: '/overview' }
+    if (!_hasPerm?.(module)) {
+      return { path: '/overview' }
+    }
   }
   return true
 })

@@ -55,7 +55,9 @@ class ContainerTerminal extends Vue {
     }
 
     handleConnect() {
-        if (this.connected || !this.container) return
+        if (this.connected || !this.container) {
+            return
+        }
         this.adapter = new WsTerminal(wsUrl(`docker/container/${encodeURIComponent(this.containerId)}/exec?token=${this.portal.token ?? ''}&shell=${encodeURIComponent(this.shell)}`))
     }
 

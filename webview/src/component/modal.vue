@@ -44,7 +44,9 @@ class BaseModal extends Vue {
     }
 
     handleConfirm() {
-        if (this.loading || this.confirmDisabled || !this.showConfirm) return
+        if (this.loading || this.confirmDisabled || !this.showConfirm) {
+            return
+        }
         this.$emit('confirm')
     }
 
@@ -56,7 +58,9 @@ class BaseModal extends Vue {
     }
 
     handleCancel() {
-        if (this.closeDisabled || (this.loading && !this.allowCloseWhileLoading)) return
+        if (this.closeDisabled || (this.loading && !this.allowCloseWhileLoading)) {
+            return
+        }
         this.$emit('cancel')
         this.close()
     }

@@ -50,7 +50,9 @@ const bodyID = useId()
 let unbindAutoCollapse: (() => void) | undefined
 
 onMounted(() => {
-    if (!cardRef.value) return
+    if (!cardRef.value) {
+        return
+    }
     unbindAutoCollapse = bindCardAutoCollapse(
         cardRef.value,
         () => props.status === 'complete' && expanded.value && !manuallyExpanded.value,
@@ -70,15 +72,27 @@ const path = computed(() => preview.value.path.replace(/^\/+/, ''))
 const previewError = computed(() => preview.value.error || '')
 const isDanger = computed(() => method.value === 'DELETE')
 const methodClass = computed(() => {
-    if (method.value === 'GET') return 'bg-blue-50 text-blue-700'
-    if (isDanger.value) return 'bg-red-50 text-red-700'
+    if (method.value === 'GET') {
+        return 'bg-blue-50 text-blue-700'
+    }
+    if (isDanger.value) {
+        return 'bg-red-50 text-red-700'
+    }
     return 'bg-amber-50 text-amber-700'
 })
 const cardTitle = computed(() => {
-    if (props.approval && props.status === 'executing') return t('等待确认')
-    if (props.status === 'inProgress') return t('正在准备操作')
-    if (props.status === 'executing') return method.value === 'GET' ? t('正在查询资源') : t('正在执行变更')
-    if (resultCanceled.value) return t('操作已取消')
+    if (props.approval && props.status === 'executing') {
+        return t('等待确认')
+    }
+    if (props.status === 'inProgress') {
+        return t('正在准备操作')
+    }
+    if (props.status === 'executing') {
+        return method.value === 'GET' ? t('正在查询资源') : t('正在执行变更')
+    }
+    if (resultCanceled.value) {
+        return t('操作已取消')
+    }
     return resultSuccess.value ? t('操作完成') : t('操作失败')
 })
 
@@ -92,8 +106,12 @@ const resultMessage = computed(() => {
 })
 const payload = computed(() => {
     const result = resultRecord.value
-    if (!result) return sanitizeValue(parsedResult.value)
-    if ('payload' in result) return sanitizeValue(result.payload)
+    if (!result) {
+        return sanitizeValue(parsedResult.value)
+    }
+    if ('payload' in result) {
+        return sanitizeValue(result.payload)
+    }
 
     const rest = Object.fromEntries(
         Object.entries(result).filter(([key]) => !['success', 'message', 'canceled'].includes(key)),
@@ -101,25 +119,33 @@ const payload = computed(() => {
     return Object.keys(rest).length ? sanitizeValue(rest) : null
 })
 const resourceItems = computed<ResourceItem[]>(() => {
-    if (!Array.isArray(payload.value)) return []
+    if (!Array.isArray(payload.value)) {
+        return []
+    }
     return payload.value.slice(0, 6).map((item, index) => formatResourceItem(item, index))
 })
 const resourceRows = computed<ResourceRow[]>(() => {
-    if (!isRecord(payload.value)) return []
+    if (!isRecord(payload.value)) {
+        return []
+    }
     return Object.entries(payload.value).slice(0, 10).map(([key, value]) => ({
         key,
         value: formatValue(value),
     }))
 })
 const resourceText = computed(() => {
-    if (payload.value === null || payload.value === undefined || Array.isArray(payload.value) || isRecord(payload.value)) return ''
+    if (payload.value === null || payload.value === undefined || Array.isArray(payload.value) || isRecord(payload.value)) {
+        return ''
+    }
     return formatValue(payload.value)
 })
 const bodyPreview = computed(() => formatJSONPreview(preview.value.body))
 const paramsPreview = computed(() => formatJSONPreview(preview.value.query))
 
 async function approve() {
-    if (!props.respond || submitting.value) return
+    if (!props.respond || submitting.value) {
+        return
+    }
     submitting.value = true
     localError.value = ''
     try {
@@ -133,7 +159,9 @@ async function approve() {
 }
 
 async function cancel() {
-    if (!props.respond || submitting.value) return
+    if (!props.respond || submitting.value) {
+        return
+    }
     submitting.value = true
     try {
         await props.respond({ success: false, canceled: true, message: t('用户取消了操作') })
@@ -151,7 +179,9 @@ function normalizeArgs(args: Partial<CopilotAPIArgs>): CopilotAPIArgs {
 }
 
 function parseResult(value: unknown): unknown {
-    if (typeof value !== 'string') return value
+    if (typeof value !== 'string') {
+        return value
+    }
     try {
         return JSON.parse(value)
     } catch {
@@ -164,12 +194,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function formatJSONPreview(value: unknown): string {
-    if (value === undefined || value === null) return ''
+    if (value === undefined || value === null) {
+        return ''
+    }
     return JSON.stringify(sanitizeValue(value), null, 2)
 }
 
 function formatResourceItem(value: unknown, index: number): ResourceItem {
-    if (!isRecord(value)) return { title: `#${index + 1}`, subtitle: formatValue(value) }
+    if (!isRecord(value)) {
+        return { title: `#${index + 1}`, subtitle: formatValue(value) }
+    }
 
     const titleKey = ['name', 'title', 'hostname', 'host', 'id', 'shortId', 'path', 'image'].find(key => value[key] !== undefined)
     const title = titleKey ? formatValue(value[titleKey]) : `#${index + 1}`
@@ -182,9 +216,15 @@ function formatResourceItem(value: unknown, index: number): ResourceItem {
 }
 
 function formatValue(value: unknown): string {
-    if (value === null || value === undefined || value === '') return '-'
-    if (typeof value === 'string') return value.length > 180 ? `${value.slice(0, 180)}…` : value
-    if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+    if (value === null || value === undefined || value === '') {
+        return '-'
+    }
+    if (typeof value === 'string') {
+        return value.length > 180 ? `${value.slice(0, 180)}…` : value
+    }
+    if (typeof value === 'number' || typeof value === 'boolean') {
+        return String(value)
+    }
     const text = JSON.stringify(value)
     return text.length > 180 ? `${text.slice(0, 180)}…` : text
 }

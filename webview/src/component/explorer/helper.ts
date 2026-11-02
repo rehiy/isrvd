@@ -16,12 +16,20 @@ export function remoteFileInfo(basePath: string, file: Omit<FileInfo, 'path' | '
 }
 
 function modeToOctal(mode: string): string {
-    if (mode.length < 10) return ''
+    if (mode.length < 10) {
+        return ''
+    }
     const parseRwx = (s: string): number => {
         let v = 0
-        if (s[0] === 'r') v += 4
-        if (s[1] === 'w') v += 2
-        if (s[2] === 'x' || s[2] === 's' || s[2] === 't') v += 1
+        if (s[0] === 'r') {
+            v += 4
+        }
+        if (s[1] === 'w') {
+            v += 2
+        }
+        if (s[2] === 'x' || s[2] === 's' || s[2] === 't') {
+            v += 1
+        }
         return v
     }
     return `${parseRwx(mode.slice(1, 4))}${parseRwx(mode.slice(4, 7))}${parseRwx(mode.slice(7, 10))}`

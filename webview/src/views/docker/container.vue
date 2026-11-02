@@ -28,12 +28,16 @@ class ContainerDetail extends Vue {
     }
 
     get portEntries() {
-        if (!this.detail?.ports) return []
+        if (!this.detail?.ports) {
+            return []
+        }
         return Object.entries(this.detail.ports)
     }
 
     get labelEntries() {
-        if (!this.detail?.labels) return []
+        if (!this.detail?.labels) {
+            return []
+        }
         return Object.entries(this.detail.labels)
     }
 

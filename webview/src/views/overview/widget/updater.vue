@@ -30,7 +30,9 @@ class SystemUpdater extends Vue {
 
     unmounted() {
         this.pollController?.abort()
-        if (this.refreshTimer) clearTimeout(this.refreshTimer)
+        if (this.refreshTimer) {
+            clearTimeout(this.refreshTimer)
+        }
     }
 
     async mounted() {
@@ -38,7 +40,9 @@ class SystemUpdater extends Vue {
     }
 
     async loadVersionInfo() {
-        if (!this.portal.hasPerm('GET /api/overview/version')) return
+        if (!this.portal.hasPerm('GET /api/overview/version')) {
+            return
+        }
         try {
             const res = await api.overviewVersion()
             this.version = res.payload ?? null
@@ -48,7 +52,9 @@ class SystemUpdater extends Vue {
     }
 
     async loadSelfContainer() {
-        if (!this.portal.hasPerm('GET /api/docker/containers')) return
+        if (!this.portal.hasPerm('GET /api/docker/containers')) {
+            return
+        }
         try {
             const res = await api.dockerContainerList(true)
             const self = res.payload?.find(c => c.isSelf)
@@ -62,7 +68,9 @@ class SystemUpdater extends Vue {
     }
 
     openUpdaterModal() {
-        if (this.deploying || this.upgrading) return
+        if (this.deploying || this.upgrading) {
+            return
+        }
         this.updaterContainer = this.selfContainerName
         this.updaterAutoRemove = true
         this.updaterModalOpen = true
@@ -70,7 +78,9 @@ class SystemUpdater extends Vue {
 
     // Docker 容器升级：部署临时 docker-updater 容器
     async handleDeployUpdater() {
-        if (this.deploying || this.upgrading) return
+        if (this.deploying || this.upgrading) {
+            return
+        }
 
         const containerName = this.updaterContainer.trim()
         if (!containerName) {
@@ -95,7 +105,9 @@ class SystemUpdater extends Vue {
     }
 
     async startUpgrade(submit: (signal: AbortSignal) => Promise<unknown>) {
-        if (this.deploying || this.upgrading || !this.version?.current) return
+        if (this.deploying || this.upgrading || !this.version?.current) {
+            return
+        }
         const oldVersion = this.version.current
         this.deploying = true
         const controller = new AbortController()
@@ -103,13 +115,17 @@ class SystemUpdater extends Vue {
         try {
             await submit(controller.signal)
         } catch (error) {
-            if (controller.signal.aborted) return
+            if (controller.signal.aborted) {
+                return
+            }
             if (!this.isUpgradeDisconnect(error, true)) {
                 this.finishUpgrade()
                 return
             }
         }
-        if (controller.signal.aborted) return
+        if (controller.signal.aborted) {
+            return
+        }
         this.updaterModalOpen = false
         this.deploying = false
         await this.waitForNewVersion(controller, oldVersion)
@@ -124,7 +140,9 @@ class SystemUpdater extends Vue {
     finishUpgrade(message?: string, type: 'error' | 'success' = 'error') {
         this.deploying = false
         this.pollController = null
-        if (message) this.portal.showNotification(type, message)
+        if (message) {
+            this.portal.showNotification(type, message)
+        }
         if (type === 'success') {
             this.refreshTimer = setTimeout(() => window.location.reload(), 2000)
         } else {
@@ -138,24 +156,32 @@ class SystemUpdater extends Vue {
 
         while (!controller.signal.aborted && Date.now() < deadline) {
             await new Promise(resolve => setTimeout(resolve, Math.min(3_000, deadline - Date.now())))
-            if (controller.signal.aborted || Date.now() >= deadline) break
+            if (controller.signal.aborted || Date.now() >= deadline) {
+                break
+            }
             try {
                 const options = { params: { current: 1 }, timeout: Math.min(10_000, deadline - Date.now()), signal: controller.signal }
                 const current = (await api.overviewVersion(options)).payload?.current
-                if (controller.signal.aborted) return
+                if (controller.signal.aborted) {
+                    return
+                }
                 if (current && oldVersion && current.replace(/^v/, '') !== oldVersion.replace(/^v/, '')) {
                     this.finishUpgrade(this.$t('升级成功，即将刷新页面...'), 'success')
                     return
                 }
             } catch (error) {
-                if (controller.signal.aborted) return
+                if (controller.signal.aborted) {
+                    return
+                }
                 if (!this.isUpgradeDisconnect(error)) {
                     this.finishUpgrade()
                     return
                 }
             }
         }
-        if (!controller.signal.aborted) this.finishUpgrade(this.$t('升级超时，请手动检查服务状态'))
+        if (!controller.signal.aborted) {
+            this.finishUpgrade(this.$t('升级超时，请手动检查服务状态'))
+        }
     }
 }
 

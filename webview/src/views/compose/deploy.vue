@@ -42,7 +42,9 @@ class ComposeDeploy extends Vue {
     }
 
     get canAccess(): boolean {
-        if (!this.portal.initialized) return true
+        if (!this.portal.initialized) {
+            return true
+        }
         return this.portal.hasPerm(`POST /api/compose/${this.target}`)
     }
 
@@ -52,7 +54,9 @@ class ComposeDeploy extends Vue {
 
     @Watch('canAccess', { immediate: true })
     onAccessChange(canAccess: boolean) {
-        if (!canAccess) this.$router.replace('/overview')
+        if (!canAccess) {
+            this.$router.replace('/overview')
+        }
     }
 
     /** 编辑器提示文案（整行展示） */
@@ -70,11 +74,15 @@ class ComposeDeploy extends Vue {
         let raw: string | null
         try {
             raw = sessionStorage.getItem(MARKETPLACE_PICK_STORAGE_KEY)
-            if (raw) sessionStorage.removeItem(MARKETPLACE_PICK_STORAGE_KEY)
+            if (raw) {
+                sessionStorage.removeItem(MARKETPLACE_PICK_STORAGE_KEY)
+            }
         } catch {
             return
         }
-        if (!raw) return
+        if (!raw) {
+            return
+        }
         try {
             const pick = JSON.parse(raw) as ComposeMarketplacePick
             if (pick && typeof pick.compose === 'string' && pick.compose) {
@@ -109,13 +117,17 @@ class ComposeDeploy extends Vue {
         const input = e.target as HTMLInputElement
         const file = input.files?.[0] ?? null
         this.initFile = file
-        if (file) this.initURL = ''
+        if (file) {
+            this.initURL = ''
+        }
     }
 
     clearInitFile() {
         this.initFile = null
         const input = this.$refs.fileInput as HTMLInputElement | undefined
-        if (input) input.value = ''
+        if (input) {
+            input.value = ''
+        }
     }
 
     onEnvContentChange(value: string) {
@@ -124,7 +136,9 @@ class ComposeDeploy extends Vue {
     }
 
     async handleDeploy() {
-        if (!this.canSubmit) return
+        if (!this.canSubmit) {
+            return
+        }
 
         const target = this.target
         this.loading = true
@@ -166,7 +180,9 @@ class ComposeDeploy extends Vue {
         this.initURL = ''
         this.initFile = null
         const input = this.$refs.fileInput as HTMLInputElement | undefined
-        if (input) input.value = ''
+        if (input) {
+            input.value = ''
+        }
         this.fromMarketplace = false
     }
 }

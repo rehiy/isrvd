@@ -35,8 +35,12 @@ class ContainerSelect extends Vue {
     }
 
     stateColor(state: string) {
-        if (state === 'running') return 'text-emerald-500'
-        if (state === 'paused') return 'text-amber-500'
+        if (state === 'running') {
+            return 'text-emerald-500'
+        }
+        if (state === 'paused') {
+            return 'text-amber-500'
+        }
         return 'text-slate-400'
     }
 
@@ -52,8 +56,12 @@ class ContainerSelect extends Vue {
             }
         }
         return Object.values(groups).sort((a, b) => {
-            if (a.network === '默认') return 1
-            if (b.network === '默认') return -1
+            if (a.network === '默认') {
+                return 1
+            }
+            if (b.network === '默认') {
+                return -1
+            }
             return a.network.localeCompare(b.network)
         })
     }

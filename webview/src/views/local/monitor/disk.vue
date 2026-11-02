@@ -40,15 +40,23 @@ class SystemDisk extends Vue {
     memPercent = usagePercent
 
     usageLineColor(pct: number): string {
-        if (pct >= 90) return '#ef4444'
-        if (pct >= 70) return '#f59e0b'
+        if (pct >= 90) {
+            return '#ef4444'
+        }
+        if (pct >= 70) {
+            return '#f59e0b'
+        }
         return '#10b981'
     }
 
     sortedDiskPartitions(list: SystemDiskPartition[] = []) {
         return [...list].sort((a, b) => {
-            if (a.mountpoint === '/') return -1
-            if (b.mountpoint === '/') return 1
+            if (a.mountpoint === '/') {
+                return -1
+            }
+            if (b.mountpoint === '/') {
+                return 1
+            }
             return NATURAL_COLLATOR.compare(a.mountpoint, b.mountpoint)
                 || NATURAL_COLLATOR.compare(a.device, b.device)
         })
@@ -59,7 +67,9 @@ class SystemDisk extends Vue {
     }
 
     diskIOByDevice(device: string): SystemDiskIO | null {
-        if (!this.currentDiskIO?.length) return null
+        if (!this.currentDiskIO?.length) {
+            return null
+        }
         const devName = device.split('/').pop()
         return this.currentDiskIO.find(d => d.name === devName)
             || this.currentDiskIO.find(d => devName?.startsWith(d.name)) || null
@@ -71,14 +81,18 @@ class SystemDisk extends Vue {
 
     currentDiskRate(name: string, dir: string): number {
         const h = this.diskIOHistory[name]
-        if (!h) return 0
+        if (!h) {
+            return 0
+        }
         const arr = h[dir as keyof DiskIOSeriesHistory] as number[]
         return arr?.length ? arr[arr.length - 1] : 0
     }
 
     currentUsagePct(dp: SystemDiskPartition): number {
         const h = this.diskIOHistory[this.diskIOHistoryKey(dp.device)]
-        if (!h?.pct?.length) return this.memPercent(dp.used, dp.total)
+        if (!h?.pct?.length) {
+            return this.memPercent(dp.used, dp.total)
+        }
         return h.pct[h.pct.length - 1]
     }
 
@@ -128,7 +142,9 @@ class SystemDisk extends Vue {
 
     initDiskChart(name: string) {
         const canvas = this.getDiskCanvas(name)
-        if (!canvas) return
+        if (!canvas) {
+            return
+        }
         this.diskIOCharts[name]?.destroy()
         const h = this.diskIOHistory[name] || { ts: [], labels: [], read: [], write: [], pct: [] }
         this.diskIOHistory[name] = h
@@ -152,7 +168,9 @@ class SystemDisk extends Vue {
     updateDiskChart(name: string) {
         const chart = this.diskIOCharts[name]
         const h = this.diskIOHistory[name]
-        if (!chart || !h) return
+        if (!chart || !h) {
+            return
+        }
         chart.data.labels = [...h.labels]
         chart.data.datasets[0].data = [...h.read]
         chart.data.datasets[1].data = [...h.write]
@@ -188,7 +206,9 @@ class SystemDisk extends Vue {
         const diskIO = this.sortedDiskIO(payload.diskIO)
         this.currentDiskIO = diskIO
 
-        if (!diskIO.length || !s.diskPartition) return
+        if (!diskIO.length || !s.diskPartition) {
+            return
+        }
 
         const nowTime = ts * 1000
 

@@ -30,7 +30,9 @@ class Volumes extends Vue {
 
     get filteredVolumes() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.volumes
+        if (!keyword) {
+            return this.volumes
+        }
         return this.volumes.filter((volume: DockerVolumeInfo) =>
             volume.name.toLowerCase().includes(keyword) ||
             (volume.driver || '').toLowerCase().includes(keyword) ||

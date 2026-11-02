@@ -39,7 +39,9 @@ export const useUIStore = defineStore('ui', () => {
     // ─── Notification 操作 ───
 
     function showNotification(type: string, message: string) {
-        if (!message) return
+        if (!message) {
+            return
+        }
         const id = Date.now() + Math.random()
         const timer = setTimeout(() => clearNotification(id), 5000)
         notifications.value.push({ id, type, message, timer })
@@ -76,8 +78,12 @@ export const useUIStore = defineStore('ui', () => {
     }
 
     async function handleConfirm() {
-        if (confirm.loading || !confirm.show) return
-        if (!confirm.onConfirm) return closeConfirm()
+        if (confirm.loading || !confirm.show) {
+            return
+        }
+        if (!confirm.onConfirm) {
+            return closeConfirm()
+        }
         confirm.loading = true
         try {
             await confirm.onConfirm()

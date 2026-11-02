@@ -13,11 +13,15 @@ export const POLL_INTERVAL = 5000
  */
 export function parseHostPort(value: string): { host: string; port: string } {
     const s = value.trim()
-    if (!s) return { host: '', port: '' }
+    if (!s) {
+        return { host: '', port: '' }
+    }
 
     if (s.startsWith('[')) {
         const close = s.indexOf(']')
-        if (close === -1) return { host: s, port: '' }
+        if (close === -1) {
+            return { host: s, port: '' }
+        }
         const host = s.slice(1, close)
         const rest = s.slice(close + 1)
         const port = rest.startsWith(':') ? rest.slice(1) : ''
@@ -25,15 +29,21 @@ export function parseHostPort(value: string): { host: string; port: string } {
     }
 
     const colonCount = (s.match(/:/g) ?? []).length
-    if (colonCount > 1) return { host: s, port: '' }
+    if (colonCount > 1) {
+        return { host: s, port: '' }
+    }
 
     const idx = s.lastIndexOf(':')
-    if (idx <= 0) return { host: s, port: '' }
+    if (idx <= 0) {
+        return { host: s, port: '' }
+    }
     return { host: s.slice(0, idx), port: s.slice(idx + 1) }
 }
 
 export const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B'
+    if (bytes === 0) {
+        return '0 B'
+    }
     const k = 1024
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
@@ -41,7 +51,9 @@ export const formatFileSize = (bytes: number): string => {
 }
 
 export const formatMonitorBytes = (bytes: number, rate = false): string => {
-    if (!bytes || bytes < 0) return rate ? '0 B/s' : '0 B'
+    if (!bytes || bytes < 0) {
+        return rate ? '0 B/s' : '0 B'
+    }
     const units = rate ? ['B/s', 'KB/s', 'MB/s', 'GB/s'] : ['B', 'KB', 'MB', 'GB', 'TB']
     let unitIndex = 0
     let value = bytes
@@ -53,7 +65,9 @@ export const formatMonitorBytes = (bytes: number, rate = false): string => {
 }
 
 export const formatTime = (timeString?: string): string => {
-    if (!timeString) return '-'
+    if (!timeString) {
+        return '-'
+    }
     const date = new Date(timeString)
     return date.toLocaleDateString('zh-CN') + ' ' + date.toLocaleTimeString('zh-CN', { hour12: false })
 }

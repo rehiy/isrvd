@@ -315,8 +315,12 @@ class ApiService {
 
     filerDownloadURL(path: string, token = '', inline = false) {
         const params = new URLSearchParams({ path })
-        if (inline) params.set('inline', '1')
-        if (token) params.set('token', token)
+        if (inline) {
+            params.set('inline', '1')
+        }
+        if (token) {
+            params.set('token', token)
+        }
         return absUrl(`filer/download?${params.toString()}`)
     }
 
@@ -567,14 +571,20 @@ class ApiService {
             params: { path },
             responseType: 'blob',
             onDownloadProgress: onProgress
-                ? (e) => { if (e.total) onProgress(Math.round((e.loaded / e.total) * 100)) }
+                ? (e) => {
+                    if (e.total) {
+                        onProgress(Math.round((e.loaded / e.total) * 100))
+                    }
+                }
                 : undefined,
         })
     }
 
     dockerContainerFileDownloadURL(id: string, path: string, token = '') {
         const params = new URLSearchParams({ path })
-        if (token) params.set('token', token)
+        if (token) {
+            params.set('token', token)
+        }
         return absUrl(`docker/container/${id}/file/download?${params.toString()}`)
     }
 
@@ -584,7 +594,11 @@ class ApiService {
             params: { ...config.params, path },
             headers: { ...config.headers, 'Content-Type': 'multipart/form-data' },
             onUploadProgress: onProgress
-                ? (e) => { if (e.total) onProgress(Math.round((e.loaded / e.total) * 100)) }
+                ? (e) => {
+                    if (e.total) {
+                        onProgress(Math.round((e.loaded / e.total) * 100))
+                    }
+                }
                 : undefined,
         })
     }
@@ -927,7 +941,11 @@ class ApiService {
             params: { ...config.params, path },
             headers: { ...config.headers, 'Content-Type': 'multipart/form-data' },
             onUploadProgress: onProgress
-                ? (e) => { if (e.total) onProgress(Math.round((e.loaded / e.total) * 100)) }
+                ? (e) => {
+                    if (e.total) {
+                        onProgress(Math.round((e.loaded / e.total) * 100))
+                    }
+                }
                 : undefined,
         })
     }
@@ -937,14 +955,20 @@ class ApiService {
             params: { path },
             responseType: 'blob',
             onDownloadProgress: onProgress
-                ? (e) => { if (e.total) onProgress(Math.round((e.loaded / e.total) * 100)) }
+                ? (e) => {
+                    if (e.total) {
+                        onProgress(Math.round((e.loaded / e.total) * 100))
+                    }
+                }
                 : undefined,
         })
     }
 
     sftpDownloadURL(hostId: string, path: string, token = '') {
         const params = new URLSearchParams({ path })
-        if (token) params.set('token', token)
+        if (token) {
+            params.set('token', token)
+        }
         return absUrl(`sftp/${hostId}/download?${params.toString()}`)
     }
 

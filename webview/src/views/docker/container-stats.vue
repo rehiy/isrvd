@@ -88,7 +88,9 @@ class ContainerStats extends Vue {
     async loadHistory() {
         try {
             const res = await api.overviewMonitor({ type: 'container', id: this.containerId, since: 3600 })
-            if (!res.payload || res.payload.length < 2) return
+            if (!res.payload || res.payload.length < 2) {
+                return
+            }
             // 历史数据需要相邻两条计算速率，逐对推入
             for (let i = 0; i < res.payload.length; i++) {
                 const rec = res.payload[i]
@@ -144,13 +146,17 @@ class ContainerStats extends Vue {
             this.prevTime = last.ts * 1000
             // 用最后一条记录初始化 statsData，触发图表渲染
             this.statsData = last.data
-        } catch { /* ignore */ }
+        } catch {
+            /* ignore */
+        }
     }
 
     async loadStats() {
         try {
             const res = await api.dockerContainerStats(this.containerId)
-            if (this.destroyed || !res.payload) return
+            if (this.destroyed || !res.payload) {
+                return
+            }
             const isFirst = !this.statsData
             this.statsData = res.payload
             this.pushPoint(res.payload)
@@ -325,17 +331,47 @@ class ContainerStats extends Vue {
     }
 
     renderCharts() {
-        if (this.cpuChart) { this.cpuChart.data.labels = [...this.labels]; this.cpuChart.data.datasets[0].data = [...this.cpuData]; this.cpuChart.update('none') }
-        if (this.memChart) { this.memChart.data.labels = [...this.labels]; this.memChart.data.datasets[0].data = [...this.memData]; this.memChart.update('none') }
-        if (this.netChart) { this.netChart.data.labels = [...this.labels]; this.netChart.data.datasets[0].data = [...this.netRxData]; this.netChart.data.datasets[1].data = [...this.netTxData]; this.netChart.update('none') }
-        if (this.blkChart) { this.blkChart.data.labels = [...this.labels]; this.blkChart.data.datasets[0].data = [...this.blkRData]; this.blkChart.data.datasets[1].data = [...this.blkWData]; this.blkChart.update('none') }
+        if (this.cpuChart) {
+            this.cpuChart.data.labels = [...this.labels]
+            this.cpuChart.data.datasets[0].data = [...this.cpuData]
+            this.cpuChart.update('none')
+        }
+        if (this.memChart) {
+            this.memChart.data.labels = [...this.labels]
+            this.memChart.data.datasets[0].data = [...this.memData]
+            this.memChart.update('none')
+        }
+        if (this.netChart) {
+            this.netChart.data.labels = [...this.labels]
+            this.netChart.data.datasets[0].data = [...this.netRxData]
+            this.netChart.data.datasets[1].data = [...this.netTxData]
+            this.netChart.update('none')
+        }
+        if (this.blkChart) {
+            this.blkChart.data.labels = [...this.labels]
+            this.blkChart.data.datasets[0].data = [...this.blkRData]
+            this.blkChart.data.datasets[1].data = [...this.blkWData]
+            this.blkChart.update('none')
+        }
     }
 
     destroyCharts() {
-        if (this.cpuChart) { this.cpuChart.destroy(); this.cpuChart = null }
-        if (this.memChart) { this.memChart.destroy(); this.memChart = null }
-        if (this.netChart) { this.netChart.destroy(); this.netChart = null }
-        if (this.blkChart) { this.blkChart.destroy(); this.blkChart = null }
+        if (this.cpuChart) {
+            this.cpuChart.destroy()
+            this.cpuChart = null
+        }
+        if (this.memChart) {
+            this.memChart.destroy()
+            this.memChart = null
+        }
+        if (this.netChart) {
+            this.netChart.destroy()
+            this.netChart = null
+        }
+        if (this.blkChart) {
+            this.blkChart.destroy()
+            this.blkChart = null
+        }
     }
 
     clearHistory() {

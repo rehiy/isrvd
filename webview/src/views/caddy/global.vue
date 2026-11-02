@@ -49,7 +49,9 @@ class CaddyGlobalConfig extends Vue {
     }
 
     async save() {
-        if (this.saving || this.loading) return
+        if (this.saving || this.loading) {
+            return
+        }
         const payload: CaddyGlobal = {
             logLevel:      this.logLevel      || undefined,
             logFormat:     this.logFormat     || undefined,

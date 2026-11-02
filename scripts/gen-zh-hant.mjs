@@ -82,8 +82,11 @@ const readFrontend = (file) => {
     const entry = /^\s*('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")\s*:\s*('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")\s*,?\s*$/
     for (const line of readFileSync(file, 'utf8').split('\n')) {
         const m = line.match(entry)
-        if (m) items.push({ key: unquote(m[1]), en: unquote(m[2]) })
-        else if (/^\s*\/\/ ─── /.test(line)) items.push({ section: line.trim() })
+        if (m) {
+            items.push({ key: unquote(m[1]), en: unquote(m[2]) })
+        } else if (/^\s*\/\/ ─── /.test(line)) {
+            items.push({ section: line.trim() })
+        }
     }
     return items
 }
@@ -94,8 +97,11 @@ const readBackend = (file) => {
     const entry = /^\s*("(?:[^"\\]|\\.)*")\s*:\s*("(?:[^"\\]|\\.)*"),\s*$/
     for (const line of readFileSync(file, 'utf8').split('\n')) {
         const m = line.match(entry)
-        if (m) items.push({ key: JSON.parse(m[1]), en: JSON.parse(m[2]) })
-        else if (/^\s*\/\/ ─── /.test(line)) items.push({ section: line.trim() })
+        if (m) {
+            items.push({ key: JSON.parse(m[1]), en: JSON.parse(m[2]) })
+        } else if (/^\s*\/\/ ─── /.test(line)) {
+            items.push({ section: line.trim() })
+        }
     }
     return items
 }
@@ -156,8 +162,12 @@ func init() {
 	Register(Language{Code: "zh-Hant", Tags: []string{"zh-hant", "zh-tw", "zh-hk", "zh-mo"}}, map[string]string{
 ${backend
     .filter((i) => {
-        if (i.section) return true
-        if (seen.has(i.key)) return false
+        if (i.section) {
+            return true
+        }
+        if (seen.has(i.key)) {
+            return false
+        }
         seen.add(i.key)
         return true
     })

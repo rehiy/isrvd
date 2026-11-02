@@ -47,7 +47,9 @@ class PageSearch extends Vue {
     }
 
     mounted() {
-        if (!this.typeToSearch || !this.searchKey) return
+        if (!this.typeToSearch || !this.searchKey) {
+            return
+        }
         this.unbindTypeToSearchFocus = bindTypeToSearchFocus(() =>
             Array.from(document.querySelectorAll(`[data-page-search="${this.searchKey}"]`)) as HTMLInputElement[]
         )

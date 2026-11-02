@@ -21,12 +21,16 @@ class MkdirRow extends Vue {
 
     handleConfirm() {
         const trimmed = this.name.trim()
-        if (this.loading || !trimmed) return
+        if (this.loading || !trimmed) {
+            return
+        }
         this.$emit('confirm', trimmed)
     }
 
     handleCancel() {
-        if (this.loading) return
+        if (this.loading) {
+            return
+        }
         this.$emit('cancel')
     }
 }

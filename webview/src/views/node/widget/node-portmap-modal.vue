@@ -61,7 +61,9 @@ class NodePortMapModal extends Vue {
     }
 
     async handleConfirm() {
-        if (this.invalid || this.modalLoading) return
+        if (this.invalid || this.modalLoading) {
+            return
+        }
         this.modalLoading = true
         try {
             const entry = {
@@ -72,9 +74,13 @@ class NodePortMapModal extends Vue {
             }
             const original = this.original
             const ok = await portmapPatch(this.nodeId, list => {
-                if (!original) return [...list, entry]
+                if (!original) {
+                    return [...list, entry]
+                }
                 const index = list.findIndex(f => portmapIs(f, original))
-                if (index < 0) return null
+                if (index < 0) {
+                    return null
+                }
                 list[index] = entry
                 return list
             })

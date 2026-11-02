@@ -31,7 +31,9 @@ export class WsTerminal implements TerminalAdapter {
     constructor(private wsUrl: string) {}
 
     connect(el: HTMLElement): void {
-        if (!el) return
+        if (!el) {
+            return
+        }
         this.disconnect()
 
         const fitAddon = new FitAddon()
@@ -43,14 +45,20 @@ export class WsTerminal implements TerminalAdapter {
         const uaPlatform = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform || navigator.userAgent
         const isMac = /Mac|iPhone|iPad|iPod/.test(uaPlatform)
         term.attachCustomKeyEventHandler(event => {
-            if (isMac || !event.ctrlKey || event.altKey || event.metaKey || event.isComposing) return true
+            if (isMac || !event.ctrlKey || event.altKey || event.metaKey || event.isComposing) {
+                return true
+            }
 
             const key = event.key.toLowerCase()
             // 仅跳过 xterm 按键处理，不阻止浏览器触发原生 copy/paste 事件。
             // Ctrl+V 与 Ctrl+Shift+V 都交给浏览器粘贴，避免 xterm 同时发送 ^V。
-            if (key === 'v') return false
+            if (key === 'v') {
+                return false
+            }
             // 无选区时保留 Ctrl+C 的中断语义；复制后保留选区，避免长按误中断。
-            if (key === 'c' && !event.shiftKey && term.hasSelection()) return false
+            if (key === 'c' && !event.shiftKey && term.hasSelection()) {
+                return false
+            }
             return true
         })
         term.loadAddon(fitAddon)
@@ -78,7 +86,9 @@ export class WsTerminal implements TerminalAdapter {
     }
 
     disconnect(): void {
-        if (!this.term && !this.socket) return  // 幂等保护
+        if (!this.term && !this.socket) {
+            return
+        }  // 幂等保护
         this.socket?.close()
         this.socket = null
         this.lastCols = 0
@@ -91,16 +101,22 @@ export class WsTerminal implements TerminalAdapter {
     }
 
     fit(): void {
-        if (!this.term || !this.fitAddon) return
+        if (!this.term || !this.fitAddon) {
+            return
+        }
         this.fitAddon.fit()
         this.sendResize()
     }
 
     private sendResize(force = false): void {
-        if (!this.term || !this.socket || this.socket.readyState !== WebSocket.OPEN) return
+        if (!this.term || !this.socket || this.socket.readyState !== WebSocket.OPEN) {
+            return
+        }
         const cols = this.term.cols
         const rows = this.term.rows
-        if (!force && cols === this.lastCols && rows === this.lastRows) return
+        if (!force && cols === this.lastCols && rows === this.lastRows) {
+            return
+        }
         this.lastCols = cols
         this.lastRows = rows
         this.socket.send(`\u0000isrvd:resize:${cols}:${rows}`)

@@ -1,7 +1,9 @@
 type SearchInputRef = HTMLInputElement | HTMLInputElement[] | null | undefined
 
 const isEditableElement = (el: Element | null): boolean => {
-    if (!el) return false
+    if (!el) {
+        return false
+    }
     if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) {
         return true
     }
@@ -9,7 +11,9 @@ const isEditableElement = (el: Element | null): boolean => {
 }
 
 const resolveSearchInput = (inputRef: SearchInputRef): HTMLInputElement | null => {
-    if (!inputRef) return null
+    if (!inputRef) {
+        return null
+    }
     if (Array.isArray(inputRef)) {
         return inputRef.find((el: HTMLInputElement) => el && el.offsetParent !== null) || null
     }
@@ -19,16 +23,28 @@ const resolveSearchInput = (inputRef: SearchInputRef): HTMLInputElement | null =
 // 在页面空白区域直接键入时，将输入重定向到搜索框。
 export const bindTypeToSearchFocus = (getInput: () => SearchInputRef): (() => void) => {
     const handleKeydown = (event: KeyboardEvent) => {
-        if (event.defaultPrevented || event.isComposing) return
-        if (event.ctrlKey || event.metaKey || event.altKey) return
+        if (event.defaultPrevented || event.isComposing) {
+            return
+        }
+        if (event.ctrlKey || event.metaKey || event.altKey) {
+            return
+        }
         const isPrintable = event.key.length === 1 && event.key.trim() !== ''
         const isDeleteKey = event.key === 'Backspace' || event.key === 'Delete'
-        if (!isPrintable && !isDeleteKey) return
-        if (document.querySelector('.modal-card')) return
-        if (isEditableElement(document.activeElement)) return
+        if (!isPrintable && !isDeleteKey) {
+            return
+        }
+        if (document.querySelector('.modal-card')) {
+            return
+        }
+        if (isEditableElement(document.activeElement)) {
+            return
+        }
 
         const input = resolveSearchInput(getInput())
-        if (!input || input.disabled || input.readOnly) return
+        if (!input || input.disabled || input.readOnly) {
+            return
+        }
 
         event.preventDefault()
         let nextValue = input.value

@@ -36,9 +36,15 @@ class SystemGpu extends Vue {
     semanticColor = semanticColor
 
     gpuTempColor(temp: number): string {
-        if (temp < 0) return 'text-slate-400'
-        if (temp >= 80) return 'text-red-500'
-        if (temp >= 60) return 'text-amber-500'
+        if (temp < 0) {
+            return 'text-slate-400'
+        }
+        if (temp >= 80) {
+            return 'text-red-500'
+        }
+        if (temp >= 60) {
+            return 'text-amber-500'
+        }
         return 'text-emerald-500'
     }
 
@@ -83,7 +89,9 @@ class SystemGpu extends Vue {
 
     initGpuChart(key: string) {
         const canvas = this.gpuContainerRef?.querySelector(`[data-gpu="${key}"]`) as HTMLCanvasElement | null
-        if (!canvas) return
+        if (!canvas) {
+            return
+        }
 
         this.gpuCharts[key]?.destroy()
 
@@ -108,7 +116,9 @@ class SystemGpu extends Vue {
     updateGpuChart(key: string) {
         const chart = this.gpuCharts[key]
         const h = this.gpuHistories[key]
-        if (!chart || !h) return
+        if (!chart || !h) {
+            return
+        }
 
         chart.data.labels = [...h.labels]
         chart.data.datasets[0].data = [...h.util]
@@ -138,7 +148,9 @@ class SystemGpu extends Vue {
 
     pushData(payload: SystemStat, ts: number) {
         this.currentGpus = payload.gpu || []
-        if (!payload.gpu?.length) return
+        if (!payload.gpu?.length) {
+            return
+        }
 
         payload.gpu.forEach(gpu => {
             const key = this.gpuKey(gpu)

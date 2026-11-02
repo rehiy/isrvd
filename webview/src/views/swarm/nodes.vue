@@ -28,7 +28,9 @@ class Nodes extends Vue {
 
     get filteredNodes() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.nodes
+        if (!keyword) {
+            return this.nodes
+        }
         return this.nodes.filter((n: SwarmNodeInfo) =>
             (n.hostname || '').toLowerCase().includes(keyword) ||
             (n.id || '').toLowerCase().includes(keyword) ||
@@ -85,7 +87,9 @@ class Nodes extends Vue {
     }
 
     get joinCommand() {
-        if (!this.joinTokens) return ''
+        if (!this.joinTokens) {
+            return ''
+        }
         const token = this.joinRole === 'worker' ? this.joinTokens.worker : this.joinTokens.manager
         const addr = this.joinAddr.trim()
         return addr

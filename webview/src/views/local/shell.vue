@@ -27,7 +27,9 @@ class Shell extends Vue {
     }
 
     handleConnect() {
-        if (this.connected) return
+        if (this.connected) {
+            return
+        }
         this.adapter = new WsTerminal(wsUrl(`shell?token=${this.portal.token || ''}&shell=${encodeURIComponent(this.shellType)}`))
     }
 

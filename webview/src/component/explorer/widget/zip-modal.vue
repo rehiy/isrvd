@@ -23,7 +23,9 @@ class ZipModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.file || !this.adapter) return
+        if (!this.file || !this.adapter) {
+            return
+        }
         this.loading = true
         try {
             await this.adapter.zip?.(this.file.path)

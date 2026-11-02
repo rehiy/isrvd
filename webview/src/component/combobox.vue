@@ -28,49 +28,69 @@ class Combobox extends Vue {
 
     // ─── 计算属性 ───
     get selected(): string[] {
-        if (!this.multiple) return []
+        if (!this.multiple) {
+            return []
+        }
         return Array.isArray(this.modelValue) ? this.modelValue : []
     }
 
     get singleValue(): string {
-        if (this.multiple) return ''
+        if (this.multiple) {
+            return ''
+        }
         return typeof this.modelValue === 'string' ? this.modelValue : ''
     }
 
     get effectivePlaceholder(): string {
-        if (!this.multiple) return this.placeholder
-        if (this.selected.length === 0) return this.placeholder
+        if (!this.multiple) {
+            return this.placeholder
+        }
+        if (this.selected.length === 0) {
+            return this.placeholder
+        }
         return this.searchPlaceholder || this.$t('搜索...')
     }
 
     // ─── 生命周期 ───
     mounted() {
-        if (!this.multiple) this.searchQuery = this.singleValue
+        if (!this.multiple) {
+            this.searchQuery = this.singleValue
+        }
     }
 
     // ─── 监听器（仅单选需要回填） ───
     @Watch('modelValue')
     onModelValueChange() {
-        if (this.multiple) return
-        if (this.singleValue !== this.searchQuery) this.searchQuery = this.singleValue
+        if (this.multiple) {
+            return
+        }
+        if (this.singleValue !== this.searchQuery) {
+            this.searchQuery = this.singleValue
+        }
     }
 
     @Watch('dropdownOpen')
     onDropdownOpenChange(open: boolean) {
         if (this.multiple) {
-            if (!open) this.searchQuery = ''
+            if (!open) {
+                this.searchQuery = ''
+            }
             return
         }
         if (!open) {
             // 关闭时：未通过点选确认则恢复显示原值
-            if (!this.justSelected) this.searchQuery = this.singleValue
+            if (!this.justSelected) {
+                this.searchQuery = this.singleValue
+            }
             this.justSelected = false
         }
     }
 
     @Watch('disabled')
     onDisabledChange(disabled: boolean) {
-        if (disabled) this.dropdownOpen = false
+        if (disabled) {
+            this.dropdownOpen = false
+        }
     }
 
     // ─── 方法 ───
@@ -79,11 +99,17 @@ class Combobox extends Vue {
     }
 
     select(value: string) {
-        if (this.disabled) return
+        if (this.disabled) {
+            return
+        }
         if (this.multiple) {
             const v = value.trim()
-            if (!v) return
-            if (this.selected.includes(v) && this.tagDisabled(v)) return
+            if (!v) {
+                return
+            }
+            if (this.selected.includes(v) && this.tagDisabled(v)) {
+                return
+            }
             const next = this.selected.includes(v)
                 ? this.selected.filter(x => x !== v)
                 : [...this.selected, v]
@@ -98,28 +124,46 @@ class Combobox extends Vue {
     }
 
     removeTag(value: string) {
-        if (!this.multiple || this.disabled || this.tagDisabled(value)) return
+        if (!this.multiple || this.disabled || this.tagDisabled(value)) {
+            return
+        }
         this.$emit('update:modelValue', this.selected.filter(x => x !== value))
     }
 
     clearAll() {
-        if (!this.multiple || this.disabled) return
+        if (!this.multiple || this.disabled) {
+            return
+        }
         const next = this.selected.filter(value => this.tagDisabled(value))
-        if (next.length !== this.selected.length) this.$emit('update:modelValue', next)
+        if (next.length !== this.selected.length) {
+            this.$emit('update:modelValue', next)
+        }
     }
 
     handleInput() {
-        if (this.disabled) return
-        if (!this.multiple) this.$emit('update:modelValue', this.searchQuery)
-        if (!this.dropdownOpen) this.dropdownOpen = true
+        if (this.disabled) {
+            return
+        }
+        if (!this.multiple) {
+            this.$emit('update:modelValue', this.searchQuery)
+        }
+        if (!this.dropdownOpen) {
+            this.dropdownOpen = true
+        }
     }
 
     handleEnter() {
-        if (this.disabled) return
+        if (this.disabled) {
+            return
+        }
         const v = this.searchQuery.trim()
         if (this.multiple) {
-            if (!this.allowCustom) return
-            if (!v) return
+            if (!this.allowCustom) {
+                return
+            }
+            if (!v) {
+                return
+            }
             if (!this.selected.includes(v)) {
                 this.$emit('update:modelValue', [...this.selected, v])
             }
@@ -131,8 +175,10 @@ class Combobox extends Vue {
     }
 
     focusInput() {
-        if (this.disabled) return
-        ;(this.$refs.inputRef as HTMLInputElement)?.focus()
+        if (this.disabled) {
+            return
+            
+        }(this.$refs.inputRef as HTMLInputElement)?.focus()
         this.dropdownOpen = true
     }
 }

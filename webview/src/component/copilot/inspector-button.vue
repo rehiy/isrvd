@@ -20,7 +20,9 @@ function inspector(): InspectorElement | null {
 
 function hideFloatingLauncher() {
     const root = inspector()?.shadowRoot
-    if (!root || root.getElementById(launcherStyleID)) return
+    if (!root || root.getElementById(launcherStyleID)) {
+        return
+    }
 
     const style = document.createElement('style')
     style.id = launcherStyleID
@@ -30,7 +32,9 @@ function hideFloatingLauncher() {
 
 function observeInspector() {
     const root = inspector()?.shadowRoot
-    if (!root || root === observedRoot) return
+    if (!root || root === observedRoot) {
+        return
+    }
 
     shadowObserver?.disconnect()
     observedRoot = root
@@ -44,7 +48,9 @@ function openInspector() {
 }
 
 onMounted(() => {
-    if (!enabled) return
+    if (!enabled) {
+        return
+    }
 
     observeInspector()
     documentObserver = new MutationObserver(observeInspector)

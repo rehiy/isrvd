@@ -46,7 +46,9 @@ class SystemCpuMem extends Vue {
     get memTotal() { return this.current?.memoryTotal ?? 0 }
 
     avgCpuPercent(arr: number[]): number {
-        if (!arr || !arr.length) return 0
+        if (!arr || !arr.length) {
+            return 0
+        }
         return parseFloat(((arr.reduce((a, b) => a + b, 0) / arr.length)).toFixed(1))
     }
 
@@ -74,8 +76,14 @@ class SystemCpuMem extends Vue {
     }
 
     initCharts() {
-        if (this.cpuChart) { this.cpuChart.destroy(); this.cpuChart = null }
-        if (this.memChart) { this.memChart.destroy(); this.memChart = null }
+        if (this.cpuChart) {
+            this.cpuChart.destroy()
+            this.cpuChart = null
+        }
+        if (this.memChart) {
+            this.memChart.destroy()
+            this.memChart = null
+        }
 
         if (this.cpuCanvasRef) {
             const chart = new Chart(this.cpuCanvasRef, {

@@ -10,7 +10,9 @@ const props = withDefaults(defineProps<{
 const error = computed(() => {
     try {
         const result: unknown = typeof props.result === 'string' ? JSON.parse(props.result) : props.result
-        if (!result || typeof result !== 'object' || !('success' in result) || result.success !== false) return ''
+        if (!result || typeof result !== 'object' || !('success' in result) || result.success !== false) {
+            return ''
+        }
         return 'message' in result && typeof result.message === 'string' ? result.message || '请求失败' : '请求失败'
     } catch {
         return ''

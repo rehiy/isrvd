@@ -38,7 +38,9 @@ class JobLogsModal extends Vue {
     }
 
     async loadLogs() {
-        if (!this.job) return
+        if (!this.job) {
+            return
+        }
         this.loading = true
         try {
             const res = await api.cronJobLogs(this.job.id, 50)

@@ -14,7 +14,9 @@ const LOCALE_KEY = 'app-locale'
  */
 const readLocale = (): Locale => {
     const saved = localStorage.getItem(LOCALE_KEY)
-    if (isLocale(saved)) return saved
+    if (isLocale(saved)) {
+        return saved
+    }
     return matchLocale(navigator.languages ?? [navigator.language]) ?? SOURCE
 }
 
@@ -58,7 +60,9 @@ export const useLocaleStore = defineStore('locale', () => {
     // ─── 切换 ───
 
     function setLocale(next: Locale): void {
-        if (!isLocale(next)) return
+        if (!isLocale(next)) {
+            return
+        }
         writeLocale(next)
         locale.value = next
         applyLocale(next)

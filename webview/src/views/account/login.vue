@@ -39,8 +39,12 @@ class Login extends Vue {
 
     // 没有任何可交互登录方式时的说明（模板中再翻译）
     get loginNotice() {
-        if (this.portal.headerMode) return '当前使用 Header 认证，请通过上游认证网关访问。'
-        if (!this.passwordLogin && !this.thirdPartyLogin) return '密码登录已禁用，请联系管理员配置其他登录方式。'
+        if (this.portal.headerMode) {
+            return '当前使用 Header 认证，请通过上游认证网关访问。'
+        }
+        if (!this.passwordLogin && !this.thirdPartyLogin) {
+            return '密码登录已禁用，请联系管理员配置其他登录方式。'
+        }
         return ''
     }
 
@@ -52,13 +56,17 @@ class Login extends Vue {
                 ...this.loginForm,
                 totpCode: this.twoFactorRequired ? this.totpForm.code : undefined
             })
-            if (!payload) return
+            if (!payload) {
+                return
+            }
             if (payload.twoFactorRequired) {
                 this.twoFactorRequired = true
                 this.totpForm.code = ''
                 return
             }
-            if (!payload.token) return
+            if (!payload.token) {
+                return
+            }
 
             // 使用默认密码登录，在清空表单之前检测
             const isDefaultPassword = this.loginForm.password === 'admin'

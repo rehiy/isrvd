@@ -30,7 +30,9 @@ function apiUrl(baseUrl, apiPath) {
 }
 
 function authHeaders(token, authHeader) {
-  if (!token) return {};
+  if (!token) {
+    return {};
+  }
   return authHeader.toLowerCase() === 'authorization'
     ? { Authorization: `Bearer ${token}` }
     : { [authHeader]: token };
@@ -98,12 +100,20 @@ function httpRequest(method, urlText, token = '', body = undefined, headers = {}
           red(`✗ HTTP ${res.statusCode}`);
           process.exit(1);
         }
-        if (!raw) return resolve(null);
-        try { resolve(JSON.parse(raw)); } catch (_) { resolve(raw); }
+        if (!raw) {
+          return resolve(null);
+        }
+        try {
+          resolve(JSON.parse(raw));
+        } catch (_) {
+          resolve(raw);
+        }
       });
     });
     req.on('error', reject);
-    if (data) req.write(data);
+    if (data) {
+      req.write(data);
+    }
     req.end();
   });
 }
@@ -141,8 +151,14 @@ function multipartRequest(urlText, token, fileField, filePath, fields, authHeade
           red(`✗ HTTP ${res.statusCode}`);
           process.exit(1);
         }
-        if (!raw) return resolve(null);
-        try { resolve(JSON.parse(raw)); } catch (_) { resolve(raw); }
+        if (!raw) {
+          return resolve(null);
+        }
+        try {
+          resolve(JSON.parse(raw));
+        } catch (_) {
+          resolve(raw);
+        }
       });
     });
     req.on('error', reject);
@@ -156,22 +172,38 @@ function payloadOf(value) {
 }
 
 function applyFilter(value, selector) {
-  if (!selector) return value;
-  if (!selector.startsWith('.')) throw new Error(`unsupported selector: ${selector}`);
+  if (!selector) {
+    return value;
+  }
+  if (!selector.startsWith('.')) {
+    throw new Error(`unsupported selector: ${selector}`);
+  }
   let current = value;
   for (const part of selector.slice(1).split('.')) {
-    if (!part) continue;
-    if (current && typeof current === 'object' && !Array.isArray(current)) current = current[part];
-    else if (Array.isArray(current) && /^\d+$/.test(part)) current = current[Number(part)];
-    else return null;
+    if (!part) {
+      continue;
+    }
+    if (current && typeof current === 'object' && !Array.isArray(current)) {
+      current = current[part];
+    } else if (Array.isArray(current) && /^\d+$/.test(part)) {
+      current = current[Number(part)];
+    } else {
+      return null;
+    }
   }
   return current === undefined ? null : current;
 }
 
 function encodeCell(value) {
-  if (value === null || value === undefined) return 'null';
-  if (typeof value === 'string') return JSON.stringify(value);
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (value === null || value === undefined) {
+    return 'null';
+  }
+  if (typeof value === 'string') {
+    return JSON.stringify(value);
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
   return JSON.stringify(value);
 }
 
@@ -186,7 +218,11 @@ function printResult(value) {
 }
 
 function printCompactJsonOrRaw(raw) {
-  try { console.log(JSON.stringify(JSON.parse(raw))); } catch (_) { console.log(raw); }
+  try {
+    console.log(JSON.stringify(JSON.parse(raw)));
+  } catch (_) {
+    console.log(raw);
+  }
 }
 
 async function apiCall(method, apiPath, bodyText = '', selector = '') {
@@ -227,27 +263,41 @@ async function main() {
     switch (command) {
       case 'login': {
         const [base, username, password, totp] = args;
-        if (!base || !username || !password) throw new Error('usage: api.js login <api_root> <username> <password> [totpCode]');
+        if (!base || !username || !password) {
+          throw new Error('usage: api.js login <api_root> <username> <password> [totpCode]');
+        }
         const baseUrl = normalizeApiRoot(base);
         const body = { username, password };
-        if (totp) body.totpCode = totp;
+        if (totp) {
+          body.totpCode = totp;
+        }
         blue(`→ 登录 ${baseUrl} ...`);
         const data = await httpRequest('POST', apiUrl(baseUrl, '/account/login'), '', body, {}, process.env.ISRVD_AUTH_HEADER || 'Authorization');
-        if (!data || data.success !== true) throw new Error(`登录失败: ${data && data.message ? data.message : '未知错误'}`);
-        if (data.payload && data.payload.twoFactorRequired) throw new Error('该账号已启用 TOTP 二次验证。请使用: api.js login <api_root> <username> <password> <totpCode>');
+        if (!data || data.success !== true) {
+          throw new Error(`登录失败: ${data && data.message ? data.message : '未知错误'}`);
+        }
+        if (data.payload && data.payload.twoFactorRequired) {
+          throw new Error('该账号已启用 TOTP 二次验证。请使用: api.js login <api_root> <username> <password> <totpCode>');
+        }
         const token = data.payload && data.payload.token;
-        if (!token) throw new Error('登录失败: 响应中缺少 token');
+        if (!token) {
+          throw new Error('登录失败: 响应中缺少 token');
+        }
         saveConfig({ base_url: baseUrl, token, username, auth_header: process.env.ISRVD_AUTH_HEADER || 'Authorization' });
         green(`✓ 登录成功，已保存到 ${configFile}`);
         break;
       }
       case 'token': {
         const [base, token] = args;
-        if (!base || !token) throw new Error('usage: api.js token <api_root> <token>');
+        if (!base || !token) {
+          throw new Error('usage: api.js token <api_root> <token>');
+        }
         const baseUrl = normalizeApiRoot(base);
         blue('→ 验证 token ...');
         const data = await httpRequest('GET', apiUrl(baseUrl, '/overview/bootstrap'), token, undefined, {}, process.env.ISRVD_AUTH_HEADER || 'Authorization');
-        if (!data || data.success !== true) throw new Error(`token 无效: ${data && data.message ? data.message : '未知错误'}`);
+        if (!data || data.success !== true) {
+          throw new Error(`token 无效: ${data && data.message ? data.message : '未知错误'}`);
+        }
         const username = (data.payload && data.payload.auth && data.payload.auth.username) || 'unknown';
         saveConfig({ base_url: baseUrl, token, username, auth_header: process.env.ISRVD_AUTH_HEADER || 'Authorization' });
         green(`✓ token 有效 (用户: ${username})，已保存到 ${configFile}`);
@@ -260,7 +310,9 @@ async function main() {
       case 'patch': await apiCall('PATCH', args[0], args[1] || '', args[2] || ''); break;
       case 'upload': {
         const [apiPath, field, file, ...fields] = args;
-        if (!apiPath || !field || !file) throw new Error('usage: api.js upload <path> <file_field> <file_path> [key=value ...]');
+        if (!apiPath || !field || !file) {
+          throw new Error('usage: api.js upload <path> <file_field> <file_path> [key=value ...]');
+        }
         const cfg = requireAuth();
         printResult(await multipartRequest(apiUrl(cfg.base_url, apiPath), cfg.token, field, file, fields, cfg.auth_header));
         break;
@@ -268,12 +320,21 @@ async function main() {
       case 'whoami': await apiCall('GET', '/overview/bootstrap'); break;
       case 'status': {
         const cfg = loadConfig();
-        if (fs.existsSync(configFile)) green(`✓ 配置文件: ${configFile}`); else yellow('○ 无配置文件');
+        if (fs.existsSync(configFile)) {
+          green(`✓ 配置文件: ${configFile}`);
+        } else {
+          yellow('○ 无配置文件');
+        }
         printResult({ base_url: cfg.base_url, username: cfg.username, token: cfg.token ? `${cfg.token.slice(0, 20)}...` : '' });
         break;
       }
       case 'logout':
-        if (fs.existsSync(configFile)) { fs.unlinkSync(configFile); green('✓ 已清除认证信息'); } else yellow('○ 无需清除');
+        if (fs.existsSync(configFile)) {
+          fs.unlinkSync(configFile);
+          green('✓ 已清除认证信息');
+        } else {
+          yellow('○ 无需清除');
+        }
         break;
       case 'help':
       case undefined:

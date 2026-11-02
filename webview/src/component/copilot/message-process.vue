@@ -17,9 +17,15 @@ const waitingApproval = computed(() => calls.value.some(call => call.function.na
 const hasFailure = computed(() => calls.value.some(call => toolResultFailed(results.value.get(call.id))))
 const latestID = computed(() => props.process.messages[props.process.messages.length - 1]?.id)
 const status = computed(() => {
-    if (waitingApproval.value) return '等待确认'
-    if (running.value) return '进行中'
-    if (hasFailure.value) return '含失败或取消记录'
+    if (waitingApproval.value) {
+        return '等待确认'
+    }
+    if (running.value) {
+        return '进行中'
+    }
+    if (hasFailure.value) {
+        return '含失败或取消记录'
+    }
     return '已结束'
 })
 

@@ -30,7 +30,9 @@ class Services extends Vue {
 
     get filteredServices() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.services
+        if (!keyword) {
+            return this.services
+        }
         return this.services.filter((svc: SwarmServiceInfo) =>
             (svc.name || '').toLowerCase().includes(keyword) ||
             (svc.id || '').toLowerCase().includes(keyword) ||

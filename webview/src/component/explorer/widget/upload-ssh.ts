@@ -38,9 +38,13 @@ const UPLOAD_IGNORE_NAMES = new Set([
 
 // 判断是否应该忽略该条目
 export const shouldIgnoreUploadEntry = (name: string): boolean => {
-    if (UPLOAD_IGNORE_NAMES.has(name)) return true
+    if (UPLOAD_IGNORE_NAMES.has(name)) {
+        return true
+    }
     // 以 ._ 开头的 macOS 资源分叉文件
-    if (name.startsWith('._')) return true
+    if (name.startsWith('._')) {
+        return true
+    }
     return false
 }
 
@@ -52,7 +56,9 @@ export const buildUploadTree = async (
     baseDir: string,
 ): Promise<UploadNode[]> => {
     const collect = async (entry: FileSystemEntry, dir: string): Promise<UploadNode | null> => {
-        if (shouldIgnoreUploadEntry(entry.name)) return null
+        if (shouldIgnoreUploadEntry(entry.name)) {
+            return null
+        }
         if (entry.isFile) {
             const file = await new Promise<File>((resolve, reject) =>
                 (entry as FileSystemFileEntry).file(resolve, reject)
@@ -66,7 +72,10 @@ export const buildUploadTree = async (
                     const all: FileSystemEntry[] = []
                     const readBatch = () => {
                         reader.readEntries((batch) => {
-                            if (batch.length === 0) { resolve(all); return }
+                            if (batch.length === 0) {
+                                resolve(all)
+                                return
+                            }
                             all.push(...batch)
                             readBatch()
                         }, reject)
@@ -87,8 +96,11 @@ export const flattenUploadTree = (nodes: UploadNode[]): UploadFileNode[] => {
     const result: UploadFileNode[] = []
     const walk = (ns: UploadNode[]) => {
         for (const n of ns) {
-            if (n.type === 'file') result.push(n)
-            else walk(n.children)
+            if (n.type === 'file') {
+                result.push(n)
+            } else {
+                walk(n.children)
+            }
         }
     }
     walk(nodes)

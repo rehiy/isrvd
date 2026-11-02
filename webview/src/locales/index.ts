@@ -75,9 +75,13 @@ export const matchLocale = (tags: readonly string[]): Locale | undefined => {
         let tag = raw.toLowerCase()
         while (tag) {
             const hit = tagIndex.get(tag)
-            if (hit) return hit
+            if (hit) {
+                return hit
+            }
             const i = tag.lastIndexOf('-')
-            if (i < 0) break
+            if (i < 0) {
+                break
+            }
             tag = tag.slice(0, i)
         }
     }
@@ -96,9 +100,13 @@ const lookup = (locale: Locale, key: string): string | undefined => {
  * 参数按 {0}、{1} 占位一次性替换：已代入的参数值里即使含有 {n} 也不会被再次替换。
  */
 export const translate = (key: string, locale: Locale, ...args: unknown[]): string => {
-    if (typeof key !== 'string') return key
+    if (typeof key !== 'string') {
+        return key
+    }
     const text = locale === SOURCE ? key : lookup(locale, key) || key
-    if (args.length === 0) return text
+    if (args.length === 0) {
+        return text
+    }
     return text.replace(/\{(\d+)\}/g, (match, index: string) =>
         Number(index) < args.length ? String(args[Number(index)]) : match
     )

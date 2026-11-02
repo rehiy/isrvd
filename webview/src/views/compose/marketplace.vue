@@ -20,12 +20,22 @@ interface MarketplaceInstallPayload {
 
 // 校验 postMessage 数据是否为合法的安装 payload
 function isMarketplaceInstallPayload(data: unknown): data is MarketplaceInstallPayload {
-    if (!data || typeof data !== 'object') return false
+    if (!data || typeof data !== 'object') {
+        return false
+    }
     const d = data as Record<string, unknown>
-    if (d.source !== 'marketplace' || d.type !== 'install') return false
-    if (typeof d.name !== 'string' || !d.name) return false
-    if (typeof d.compose !== 'string' || !d.compose) return false
-    if (d.initURL !== undefined && typeof d.initURL !== 'string') return false
+    if (d.source !== 'marketplace' || d.type !== 'install') {
+        return false
+    }
+    if (typeof d.name !== 'string' || !d.name) {
+        return false
+    }
+    if (typeof d.compose !== 'string' || !d.compose) {
+        return false
+    }
+    if (d.initURL !== undefined && typeof d.initURL !== 'string') {
+        return false
+    }
     return true
 }
 
@@ -62,7 +72,9 @@ class ComposeMarketplace extends Vue {
 
     @Watch('canAccess', { immediate: true })
     onAccessChange(canAccess: boolean) {
-        if (!canAccess) this.$router.replace('/overview')
+        if (!canAccess) {
+            this.$router.replace('/overview')
+        }
     }
 
     // ─── 方法 ───
@@ -83,7 +95,9 @@ class ComposeMarketplace extends Vue {
 
     refreshMarketplace() {
         this.loadUrl()
-        if (this.iframeUrl) this.iframeKey += 1
+        if (this.iframeUrl) {
+            this.iframeKey += 1
+        }
     }
 
     onIframeLoad() {
@@ -105,9 +119,13 @@ class ComposeMarketplace extends Vue {
     }
 
     onMessage(e: MessageEvent) {
-        if (!this.portal.initialized || !this.canAccess) return
+        if (!this.portal.initialized || !this.canAccess) {
+            return
+        }
         // 非 marketplace 协议的消息一律忽略（浏览器扩展/其它 iframe 也会发 message）
-        if (!isMarketplaceInstallPayload(e.data)) return
+        if (!isMarketplaceInstallPayload(e.data)) {
+            return
+        }
 
         // 首选校验：消息来源窗口必须是当前 iframe
         const iframeWin = this.iframeRef?.contentWindow

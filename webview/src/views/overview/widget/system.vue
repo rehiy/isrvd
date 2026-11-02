@@ -17,7 +17,9 @@ class SystemOverview extends Vue {
 
     // ─── 计算属性 ───
     get statCards() {
-        if (!this.systemInfo?.system) return []
+        if (!this.systemInfo?.system) {
+            return []
+        }
         const s = this.systemInfo.system
         const cards = [
             { label: this.$t('主机名'), value: s.hostName, icon: 'fa-server', bgColor: 'bg-blue-500' },
@@ -41,15 +43,25 @@ class SystemOverview extends Vue {
 
     // ─── 方法 ───
     fmtUptime(seconds: number) {
-        if (!seconds) return '0s'
+        if (!seconds) {
+            return '0s'
+        }
         const d = Math.floor(seconds / 86400)
         const h = Math.floor((seconds % 86400) / 3600)
         const m = Math.floor((seconds % 3600) / 60)
         const parts: string[] = []
-        if (d) parts.push(`${d}d`)
-        if (h) parts.push(`${h}h`)
-        if (m) parts.push(`${m}m`)
-        if (!parts.length) parts.push(`${seconds % 60}s`)
+        if (d) {
+            parts.push(`${d}d`)
+        }
+        if (h) {
+            parts.push(`${h}h`)
+        }
+        if (m) {
+            parts.push(`${m}m`)
+        }
+        if (!parts.length) {
+            parts.push(`${seconds % 60}s`)
+        }
         return parts.join(' ')
     }
 
@@ -64,7 +76,9 @@ class SystemOverview extends Vue {
     }
 
     async loadSystemInfo() {
-        if (!this.portal.hasPerm('GET /api/overview/monitor')) return
+        if (!this.portal.hasPerm('GET /api/overview/monitor')) {
+            return
+        }
         const res = await api.overviewMonitor({ since: 0 })
         const record = res.payload as MonitorHostRecord | null
         if (record?.data) {
@@ -73,7 +87,9 @@ class SystemOverview extends Vue {
     }
 
     async loadVersionInfo() {
-        if (!this.portal.hasPerm('GET /api/overview/version')) return
+        if (!this.portal.hasPerm('GET /api/overview/version')) {
+            return
+        }
         try {
             const res = await api.overviewVersion()
             this.versionInfo = res.payload ?? null

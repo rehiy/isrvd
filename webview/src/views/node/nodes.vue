@@ -28,7 +28,9 @@ class NodeManage extends Vue {
     // ─── 计算属性 ───
     get filteredNodes() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.portal.nodes
+        if (!keyword) {
+            return this.portal.nodes
+        }
         return this.portal.nodes.filter(node =>
             [node.name, node.hostname, node.id, node.os, node.arch, node.agentVersion, this.statusText(node)]
                 .some(value => (value || '').toLowerCase().includes(keyword))
@@ -43,7 +45,9 @@ class NodeManage extends Vue {
     // ─── 监听器 ───
     @Watch('ready', { immediate: true })
     onReadyChange(ready: boolean) {
-        if (ready) this.stopPoll ??= enterNodePage(this.portal, this.$router)
+        if (ready) {
+            this.stopPoll ??= enterNodePage(this.portal, this.$router)
+        }
     }
 
     // ─── 展示辅助 ───
@@ -53,7 +57,9 @@ class NodeManage extends Vue {
 
     // 协商成功但节点程序缺少部分可选能力时的提示；基础转发不受影响
     featureHint(node: NodeInfo) {
-        if (node.status !== 'active' || !node.online) return ''
+        if (node.status !== 'active' || !node.online) {
+            return ''
+        }
         const missing = nodeMissingFeatures(node).map(name => this.$t(name))
         return missing.length ? this.$t('部分功能不可用：{0}，请升级节点程序', missing.join('、')) : ''
     }

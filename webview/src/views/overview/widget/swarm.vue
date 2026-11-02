@@ -30,9 +30,15 @@ class SwarmOverview extends Vue {
     }
 
     cardValue(key: keyof SwarmInfo): string | number {
-        if (!this.swarmInfo) return 0
-        if (key === 'clusterID') return this.swarmInfo.clusterID ? this.swarmInfo.clusterID.slice(0, 12) : '-'
-        if (key === 'createdAt') return this.swarmInfo.createdAt ? new Date(this.swarmInfo.createdAt).toLocaleDateString('zh-CN') : '-'
+        if (!this.swarmInfo) {
+            return 0
+        }
+        if (key === 'clusterID') {
+            return this.swarmInfo.clusterID ? this.swarmInfo.clusterID.slice(0, 12) : '-'
+        }
+        if (key === 'createdAt') {
+            return this.swarmInfo.createdAt ? new Date(this.swarmInfo.createdAt).toLocaleDateString('zh-CN') : '-'
+        }
         return this.swarmInfo[key] as number
     }
 

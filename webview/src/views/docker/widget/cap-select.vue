@@ -131,7 +131,9 @@ class CapSelect extends Vue {
     }
 
     filteredCategories(query: string): CapCategory[] {
-        if (!query) return this.capabilityCategories
+        if (!query) {
+            return this.capabilityCategories
+        }
         const upper = query.toUpperCase()
         return this.capabilityCategories
             .map(cat => ({ ...cat, caps: cat.caps.filter(c => c.name.includes(upper) || c.desc.includes(query)) }))

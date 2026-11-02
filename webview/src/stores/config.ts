@@ -168,7 +168,9 @@ export const useConfigStore = defineStore('config', () => {
     function isDirty(group: ConfigGroup): boolean {
         const meta = configGroups.find(item => item.id === group)
         // 未完成首次加载时基线不可用，避免误判为已修改
-        if (!meta || !loaded.value) return false
+        if (!meta || !loaded.value) {
+            return false
+        }
         return meta.sections.some(
             section => JSON.stringify(sectionPayload(section)) !== JSON.stringify(baseline.value[section as keyof AllConfig]),
         )
@@ -181,7 +183,9 @@ export const useConfigStore = defineStore('config', () => {
 
     /** 加载全量配置；force 为 true 时请求后端重载后返回 */
     async function load(force = false) {
-        if (loading.value) return
+        if (loading.value) {
+            return
+        }
         loading.value = true
         error.value = ''
         try {
@@ -199,7 +203,9 @@ export const useConfigStore = defineStore('config', () => {
 
     /** 保存全部配置：一次提交所有分区，避免分组间切换造成改动丢失 */
     async function saveAll() {
-        if (saving.value) return
+        if (saving.value) {
+            return
+        }
         saving.value = true
         error.value = ''
         try {

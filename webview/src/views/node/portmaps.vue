@@ -33,7 +33,9 @@ class NodePortMaps extends Vue {
 
     get filteredItems() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.items
+        if (!keyword) {
+            return this.items
+        }
         return this.items.filter(item =>
             [String(item.listen), item.proto, item.target, item.name, item.node.name]
                 .some(value => (value || '').toLowerCase().includes(keyword))
@@ -52,7 +54,9 @@ class NodePortMaps extends Vue {
     // ─── 监听器 ───
     @Watch('ready', { immediate: true })
     onReadyChange(ready: boolean) {
-        if (ready) this.stopPoll ??= enterNodePage(this.portal, this.$router)
+        if (ready) {
+            this.stopPoll ??= enterNodePage(this.portal, this.$router)
+        }
     }
 
     // ─── 展示辅助 ───

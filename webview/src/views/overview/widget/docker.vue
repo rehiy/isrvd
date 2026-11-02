@@ -42,8 +42,12 @@ class DockerOverview extends Vue {
     }
 
     cardValue(key: keyof DockerInfo): string | number {
-        if (!this.info) return 0
-        if (key === 'registryMirrors') return this.info.registryMirrors?.length ?? 0
+        if (!this.info) {
+            return 0
+        }
+        if (key === 'registryMirrors') {
+            return this.info.registryMirrors?.length ?? 0
+        }
         return this.info[key] as number
     }
 

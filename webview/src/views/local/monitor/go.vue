@@ -33,7 +33,9 @@ class SystemGo extends Vue {
     formatMonitorBytes = formatMonitorBytes
 
     fmtGCTime(ts: number) {
-        if (!ts) return this.$t('从未')
+        if (!ts) {
+            return this.$t('从未')
+        }
         this.lastGCTime = new Date(ts * 1000).toLocaleString('zh-CN')
         return this.lastGCTime
     }
@@ -145,10 +147,22 @@ class SystemGo extends Vue {
     }
 
     initCharts() {
-        if (this.memChart) { this.memChart.destroy(); this.memChart = null }
-        if (this.goroutineChart) { this.goroutineChart.destroy(); this.goroutineChart = null }
-        if (this.stackChart) { this.stackChart.destroy(); this.stackChart = null }
-        if (this.sysChart) { this.sysChart.destroy(); this.sysChart = null }
+        if (this.memChart) {
+            this.memChart.destroy()
+            this.memChart = null
+        }
+        if (this.goroutineChart) {
+            this.goroutineChart.destroy()
+            this.goroutineChart = null
+        }
+        if (this.stackChart) {
+            this.stackChart.destroy()
+            this.stackChart = null
+        }
+        if (this.sysChart) {
+            this.sysChart.destroy()
+            this.sysChart = null
+        }
 
         if (this.memCanvasRef) {
             this.memChart = markRaw(new Chart(this.memCanvasRef, {

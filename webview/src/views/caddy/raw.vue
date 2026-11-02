@@ -28,7 +28,9 @@ class CaddyRaw extends Vue {
     }
 
     async saveConfig() {
-        if (this.saving || this.loading) return
+        if (this.saving || this.loading) {
+            return
+        }
         let parsed: unknown
         try {
             parsed = JSON.parse(this.raw)

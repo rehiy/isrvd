@@ -20,7 +20,9 @@ export class SplitPane {
         this.startY = event.clientY
         this.startHeight = this.height
         this.moveHandler = event => {
-            if (!this.dragging) return
+            if (!this.dragging) {
+                return
+            }
             const delta = this.startY - event.clientY
             this.height = Math.min(Math.max(this.startHeight + delta, 120), (this.container?.clientHeight ?? 600) - 120)
         }
@@ -32,8 +34,12 @@ export class SplitPane {
 
     stop() {
         this.dragging = false
-        if (this.moveHandler) document.removeEventListener('mousemove', this.moveHandler)
-        if (this.endHandler) document.removeEventListener('mouseup', this.endHandler)
+        if (this.moveHandler) {
+            document.removeEventListener('mousemove', this.moveHandler)
+        }
+        if (this.endHandler) {
+            document.removeEventListener('mouseup', this.endHandler)
+        }
         this.moveHandler = null
         this.endHandler = null
         this.container = null

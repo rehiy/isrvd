@@ -34,37 +34,59 @@ class CertDetailModal extends Vue {
     }
 
     certSummary(cert: CaddyCert) {
-        if (cert.subject) return cert.subject
-        if (cert.source === 'file') return cert.certificate || '-'
+        if (cert.subject) {
+            return cert.subject
+        }
+        if (cert.source === 'file') {
+            return cert.certificate || '-'
+        }
         return cert.certificate?.split('\n')[0].trim() || this.$t('(空)')
     }
 
     formatDate(value?: string) {
-        if (!value) return '-'
+        if (!value) {
+            return '-'
+        }
         const date = new Date(value)
-        if (Number.isNaN(date.getTime())) return value
+        if (Number.isNaN(date.getTime())) {
+            return value
+        }
         return date.toLocaleString('zh-CN', { hour12: false })
     }
 
     expireClass(notAfter?: string) {
-        if (!notAfter) return 'text-slate-400'
+        if (!notAfter) {
+            return 'text-slate-400'
+        }
         const days = (new Date(notAfter).getTime() - Date.now()) / 86400000
-        if (days < 0) return 'text-red-500 font-medium'
-        if (days < 30) return 'text-amber-600 font-medium'
+        if (days < 0) {
+            return 'text-red-500 font-medium'
+        }
+        if (days < 30) {
+            return 'text-amber-600 font-medium'
+        }
         return 'text-emerald-600 font-medium'
     }
 
     expireLabel(notAfter?: string) {
-        if (!notAfter) return '-'
+        if (!notAfter) {
+            return '-'
+        }
         const days = Math.floor((new Date(notAfter).getTime() - Date.now()) / 86400000)
-        if (days < 0) return this.$t('已过期 {0} 天', -days)
-        if (days === 0) return this.$t('今日过期')
+        if (days < 0) {
+            return this.$t('已过期 {0} 天', -days)
+        }
+        if (days === 0) {
+            return this.$t('今日过期')
+        }
         return this.$t('{0} 天后到期', days)
     }
 
     certificatePreview(cert: CaddyCert) {
         const text = cert.certificate || ''
-        if (!text) return '-'
+        if (!text) {
+            return '-'
+        }
         if (cert.source === 'pem') {
             return text.split('\n').slice(0, 4).join('\n') + (text.split('\n').length > 4 ? '\n...' : '')
         }

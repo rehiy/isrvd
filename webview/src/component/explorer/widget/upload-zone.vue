@@ -40,41 +40,60 @@ class UploadZone extends Vue {
     }
 
     onDragEnter(e: DragEvent) {
-        if (!this.enabled) return
+        if (!this.enabled) {
+            return
+        }
         e.preventDefault()
         this.dragCounter++
         this.dragOver = true
     }
 
     onDragOver(e: DragEvent) {
-        if (!this.enabled) return
+        if (!this.enabled) {
+            return
+        }
         e.preventDefault()
     }
 
     onDragLeave(e: DragEvent) {
-        if (!this.enabled) return
+        if (!this.enabled) {
+            return
+        }
         e.preventDefault()
         this.dragCounter--
-        if (this.dragCounter <= 0) { this.dragCounter = 0; this.dragOver = false }
+        if (this.dragCounter <= 0) {
+            this.dragCounter = 0
+            this.dragOver = false
+        }
     }
 
     async onDrop(e: DragEvent) {
-        if (!this.enabled) return
+        if (!this.enabled) {
+            return
+        }
         e.preventDefault()
         this.dragOver = false
         this.dragCounter = 0
 
         const items = e.dataTransfer?.items
-        if (!items || items.length === 0) return
+        if (!items || items.length === 0) {
+            return
+        }
 
         const entries: FileSystemEntry[] = []
         for (let i = 0; i < items.length; i++) {
             const entry = items[i].webkitGetAsEntry()
-            if (entry) entries.push(entry)
+            if (entry) {
+                entries.push(entry)
+            }
         }
-        if (entries.length === 0) return
+        if (entries.length === 0) {
+            return
+        }
 
-        if (this.uploadRef) await this.uploadRef.startDrop(entries)
+        if (this.uploadRef) {
+            await this.uploadRef.startDrop(entries)
+        }
     }
 }
 

@@ -32,7 +32,9 @@ export const enterNodePage = (
 /** 当前页面所在的中控根路径（以 / 结尾）与所选节点 ID（本机为空字符串） */
 export const nodeLocation = (): { root: string; id: string } => {
     const match = window.location.pathname.match(NODE_PATH)
-    if (match) return { root: match[1], id: match[2] }
+    if (match) {
+        return { root: match[1], id: match[2] }
+    }
     return { root: window.location.pathname.replace(/index\.html$/, ''), id: '' }
 }
 
@@ -47,9 +49,15 @@ export const isCenterPage = (path: string): boolean =>
 
 /** 节点状态的展示：text 为待翻译的文案，cls 为样式类 */
 export const nodeStatus = (node: { status: string; online: boolean }): { text: string; cls: string } => {
-    if (node.status === 'pending') return { text: '待接入', cls: 'text-slate-500' }
-    if (node.status === 'revoked') return { text: '已吊销', cls: 'text-slate-500' }
-    if (!node.online) return { text: '离线', cls: 'text-red-500 font-medium' }
+    if (node.status === 'pending') {
+        return { text: '待接入', cls: 'text-slate-500' }
+    }
+    if (node.status === 'revoked') {
+        return { text: '已吊销', cls: 'text-slate-500' }
+    }
+    if (!node.online) {
+        return { text: '离线', cls: 'text-red-500 font-medium' }
+    }
     return { text: '在线', cls: 'text-emerald-600 font-medium' }
 }
 

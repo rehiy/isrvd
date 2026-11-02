@@ -31,7 +31,9 @@ class DeleteModal extends Vue {
     }
 
     async handleConfirm() {
-        if (this.files.length === 0 || !this.adapter) return
+        if (this.files.length === 0 || !this.adapter) {
+            return
+        }
         this.loading = true
         try {
             for (let i = 0; i < this.files.length; i += 5) {

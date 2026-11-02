@@ -27,7 +27,9 @@ class PreviewModal extends Vue {
 
     @Watch('isOpen')
     onOpenChange(value: boolean) {
-        if (!value) this.resetPreview()
+        if (!value) {
+            this.resetPreview()
+        }
     }
 
     show(adapter: ExplorerAdapter, file: FileInfo) {

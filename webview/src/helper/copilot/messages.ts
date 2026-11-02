@@ -16,7 +16,9 @@ export function groupAssistantProcesses(messages: Message[], isRunning: boolean)
             turn = new Map<string, AssistantMessage>()
             turns.push(turn)
         }
-        if (message.role !== 'assistant') continue
+        if (message.role !== 'assistant') {
+            continue
+        }
         const previous = turn.get(message.id)
         turn.set(message.id, previous
             ? { ...previous, ...message, content: message.content || previous.content, toolCalls: message.toolCalls ?? previous.toolCalls }
@@ -28,11 +30,15 @@ export function groupAssistantProcesses(messages: Message[], isRunning: boolean)
         const turn = [...items.values()]
         const first = turn[0]
         const last = turn[turn.length - 1]
-        if (!first || !last || (turn.length === 1 && !first.toolCalls?.length)) return
+        if (!first || !last || (turn.length === 1 && !first.toolCalls?.length)) {
+            return
+        }
         // 只有最后一条不带工具的正文作为答复；流式正文之后若出现工具，会归回过程。
         const hasAnswer = !!last.content?.trim() && !last.toolCalls?.length
         const progress = hasAnswer ? turn.slice(0, -1) : turn
-        if (!progress.length) return
+        if (!progress.length) {
+            return
+        }
         const group = { id: first.id, messages: progress, active: isRunning && index === turns.length - 1, hasAnswer }
         for (const message of progress) groups.set(message.id, group)
     })
@@ -44,7 +50,9 @@ export function toolMessageResults(messages: Message[]): Map<string, ToolMessage
 }
 
 export function toolResultFailed(message: ToolMessage | undefined): boolean {
-    if (!message || typeof message.content !== 'string') return false
+    if (!message || typeof message.content !== 'string') {
+        return false
+    }
     try {
         return JSON.parse(message.content)?.success === false
     } catch {

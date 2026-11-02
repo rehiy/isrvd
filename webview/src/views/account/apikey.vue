@@ -29,7 +29,9 @@ class AccountTokens extends Vue {
     ]
 
     async handleCreateToken() {
-        if (this.tokenLoading) return
+        if (this.tokenLoading) {
+            return
+        }
         if (!this.tokenForm.name.trim()) {
             this.portal.showNotification('error', this.$t('请输入令牌名称'))
             return

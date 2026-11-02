@@ -33,7 +33,9 @@ export class LogStream {
     }
 
     start(path: string, token: string, onError: (message: string) => void) {
-        if (this.active) return
+        if (this.active) {
+            return
+        }
         this.loading = false
         this.content = ''
         this.state = 'connecting'

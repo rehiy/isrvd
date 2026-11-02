@@ -32,7 +32,9 @@ class Containers extends Vue {
 
     get filteredContainers() {
         const keyword = this.searchText.trim().toLowerCase()
-        if (!keyword) return this.containers
+        if (!keyword) {
+            return this.containers
+        }
         return this.containers.filter((container: DockerContainerInfo) => {
             const ports = container.ports?.join(' ') || ''
             return (
@@ -70,7 +72,9 @@ class Containers extends Vue {
 
     handleContainerAction(container: DockerContainerInfo, action: string) {
         const config = this.actionConfigs[action]
-        if (!config) return
+        if (!config) {
+            return
+        }
         // 获取显示名称：优先名称，其次短 ID
         const displayName = container.name || container.id.substring(0, 12)
         this.portal.showConfirm({
@@ -93,7 +97,9 @@ class Containers extends Vue {
     }
 
     formatImageName(image: string) {
-        if (!image) return ''
+        if (!image) {
+            return ''
+        }
         // 去掉 registry host（含端口）前缀，只保留 name:tag 部分
         return image.replace(/^[^/]+\.[^/]+\//, '').replace(/^[^/]+:[0-9]+\//, '')
     }
@@ -104,7 +110,9 @@ class Containers extends Vue {
 
     composeBadgeTitle(container: DockerContainerInfo) {
         const project = container.labels?.[COMPOSE_PROJECT_LABEL]
-        if (!project) return ''
+        if (!project) {
+            return ''
+        }
         const service = container.labels?.[COMPOSE_SERVICE_LABEL]
         return `Compose: ${project}${service ? ` / ${service}` : ''}`
     }

@@ -108,16 +108,26 @@ const effectiveExtension = (filename: string): string => {
  * 无扩展名或未知扩展名的文件默认允许，真正的二进制内容由后端读取时嗅探拒绝。
  */
 export const isEditableFile = (filename: string, size?: number, maxSize?: number): boolean => {
-    if (!filename) return false
-    if (typeof size === 'number' && typeof maxSize === 'number' && size > maxSize) return false
+    if (!filename) {
+        return false
+    }
+    if (typeof size === 'number' && typeof maxSize === 'number' && size > maxSize) {
+        return false
+    }
     return !BINARY_EXTENSIONS.has(effectiveExtension(filename))
 }
 
 export const getPreviewType = (filename: string): PreviewFileType => {
-    if (!filename) return ''
+    if (!filename) {
+        return ''
+    }
     const mime = PREVIEW_MIME_MAP[fileExtension(filename)]
-    if (!mime) return ''
-    if (mime === 'application/pdf') return 'pdf'
+    if (!mime) {
+        return ''
+    }
+    if (mime === 'application/pdf') {
+        return 'pdf'
+    }
     const type = mime.split('/')[0]
     return type === 'image' || type === 'audio' || type === 'video' ? type : ''
 }
@@ -129,7 +139,9 @@ export const getPreviewMimeType = (filename: string): string => {
 }
 
 export const getFileIcon = (file: { isDir: boolean; name: string }): string => {
-    if (file.isDir) return 'fas fa-folder text-warning'
+    if (file.isDir) {
+        return 'fas fa-folder text-warning'
+    }
     return FILE_ICON_MAP[fileExtension(file.name)] || 'fas fa-file text-secondary'
 }
 
