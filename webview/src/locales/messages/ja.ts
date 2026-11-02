@@ -226,6 +226,7 @@ const messages: Record<string, string> = {
     '使用 OIDC 登录': 'OIDC でサインイン',
     // Password login is disabled, contact the administrator to configure another method.
     '密码登录已禁用，请联系管理员配置其他登录方式。': 'パスワードログインは無効です。他のログイン方法を設定するよう管理者にお問い合わせください。',
+    // Header authentication is enabled, please access through the upstream authentication gateway.
     '当前使用 Header 认证，请通过上游认证网关访问。': 'Header 認証が有効です。上流の認証ゲートウェイ経由でアクセスしてください。',
     // Language
     '语言': '言語',
@@ -535,6 +536,44 @@ const messages: Record<string, string> = {
     '描述': '説明',
     // Disable
     '禁用': '無効にする',
+    // Optional
+    '可选': '省略可',
+    // Use either a password or a private key
+    '与私钥二选一': 'パスワードか秘密鍵のどちらか一方を指定します',
+    // URI
+    'URI': 'URI',
+    // Host
+    'Host': 'Host',
+    // Subnet CIDR
+    '子网 CIDR': 'サブネット CIDR',
+    // Request Body Template
+    '请求体模板': 'リクエストボディテンプレート',
+    // Optional. Use either a URL or an uploaded .zip file; it is extracted into the project directory before deployment
+    '选填，URL 与上传文件二选一，仅支持 .zip 格式，部署前解压到项目目录': '省略可。URL とアップロードしたファイルのどちらか一方を指定します。.zip 形式のみ対応し、デプロイ前にプロジェクトディレクトリへ展開されます',
+    // One KEY=VALUE per line, used for Compose variable interpolation
+    '每行 KEY=VALUE，用于 Compose 变量插值': '1 行に 1 つの KEY=VALUE。Compose の変数展開に使用します',
+    // One /host:/container[:ro] per line, e.g. /data/files:/data:ro
+    '每行 /host:/container[:ro]，例如：/data/files:/data:ro': '1 行に 1 つの /host:/container[:ro]。例: /data/files:/data:ro',
+    // Optional. A PEM private key starting with "-----BEGIN"; private key authentication takes priority when set
+    '可选，PEM 格式私钥，以 "-----BEGIN" 开头，设置后优先使用私钥认证': '省略可。"-----BEGIN" で始まる PEM 形式の秘密鍵。設定すると秘密鍵認証が優先されます',
+    // Optional. The image will be pushed as: {0}
+    '可选，镜像将被推送为：{0}': '省略可。イメージは {0} としてプッシュされます',
+    // Optional. Replaces the entire URI forwarded upstream; leave empty to keep it unchanged
+    '可选，完整替换转发给上游的 URI，留空不修改': '省略可。上流に転送する URI 全体を置き換えます。空白のままにすると変更しません',
+    // Optional. Relative paths use the base directory; leave empty to create base directory/username automatically
+    '可选，相对路径基于"基础目录"，留空则自动创建为 基础目录/用户名': '省略可。相対パスは「基本ディレクトリ」を基準にします。空白のままにすると「基本ディレクトリ/ユーザー名」が自動作成されます',
+    // Optional. Describes the member purpose, up to 64 characters
+    '可选，用于标识成员用途，最长 64 字符': '省略可。メンバーの用途を示します。最大 64 文字',
+    // One per line, e.g. /api/v1/* or /api/v2/*
+    '每行一个，例如：/api/v1/* 或 /api/v2/*': '1 行に 1 つ。例: /api/v1/* または /api/v2/*',
+    // JSON format with Go template variables; use {{.Title | json}} in JSON fields to safely handle quotes and newlines.
+    'JSON 格式，支持 Go 模板变量；在 JSON 字段中使用 {{.Title | json}} 可安全处理引号和换行。': 'JSON 形式で、Go テンプレート変数を使用できます。JSON フィールドで {{.Title | json}} を使うと、引用符や改行を安全に処理できます。',
+    // One domain per line; commas and wildcards are also supported, e.g. example.com or *.example.com
+    '每行一个域名，也支持英文逗号分隔和通配符，例如：example.com 或 *.example.com': '1 行に 1 つのドメイン。半角カンマ区切りとワイルドカードも使用できます。例: example.com または *.example.com',
+    // Leave the target directory empty to extract into the current directory; enter only a directory name without path separators such as /
+    '目标目录留空时，文件将解压到当前目录；只能输入目录名，不允许包含 / 等路径分隔符': '対象ディレクトリを空白にすると、現在のディレクトリに展開されます。ディレクトリ名のみ入力でき、/ などのパス区切り文字は使用できません',
+    // Example:
+    '示例：': '例: ',
     // Update
     '更新': '更新する',
     // Tags
@@ -751,7 +790,6 @@ const messages: Record<string, string> = {
     '个': '件',
     // Offline
     '离线': 'オフライン',
-    // Protocol version too old
     // Some features unavailable: {0}. Please upgrade the node.
     '部分功能不可用：{0}，请升级节点程序': '一部の機能が利用できません：{0}。ノードをアップグレードしてください',
     // Failed to load
@@ -2246,6 +2284,7 @@ const messages: Record<string, string> = {
     '直接粘贴 compose.yml，或从左侧应用市场选择模板后回填': 'compose.yml を直接貼り付けるか、左側のアプリケーション マーケットからテンプレートを選択して埋め戻します。',
     // Paste compose.yml, or fill in from the marketplace
     '粘贴 compose.yml，或从应用市场回填': 'compose.yml を貼り付けるか、App Market からバックフィルします。',
+    // Standalone Deployment
     '单机部署': 'スタンドアロンデプロイ',
     // Swarm Service
     'Swarm 服务': 'スウォームサービス',
