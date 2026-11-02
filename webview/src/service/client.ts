@@ -55,6 +55,12 @@ export const http = axiosInstance as unknown as HttpClient
 
 export const httpBlob = axiosBlobInstance as unknown as HttpBlobClient
 
+// 拦截器已向用户弹出提示的请求错误。页面无需再 catch，全局兜底（main.ts）据此静默，其余错误照常抛出。
+const notifiedErrors = new WeakSet<object>()
+
+export const isNotifiedError = (error: unknown): boolean =>
+    typeof error === 'object' && error !== null && notifiedErrors.has(error)
+
 export const interceptors = (
     state: { token: string | null },
     actions: { showNotification: (type: NotificationType, message: string) => void; clearAuth: () => void }
@@ -73,6 +79,9 @@ export const interceptors = (
 
     const handleError = async (error: unknown, isBlob = false) => {
         if (axios.isCancel(error)) return Promise.reject(error)
+        if (typeof error === 'object' && error !== null) {
+            notifiedErrors.add(error)
+        }
         if (!axios.isAxiosError<APIResponse | Blob>(error)) {
             actions.showNotification('error', t('发生未知错误'))
             return Promise.reject(error)

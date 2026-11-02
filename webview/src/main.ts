@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 
 import App from '@/app.vue'
 import router, { setRouterGuard } from '@/router'
+import { isNotifiedError } from '@/service/client'
 import { useLocaleStore, usePortal } from '@/stores'
 
 // 导入全局样式
@@ -20,6 +21,18 @@ const pinia = createPinia()
 
 app.use(pinia)
 app.use(router)
+
+// 请求失败已由拦截器统一提示，这类错误不再向上报告；其他错误（代码缺陷等）保持原有输出
+window.addEventListener('unhandledrejection', event => {
+    if (isNotifiedError(event.reason)) {
+        event.preventDefault()
+    }
+})
+app.config.errorHandler = (error, _instance, info) => {
+    if (!isNotifiedError(error)) {
+        console.error(`[${info}]`, error)
+    }
+}
 
 // 设置路由守卫（在 Pinia 初始化之后）
 const portal = usePortal()

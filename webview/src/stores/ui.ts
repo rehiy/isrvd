@@ -82,9 +82,8 @@ export const useUIStore = defineStore('ui', () => {
         try {
             await confirm.onConfirm()
         } finally {
-            confirm.loading = false
+            closeConfirm()
         }
-        closeConfirm()
     }
 
     return {
