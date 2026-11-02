@@ -45,7 +45,7 @@
 
 | 层级 | 技术 |
 | ------ | ------ |
-| 后端 | Go 1.26+ / Gin / golang-jwt |
+| 后端 | Go 1.27+ / Gin / golang-jwt |
 | 前端 | Vue 3 / TypeScript / Tailwind CSS / Pinia |
 | 终端 | xterm.js |
 | 容器 | Docker / APISIX / Caddy |
@@ -332,7 +332,7 @@ Windows 脚本直接使用根目录的 `config.yml` 以单机模式启动后端�
 
 ### 构建与校验
 
-GitHub Actions 从 `go.mod` 读取 Go 版本，CNB 使用 `golang:1.26-bookworm` 构建镜像。若设置了 `GOTOOLCHAIN=local`，本地已安装的 Go 必须满足 `go.mod` 的最低版本要求。
+GitHub Actions 从 `go.mod` 读取 Go 版本，CNB 使用 `golang:1.27-bookworm` 构建镜像。若设置了 `GOTOOLCHAIN=local`，本地已安装的 Go 必须满足 `go.mod` 的最低版本要求。
 
 ```bash
 # 完整分发构建

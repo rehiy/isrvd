@@ -45,7 +45,7 @@ A lightweight operations panel built with Go + Vue 3. It integrates file managem
 
 | Layer | Technology |
 | ------ | ------ |
-| Backend | Go 1.26+ / Gin / golang-jwt |
+| Backend | Go 1.27+ / Gin / golang-jwt |
 | Frontend | Vue 3 / TypeScript / Tailwind CSS / Pinia |
 | Terminal | xterm.js |
 | Containers | Docker / APISIX / Caddy |
@@ -332,7 +332,7 @@ The Windows script starts the backend in standalone mode using the root `config.
 
 ### Build and Checks
 
-GitHub Actions reads the Go version from `go.mod`; CNB builds images with `golang:1.26-bookworm`. If `GOTOOLCHAIN=local` is set, the locally installed Go must satisfy the minimum version in `go.mod`.
+GitHub Actions reads the Go version from `go.mod`; CNB builds images with `golang:1.27-bookworm`. If `GOTOOLCHAIN=local` is set, the locally installed Go must satisfy the minimum version in `go.mod`.
 
 ```bash
 # full distribution build
