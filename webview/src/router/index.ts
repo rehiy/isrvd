@@ -304,6 +304,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Swarm 服务', permissions: ['POST /api/compose/swarm'] }
   },
   {
+    path: '/metrics',
+    name: 'metrics',
+    component: () => import('@/views/metrics/index.vue'),
+    meta: { title: '监控指标', permissions: ['metrics'] }
+  },
+  {
     path: '/cron',
     name: 'cron',
     redirect: '/cron/jobs'

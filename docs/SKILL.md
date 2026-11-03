@@ -80,6 +80,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 | Caddy | [references/caddy/certs.md](references/caddy/certs.md) | SSL 证书管理 |
 | Caddy | [references/caddy/config.md](references/caddy/config.md) | 全局配置、原始 JSON 配置 |
 | Caddy | [references/caddy/basic-auth.md](references/caddy/basic-auth.md) | 路由 Basic Auth 账号 |
+| 监控指标 | [references/metrics.md](references/metrics.md) | APISIX / Caddy / 本机 / 容器监控指标出口、指标开关、访问统计 |
 | 系统 | [references/system/config.md](references/system/config.md) | 系统配置、配置/业务数据存储、重载、故障告警、审计日志 |
 | 系统 | [references/system/account.md](references/system/account.md) | 登录、成员管理、API Token |
 | 系统 | [references/system/filer.md](references/system/filer.md) | 文件管理、上传下载、压缩解压 |
@@ -148,6 +149,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
     ├── 成员/权限/Token/OIDC/TOTP 2FA → references/system/account.md
     ├── 文件管理         → references/system/filer.md
     ├── 计划任务         → references/system/cron.md
+    ├── 网关指标/访问统计 → references/metrics.md
     ├── SSH 主机管理     → references/ssh/hosts.md
     ├── SFTP 远程文件    → references/ssh/sftp.md
     ├── 创建/接入/吊销受管节点 → references/node/nodes.md

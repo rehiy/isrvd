@@ -31,6 +31,7 @@ type Snapshot struct {
 	Caddy       *CaddyConfig             `yaml:"caddy"`
 	Docker      *DockerConfig            `yaml:"docker"`
 	Monitor     *MonitorConfig           `yaml:"monitor"`
+	Metrics     *MetricsConfig           `yaml:"metrics"`
 	Marketplace *MarketplaceConfig       `yaml:"marketplace"`
 	PortMap     *PortMapConfig           `yaml:"portmap,omitempty"`
 	Links       []*LinkConfig            `yaml:"links"`
@@ -71,6 +72,7 @@ func buildSnapshot(conf *Config) (*Snapshot, error) {
 		Caddy:       cloned.Caddy,
 		Docker:      cloned.Docker,
 		Monitor:     cloned.Monitor,
+		Metrics:     cloned.Metrics,
 		Marketplace: cloned.Marketplace,
 		PortMap:     cloned.PortMap,
 		Links:       cloned.Links,
@@ -192,6 +194,9 @@ func normalizeSnapshot(snapshot *Snapshot) error {
 	}
 	snapshot.Docker.ContainerRoot = PathToAbs(snapshot.Docker.ContainerRoot, snapshot.Server.RootDirectory)
 	snapshot.Monitor = normalizeMonitor(snapshot.Monitor)
+	if snapshot.Metrics == nil {
+		snapshot.Metrics = &MetricsConfig{}
+	}
 	if snapshot.Marketplace == nil {
 		snapshot.Marketplace = &MarketplaceConfig{}
 	}

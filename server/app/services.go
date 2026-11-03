@@ -18,6 +18,7 @@ import (
 	"isrvd/server/service/cron"
 	"isrvd/server/service/docker"
 	"isrvd/server/service/filer"
+	"isrvd/server/service/metrics"
 	"isrvd/server/service/monitor"
 	"isrvd/server/service/notify"
 	"isrvd/server/service/overview"
@@ -139,6 +140,19 @@ func (app *App) initServices(ctx context.Context) {
 	// 启动后台监控采集
 	app.monitorCollector = monitor.NewCollector(dockerRaw)
 	app.monitorCollector.Start(ctx)
+
+	// 网关指标：指标透传出口与内置统计采样；仅注入已就绪的网关开关
+	switches := map[string]metrics.Switch{}
+	if app.caddySvc != nil {
+		switches[metrics.GatewayCaddy] = app.caddySvc
+	}
+	if app.apisixSvc != nil {
+		switches[metrics.GatewayApisix] = app.apisixSvc
+	}
+	app.metricsSvc = metrics.NewService(switches, dockerRaw != nil)
+	app.metricsSvc.Start(ctx)
+	// 本机监控指标不依赖网关，模块始终可用；未配置的网关由各路由返回 404
+	app.markReady("metrics", nil)
 }
 
 // closeServices 释放所有有状态服务持有的资源，并返回旧计划任务全部结束的信号。
@@ -152,6 +166,7 @@ func (app *App) closeServices() <-chan struct{} {
 	if app.monitorCollector != nil {
 		app.monitorCollector.Stop()
 	}
+	app.metricsSvc.Stop()
 	if app.faultWatcher != nil {
 		app.faultWatcher.Stop()
 	}
@@ -187,7 +202,7 @@ func (app *App) serviceAvailableMiddleware() gin.HandlerFunc {
 
 // optionalModules 依赖外部服务、初始化失败时整体不可用的模块。
 // 新增此类模块时：在此登记，并在 initServices 构造成功后调用 markReady。
-var optionalModules = map[string]bool{"ssh": true, "node": true, "apisix": true, "caddy": true, "docker": true, "swarm": true, "compose": true}
+var optionalModules = map[string]bool{"ssh": true, "node": true, "apisix": true, "caddy": true, "metrics": true, "docker": true, "swarm": true, "compose": true}
 
 // markReady 标记可选模块已就绪并登记探活函数（probe 为 nil 表示无需探活）。
 // 登记了未在 optionalModules 声明的模块会被忽略可用性判断，因此这里直接告警。

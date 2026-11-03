@@ -5906,6 +5906,215 @@
         ]
       }
     },
+    "/metrics/apisix": {
+      "get": {
+        "operationId": "get_metrics_apisix",
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "导出 APISIX 指标",
+        "tags": [
+          "metrics"
+        ]
+      }
+    },
+    "/metrics/caddy": {
+      "get": {
+        "operationId": "get_metrics_caddy",
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "导出 Caddy 指标",
+        "tags": [
+          "metrics"
+        ]
+      }
+    },
+    "/metrics/containers": {
+      "get": {
+        "operationId": "get_metrics_containers",
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "导出容器监控指标",
+        "tags": [
+          "metrics"
+        ]
+      }
+    },
+    "/metrics/gateway/{name}": {
+      "put": {
+        "operationId": "put_metrics_gateway_name",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/metrics.metricsGatewayUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "开关监控指标",
+        "tags": [
+          "metrics"
+        ]
+      }
+    },
+    "/metrics/host": {
+      "get": {
+        "operationId": "get_metrics_host",
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "导出本机监控指标",
+        "tags": [
+          "metrics"
+        ]
+      }
+    },
+    "/metrics/stats": {
+      "get": {
+        "operationId": "get_metrics_stats",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "items": {
+                        "$ref": "#/components/schemas/metrics.GatewayStats"
+                      },
+                      "type": "array"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询网关访问统计",
+        "tags": [
+          "metrics"
+        ]
+      }
+    },
+    "/metrics/status": {
+      "get": {
+        "operationId": "get_metrics_status",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "items": {
+                        "$ref": "#/components/schemas/metrics.SourceStatus"
+                      },
+                      "type": "array"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询指标状态",
+        "tags": [
+          "metrics"
+        ]
+      }
+    },
     "/overview/bootstrap": {
       "get": {
         "operationId": "get_overview_bootstrap",
@@ -8047,6 +8256,27 @@
         },
         "type": "object"
       },
+      "apisix.GlobalRule": {
+        "properties": {
+          "create_time": {
+            "description": "创建时间（Unix 时间戳，只读）",
+            "type": "integer"
+          },
+          "id": {
+            "description": "Global Rule ID",
+            "type": "string"
+          },
+          "plugins": {
+            "description": "对所有路由生效的插件配置",
+            "type": "object"
+          },
+          "update_time": {
+            "description": "更新时间（Unix 时间戳，只读）",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "apisix.PluginConfig": {
         "properties": {
           "create_time": {
@@ -8739,7 +8969,7 @@
             "type": "integer"
           },
           "metrics": {
-            "description": "指标配置（如 Prometheus）",
+            "description": "指标配置（如 per_host）",
             "type": "object"
           },
           "named_routes": {
@@ -9484,6 +9714,10 @@
           "adminUrl": {
             "description": "Apisix Admin API 地址",
             "type": "string"
+          },
+          "metricsUrl": {
+            "description": "指标地址；留空时取 Admin URL 的主机 + :9091/apisix/prometheus/metrics",
+            "type": "string"
           }
         },
         "type": "object"
@@ -9549,6 +9783,10 @@
               "type": "object"
             },
             "type": "array"
+          },
+          "Metrics": {
+            "description": "本机与容器指标出口配置",
+            "type": "object"
           },
           "Monitor": {
             "description": "监控配置",
@@ -9770,6 +10008,19 @@
           "username": {
             "description": "用户名",
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "config.MetricsConfig": {
+        "properties": {
+          "containersDisabled": {
+            "description": "containersDisabled",
+            "type": "boolean"
+          },
+          "hostDisabled": {
+            "description": "hostDisabled",
+            "type": "boolean"
           }
         },
         "type": "object"
@@ -11769,8 +12020,7 @@
           }
         },
         "required": [
-          "path",
-          "content"
+          "path"
         ],
         "type": "object"
       },
@@ -11898,6 +12148,185 @@
             "type": "boolean"
           }
         },
+        "type": "object"
+      },
+      "metrics.GatewayStats": {
+        "properties": {
+          "error": {
+            "description": "无法提供可靠统计时的说明",
+            "type": "string"
+          },
+          "name": {
+            "description": "网关标识：caddy / apisix",
+            "type": "string"
+          },
+          "series": {
+            "description": "趋势",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "sites": {
+            "description": "站点排行",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "summary": {
+            "description": "窗口汇总",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "metrics.SiteStat": {
+        "properties": {
+          "avg": {
+            "description": "平均耗时（ms）",
+            "type": "number"
+          },
+          "bytesOut": {
+            "description": "响应流量（字节）",
+            "type": "number"
+          },
+          "requests": {
+            "description": "请求总数",
+            "type": "number"
+          },
+          "s4xx": {
+            "description": "4xx 请求数",
+            "type": "number"
+          },
+          "s5xx": {
+            "description": "5xx 请求数",
+            "type": "number"
+          },
+          "site": {
+            "description": "site",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "metrics.SourceStatus": {
+        "properties": {
+          "available": {
+            "description": "本机采集能力或网关管理服务是否可用",
+            "type": "boolean"
+          },
+          "enabled": {
+            "description": "是否已开启指标",
+            "type": "boolean"
+          },
+          "enabledUnknown": {
+            "description": "网关开关查询失败，enabled 不代表关闭",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "最近一次检查失败的原因",
+            "type": "string"
+          },
+          "name": {
+            "description": "host / containers / caddy / apisix",
+            "type": "string"
+          },
+          "scrapable": {
+            "description": "本机出口就绪状态或网关抓取检查结果",
+            "type": "boolean"
+          },
+          "url": {
+            "description": "抓取地址",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "metrics.StatsPoint": {
+        "properties": {
+          "avg": {
+            "description": "平均耗时（ms）",
+            "type": "number"
+          },
+          "rps": {
+            "description": "总请求速率",
+            "type": "number"
+          },
+          "s2xx": {
+            "description": "2xx 速率",
+            "type": "number"
+          },
+          "s3xx": {
+            "description": "3xx 速率",
+            "type": "number"
+          },
+          "s4xx": {
+            "description": "4xx 速率",
+            "type": "number"
+          },
+          "s5xx": {
+            "description": "5xx 速率",
+            "type": "number"
+          },
+          "ts": {
+            "description": "ts",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "metrics.StatsSummary": {
+        "properties": {
+          "avg": {
+            "description": "平均耗时（ms）",
+            "type": "number"
+          },
+          "bytesOut": {
+            "description": "响应流量（字节）",
+            "type": "number"
+          },
+          "errorRate": {
+            "description": "5xx 占比（0-1）",
+            "type": "number"
+          },
+          "requests": {
+            "description": "请求总数",
+            "type": "number"
+          },
+          "rps": {
+            "description": "平均请求速率",
+            "type": "number"
+          },
+          "s2xx": {
+            "description": "2xx 请求数",
+            "type": "number"
+          },
+          "s3xx": {
+            "description": "3xx 请求数",
+            "type": "number"
+          },
+          "s4xx": {
+            "description": "4xx 请求数",
+            "type": "number"
+          },
+          "s5xx": {
+            "description": "5xx 请求数",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "metrics.metricsGatewayUpdate": {
+        "properties": {
+          "enabled": {
+            "description": "true 开启，false 关闭",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
         "type": "object"
       },
       "monitor.DiskIOStat": {
@@ -12064,10 +12493,6 @@
             "description": "操作系统",
             "type": "string"
           },
-          "protocol": {
-            "description": "协议版本，不得低于中控的 MinProtocolVersion",
-            "type": "integer"
-          },
           "version": {
             "description": "程序版本",
             "type": "string"
@@ -12159,14 +12584,6 @@
             "description": "agentVersion",
             "type": "string"
           },
-          "compatible": {
-            "description": "协议版本是否足以通信；无法协商时按兼容处理",
-            "type": "boolean"
-          },
-          "connectedAt": {
-            "description": "connectedAt",
-            "type": "string"
-          },
           "features": {
             "description": "节点声明的可选能力；Negotiated 为 false 时无从判断",
             "items": {
@@ -12185,10 +12602,6 @@
           "online": {
             "description": "online",
             "type": "boolean"
-          },
-          "remoteAddr": {
-            "description": "remoteAddr",
-            "type": "string"
           }
         },
         "type": "object"
@@ -12490,8 +12903,7 @@
           }
         },
         "required": [
-          "path",
-          "content"
+          "path"
         ],
         "type": "object"
       },
@@ -12870,6 +13282,10 @@
           "marketplace": {
             "$ref": "#/components/schemas/config.MarketplaceConfig",
             "description": "应用市场配置"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/config.MetricsConfig",
+            "description": "本机与容器指标出口配置"
           },
           "monitor": {
             "$ref": "#/components/schemas/config.MonitorConfig",

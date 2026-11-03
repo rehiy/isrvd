@@ -102,6 +102,10 @@ import type {
     ComposeDeployResult,
     ComposeDeploy,
     ComposeRedeploy,
+    // Metrics
+    MetricsGatewayStats,
+    MetricsSourceName,
+    MetricsSourceStatus,
     // Cron
     CronJob,
     CronJobCreate,
@@ -829,6 +833,20 @@ class ApiService {
 
     localProcessKill(pid: number, force = false) {
         return http.post<{ pid: number }>(`local/process/${pid}/kill`, { force })
+    }
+
+    // ==================== 监控指标与网关访问统计 ====================
+
+    metricsStatus() {
+        return http.get<MetricsSourceStatus[]>('metrics/status')
+    }
+
+    metricsStats(since: number) {
+        return http.get<MetricsGatewayStats[]>('metrics/stats', { params: { since } })
+    }
+
+    metricsSourceUpdate(name: MetricsSourceName, enabled: boolean) {
+        return http.put<void>(`metrics/gateway/${name}`, { enabled })
     }
 
     // ==================== Cron 计划任务 ====================

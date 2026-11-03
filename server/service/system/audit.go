@@ -34,7 +34,7 @@ const (
 // sensitiveFields 审计请求体与 URI 中需要脱敏的字段名
 var sensitiveFields = []string{
 	// 系统配置密钥：JWT、Copilot、APISIX、OIDC
-	"jwtSecret", "apiKey", "adminKey", "clientSecret",
+	"jwtSecret", "apiKey", "adminKey", "clientSecret", "metricsUrl",
 	// 跨模块密码与共享密钥：账户、SSH、镜像仓库、APISIX 认证插件
 	"password", "secret",
 	// 账户密码变更、认证码与双因素验证码

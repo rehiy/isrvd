@@ -20,6 +20,7 @@ import (
 	"isrvd/server/service/cron"
 	"isrvd/server/service/docker"
 	"isrvd/server/service/filer"
+	"isrvd/server/service/metrics"
 	"isrvd/server/service/monitor"
 	"isrvd/server/service/notify"
 	"isrvd/server/service/overview"
@@ -61,6 +62,7 @@ type App struct {
 	requestsCancel     context.CancelFunc
 	wsConfig           *websocket.ServerConfig
 	monitorCollector   *monitor.Collector
+	metricsSvc         *metrics.Service
 	faultWatcher       *notify.FaultWatcher
 	overviewSvc        *overview.Service
 	configSvc          *system.ConfigService
@@ -204,6 +206,7 @@ func (app *App) collectRoutes() []Route {
 	routes = append(routes, app.defineCopilotRoutes()...)
 	routes = append(routes, app.defineApisixRoutes()...)
 	routes = append(routes, app.defineCaddyRoutes()...)
+	routes = append(routes, app.defineMetricsRoutes()...)
 	routes = append(routes, app.defineDockerRoutes()...)
 	routes = append(routes, app.defineSwarmRoutes()...)
 	routes = append(routes, app.defineComposeRoutes()...)

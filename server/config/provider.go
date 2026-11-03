@@ -233,6 +233,7 @@ func persistSnapshot(snapshot *Snapshot) error {
 		Caddy:       snapshot.Caddy,
 		Docker:      snapshot.Docker,
 		Monitor:     snapshot.Monitor,
+		Metrics:     snapshot.Metrics,
 		Marketplace: snapshot.Marketplace,
 		PortMap:     snapshot.PortMap,
 		Links:       snapshot.Links,

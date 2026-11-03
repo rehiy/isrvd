@@ -16,6 +16,7 @@ type Config struct {
 	Caddy       *CaddyConfig       `yaml:"caddy"`             // Caddy 配置
 	Docker      *DockerConfig      `yaml:"docker"`            // Docker 配置
 	Monitor     *MonitorConfig     `yaml:"monitor"`           // 监控配置
+	Metrics     *MetricsConfig     `yaml:"metrics"`           // 本机与容器指标出口配置
 	Marketplace *MarketplaceConfig `yaml:"marketplace"`       // 应用市场配置
 	PortMap     *PortMapConfig     `yaml:"portmap,omitempty"` // 中控端口映射（端口转发）配置，仅 center 模式使用
 	Links       []*LinkConfig      `yaml:"links"`             // 工具栏链接列表
@@ -86,6 +87,12 @@ type MonitorConfig struct {
 	Interval int `yaml:"interval" json:"interval"` // 采集间隔（秒），合法值：5/15/30/60；其他值均视为禁用
 }
 
+// MetricsConfig 只控制 Prometheus 指标出口；零值保持启用，不影响其他监控或告警。
+type MetricsConfig struct {
+	HostDisabled       bool `yaml:"hostDisabled" json:"hostDisabled"`
+	ContainersDisabled bool `yaml:"containersDisabled" json:"containersDisabled"`
+}
+
 // 告警通知配置
 type NotifyConfig struct {
 	Webhooks []*WebhookConfig  `yaml:"webhooks" json:"webhooks"`       // Webhook 通道列表
@@ -126,6 +133,8 @@ type AlertRule struct {
 type ApisixConfig struct {
 	AdminURL string `yaml:"adminUrl" json:"adminUrl"`           // Apisix Admin API 地址
 	AdminKey string `yaml:"adminKey" json:"adminKey,omitempty"` // 写入时为空表示保留原值；响应时不返回
+
+	MetricsURL string `yaml:"metricsUrl,omitempty" json:"metricsUrl,omitempty"` // 指标地址；留空时取 Admin URL 的主机 + :9091/apisix/prometheus/metrics
 }
 
 // Caddy 配置

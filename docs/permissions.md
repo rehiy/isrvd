@@ -72,6 +72,13 @@
 | `ssh` | `GET /api/sftp/:id/ls` | SSH 远程管理（SFTP 列出目录） |
 | `copilot` | `POST /api/copilot/agui` | AI 助手（AG-UI 协议对话） |
 | `cron` | `GET /api/cron/jobs` | 计划任务（列出） |
+| `metrics` | `GET /api/metrics/apisix` | 指标（APISIX 指标出口） |
+| `metrics` | `GET /api/metrics/caddy` | 指标（Caddy 指标出口） |
+| `metrics` | `GET /api/metrics/host` | 指标（本机监控指标出口） |
+| `metrics` | `GET /api/metrics/containers` | 指标（容器监控指标出口） |
+| `metrics` | `GET /api/metrics/status` | 指标（本机、容器及网关状态） |
+| `metrics` | `GET /api/metrics/stats` | 网关指标（访问统计） |
+| `metrics` | `PUT /api/metrics/gateway/:name` | 指标（本机、容器及网关开启/关闭） |
 | `cron` | `POST /api/cron/jobs` | 计划任务（创建） |
 | `cron` | `POST /api/cron/jobs/:id/run` | 计划任务（立即执行） |
 | `cron` | `GET /api/cron/jobs/:id/logs` | 计划任务（查看日志） |

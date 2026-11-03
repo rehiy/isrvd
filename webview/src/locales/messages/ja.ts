@@ -1864,6 +1864,8 @@ const messages: Record<string, string> = {
     'TLS、日志与服务参数': 'TLS、ログ、サービスパラメータ',
     // Certificate Issuance
     '证书签发': '証明書の発行',
+    '配置 ACME 签发、自签证书与按需 TLS': 'ACME による発行、自己署名証明書、オンデマンド TLS を設定',
+    '配置日志级别、输出格式与优雅关闭等待时间': 'ログレベル、出力形式、グレースフルシャットダウンの待機時間を設定',
     // ACME Email
     'ACME 邮箱': 'ACMEメール',
     // Enter the ACME email
@@ -3804,6 +3806,109 @@ const messages: Record<string, string> = {
     '配置已保存，运行模式、连接参数和监听地址变更需重启生效': '設定を保存しました。実行モード、接続パラメーター、リッスンアドレスの変更は再起動後に反映されます',
     // The token is shown only when created. Save it securely; it does not expire and permits only one client online.
     'token 仅在创建时显示，请妥善保存；长期有效，仅允许一个客户端在线。': 'トークンは作成時にのみ表示されます。安全に保管してください。有効期限はなく、オンラインにできるクライアントは 1 つだけです。',
+
+    // ─── 监控指标 ───
+    // Monitoring Metrics
+    '监控指标': '監視メトリクス',
+    // Caddy / APISIX access statistics based on gateway metrics
+    '基于网关指标的 Caddy / APISIX 访问统计': 'ゲートウェイのメトリクスに基づく Caddy / APISIX アクセス統計',
+    // Caddy / APISIX access stats
+    'Caddy / APISIX 访问统计': 'Caddy / APISIX アクセス統計',
+    // Time range
+    '时间范围': '時間範囲',
+    // 15 minutes
+    '15 分钟': '15 分',
+    // 6 hours
+    '6 小时': '6 時間',
+    // Neither Caddy nor APISIX Admin URL is configured
+    '未配置 Caddy 或 APISIX 的 Admin 地址': 'Caddy / APISIX の Admin URL が設定されていません',
+    // Metrics on
+    '指标已开启': 'メトリクス有効',
+    // Metrics off
+    '指标未开启': 'メトリクス無効',
+    // Scrapable
+    '可抓取': '取得可能',
+    // Not scrapable
+    '不可抓取': '取得不可',
+    // Enable metrics
+    '开启指标': 'メトリクスを有効化',
+    // Disable metrics
+    '关闭指标': 'メトリクスを無効化',
+    // Gateway metrics enabled
+    '网关指标已开启': 'ゲートウェイのメトリクスを有効にしました',
+    // Gateway metrics disabled
+    '网关指标已关闭': 'ゲートウェイのメトリクスを無効にしました',
+    // No statistics yet. Data appears within about 1 minute after metrics are enabled and traffic arrives.
+    '暂无统计数据。开启指标并产生访问后，约 1 分钟内开始出现。': '統計データはまだありません。メトリクスを有効にしてアクセスが発生すると、約 1 分以内に表示されます。',
+    // Total requests
+    '请求总数': 'リクエスト総数',
+    // Average QPS
+    '平均 QPS': 'QPS（平均）',
+    // 5xx ratio
+    '5xx 占比': '5xx 比率',
+    // Average latency
+    '平均耗时': '平均レイテンシ',
+    // Response traffic
+    '响应流量': 'レスポンストラフィック',
+    '2xx 请求数': '2xx リクエスト数',
+    '3xx 请求数': '3xx リクエスト数',
+    '4xx 请求数': '4xx リクエスト数',
+    '5xx 请求数': '5xx リクエスト数',
+    // Request rate (by status code)
+    '请求速率（按状态码）': 'リクエストレート（ステータスコード別）',
+    // Top routes
+    '路由排行': 'ルートランキング',
+    // Top sites
+    '站点排行': 'サイトランキング',
+    // Site
+    '站点': 'サイト',
+    // Requests
+    '请求数': 'リクエスト数',
+    // No data
+    '暂无数据': 'データなし',
+    // External monitoring systems can scrape the endpoints below (authenticate with a token created on the API Keys page as a Bearer token):
+    '外部监控系统可分别抓取以下出口（使用「API 密钥」页创建的令牌以 Bearer 方式认证）：': '外部の監視システムは以下のエンドポイントを取得できます（「API キー」ページで作成したトークンを Bearer 認証に使用）：',
+    // Host monitor
+    '本机监控': 'ホスト監視',
+    // Metric endpoints and access statistics for hosts, containers and gateways
+    '主机、容器与网关的指标出口及访问统计': 'ホスト・コンテナ・ゲートウェイのメトリクスエンドポイントとアクセス統計',
+    // Hosts, containers and gateways
+    '主机、容器与网关': 'ホスト・コンテナ・ゲートウェイ',
+    // Metric sources
+    '指标来源': 'メトリクスの収集元',
+    // CPU, memory, disk, network and process runtime metrics
+    'CPU、内存、磁盘、网络与进程运行时指标': 'CPU・メモリ・ディスク・ネットワーク・プロセスランタイムのメトリクス',
+    // CPU, memory, network and disk metrics for running containers
+    '运行中容器的 CPU、内存、网络与磁盘指标': '実行中コンテナの CPU・メモリ・ネットワーク・ディスクのメトリクス',
+    // Requests, status codes, latency and response traffic
+    '请求数、状态码、耗时与响应流量': 'リクエスト数・ステータスコード・レイテンシ・レスポンストラフィック',
+    // Collected on demand
+    '按需采集': 'リクエスト時に収集',
+    // Docker available
+    'Docker 可用': 'Docker 利用可能',
+    // Docker unavailable
+    'Docker 不可用': 'Docker 利用不可',
+    // Check failed
+    '检查失败': '確認に失敗',
+    // Status not checked
+    '状态未查询': '状態未確認',
+    // Copy address
+    '复制地址': 'アドレスをコピー',
+    // Scrape permission for this endpoint has not been granted
+    '未授予此出口的抓取权限': 'このエンドポイントの取得権限が付与されていません',
+    // Enable metrics
+    '启用指标': 'メトリクスを有効化',
+    // Configured through the gateway management API
+    '通过网关管理接口配置': 'ゲートウェイ管理 API で設定',
+    '仅控制指标出口，不影响其他监控或告警': 'メトリクスエンドポイントのみを制御し、他の監視やアラートには影響しません',
+    // Gateway access statistics
+    '网关访问统计': 'ゲートウェイのアクセス統計',
+    // Sampled every 30 seconds, retained for up to 24 hours; cleared on restart or reload.
+    '30 秒采样，最多保留 24 小时；重启或重载后清空。': '30 秒間隔で収集し、最大 24 時間保持します。再起動や再読み込みで消去されます。',
+    // Statistics are temporarily unavailable. Refresh to retry.
+    '统计暂不可用，请刷新重试': '統計を一時的に利用できません。更新して再試行してください。',
+    // Search sites or routes...
+    '搜索站点或路由...': 'サイトまたはルートを検索...',
 }
 
 const language: LanguageModule = {

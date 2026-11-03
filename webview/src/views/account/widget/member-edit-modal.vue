@@ -30,6 +30,7 @@ const MODULE_META: Record<string, { icon: string; label: string }> = {
     copilot:  { icon: 'fas fa-robot',       label: 'AI 助手' },
     apisix:   { icon: 'fas fa-route',       label: 'APISIX' },
     caddy:    { icon: 'fas fa-shield',      label: 'Caddy 网关' },
+    metrics:  { icon: 'fas fa-chart-line',  label: '监控指标' },
     docker:   { icon: 'fab fa-docker',      label: 'Docker' },
     swarm:    { icon: 'fas fa-layer-group', label: 'Swarm' },
     compose:  { icon: 'fas fa-cubes',       label: 'Compose' },

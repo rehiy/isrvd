@@ -132,6 +132,11 @@ export interface MonitorConfig {
     interval: number  // 采集间隔（秒），合法值：5/15/30/60；其他值均视为禁用
 }
 
+export interface MetricsConfig {
+    hostDisabled: boolean
+    containersDisabled: boolean
+}
+
 export interface MarketplaceConfig {
     url: string
 }
@@ -154,6 +159,7 @@ export interface AllConfig {
     caddy: CaddyConfig
     docker: DockerConfig
     monitor: MonitorConfig
+    metrics?: MetricsConfig
     marketplace: MarketplaceConfig
     links: LinkConfig[]
 }

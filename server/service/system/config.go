@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"isrvd/pkgs/docker"
@@ -28,6 +29,7 @@ type AllConfig struct {
 	Caddy       *config.CaddyConfig       `json:"caddy"`       // Caddy 配置
 	Docker      *config.DockerConfig      `json:"docker"`      // Docker 配置（registry.Password：响应脱敏 / 请求空保留）
 	Monitor     *config.MonitorConfig     `json:"monitor"`     // 监控配置
+	Metrics     *config.MetricsConfig     `json:"metrics"`     // 本机与容器指标出口配置
 	Marketplace *config.MarketplaceConfig `json:"marketplace"` // 应用市场配置
 	PortMap     *config.PortMapConfig     `json:"portmap"`     // 中控端口映射（端口转发）配置，仅 center 模式使用，修改后需重启生效
 	Links       []*config.LinkConfig      `json:"links"`       // 导航链接列表
@@ -56,6 +58,7 @@ func (s *ConfigService) ConfigAll() *AllConfig {
 		Caddy:       snapshot.Caddy,
 		Docker:      snapshot.Docker,
 		Monitor:     snapshot.Monitor,
+		Metrics:     snapshot.Metrics,
 		Marketplace: snapshot.Marketplace,
 		PortMap:     snapshot.PortMap,
 		Links:       snapshot.Links,
@@ -75,6 +78,7 @@ func (s *ConfigService) ConfigAll() *AllConfig {
 	}
 	if dst.Apisix != nil {
 		dst.Apisix.AdminKey = ""
+		dst.Apisix.MetricsURL = metricsURLRedact(dst.Apisix.MetricsURL)
 	}
 	if dst.Docker != nil {
 		if dst.Docker.TLS != nil {
@@ -157,6 +161,9 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 		}
 		if req.Apisix != nil {
 			req.Apisix.AdminKey = config.SecretKeep(req.Apisix.AdminKey, draft.Apisix.AdminKey)
+			if strings.TrimSpace(req.Apisix.MetricsURL) == redactedMetricsURL {
+				req.Apisix.MetricsURL = draft.Apisix.MetricsURL
+			}
 			draft.Apisix = req.Apisix
 		}
 		if req.Caddy != nil {
@@ -191,6 +198,9 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 		if req.Monitor != nil {
 			draft.Monitor = req.Monitor
 		}
+		if req.Metrics != nil {
+			draft.Metrics = req.Metrics
+		}
 		if req.Marketplace != nil {
 			draft.Marketplace = req.Marketplace
 		}
@@ -213,6 +223,17 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 }
 
 // ─── 辅助函数 ───
+
+const redactedMetricsURL = "******"
+
+// metricsURLRedact 将可能含凭据的指标地址整体脱敏，解析失败时也不返回原文。
+func metricsURLRedact(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
+		return redactedMetricsURL
+	}
+	return rawURL
+}
 
 // dockerTLSMerge 合并 Docker TLS 配置：私钥留空保留原值，并在保存前校验证书可用。
 // 未启用 TLS 时不校验，保留已填写的证书便于之后重新启用。

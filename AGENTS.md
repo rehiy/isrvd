@@ -93,6 +93,7 @@ docs/
     ├── swarm/{info,services,tasks}.md
     ├── apisix/{routes,upstreams,consumers,ssl}.md
     ├── caddy/{routes,servers,certs,config,basic-auth}.md
+    ├── metrics.md
     ├── system/{config,account,filer,cron}.md
     ├── ssh/{hosts,sftp}.md
     ├── node/nodes.md
@@ -113,6 +114,7 @@ docs/
 | `server/app/ctrl_caddy.go` | `docs/references/caddy/` 下对应资源文件 |
 | `server/app/ctrl_compose.go` | `docs/references/compose.md` |
 | `server/app/ctrl_cron.go` | `docs/references/system/cron.md` |
+| `server/app/ctrl_metrics.go` | `docs/references/metrics.md` |
 | `server/app/ctrl_system.go` / `ctrl_account.go` | `docs/references/system/` 下对应文件 |
 | `server/app/ctrl_filer.go` | `docs/references/system/filer.md` |
 | `server/app/ctrl_webssh.go` | `docs/references/ssh/` 下对应文件 |

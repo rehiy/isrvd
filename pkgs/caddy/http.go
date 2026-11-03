@@ -170,7 +170,7 @@ type HTTPServer struct {
 	TrustedProxiesStrict int                        `json:"trusted_proxies_strict,omitempty"`  // 可信代理头解析顺序
 	Logs                 *ServerLogs                `json:"logs,omitempty"`                    // 访问日志配置
 	Protocols            []string                   `json:"protocols,omitempty"`               // 启用的协议：h1|h2|h2c|h3
-	Metrics              map[string]any             `json:"metrics,omitempty"`                 // 指标配置（如 Prometheus）
+	Metrics              map[string]any             `json:"metrics,omitempty"`                 // 指标配置（如 per_host）
 	ID                   ID                         `json:"@id,omitempty"`                     // 配置 ID（用于引用）
 	Extras               map[string]json.RawMessage `json:"-"`                                 // 未建模的 server 配置
 }

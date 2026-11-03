@@ -615,6 +615,12 @@ export default toNative(NavigationBar)
         </template>
       </div>
 
+      <!-- 监控指标 -->
+      <router-link v-if="portal.hasPerm('metrics')" to="/metrics" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('监控指标') : ''">
+        <i class="fas fa-chart-line"></i>
+        <span v-if="!collapsed">{{ $t('监控指标') }}</span>
+      </router-link>
+
       <!-- 计划任务 -->
       <router-link v-if="portal.hasPerm('GET /api/cron/jobs')" to="/cron/jobs" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('计划任务') : ''">
         <i class="fas fa-clock"></i>

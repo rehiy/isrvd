@@ -54,6 +54,7 @@ etcd 配置监听在首次连接、重连后重新读取最新状态，读取失
 | `caddy` | Caddy Admin API 地址 |
 | `docker` | Docker 守护进程地址（支持 `tcp://` + TLS 证书连接远程 Docker / Swarm）、容器数据目录、镜像仓库账号 |
 | `monitor` | 系统与容器监控的采集间隔（5/15/30/60 秒；未配置或其他值禁用自动采集） |
+| `metrics` | 本机与容器 Prometheus 出口禁用标志（`hostDisabled` / `containersDisabled`；默认 false，不影响其他监控或告警） |
 | `notify` | Webhook 通道、CPU/内存/磁盘规则，以及容器异常、任务失败和网关证书到期告警；默认关闭应用故障告警 |
 | `marketplace` | 应用市场地址 |
 | `portmap` | 中控端口转发（`range` 监听端口范围 / `bind` 监听地址；仅 center 模式使用，修改后重启生效；与 Docker 容器端口映射无关） |
@@ -121,10 +122,11 @@ isrvd_get "/system/config"
 | tha | object | `{enabled, headerName, trustedCIDRs}`（代理 Header 登录配置） |
 | copilot | object | `{model, baseUrl}`（apiKey 不返回） |
 | notify | object | `{webhooks, rules, events}`；资源与应用故障告警共用已配置 Webhook |
-| apisix | object | `{adminUrl}`（adminKey 不返回） |
+| apisix | object | `{adminUrl, metricsUrl}`（adminKey 不返回；`metricsUrl` 可选，含用户信息、查询参数、片段或解析失败时整值返回 `******`；留空时取 `adminUrl` 主机的 `:9091/apisix/prometheus/metrics`） |
 | caddy | object | `{adminUrl}` |
 | docker | object | `{host, tls, containerRoot, registries}`（registry password、`tls.key` 不返回） |
 | monitor | object | `{interval}`（采集间隔秒数；未配置或非法值表示禁用） |
+| metrics | object | `{hostDisabled, containersDisabled}`（各自默认 false；true 禁用对应 Prometheus 出口，不影响其他监控或告警） |
 | marketplace | object | `{url}` |
 | portmap | object | `{range, bind}`（中控端口转发，与 Docker 容器端口映射无关；`range` 如 `20000-20999` 或单个端口，留空不启用；`bind` 为监听 IP，默认 `127.0.0.1`；格式无效返回 `400`；修改后重启生效） |
 | links | object[] | `{label, url, icon}` |
@@ -143,11 +145,14 @@ isrvd_put "/system/config" '<CURRENT_CONFIG_WITH_CHANGES>'
 
 支持按分区提交：请求中为 `null` 或未提交的分区跳过更新。保存成功后自动触发配置重载。
 
+`metrics` 分区控制本机与容器指标出口，两个字段未配置时默认 false。通过 `/metrics/gateway/host`、`/metrics/gateway/containers` 修改开关时，保存成功即生效，不触发本进程服务重载，不清空网关统计历史；详见 [监控指标 API](../metrics.md)。
+
 状态码：`400` 为通知阈值非法、`portmap` 非法、受管模式启用 THA；其余校验失败（JWT 密钥不足 32 字符、Passkey/OIDC/Docker TLS 校验失败、关闭全部登录方式、配置正在重载等）返回 `500`。
 
 配置说明：
 
 - `clientSecret`、`jwtSecret`、`apiKey`、`adminKey`、`docker.registries[].password` 等敏感字段不会通过 GET 返回；PUT 时为空（含纯空白）表示保留原值，非空值会去除首尾空白后保存；`docker.registries[].password` 按 `url` + `username` 匹配旧仓库后保留原值。启动加载配置时，如果 `server.jwtSecret` 为空或仍为示例值 `your-jwt-secret`，系统会使用密码学安全随机源生成 256 位密钥并写回配置；手动配置的密钥不能少于 32 个字符。
+- `apisix.metricsUrl` 的脱敏占位符 `******` 回传时保留完整原地址及凭据；提交新地址替换原值，提交空字符串恢复默认抓取地址，不将旧凭据迁移到新目标。审计请求体中的该字段始终脱敏。
 - 默认值：`server.listenAddr` `:8080`，`server.rootDirectory` `.`（相对路径转为绝对路径），`server.maxUploadSize` 104857600（0 取默认），`server.jwtExpiration` 86400 秒，`passkey.timeout` 60000 毫秒（0 取默认），`oidc.scopes` 空时为 `[openid profile email]` 且始终包含 `openid`。`docker.containerRoot`、`members[].homeDirectory` 相对 `rootDirectory` 解析，落盘时还原为 `./` 相对路径。
 - 连接远程 Docker / Swarm：`docker.host` 设为 `tcp://host:2376`，并设置 `docker.tls`：`enabled`（启用 TLS）、`skipVerify`（跳过服务端证书校验，仅限测试）、`ca`（校验服务端证书的 CA，PEM 文本；留空使用系统根证书）、`cert` 与 `key`（客户端证书与私钥，PEM 文本，daemon 启用 `--tlsverify` 时需要，必须成对）。证书以 PEM 文本保存在配置中，使用 etcd 配置后端时随配置同步。`tls.enabled` 为 `true` 时 `host` 必须是 `tcp://` 地址，保存时会校验 PEM 与证书私钥是否匹配，不通过则拒绝保存。`tls.key` 留空保留原值；清空 `tls.cert` 会同时清除私钥；请求未携带 `tls` 时沿用原值。Swarm 复用 Docker 连接，目标节点需为 manager。
 - 远程 Docker 的判定与限制：`docker.host`（留空时取环境变量 `DOCKER_HOST`）为 `tcp://` 且主机不是回环地址（`127.0.0.0/8`、`::1`、`localhost`）即视为远程，与是否启用 TLS 无关；`tcp://docker-proxy:2375` 这类无法确认是否同机的别名也按远程处理。远程时：
