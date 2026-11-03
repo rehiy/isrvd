@@ -58,9 +58,9 @@ isrvd
 
 **安装脚本**：系统服务使用 `/install/` 或本地 `isrvd-system.sh`，全容器化使用 `/install/?script=docker` 或本地 `isrvd-docker.sh`。在 `install` 前导出上述环境变量；默认角色为单机，系统服务写入仅 root 可读的 systemd drop-in（`installer.conf`），Docker 脚本传入容器环境。Docker 的 agent 模式不发布 8080（Caddy/APISIX 业务端口仍按镜像发布）。更新及卸载使用对应脚本，`update` 保留现有角色，不读取安装器环境来切换角色。
 
-系统服务可用 `--data` 指定数据目录（写入 `server.rootDirectory`，isrvd 自身数据与组件共用），例如 `bash isrvd-system.sh install --components caddy --data /mnt/isrvd-data`，不选组件时同样可用；适用于单机、中控和受管机，数据目录默认 `/srv/data`，isrvd 主配置仍为 `/usr/local/isrvd/config.yml`。目录须为非根绝对路径且不能与安装目录重叠，选择组件时其子路径不能通过符号链接重定向。系统服务 `update` 从所属组件的实际 bind 挂载恢复目录，不接受 `--data` 迁移数据；挂载路径不一致时在停服前中止。`uninstall` 保留实际组件数据目录，删除主配置前请备份。
+两种安装脚本均可用 `install --data PATH` 指定全部安装器管理的持久化文件根目录，包括主配置、业务数据、文件日志和组件存储，默认 `/srv/data`；适用于单机、中控、受管机及无网关安装。例如 `bash isrvd-system.sh install --components caddy --data /mnt/isrvd-data` 或 `bash isrvd-docker.sh install --tag slim --data /mnt/isrvd-data`。主配置统一为 `DATA/conf/isrvd.yml`（0600）；新系统服务安装的 `/usr/local/isrvd/config.yml` 仅为兼容链接，`server.rootDirectory` 与工作目录使用 DATA，Docker 挂载 DATA 到 `/data`。目录须为非根绝对路径、不能与安装目录重叠，管理的子路径不能通过符号链接重定向。系统服务更新恢复配置链接及组件实际挂载目录，Docker 更新恢复原容器 `/data` 挂载；挂载不一致时中止，不接受 `--data` 迁移已有数据。卸载保留实际数据目录和主配置，旧系统部署的本地配置先复制到 `DATA/conf/isrvd.yml`，不覆盖已有文件。显式外部绝对路径、Docker 全局存储、系统 journal 和 etcd key 命名空间不随本地目录选项改写。
 
-Docker `update` 将旧容器临时更名为 `isrvd-update-backup`，新容器通过启动检查（仅确认容器仍在运行，不代表已连上中控）后才删除旧容器；创建或启动检查失败时恢复旧容器。更新中断后遗留备份容器时，需先处理再重试。
+Docker `update` 将旧容器临时更名为 `isrvd-update-backup`，旧 APISIX 容器的配置、证书和文件日志先复制到数据根目录（已有持久化文件优先，复制失败保留快照并恢复旧容器），新容器通过启动检查（仅确认容器仍在运行，不代表已连上中控）后才删除旧容器；创建或启动检查失败时恢复旧容器。更新中断后遗留备份容器时，需先处理再重试。
 
 **Docker 手动运行**：提前准备完整的 `/srv/data/conf/isrvd.yml`，中控和受管机使用各自的数据目录：
 

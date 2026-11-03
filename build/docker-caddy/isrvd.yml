@@ -82,5 +82,5 @@ links:
 members:
   - username: admin
     password: admin
-    homeDirectory: /
+    homeDirectory: .
     founder: true

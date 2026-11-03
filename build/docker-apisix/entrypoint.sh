@@ -59,7 +59,19 @@ for required in apisix.yaml isrvd.yml; do
     fi
 done
 
-ln -sf "$CONF_DIR/apisix.yaml" /usr/local/apisix/conf/config.yaml
+for dir in conf cert logs; do
+    target="/data/apisix/$dir"
+    mkdir -p "$target"
+    if [ ! -L "/usr/local/apisix/$dir" ]; then
+        if [ -d "/usr/local/apisix/$dir" ]; then
+            cp -an "/usr/local/apisix/$dir/." "$target/"
+            rm -rf "/usr/local/apisix/$dir"
+        fi
+        ln -s "$target" "/usr/local/apisix/$dir"
+    fi
+done
+ln -sf "$CONF_DIR/apisix.yaml" /data/apisix/conf/config.yaml
+chmod 600 "$CONF_DIR/isrvd.yml" "$CONF_DIR/apisix.yaml"
 
 # ------------------------------------------
 # 输出默认密码提示信息

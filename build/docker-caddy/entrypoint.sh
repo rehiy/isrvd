@@ -35,6 +35,7 @@ for required in isrvd.yml caddy.json; do
         exit 1
     fi
 done
+chmod 600 "$CONF_DIR/isrvd.yml" "$CONF_DIR/caddy.json"
 
 # ------------------------------------------
 # 输出默认密码提示信息

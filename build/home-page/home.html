@@ -433,9 +433,9 @@
                             </div>
                             <p class="wizard-hint" id="hint-variant"></p>
                             <label class="block mt-3 text-xs muted" id="f-component-data" hidden>
-                                <span class="block mb-1">组件数据目录（可选）</span>
+                                <span class="block mb-1">数据根目录（可选）</span>
                                 <input id="in-component-data" type="text" autocomplete="off" spellcheck="false" placeholder="/srv/data" oninput="renderBuilder()" class="field-input" aria-describedby="hint-component-data">
-                                <span class="block mt-1" id="hint-component-data">保存组件证书、配置及 etcd 数据，留空使用 /srv/data；isrvd 主配置仍在 /usr/local/isrvd/config.yml。</span>
+                                <span class="block mt-1" id="hint-component-data">统一保存主配置、业务数据、日志和组件存储，留空使用 /srv/data；主配置位于 conf/isrvd.yml。</span>
                             </label>
                             <label class="block mt-3 text-xs muted" id="f-tag" hidden>
                                 <span class="block mb-1">镜像标签（可选）</span>
@@ -587,8 +587,8 @@
                 ['节点令牌', 'Node token'],
                 ['在中控「节点管理」页生成', 'Generate in the controller’s Nodes page'],
                 ['网关方案', 'Gateway option'],
-                ['组件数据目录（可选）', 'Component data directory (optional)'],
-                ['保存组件证书、配置及 etcd 数据，留空使用 /srv/data；isrvd 主配置仍在 /usr/local/isrvd/config.yml。', 'Stores component certificates, configuration and etcd data. Leave blank for /srv/data; the main isrvd configuration remains in /usr/local/isrvd/config.yml.'],
+                ['数据根目录（可选）', 'Data root (optional)'],
+                ['统一保存主配置、业务数据、日志和组件存储，留空使用 /srv/data；主配置位于 conf/isrvd.yml。', 'Stores main configuration, business data, file logs and component storage. Leave blank for /srv/data; the main configuration is conf/isrvd.yml.'],
                 ['默认', 'Default'],
                 ['镜像标签（可选）', 'Image tag (optional)'],
                 ['留空使用所选布局的标签', 'Leave blank to use the selected layout’s tag'],
@@ -738,11 +738,11 @@
             if (['slim', 'caddy', 'apisix'].indexOf(v.variant) === -1) {
                 addError('variant-label', '网关仅支持 Caddy 或 APISIX + etcd，不支持独立 etcd 或自定义组件组合', 'Only Caddy or APISIX + etcd gateways are supported. Standalone etcd and custom component combinations are not supported');
             }
-            if (s.method === 'script-binary' && v.variant !== 'slim') {
+            if (!isDocker) {
                 v.componentData = parseDataDir('in-component-data', addError);
                 var installDir = '/usr/local/isrvd';
                 if (v.componentData && (v.componentData === installDir || v.componentData.startsWith(installDir + '/') || installDir.startsWith(v.componentData + '/'))) {
-                    addError('in-component-data', '组件数据目录不能与 /usr/local/isrvd 安装目录重叠，以免卸载时删除数据', 'The component data directory must not overlap /usr/local/isrvd, to prevent data deletion during uninstall');
+                    addError('in-component-data', '数据根目录不能与 /usr/local/isrvd 安装目录重叠，以免卸载时删除数据', 'The data root must not overlap /usr/local/isrvd, to prevent data deletion during uninstall');
                 }
             }
             if (s.method !== 'script-binary') {
@@ -810,12 +810,13 @@
 
         function buildBinary(s, v) {
             var componentFlag = v.variant === 'slim' ? '' : ' --components ' + v.variant;
-            var dataFlag = componentFlag && v.componentData ? ' --data ' + shq(v.componentData) : '';
+            var dataFlag = v.componentData ? ' --data ' + shq(v.componentData) : '';
             return [envPrefix(s, v) + installerRun('install' + componentFlag + dataFlag + sourceFlag(s))];
         }
 
         function buildScriptDocker(s, v) {
-            return [envPrefix(s, v) + installerRun('install --variant ' + v.variant + ' --tag ' + shq(v.tag) + sourceFlag(s), DOCKER_SCRIPT_URL)];
+            var dataFlag = v.componentData ? ' --data ' + shq(v.componentData) : '';
+            return [envPrefix(s, v) + installerRun('install --variant ' + v.variant + ' --tag ' + shq(v.tag) + dataFlag + sourceFlag(s), DOCKER_SCRIPT_URL)];
         }
 
         function dockerImage(s, v) {
@@ -890,7 +891,7 @@
             if (!isSystem) {
                 actions.push({ id: 'change-tag', title: t('同布局换标签（可选）', 'Change tag (same layout, optional)'), note: migrationNote, command: joinCommands([sameLayoutGuard('isrvd', v.variant), installerRun('update --tag ' + shq(v.tag) + ' --variant ' + v.variant + sourceFlag(s), scriptUrl)]) });
             }
-            actions.push({ id: 'uninstall', title: t('卸载部署', 'Uninstall deployment'), note: isSystem ? t('删除系统服务与所属组件及备份容器。先备份 /usr/local/isrvd/config.yml；保留已安装组件的实际数据目录。', 'Removes the system service, its components and backup containers. Back up /usr/local/isrvd/config.yml first. Preserves the actual data directory of installed components.') : t('只删除 isrvd 主容器，保留 /srv/data。', 'Only removes the main isrvd container. Preserves /srv/data.'), command: installerRun('uninstall', scriptUrl), danger: true });
+            actions.push({ id: 'uninstall', title: t('卸载部署', 'Uninstall deployment'), note: isSystem ? t('删除系统服务与所属组件及备份容器，保留实际数据目录和主配置；旧版本地配置先复制到数据目录。', 'Removes the system service, its components and backup containers. Preserves the actual data directory and main configuration; legacy local configuration is copied to the data directory first.') : t('只删除 isrvd 主容器，保留实际挂载的数据目录和主配置。', 'Only removes the main isrvd container. Preserves the actual mounted data directory and main configuration.'), command: installerRun('uninstall', scriptUrl), danger: true });
             actions.push({ id: 'download', title: t('仅下载二进制', 'Download binary only'), note: t('使用 isrvd-system.sh 下载到当前目录，不安装、不更新、不卸载。', 'Uses isrvd-system.sh to download into the current directory. Does not install, update or uninstall.'), command: installerRun('download' + sourceFlag(s), SCRIPT_URL) });
             return actions;
         }
@@ -931,18 +932,18 @@
                 notes.push(t('手写更新按当前表单重建容器，不自动保留旧角色或回滚；执行前核对配置并备份。', 'Manual updates recreate the container using this form. They do not automatically preserve the old role or roll back. Verify the configuration and back up first.'));
             } else {
                 notes.push(t('请以 root 身份在 Bash 中执行；安装与更新、卸载必须使用同一种部署脚本。', 'Run in Bash as root. Use the same deployment script for installation, updates and uninstall.'));
+                notes.push(t('主配置和持久化数据统一保存到 <code>', 'Main configuration and persistent data are stored in <code>') + esc(v.componentData) + t('</code>；主配置为 conf/isrvd.yml。更新沿用实际安装目录，修改表单不会迁移数据，卸载保留配置和数据。', '</code>; the main configuration is conf/isrvd.yml. Updates retain the actual installed directory. Changing this form does not migrate data; uninstall preserves configuration and data.'));
                 if (s.method === 'script-binary') {
-                    notes.push(t('安装失败或可捕获中断会回滚本次新建资源，保留组件数据；卸载前备份 <code>/usr/local/isrvd/config.yml</code>，组件数据目录不删除。', 'Failed installations or catchable interruptions roll back newly created resources while preserving component data. Back up <code>/usr/local/isrvd/config.yml</code> before uninstalling. The component data directory is not deleted.'));
+                    notes.push(t('安装失败或可捕获中断会回滚本次新建资源，保留主配置和数据。', 'Failed installations or catchable interruptions roll back newly created resources while preserving main configuration and data.'));
                     if (v.variant !== 'slim') {
-                        notes.push(t('组件数据保存到 <code>', 'Component data is stored in <code>') + esc(v.componentData) + t('</code> 下的独立子目录；更新自动沿用已安装目录，修改表单不会迁移数据。', '</code> in separate subdirectories. Updates retain the installed directory; changing this form does not migrate data.'));
                         notes.push(t('组件使用 host 网络；管理接口与 etcd 仅监听本机。更新遗留 <code>isrvd-组件-update-backup</code> 时会在停服前中止，请恢复备份或用系统脚本卸载清理。', 'Components use host networking; admin interfaces and etcd listen only on localhost. Updates abort before stopping services if an <code>isrvd-&lt;component&gt;-update-backup</code> container remains. Restore the backup or clean it up using the system script’s uninstall operation.'));
                     }
                     if (v.variant === 'apisix') {
-                        notes.push(t('APISIX 密钥随机生成，或在执行前通过环境变量 <code>ISRVD_APISIX_ADMIN_KEY</code> 提供；脚本保存至 <code>config.yml</code>（root 可读，0600），更新沿用原密钥。请保护配置及备份。', 'The APISIX key is generated randomly or supplied through <code>ISRVD_APISIX_ADMIN_KEY</code> before execution. It is stored in <code>config.yml</code> with root-only permissions (0600) and reused during updates. Protect the configuration and backups.'));
+                        notes.push(t('APISIX 密钥随机生成，或在执行前通过环境变量 <code>ISRVD_APISIX_ADMIN_KEY</code> 提供；脚本保存至 <code>conf/isrvd.yml</code>（root 可读，0600），更新沿用原密钥。请保护配置及备份。', 'The APISIX key is generated randomly or supplied through <code>ISRVD_APISIX_ADMIN_KEY</code> before execution. It is stored in <code>conf/isrvd.yml</code> with root-only permissions (0600) and reused during updates. Protect the configuration and backups.'));
                         notes.push(t('APISIX 管理地址为 <code>http://127.0.0.1:9180/apisix/admin</code>；安装会验证 Admin API 鉴权，不能仅凭容器运行判断可用。', 'The APISIX admin URL is <code>http://127.0.0.1:9180/apisix/admin</code>. Installation verifies Admin API authentication; a running container alone does not prove it is usable.'));
                     }
                 } else {
-                    notes.push(t('脚本自动准备 Swarm 与 <code>sdnet</code>；已有同名网络必须为 attachable overlay。卸载只删除主容器，保留 <code>/srv/data</code>。', 'The script prepares Swarm and <code>sdnet</code> automatically. An existing network with that name must be an attachable overlay. Uninstall removes only the main container and preserves <code>/srv/data</code>.'));
+                    notes.push(t('脚本自动准备 Swarm 与 <code>sdnet</code>；已有同名网络必须为 attachable overlay。数据根目录挂载到容器 <code>/data</code>。', 'The script prepares Swarm and <code>sdnet</code> automatically. An existing network with that name must be an attachable overlay. The data root is mounted at <code>/data</code> inside the container.'));
                     notes.push(t('更新默认保留已安装标签与角色；下方另有同布局换标签命令，跨布局需先迁移网关配置。替换失败会恢复旧容器，中断遗留 <code>isrvd-update-backup</code> 时请先处理备份。', 'Updates preserve the installed tag and role by default. Use the separate same-layout tag-change command below; migrate gateway configuration before changing layouts. Failed replacements restore the old container. Resolve any <code>isrvd-update-backup</code> left by an interruption first.'));
                 }
             }
@@ -1020,7 +1021,7 @@
             setHint('hint-role', ROLE_DESC[s.role] + (isDocker && isAgent ? t(' 手写容器使用 slim，不发布任何端口。', ' Manual agent containers use slim and publish no ports.') : ''));
             setHint('hint-variant', isSystem ? (SYSTEM_COMPONENT_DESC[s.variant] || '') + t(' 再次点击已选网关可取消选择。', ' Click the selected gateway again to deselect it.') : VARIANT_DESC[s.variant]);
             setVisible(byId('f-tag'), !isSystem);
-            setVisible(byId('f-component-data'), isSystem && s.variant !== 'slim');
+            setVisible(byId('f-component-data'), !isDocker);
 
             var desc = SOURCE_DESC[s.method];
             setHint('hint-source', desc[{ auto: 0, cn: 1, global: 2 }[s.source]]);
@@ -1081,13 +1082,13 @@
             } else if (isSystem) {
                 meta.push(t('脚本', 'Script') + ' <code>isrvd-system.sh</code>');
                 meta.push(t('安装目录', 'Install directory') + ' <code>/usr/local/isrvd</code>');
-                meta.push(t('配置', 'Configuration') + ' <code>/usr/local/isrvd/config.yml</code>');
-                if (v.variant !== 'slim') meta.push(t('组件数据', 'Component data') + ' <code>' + esc(v.componentData) + '</code>');
+                meta.push(t('配置', 'Configuration') + ' <code>' + esc(v.componentData + '/conf/isrvd.yml') + '</code>');
+                meta.push(t('数据', 'Data') + ' <code>' + esc(v.componentData) + '</code>');
             } else {
                 meta.push(t('脚本', 'Script') + ' <code>isrvd-docker.sh</code>');
                 meta.push(t('容器', 'Container') + ' <code>isrvd</code>');
-                meta.push(t('数据', 'Data') + ' <code>/srv/data</code>');
-                meta.push(t('配置', 'Configuration') + ' <code>/srv/data/conf/isrvd.yml</code>');
+                meta.push(t('数据', 'Data') + ' <code>' + esc(v.componentData) + '</code>');
+                meta.push(t('配置', 'Configuration') + ' <code>' + esc(v.componentData + '/conf/isrvd.yml') + '</code>');
                 meta.push(t('镜像', 'Image') + ' <code>isrvd:' + esc(v.tag) + '</code>');
             }
             setHtml('install-meta', meta.map(function (item) { return '<span>' + item + '</span>'; }).join(''));

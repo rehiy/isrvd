@@ -29,7 +29,7 @@ COMPONENT_CONFIG_DIR="$DOCKER_DATA_DIR/conf/components"
 declare -A COMPONENT_MOUNTS=(
     [etcd]="/etcd:/etcd-data"
     [caddy]="/conf/components/caddy.json:/etc/caddy/caddy.json:ro /caddy:/data/caddy /caddy-config:/config"
-    [apisix]="/conf/components/apisix.yaml:/usr/local/apisix/conf/config.yaml:ro"
+    [apisix]="/conf/components/apisix.yaml:/isrvd-config/apisix.yaml:ro /apisix/conf:/usr/local/apisix/conf /apisix/cert:/usr/local/apisix/cert /apisix/logs:/usr/local/apisix/logs"
 )
 INSTALLER_LABEL="io.isrvd.installer"
 CADDY_IMAGE="caddy:2.8.4"
@@ -129,13 +129,8 @@ parse_options() {
     [ -z "$gateway" ] || [ -z "$SYSTEM_COMPONENTS" ] || fail "Use a gateway shortcut or --components, not both"
     SYSTEM_COMPONENTS="${SYSTEM_COMPONENTS:-$gateway}"
     select_components
-    if [ "${#COMPONENT_NAMES[@]}" -gt 0 ]; then
-        set_component_data_dir "${data:-$DOCKER_DATA_DIR}"
-        DATA_DIR_CHOSEN=1
-    elif [ -n "$data" ]; then
-        resolve_data_dir "$data"
-        DATA_DIR_CHOSEN=1
-    fi
+    set_component_data_dir "${data:-$DOCKER_DATA_DIR}"
+    DATA_DIR_CHOSEN=1
 }
 
 select_components() {
@@ -226,7 +221,7 @@ get_bin_file() {
 }
 
 service_install() {
-    local bin_file entry component
+    local bin_file entry component working_dir="${DOCKER_DATA_DIR//\"/\\\"}"
     bin_file=$(get_bin_file)
 
     cat > "$SERVICE_FILE" << EOF
@@ -239,8 +234,8 @@ Wants=docker.service
 [Service]
 Type=simple
 User=root
-WorkingDirectory=$INSTALL_DIR
-Environment="ISRVD_CONFIG=$CONFIG_FILE"
+WorkingDirectory="${working_dir//%/%%}"
+$(systemd_environment "ISRVD_CONFIG=$CONFIG_FILE")
 ExecStart=$bin_file
 ExecReload=/bin/kill -HUP \$MAINPID
 Restart=on-failure
@@ -314,6 +309,7 @@ files_install() {
     [ "${1:-}" != update ] || options+=(--exclude=config.yml)
     mkdir -p "$INSTALL_DIR"
     for entry in "isrvd-$ARCH" config.yml isrvd.sh isrvd-system.sh isrvd-docker.sh; do
+        [ "${1:-}" != update ] || [ "$entry" != config.yml ] || continue
         [ ! -L "$INSTALL_DIR/$entry" ] || fail "Refusing to extract over a symbolic link: $entry"
     done
     echo "[info] Extracting to: $INSTALL_DIR"
@@ -376,7 +372,8 @@ install_binary() {
     INSTALL_DIR_CREATED=1
     INSTALL_IN_PROGRESS=1
     files_install
-    [ "$DATA_DIR_CHOSEN" -eq 0 ] || configure_root_directory
+    install_data_config
+    configure_root_directory
     if [ "${#COMPONENT_NAMES[@]}" -gt 0 ]; then
         install_components
         configure_binary_components
@@ -394,6 +391,7 @@ install_binary() {
 
 update_binary() {
     [ -d "$INSTALL_DIR" ] || fail "Not installed; use install first"
+    discover_binary_data
     discover_components
     resolve_release
     print_banner Updater
@@ -479,7 +477,7 @@ set_component_data_dir() {
     local data resolved paths
     resolve_data_dir "$1"
     data="$DOCKER_DATA_DIR"
-    paths=("$data/"{etcd,caddy,caddy-config,conf/components/caddy.json,conf/components/apisix.yaml})
+    paths=("$data/"{conf/isrvd.yml,etcd,caddy,caddy-config,apisix/conf,apisix/cert,apisix/logs,conf/components/caddy.json,conf/components/apisix.yaml})
     resolved=$(realpath -m -- "${paths[@]}") || fail "Cannot resolve component data paths"
     [ "$resolved" = "$(printf '%s\n' "${paths[@]}")" ] || fail "Component data paths must not be redirected by symbolic links"
     COMPONENT_CONFIG_DIR="$data/conf/components"
@@ -488,11 +486,17 @@ set_component_data_dir() {
 restore_component_data_dir() {
     local container component mount destination suffix mode writable source root common=""
     local mounts=()
+    [ "$DATA_DIR_CHOSEN" -eq 0 ] || common="$DOCKER_DATA_DIR"
     for container in "${COMPONENT_CONTAINERS[@]}"; do
         component="${container#isrvd-}"
         component="${component%-update-backup}"
         [ -n "${COMPONENT_MOUNTS[$component]:-}" ] || fail "Unknown component container: $container"
         read -r -a mounts <<< "${COMPONENT_MOUNTS[$component]}"
+        if [ "$component" = apisix ]; then
+            source=$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/usr/local/apisix/conf/config.yaml"}}{{println .Source}}{{end}}{{end}}' "$container") \
+                || fail "Cannot read the previous APISIX configuration mount"
+            [ -z "$source" ] || mounts=("/conf/components/apisix.yaml:/usr/local/apisix/conf/config.yaml:ro")
+        fi
         for mount in "${mounts[@]}"; do
             IFS=: read -r suffix destination mode <<< "$mount"
             writable=true
@@ -549,7 +553,7 @@ prepare_component_credentials() {
 }
 
 prepare_component_configs() {
-    local component
+    local component storage_root="${DOCKER_DATA_DIR//\"/\\\"}/caddy"
     mkdir -p "$COMPONENT_CONFIG_DIR"
     for component in "${COMPONENT_NAMES[@]}"; do
         case "$component" in
@@ -557,7 +561,7 @@ prepare_component_configs() {
             caddy)
                 mkdir -p "$DOCKER_DATA_DIR/caddy" "$DOCKER_DATA_DIR/caddy-config"
                 if [ ! -e "$COMPONENT_CONFIG_DIR/caddy.json" ]; then
-                    cat > "$COMPONENT_CONFIG_DIR/caddy.json" <<'EOF'
+                    cat > "$COMPONENT_CONFIG_DIR/caddy.json" <<EOF
 {
   "admin": {"listen": "127.0.0.1:2019", "config": {"persist": true}},
   "apps": {"http": {"servers": {"srv0": {
@@ -565,7 +569,7 @@ prepare_component_configs() {
     "automatic_https": {"disable": true, "disable_redirects": true},
     "routes": []
   }}}},
-  "storage": {"module": "file_system", "root": "/data/caddy"}
+  "storage": {"module": "file_system", "root": "$storage_root"}
 }
 EOF
                 fi
@@ -611,11 +615,64 @@ EOF
     done
 }
 
-# 让 isrvd 自身数据（audit、monitor 等）与组件共用 --data 指定的目录，仅安装时写入；保留配置文件原有权限与属主。
+install_data_config() {
+    local target="$DOCKER_DATA_DIR/conf/isrvd.yml"
+    set_component_data_dir "$DOCKER_DATA_DIR"
+    mkdir -p "$DOCKER_DATA_DIR/conf"
+    if [ -e "$target" ]; then
+        [ -f "$target" ] && [ ! -L "$target" ] || fail "Expected a regular config file: $target"
+        rm -f "$INSTALL_DIR/config.yml"
+    else
+        mv "$INSTALL_DIR/config.yml" "$target"
+    fi
+    chmod 600 "$target"
+    ln -s "$target" "$INSTALL_DIR/config.yml"
+    CONFIG_FILE="$target"
+}
+
+discover_binary_data() {
+    local legacy="$INSTALL_DIR/config.yml" target root
+    if [ -L "$legacy" ]; then
+        target=$(realpath -e -- "$legacy") || fail "Cannot resolve installed configuration"
+        [[ "$target" = */conf/isrvd.yml ]] || fail "Unexpected installed configuration link"
+        set_component_data_dir "${target%/conf/isrvd.yml}"
+        DATA_DIR_CHOSEN=1
+        CONFIG_FILE="$target"
+    elif [ -f "$legacy" ]; then
+        root=$(awk '
+            /^[^[:space:]#]/ { section = $0 }
+            section ~ /^server:/ && /^[[:space:]]+rootDirectory:/ {
+                sub(/^[[:space:]]+rootDirectory:[[:space:]]*/, "")
+                sub(/[[:space:]]+#[^"\047]*$/, "")
+                sub(/[[:space:]]+$/, "")
+                if ($0 ~ /^".*"$/) {
+                    $0 = substr($0, 2, length($0) - 2)
+                    gsub(/\\"/, "\"", $0)
+                } else if ($0 ~ /^\047.*\047$/) {
+                    $0 = substr($0, 2, length($0) - 2)
+                    gsub(/\047\047/, "\047", $0)
+                }
+                print; exit
+            }' "$legacy")
+        [ -z "$root" ] || resolve_data_dir "$root"
+        CONFIG_FILE="$legacy"
+    fi
+}
+
+preserve_legacy_config() {
+    local target="$DOCKER_DATA_DIR/conf/isrvd.yml"
+    [ "$CONFIG_FILE" = "$INSTALL_DIR/config.yml" ] && [ -f "$CONFIG_FILE" ] && [ ! -L "$CONFIG_FILE" ] || return 0
+    set_component_data_dir "$DOCKER_DATA_DIR"
+    [ ! -e "$target" ] && [ ! -L "$target" ] || fail "Refusing to overwrite preserved configuration: $target"
+    mkdir -p "$DOCKER_DATA_DIR/conf"
+    cp -p -- "$CONFIG_FILE" "$target"
+    chmod 600 "$target"
+}
+
 configure_root_directory() {
     local tmp
     [ -f "$CONFIG_FILE" ] && [ ! -L "$CONFIG_FILE" ] || fail "Expected a regular config file: $CONFIG_FILE"
-    tmp=$(mktemp "$INSTALL_DIR/.config.XXXXXX")
+    tmp=$(mktemp "$(dirname "$CONFIG_FILE")/.config.XXXXXX")
     cp -p -- "$CONFIG_FILE" "$tmp" || { rm -f "$tmp"; fail "Cannot copy config file attributes: $CONFIG_FILE"; }
     if ! ROOT_DIRECTORY="$DOCKER_DATA_DIR" awk '
         function root_config() {
@@ -641,7 +698,7 @@ configure_binary_components() {
     [ "$apisix$caddy" != 00 ] || return 0
     [ -f "$CONFIG_FILE" ] && [ ! -L "$CONFIG_FILE" ] || fail "Expected a regular config file: $CONFIG_FILE"
     if [ "$apisix" -eq 1 ]; then validate_apisix_key "${APISIX_ADMIN_KEY:-}"; fi
-    tmp=$(mktemp "$INSTALL_DIR/.config.XXXXXX")
+    tmp=$(mktemp "$(dirname "$CONFIG_FILE")/.config.XXXXXX")
     if ! awk -v apisix="$apisix" -v caddy="$caddy" '
         function apisix_config() {
             print "  adminUrl: http://127.0.0.1:9180/apisix/admin"
@@ -699,6 +756,29 @@ component_ready() {
     return 1
 }
 
+prepare_apisix_data() {
+    local image="$1" previous="isrvd-apisix-update-backup" source dir
+    mkdir -p "$DOCKER_DATA_DIR/apisix/"{conf,cert,logs}
+    if container_exists "$previous"; then
+        source=$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/usr/local/apisix/conf/config.yaml"}}{{println .Source}}{{end}}{{end}}' "$previous") || return 1
+        if [ -n "$source" ]; then
+            for dir in conf cert logs; do
+                docker cp "$previous:/usr/local/apisix/$dir/." "$DOCKER_DATA_DIR/apisix/$dir" || return 1
+            done
+        fi
+    fi
+    docker run --rm --network none --security-opt no-new-privileges:true \
+        -v "$DOCKER_DATA_DIR/apisix:/isrvd-state" --entrypoint /bin/sh "$image" -ec '
+        for dir in conf cert; do
+            if [ -d "/usr/local/apisix/$dir" ]; then
+                cp -an "/usr/local/apisix/$dir/." "/isrvd-state/$dir/"
+            fi
+        done
+        rm -f /isrvd-state/conf/config.yaml
+        ln -s /isrvd-config/apisix.yaml /isrvd-state/conf/config.yaml
+    '
+}
+
 run_component_container() {
     local component="$1" image="$2" mount
     local options=(--name "isrvd-$component" --restart unless-stopped --network host
@@ -713,8 +793,14 @@ run_component_container() {
                 --listen-peer-urls http://127.0.0.1:2380 --initial-advertise-peer-urls http://127.0.0.1:2380
                 --initial-cluster isrvd-etcd=http://127.0.0.1:2380)
             ;;
-        caddy) args=(caddy run --config /etc/caddy/caddy.json --resume) ;;
-        apisix) options+=(-e APISIX_ADMIN_KEY) ;;
+        caddy)
+            [ "$DOCKER_DATA_DIR/caddy" = /data/caddy ] || options+=(-v "$DOCKER_DATA_DIR/caddy:$DOCKER_DATA_DIR/caddy")
+            args=(caddy run --config /etc/caddy/caddy.json --resume)
+            ;;
+        apisix)
+            prepare_apisix_data "$image" || return 1
+            options+=(-e APISIX_ADMIN_KEY)
+            ;;
         *) fail "Unknown component: $component" ;;
     esac
     docker run -d "${options[@]}" "$image" "${args[@]}"
@@ -788,8 +874,10 @@ uninstall() {
     if has_docker && container_exists "$SERVICE_NAME"; then
         fail "Docker deployment must be uninstalled with isrvd-docker.sh"
     fi
+    discover_binary_data
     discover_components uninstall
     if [ -f "$SERVICE_FILE" ]; then service_stop; fi
+    preserve_legacy_config
     if has_docker; then
         for ((index=${#COMPONENT_CONTAINERS[@]}-1; index>=0; index--)); do
             container="${COMPONENT_CONTAINERS[$index]}"
@@ -816,7 +904,7 @@ uninstall() {
     if [ "$removed" -eq 0 ]; then
         echo "[info] isrvd is not installed"
     else
-        echo "[info] Uninstallation complete"
+        echo "[info] Uninstallation complete; configuration and data preserved: $DOCKER_DATA_DIR"
     fi
 }
 
@@ -850,8 +938,10 @@ No gateway is selected by default; omit --components to install only isrvd, with
 --components optionally selects caddy or apisix (APISIX + etcd).
 --components none is still accepted for compatibility with existing commands.
 Standalone etcd and component combinations are not supported for new installations.
---data PATH selects the data directory for install only (default: /srv/data), with or without a gateway. It is written to server.rootDirectory in config.yml, so isrvd's own data and the components share it.
-The directory must be absolute, non-root and outside $INSTALL_DIR; component subpaths must not redirect via symlinks.
+--data PATH selects the root of all installer-managed persistent files for install only (default: /srv/data), with or without a gateway.
+Main config: DATA/conf/isrvd.yml (0600); DATA is also server.rootDirectory and the service working directory.
+The directory must be absolute, non-root and outside $INSTALL_DIR; managed subpaths must not redirect via symlinks.
+Docker daemon storage, journal, explicit external paths and etcd key namespaces are not rewritten.
 Components run in separate host-network containers; APISIX automatically installs its etcd dependency.
 Component admin APIs and etcd listen only on 127.0.0.1; gateways use ports 80/443.
 --caddy/--apisix select the corresponding gateway option; --systemd is accepted but not required.
@@ -868,8 +958,9 @@ Interrupted component updates block further updates; restore backups or use unin
 Updates preserve the installed component key, role and actual bind mounts; inconsistent data paths abort before stopping components.
 Changing --data in an install command does not migrate an existing deployment. Centers use portmap.range and portmap.bind in $CONFIG_FILE.
 
-Config: $CONFIG_FILE; data: $DOCKER_DATA_DIR.
-Uninstall deletes $INSTALL_DIR including config.yml; back it up first.
+Config: $DOCKER_DATA_DIR/conf/isrvd.yml; data: $DOCKER_DATA_DIR.
+$INSTALL_DIR/config.yml is a compatibility link for new installations.
+Uninstall preserves configuration and data; legacy local configuration is copied to DATA/conf/isrvd.yml first.
 EOF
 }
 

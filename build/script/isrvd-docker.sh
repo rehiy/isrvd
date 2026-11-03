@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # isrvd 全容器化安装与管理；系统服务部署请使用 isrvd-system.sh。
-# 用法: isrvd-docker.sh install [--tag TAG] [--variant slim|caddy|apisix] [--cn|--global|--auto]
+# 用法: isrvd-docker.sh install [--data PATH] [--tag TAG] [--variant slim|caddy|apisix] [--cn|--global|--auto]
 
 SERVICE_NAME="isrvd"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
@@ -60,7 +60,7 @@ init_arch() {
 }
 
 parse_options() {
-    local command="$1" gateway=""
+    local command="$1" gateway="" data=""
     shift
     while [ "$#" -gt 0 ]; do
         case "$1" in
@@ -72,6 +72,13 @@ parse_options() {
                 [ "$command" = install ] || fail "Gateway shortcuts are only valid for install"
                 [ -z "$gateway" ] || fail "Choose only one gateway"
                 gateway="${1#--}"
+                ;;
+            --data)
+                [ "$command" = install ] || fail "--data is only valid for install"
+                [ "$#" -ge 2 ] && [ -n "$2" ] || fail "--data requires a value"
+                [ -z "$data" ] || fail "Specify --data only once"
+                data="$2"
+                shift
                 ;;
             --tag|--variant)
                 [ "$command" = install ] || [ "$command" = update ] || fail "Image options require install or update"
@@ -105,6 +112,31 @@ parse_options() {
     fi
     DOCKER_TAG="${DOCKER_TAG:-$DOCKER_VARIANT}"
     validate_image_layout "$DOCKER_TAG" "$DOCKER_VARIANT"
+    resolve_data_dir "${data:-$DOCKER_DATA_DIR}"
+}
+
+resolve_data_dir() {
+    local data="$1" install_dir resolved paths
+    [[ "$data" = /* && "$data" != *:* && "$data" != *\\* && ! "$data" =~ [[:cntrl:]] && ! "$data" =~ (^|/)\.\.?(/|$) ]] \
+        || fail "Data directory must be an absolute directory without dot segments, colons, backslashes or control characters"
+    data=$(realpath -m -- "$data") || fail "Cannot resolve data directory (realpath is required)"
+    install_dir=$(realpath -m -- "$INSTALL_DIR") || fail "Cannot resolve installation directory"
+    [ "$data" != / ] || fail "Data directory must not use the root directory"
+    [[ "$data" != "$install_dir" && "$data" != "$install_dir/"* && "$install_dir" != "$data/"* ]] \
+        || fail "Data directory must not overlap the installation directory"
+    [ ! -e "$data" ] || [ -d "$data" ] || fail "Data path is not a directory"
+    paths=("$data/"{conf/isrvd.yml,conf/caddy.json,conf/apisix.yaml,caddy,etcd,apisix/conf,apisix/cert,apisix/logs})
+    resolved=$(realpath -m -- "${paths[@]}") || fail "Cannot resolve managed data paths"
+    [ "$resolved" = "$(printf '%s\n' "${paths[@]}")" ] || fail "Managed data paths must not be redirected by symbolic links"
+    DOCKER_DATA_DIR="$data"
+}
+
+restore_data_dir() {
+    local source
+    source=$(docker inspect --format '{{range .Mounts}}{{if and (eq .Destination "/data") (eq .Type "bind") .RW}}{{println .Source}}{{end}}{{end}}' "$SERVICE_NAME") \
+        || fail "Cannot read the installed data mount"
+    [[ -n "$source" && "$source" != *$'\n'* ]] || fail "Expected one writable /data bind mount"
+    resolve_data_dir "$source"
 }
 
 validate_image_layout() {
@@ -280,13 +312,30 @@ EOF
     fi
 }
 
+preserve_apisix_data() {
+    local previous="$1" variant="$2" stage dir
+    [ "$variant" = apisix ] || return 0
+    mkdir -p "$DOCKER_DATA_DIR/apisix" || return 1
+    stage=$(mktemp -d "$DOCKER_DATA_DIR/.apisix-migration.XXXXXX") || return 1
+    for dir in conf cert logs; do
+        mkdir -p "$stage/$dir" "$DOCKER_DATA_DIR/apisix/$dir" || return 1
+        if ! docker cp "$previous:/usr/local/apisix/$dir/." "$stage/$dir" || \
+            ! cp -an "$stage/$dir/." "$DOCKER_DATA_DIR/apisix/$dir/"; then
+            echo "[error] Cannot preserve APISIX $dir; migration snapshot retained: $stage" >&2
+            return 1
+        fi
+    done
+    rm -rf -- "$stage"
+}
+
 update() {
-    local old_image variant entry environment tag
+    local old_image variant previous_variant entry environment tag
     local backup="$SERVICE_NAME-update-backup"
     has_docker && docker info >/dev/null 2>&1 || fail "Docker is unavailable"
     container_exists "$SERVICE_NAME" || fail "Not installed; use install first (system service deployments use isrvd-system.sh)"
     ! container_exists "$backup" || fail "Container $backup already exists; resolve it before updating"
     assert_isrvd_container
+    restore_data_dir
     environment=$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$SERVICE_NAME") \
         || fail "Cannot read the previous isrvd container environment"
     while IFS= read -r entry; do
@@ -295,6 +344,11 @@ update() {
         esac
     done <<< "$environment"
     old_image=$(docker inspect --format '{{.Config.Image}}' "$SERVICE_NAME")
+    previous_variant=$(docker inspect --format '{{index .Config.Labels "io.isrvd.variant"}}' "$SERVICE_NAME")
+    case "$previous_variant" in
+        slim|caddy|apisix) ;;
+        *) previous_variant="${old_image##*:}" ;;
+    esac
     variant="$DOCKER_VARIANT"
     if [ -z "$variant" ]; then
         case "$DOCKER_TAG" in
@@ -326,7 +380,7 @@ update() {
         docker rename "$backup" "$SERVICE_NAME"
         fail "Cannot stop the previous container"
     fi
-    if run_isrvd_container "$variant" "$DOCKER_IMAGE" && container_started; then
+    if preserve_apisix_data "$backup" "$previous_variant" && run_isrvd_container "$variant" "$DOCKER_IMAGE" && container_started; then
         docker rm "$backup"
         echo "[info] Docker deployment updated: $DOCKER_IMAGE"
         return
@@ -349,13 +403,14 @@ uninstall() {
         return
     fi
     assert_isrvd_container
+    restore_data_dir
     docker rm -f "$SERVICE_NAME"
     echo "[info] Docker deployment removed; data preserved: $DOCKER_DATA_DIR"
 }
 
 print_usage() {
     cat <<EOF
-Usage: $0 install [--tag TAG] [--variant slim|caddy|apisix] [--cn|--global|--auto]
+Usage: $0 install [--data PATH] [--tag TAG] [--variant slim|caddy|apisix] [--cn|--global|--auto]
        $0 update [--tag TAG] [--variant slim|caddy|apisix] [--cn|--global|--auto]
        $0 uninstall
 
@@ -373,8 +428,12 @@ Install reads exported environment variables:
   ISRVD_NODE_TOKEN    Required for agent
 Agents do not publish 8080. Centers publish portmap.range (TCP/UDP) from the config;
 also set portmap.bind: 0.0.0.0 and run update.
+--data PATH selects all installer-managed persistent files on install (default: /srv/data), mounted at /data.
+Data paths must be absolute, non-root, outside $INSTALL_DIR, and managed subpaths must not redirect via symlinks.
+Updates restore the actual /data bind mount; --data does not migrate an existing deployment.
+Docker daemon storage, explicit external paths and etcd key namespaces are not rewritten.
 Data: $DOCKER_DATA_DIR; config: $DOCKER_DATA_DIR/conf/isrvd.yml.
-Uninstall removes only the isrvd container and preserves system services and components.
+Uninstall preserves the actual configuration and data directory, system services and components.
 EOF
 }
 

@@ -35,6 +35,7 @@ for required in isrvd.yml; do
         exit 1
     fi
 done
+chmod 600 "$CONF_DIR/isrvd.yml"
 
 # ------------------------------------------
 # 输出默认密码提示信息

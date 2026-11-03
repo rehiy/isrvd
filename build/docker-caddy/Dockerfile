@@ -32,6 +32,7 @@ COPY build/docker-caddy/runit /etc/sv
 
 # 设置环境变量
 ENV ISRVD_CONFIG=/data/conf/isrvd.yml
+WORKDIR /data
 
 # 暴露端口
 # 8080: isrvd Web UI
