@@ -104,18 +104,6 @@ func cloneSnapshot(snapshot *Snapshot) (*Snapshot, error) {
 	return cloneYAML(snapshot)
 }
 
-func cloneYAML[T any](value *T) (*T, error) {
-	buf, err := yaml.Marshal(value)
-	if err != nil {
-		return nil, err
-	}
-	var cloned T
-	if err := yaml.Unmarshal(buf, &cloned); err != nil {
-		return nil, err
-	}
-	return &cloned, nil
-}
-
 func validateSnapshot(snapshot *Snapshot) error {
 	if IsAgent() && snapshot.THA.Enabled {
 		return fmt.Errorf("%w：受控模式不能启用代理 Header 登录", ErrInvalidClusterConfig)
@@ -176,23 +164,6 @@ func validateSnapshot(snapshot *Snapshot) error {
 	return nil
 }
 
-// parseHTTPURL 校验并返回带主机的 HTTP(S) 绝对地址（不含用户信息）；name 用于错误提示。
-func parseHTTPURL(name, value string) (*url.URL, error) {
-	parsed, err := url.ParseRequestURI(strings.TrimSpace(value))
-	if err != nil || parsed.Host == "" || (parsed.Scheme != "https" && parsed.Scheme != "http") || parsed.User != nil {
-		return nil, fmt.Errorf("%s 必须是合法的 HTTP(S) 绝对地址", name)
-	}
-	return parsed, nil
-}
-
-func generateJWTSecret() (string, error) {
-	secret := make([]byte, 32)
-	if _, err := rand.Read(secret); err != nil {
-		return "", fmt.Errorf("生成 JWT 密钥失败: %w", err)
-	}
-	return base64.RawURLEncoding.EncodeToString(secret), nil
-}
-
 func normalizeSnapshot(snapshot *Snapshot) error {
 	snapshot.Server = ServerNormalize(snapshot.Server)
 	if strings.TrimSpace(snapshot.Server.JWTSecret) == "" || snapshot.Server.JWTSecret == "your-jwt-secret" {
@@ -237,4 +208,35 @@ func normalizeSnapshot(snapshot *Snapshot) error {
 		}
 	}
 	return nil
+}
+
+// ─── 辅助函数 ───
+
+func cloneYAML[T any](value *T) (*T, error) {
+	buf, err := yaml.Marshal(value)
+	if err != nil {
+		return nil, err
+	}
+	var cloned T
+	if err := yaml.Unmarshal(buf, &cloned); err != nil {
+		return nil, err
+	}
+	return &cloned, nil
+}
+
+// parseHTTPURL 校验并返回带主机的 HTTP(S) 绝对地址（不含用户信息）；name 用于错误提示。
+func parseHTTPURL(name, value string) (*url.URL, error) {
+	parsed, err := url.ParseRequestURI(strings.TrimSpace(value))
+	if err != nil || parsed.Host == "" || (parsed.Scheme != "https" && parsed.Scheme != "http") || parsed.User != nil {
+		return nil, fmt.Errorf("%s 必须是合法的 HTTP(S) 绝对地址", name)
+	}
+	return parsed, nil
+}
+
+func generateJWTSecret() (string, error) {
+	secret := make([]byte, 32)
+	if _, err := rand.Read(secret); err != nil {
+		return "", fmt.Errorf("生成 JWT 密钥失败: %w", err)
+	}
+	return base64.RawURLEncoding.EncodeToString(secret), nil
 }

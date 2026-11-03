@@ -16,6 +16,23 @@ const (
 	ComposeOneoffLabel          = "com.docker.compose.oneoff"
 )
 
+// CollectNetworks 收集 project 中所有需要确保存在的网络名（去重）
+// 包含：自定义 network_mode + 各 service.networks 解析后的真实名称
+func CollectNetworks(project *types.Project) []string {
+	set := map[string]struct{}{}
+	for _, svc := range project.Services {
+		if svc.NetworkMode != "" && !isBuiltinNetworkMode(svc.NetworkMode) {
+			set[svc.NetworkMode] = struct{}{}
+		}
+		for k := range svc.Networks {
+			set[resolveNetworkName(project, k)] = struct{}{}
+		}
+	}
+	return slices.AppendSeq(make([]string, 0, len(set)), maps.Keys(set))
+}
+
+// ─── 辅助函数 ───
+
 // resolveNetworkName 将 compose networks 的 key 解析为真实 docker 网络名
 // 优先使用顶层 networks.<key>.name，未设置则回退到 key
 func resolveNetworkName(project *types.Project, key string) string {
@@ -35,21 +52,6 @@ func isBuiltinNetworkMode(mode string) bool {
 		return true
 	}
 	return strings.HasPrefix(m, "container:") || strings.HasPrefix(m, "service:")
-}
-
-// CollectNetworks 收集 project 中所有需要确保存在的网络名（去重）
-// 包含：自定义 network_mode + 各 service.networks 解析后的真实名称
-func CollectNetworks(project *types.Project) []string {
-	set := map[string]struct{}{}
-	for _, svc := range project.Services {
-		if svc.NetworkMode != "" && !isBuiltinNetworkMode(svc.NetworkMode) {
-			set[svc.NetworkMode] = struct{}{}
-		}
-		for k := range svc.Networks {
-			set[resolveNetworkName(project, k)] = struct{}{}
-		}
-	}
-	return slices.AppendSeq(make([]string, 0, len(set)), maps.Keys(set))
 }
 
 // envToSlice 将 compose MappingWithEquals 转为 KEY=VALUE 列表

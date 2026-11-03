@@ -21,9 +21,6 @@ import (
 	"isrvd/server/config"
 )
 
-// 单个请求的超时时间，避免接收方不可达时长时间占用
-const sendTimeout = 10 * time.Second
-
 var (
 	sendsMu     sync.Mutex
 	sendsWG     sync.WaitGroup
@@ -86,6 +83,9 @@ func sendTo(hooks []*config.WebhookConfig, evt *Event) {
 	}
 }
 
+// 单个请求的超时时间，避免接收方不可达时长时间占用
+const sendTimeout = 10 * time.Second
+
 // sendOne 向单个 Webhook 发送；失败仅记录日志，不影响其他通道。
 // Webhook 地址由管理员在后台配置，属于可信输入，不做内网地址等 SSRF 校验。
 func sendOne(hook *config.WebhookConfig, evt *Event) {
@@ -112,6 +112,8 @@ func sendOne(hook *config.WebhookConfig, evt *Event) {
 		logman.Warn("发送告警失败", "webhook", hook.Name, "error", err)
 	}
 }
+
+// ─── 辅助函数 ───
 
 // validateWebhookURL 仅做基本格式校验，不限制目标网段（Webhook 地址由管理员配置，可信）。
 func validateWebhookURL(rawURL string) (*url.URL, error) {

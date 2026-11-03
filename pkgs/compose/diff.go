@@ -7,6 +7,8 @@ import (
 	"github.com/moby/docker-image-spec/specs-go/v1"
 )
 
+// ─── 辅助函数 ───
+
 // diffCmd 若容器 CMD 与镜像默认 CMD 相同则返回 nil（不写入 compose）
 func diffCmd(containerCmd []string, imageConfig *v1.DockerOCIImageConfig) []string {
 	if imageConfig == nil {

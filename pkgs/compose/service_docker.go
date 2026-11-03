@@ -92,6 +92,8 @@ func ServiceToDockerCreateSpec(project *types.Project, svc types.ServiceConfig) 
 	return spec, nil
 }
 
+// ─── 辅助函数 ───
+
 // ==================== Docker host/config mapping ====================
 
 func restartPolicyName(name string) string {

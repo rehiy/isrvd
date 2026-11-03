@@ -20,7 +20,7 @@ func (c *Client) PluginList(ctx context.Context) (map[string]any, error) {
 	return result, nil
 }
 
-// --- 辅助函数 ---
+// ─── 辅助函数 ───
 
 // pluginConsumerRestrictionWhitelist 从 plugins 中提取 consumer-restriction 白名单
 func pluginConsumerRestrictionWhitelist(plugins map[string]any) []string {

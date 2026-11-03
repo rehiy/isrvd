@@ -126,6 +126,8 @@ func applyNodeBootstrap(cfg, probe, localProbe, remoteCfg, remoteProbe map[strin
 	cfg["links"] = mergeLinks(cfg["links"], remoteCfg["links"])
 }
 
+// ─── 辅助函数 ───
+
 // mergeLinks 合并快捷链接：中控在前、节点在后，按 url 去重。
 // 节点内容不可信：只接受 http(s) 链接，避免注入 javascript: 等链接；
 // 并只保留 label、url、icon 三个字符串字段，避免类型异常导致中控顶栏渲染出错。

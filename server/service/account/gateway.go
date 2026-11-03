@@ -46,6 +46,8 @@ func (s *Service) GatewayUser(r *http.Request, allowQueryToken bool) string {
 	return username
 }
 
+// ─── 辅助函数 ───
+
 func isLoopback(r *http.Request) bool {
 	ip := net.ParseIP(helper.RemoteHost(r))
 	return ip != nil && ip.IsLoopback()

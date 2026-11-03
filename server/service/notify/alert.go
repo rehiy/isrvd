@@ -104,11 +104,6 @@ func checkRule(key string, rule *config.AlertRule, usage *HostUsage, webhooks []
 	}
 }
 
-// alertRuleKey 使用规则内容生成状态键，避免依赖易变的数组下标。
-func alertRuleKey(rule *config.AlertRule) string {
-	return fmt.Sprintf("%s:%.6f:%d", rule.Metric, rule.Threshold, rule.Duration)
-}
-
 // buildEvent 构造告警或恢复事件
 func buildEvent(event string, rule *config.AlertRule, value float64) *Event {
 	label := metricLabel(rule.Metric)
@@ -135,6 +130,13 @@ func buildEvent(event string, rule *config.AlertRule, value float64) *Event {
 		evt.Message = fmt.Sprintf("主机%s回落到 %.1f%%，低于告警阈值 %.1f%%", label, value, rule.Threshold)
 	}
 	return evt
+}
+
+// ─── 辅助函数 ───
+
+// alertRuleKey 使用规则内容生成状态键，避免依赖易变的数组下标。
+func alertRuleKey(rule *config.AlertRule) string {
+	return fmt.Sprintf("%s:%.6f:%d", rule.Metric, rule.Threshold, rule.Duration)
 }
 
 // metricValue 取指定指标的当前值，未知指标返回 -1

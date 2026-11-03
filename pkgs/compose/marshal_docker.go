@@ -147,6 +147,8 @@ func ProjectFromDockerInspects(infos []container.InspectResponse, imageConfigs m
 	}, nil
 }
 
+// ─── 辅助函数 ───
+
 func serviceFromDockerInspect(info container.InspectResponse, imageConfig *v1.DockerOCIImageConfig, containerDir, serviceName, containerName string) (types.ServiceConfig, types.Networks, error) {
 	if info.Config == nil || info.HostConfig == nil {
 		return types.ServiceConfig{}, nil, fmt.Errorf("容器 inspect 数据不完整")

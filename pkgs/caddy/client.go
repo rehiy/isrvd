@@ -22,13 +22,6 @@ const (
 	ctJSON         = "application/json"
 )
 
-// Client Caddy Admin API 客户端
-type Client struct {
-	baseURL    string
-	httpClient *http.Client
-	configMu   sync.RWMutex
-}
-
 // HTTPError 表示 Caddy Admin API 返回的非成功 HTTP 响应。
 //
 // 调用方可通过 errors.As 获取上游状态码，并映射为合适的业务响应。
@@ -42,6 +35,13 @@ type HTTPError struct {
 // Error 实现 error 接口。
 func (e *HTTPError) Error() string {
 	return fmt.Sprintf("caddy %s %s 状态码 %d: %s", e.Method, e.Path, e.StatusCode, e.Body)
+}
+
+// Client Caddy Admin API 客户端
+type Client struct {
+	baseURL    string
+	httpClient *http.Client
+	configMu   sync.RWMutex
 }
 
 // NewClient 创建 Caddy Admin API 客户端

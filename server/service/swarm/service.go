@@ -195,6 +195,8 @@ func (s *Service) ServiceLogsStream(ctx context.Context, w io.Writer, serviceID,
 	s.svc.ServiceLogsStream(ctx, w, serviceID, tail)
 }
 
+// ─── 辅助函数 ───
+
 func serviceInfoFromRaw(svc swarm.Service, runningTasks int) ServiceInfo {
 	info := ServiceInfo{
 		ID:           svc.ID,

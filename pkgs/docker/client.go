@@ -13,20 +13,6 @@ import (
 	"github.com/rehiy/libgo/logman"
 )
 
-// DockerService Docker 服务
-type DockerService struct {
-	client     *client.Client
-	config     *DockerConfig
-	registryMu sync.RWMutex // 保护 config.Registries 的并发读写
-
-	remote bool // daemon 是否位于当前进程所在主机之外，见 isRemoteHost
-
-	selfID     string
-	selfIDOnce sync.Once
-	closeOnce  sync.Once
-	closeErr   error
-}
-
 // DockerConfig Docker 配置（由外部注入，解除对 config 的依赖）
 type DockerConfig struct {
 	Host          string            // Docker 连接地址
@@ -46,6 +32,20 @@ type RegistryConfig struct {
 	Username    string // 用户名
 	Password    string // 密码
 	Description string // 仓库描述
+}
+
+// DockerService Docker 服务
+type DockerService struct {
+	client     *client.Client
+	config     *DockerConfig
+	registryMu sync.RWMutex // 保护 config.Registries 的并发读写
+
+	remote bool // daemon 是否位于当前进程所在主机之外，见 isRemoteHost
+
+	selfID     string
+	selfIDOnce sync.Once
+	closeOnce  sync.Once
+	closeErr   error
 }
 
 // NewDockerService 创建 Docker 服务
@@ -95,32 +95,6 @@ func (s *DockerService) Remote() bool {
 	return s != nil && s.remote
 }
 
-// isRemoteHost 判断 Docker Host 是否指向当前进程所在主机之外。
-// host 为空时与 SDK 一致，回退到环境变量 DOCKER_HOST。
-// unix://、npipe:// 与回环地址的 tcp:// 视为本机；其余 tcp:// 视为远程，
-// 包括 tcp://docker-proxy:2375 这类容器网络内的别名：无法确认它与当前进程同机，按远程保守处理。
-func isRemoteHost(host string) bool {
-	if strings.TrimSpace(host) == "" {
-		host = os.Getenv(client.EnvOverrideHost)
-	}
-	proto, addr, ok := strings.Cut(strings.TrimSpace(host), "://")
-	if !ok || proto != "tcp" {
-		return false
-	}
-	name := addr
-	if h, _, err := net.SplitHostPort(addr); err == nil {
-		name = h
-	}
-	name = strings.Trim(name, "[]")
-	if strings.EqualFold(name, "localhost") {
-		return false
-	}
-	if ip := net.ParseIP(name); ip != nil && ip.IsLoopback() {
-		return false
-	}
-	return true
-}
-
 // ContainerRoot 获取容器数据根目录
 func (s *DockerService) ContainerRoot() string {
 	if s.config == nil {
@@ -148,4 +122,32 @@ func (s *DockerService) Info(ctx context.Context) (system.Info, error) {
 		return system.Info{}, err
 	}
 	return info, nil
+}
+
+// ─── 辅助函数 ───
+
+// isRemoteHost 判断 Docker Host 是否指向当前进程所在主机之外。
+// host 为空时与 SDK 一致，回退到环境变量 DOCKER_HOST。
+// unix://、npipe:// 与回环地址的 tcp:// 视为本机；其余 tcp:// 视为远程，
+// 包括 tcp://docker-proxy:2375 这类容器网络内的别名：无法确认它与当前进程同机，按远程保守处理。
+func isRemoteHost(host string) bool {
+	if strings.TrimSpace(host) == "" {
+		host = os.Getenv(client.EnvOverrideHost)
+	}
+	proto, addr, ok := strings.Cut(strings.TrimSpace(host), "://")
+	if !ok || proto != "tcp" {
+		return false
+	}
+	name := addr
+	if h, _, err := net.SplitHostPort(addr); err == nil {
+		name = h
+	}
+	name = strings.Trim(name, "[]")
+	if strings.EqualFold(name, "localhost") {
+		return false
+	}
+	if ip := net.ParseIP(name); ip != nil && ip.IsLoopback() {
+		return false
+	}
+	return true
 }

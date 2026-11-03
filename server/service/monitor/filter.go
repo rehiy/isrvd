@@ -1,8 +1,11 @@
 package monitor
 
-import "slices"
+import (
+	"slices"
+	"strings"
+)
 
-import "strings"
+// ─── 辅助函数 ───
 
 // 不应该显示的磁盘设备名前缀
 var excludeDevicePrefixes = []string{

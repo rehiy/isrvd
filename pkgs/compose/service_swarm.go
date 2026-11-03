@@ -64,6 +64,8 @@ func ServiceToSwarmSpec(project *types.Project, svc types.ServiceConfig) (swarm.
 	return spec, nil
 }
 
+// ─── 辅助函数 ───
+
 // ==================== Swarm task/service mapping ====================
 
 func applySwarmMode(svc types.ServiceConfig, spec *swarm.ServiceSpec) {

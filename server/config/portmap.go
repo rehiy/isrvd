@@ -11,6 +11,13 @@ import (
 // ErrInvalidPortMapConfig 表示中控端口映射（端口转发）配置无效。
 var ErrInvalidPortMapConfig = errors.New("端口转发配置无效")
 
+// PortMapConfig 中控端口映射配置（把中控端口经隧道映射到节点侧地址），仅 center 模式使用，修改后需重启生效。
+// 注意：与 Docker 容器的端口映射无关。
+type PortMapConfig struct {
+	Range string `yaml:"range,omitempty" json:"range,omitempty"` // 允许分配的监听端口范围，如 20000-20999 或单个端口；留空表示不启用
+	Bind  string `yaml:"bind,omitempty" json:"bind,omitempty"`   // 监听地址（IP），默认 127.0.0.1；对外开放须显式设为 0.0.0.0 等地址
+}
+
 // Enabled 判断是否配置了端口转发的监听端口范围；nil 视为未启用。
 func (f *PortMapConfig) Enabled() bool {
 	_, hi := f.PortRange()
@@ -58,6 +65,8 @@ func validatePortMap(f *PortMapConfig) error {
 	}
 	return nil
 }
+
+// ─── 辅助函数 ───
 
 // parsePortRange 解析 "20000-20999" 或单个端口 "20022"；空串返回 0, 0, true 表示未启用。
 func parsePortRange(value string) (lo, hi int, ok bool) {

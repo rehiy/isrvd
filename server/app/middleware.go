@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
@@ -127,8 +126,6 @@ func (app *App) auditMiddleware(routeIndex map[string]Route) gin.HandlerFunc {
 }
 
 // ─── 辅助函数 ───
-
-var errGatewayUnavailable = errors.New("中控 isrvd 不可用")
 
 // securityHeadersMiddleware 安全响应头中间件
 func securityHeadersMiddleware() gin.HandlerFunc {

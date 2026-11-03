@@ -65,14 +65,6 @@ func WithEtcdCredentials(username, password string) Option {
 	}
 }
 
-func applyOptions(opts []Option) options {
-	var o options
-	for _, opt := range opts {
-		opt(&o)
-	}
-	return o
-}
-
 // Open 根据 URI 创建 Store，URI 指向目录（或 etcd 前缀）。
 //
 //   - etcd://...  → EtcdStore
@@ -133,4 +125,14 @@ func OpenWithKey(uri string, opts ...Option) (Store, string, error) {
 	}
 	s, err := newFileStore(filepath.Dir(uri))
 	return s, filepath.Base(uri), err
+}
+
+// ─── 辅助函数 ───
+
+func applyOptions(opts []Option) options {
+	var o options
+	for _, opt := range opts {
+		opt(&o)
+	}
+	return o
 }

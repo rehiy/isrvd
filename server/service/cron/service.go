@@ -26,12 +26,6 @@ var (
 	activeJobs    sync.Map
 )
 
-// TypeInfo 脚本类型描述
-type TypeInfo struct {
-	Value string `json:"value"` // 类型值：SHELL | EXEC | BAT | POWERSHELL | DOCKER_TMP | DOCKER_CTR
-	Label string `json:"label"` // 类型显示名称
-}
-
 // Job 计划任务业务类型
 type Job struct {
 	ID          string `yaml:"id" json:"id"`                                   // 任务 ID（自动生成）
@@ -65,30 +59,6 @@ type Service struct {
 	closed        bool
 	failureNotify func(string, string, string, int64)
 	mu            sync.RWMutex // 保护任务、调度条目和关闭状态
-}
-
-// AvailableTypes 按当前 OS 及 Docker 可用性返回可用脚本类型
-func (s *Service) AvailableTypes() []TypeInfo {
-	var types []TypeInfo
-	if runtime.GOOS == "windows" {
-		types = append(types, []TypeInfo{
-			{Value: "BAT", Label: "BAT 批处理脚本"},
-			{Value: "POWERSHELL", Label: "PowerShell 脚本"},
-			{Value: "EXEC", Label: "可执行文件"},
-		}...)
-	} else {
-		types = append(types, []TypeInfo{
-			{Value: "SHELL", Label: "Shell 脚本"},
-			{Value: "EXEC", Label: "可执行文件"},
-		}...)
-	}
-	if s.docker != nil {
-		types = append(types, []TypeInfo{
-			{Value: "DOCKER_TMP", Label: "Docker 临时容器"},
-			{Value: "DOCKER_CTR", Label: "Docker 现有容器"},
-		}...)
-	}
-	return types
 }
 
 // NewService 创建计划任务服务并启动调度器。dockerRaw 由调用方注入，为 nil 时禁用 DOCKER 类型任务。
@@ -204,6 +174,36 @@ func (s *Service) runLogCleaner(ctx context.Context) {
 }
 
 // ─── 公开方法 ───
+
+// TypeInfo 脚本类型描述
+type TypeInfo struct {
+	Value string `json:"value"` // 类型值：SHELL | EXEC | BAT | POWERSHELL | DOCKER_TMP | DOCKER_CTR
+	Label string `json:"label"` // 类型显示名称
+}
+
+// AvailableTypes 按当前 OS 及 Docker 可用性返回可用脚本类型
+func (s *Service) AvailableTypes() []TypeInfo {
+	var types []TypeInfo
+	if runtime.GOOS == "windows" {
+		types = append(types, []TypeInfo{
+			{Value: "BAT", Label: "BAT 批处理脚本"},
+			{Value: "POWERSHELL", Label: "PowerShell 脚本"},
+			{Value: "EXEC", Label: "可执行文件"},
+		}...)
+	} else {
+		types = append(types, []TypeInfo{
+			{Value: "SHELL", Label: "Shell 脚本"},
+			{Value: "EXEC", Label: "可执行文件"},
+		}...)
+	}
+	if s.docker != nil {
+		types = append(types, []TypeInfo{
+			{Value: "DOCKER_TMP", Label: "Docker 临时容器"},
+			{Value: "DOCKER_CTR", Label: "Docker 现有容器"},
+		}...)
+	}
+	return types
+}
 
 // JobDetail 任务详情（含运行时调度状态）
 type JobDetail struct {
@@ -456,14 +456,6 @@ func (s *Service) persist() error {
 	return s.store.SaveJobs(jobs)
 }
 
-func cloneJob(job *Job) *Job {
-	if job == nil {
-		return nil
-	}
-	copy := *job
-	return &copy
-}
-
 func (s *Service) validateJob(job *Job) error {
 	if job == nil {
 		return fmt.Errorf("job is nil")
@@ -503,6 +495,14 @@ func (s *Service) validateJob(job *Job) error {
 }
 
 // ─── 辅助函数 ───
+
+func cloneJob(job *Job) *Job {
+	if job == nil {
+		return nil
+	}
+	copy := *job
+	return &copy
+}
 
 // nextCronCleanTime 返回下一个凌晨 00:05 的时间（留 5 分钟余量避免边界问题）
 func nextCronCleanTime() time.Time {

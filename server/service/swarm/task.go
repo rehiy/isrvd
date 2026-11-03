@@ -34,6 +34,8 @@ func (s *Service) TaskList(ctx context.Context, serviceID string) ([]Task, error
 	return tasksFromRaw(tasks, services, nodes), nil
 }
 
+// ─── 辅助函数 ───
+
 func tasksFromRaw(tasks []swarm.Task, services []swarm.Service, nodes []swarm.Node) []Task {
 	svcNameMap := map[string]string{}
 	for _, svc := range services {

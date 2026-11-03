@@ -58,6 +58,8 @@ func (app *App) initGatewayPermissions() {
 	}
 }
 
+var errGatewayUnavailable = errors.New("中控 isrvd 不可用")
+
 // GatewayAuthorize 为中控网关认证调用者并校验请求的规范路由权限，返回用户名；
 // 失败时同时返回应写出的 HTTP 状态码。认证与权限在同一次生命周期加锁内完成，读取当前账户服务，配置重载后自动生效。
 // 网关须先通过 account.TrustGatewayIdentity 校验 THA 来源并清理外部身份头。

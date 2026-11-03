@@ -40,13 +40,6 @@ type ServerConfig struct {
 	Debug          bool     `yaml:"debug" json:"debug"`                   // 是否启用调试模式
 }
 
-// PortMapConfig 中控端口映射配置（把中控端口经隧道映射到节点侧地址），仅 center 模式使用，修改后需重启生效。
-// 注意：与 Docker 容器的端口映射无关。
-type PortMapConfig struct {
-	Range string `yaml:"range,omitempty" json:"range,omitempty"` // 允许分配的监听端口范围，如 20000-20999 或单个端口；留空表示不启用
-	Bind  string `yaml:"bind,omitempty" json:"bind,omitempty"`   // 监听地址（IP），默认 127.0.0.1；对外开放须显式设为 0.0.0.0 等地址
-}
-
 // 密码登录配置
 type PasswordConfig struct {
 	Disabled  bool `yaml:"disabled" json:"disabled"`   // 是否禁用密码登录（禁用后仅允许 Passkey/OIDC/THA 登录）

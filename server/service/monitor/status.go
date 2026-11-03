@@ -97,6 +97,32 @@ func CollectHostStat(ctx context.Context) *HostStat {
 	}
 }
 
+func buildSystemGPUs(ctx context.Context) []*SystemGPU {
+	deviceStats, _ := gpu.GetGPUStats(ctx)
+	if len(deviceStats) == 0 {
+		return nil
+	}
+
+	systemGPUs := make([]*SystemGPU, 0, len(deviceStats))
+	for i, stat := range deviceStats {
+		systemGPUs = append(systemGPUs, &SystemGPU{
+			Index:       i,
+			DeviceKey:   buildGPUDeviceKey(stat.Vendor, stat.Address, stat.Name, i),
+			Name:        stat.Name,
+			Vendor:      stat.Vendor,
+			MemoryUsed:  stat.MemoryUsed,
+			MemoryTotal: stat.MemoryTotal,
+			Utilization: stat.Utilization,
+			Temperature: stat.Temperature,
+			PowerUsage:  stat.PowerUsage,
+			FanSpeed:    stat.FanSpeed,
+		})
+	}
+	return systemGPUs
+}
+
+// ─── 辅助函数 ───
+
 func formatTimezone(t time.Time) string {
 	name, offset := t.Zone()
 	sign := "+"
@@ -160,28 +186,4 @@ func buildGPUDeviceKey(vendor, address, name string, index int) string {
 	}
 	name = strings.Trim(name, "-")
 	return fmt.Sprintf("%s:%s:%d", vendor, name, index)
-}
-
-func buildSystemGPUs(ctx context.Context) []*SystemGPU {
-	deviceStats, _ := gpu.GetGPUStats(ctx)
-	if len(deviceStats) == 0 {
-		return nil
-	}
-
-	systemGPUs := make([]*SystemGPU, 0, len(deviceStats))
-	for i, stat := range deviceStats {
-		systemGPUs = append(systemGPUs, &SystemGPU{
-			Index:       i,
-			DeviceKey:   buildGPUDeviceKey(stat.Vendor, stat.Address, stat.Name, i),
-			Name:        stat.Name,
-			Vendor:      stat.Vendor,
-			MemoryUsed:  stat.MemoryUsed,
-			MemoryTotal: stat.MemoryTotal,
-			Utilization: stat.Utilization,
-			Temperature: stat.Temperature,
-			PowerUsage:  stat.PowerUsage,
-			FanSpeed:    stat.FanSpeed,
-		})
-	}
-	return systemGPUs
 }

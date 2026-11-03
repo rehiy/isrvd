@@ -28,6 +28,29 @@ type itemStore[T any, P storeItem[T]] struct {
 	mu      sync.RWMutex
 }
 
+// newItemStore 从业务数据存储加载条目并解密密码/私钥
+func newItemStore[T any, P storeItem[T]](file, label string, aead cipher.AEAD, prepare func(item, old P)) (*itemStore[T, P], error) {
+	ts, err := config.OpenData[[]P](file)
+	if err != nil {
+		return nil, err
+	}
+	items, err := ts.Get()
+	if err != nil {
+		return nil, err
+	}
+	items = slices.DeleteFunc(items, func(item P) bool { return item == nil })
+	for _, item := range items {
+		_, password, privateKey := item.fields()
+		if *password, err = openSecret(aead, *password); err != nil {
+			return nil, err
+		}
+		if *privateKey, err = openSecret(aead, *privateKey); err != nil {
+			return nil, err
+		}
+	}
+	return &itemStore[T, P]{ts: ts, aead: aead, label: label, prepare: prepare, items: items}, nil
+}
+
 func (s *itemStore[T, P]) list() []P {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -126,29 +149,6 @@ func (s *itemStore[T, P]) indexOf(id string) int {
 }
 
 // ─── 辅助函数 ───
-
-// newItemStore 从业务数据存储加载条目并解密密码/私钥
-func newItemStore[T any, P storeItem[T]](file, label string, aead cipher.AEAD, prepare func(item, old P)) (*itemStore[T, P], error) {
-	ts, err := config.OpenData[[]P](file)
-	if err != nil {
-		return nil, err
-	}
-	items, err := ts.Get()
-	if err != nil {
-		return nil, err
-	}
-	items = slices.DeleteFunc(items, func(item P) bool { return item == nil })
-	for _, item := range items {
-		_, password, privateKey := item.fields()
-		if *password, err = openSecret(aead, *password); err != nil {
-			return nil, err
-		}
-		if *privateKey, err = openSecret(aead, *privateKey); err != nil {
-			return nil, err
-		}
-	}
-	return &itemStore[T, P]{ts: ts, aead: aead, label: label, prepare: prepare, items: items}, nil
-}
 
 // keepSecrets 填了私钥则清空密码，填了密码则清空私钥，都未填则沿用旧值
 func keepSecrets[T any, P storeItem[T]](item, old P) {
