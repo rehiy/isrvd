@@ -9,7 +9,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { DockerContainerInfo, DockerContainerStats } from '@/service/types'
 
-import { formatFileSize, formatMonitorBytes, hexToRgba, POLL_INTERVAL } from '@/helper/format'
+import { formatFileSize, hexToRgba, POLL_INTERVAL } from '@/helper/format'
+import { formatMonitorBytes } from '@/helper/monitor'
 
 Chart.register(...registerables)
 

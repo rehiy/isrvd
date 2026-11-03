@@ -8,11 +8,10 @@ import api from '@/service/api'
 import { MARKETPLACE_PICK_STORAGE_KEY } from '@/service/types'
 import type { ComposeDeployTarget, ComposeMarketplacePick } from '@/service/types'
 
-import ComposeEditor from './widget/compose-editor.vue'
-import EnvEditor from './widget/env-editor.vue'
+import ComposeEditor from '@/component/compose/compose-editor.vue'
 
 @Component({
-    components: { ComposeEditor, EnvEditor }
+    components: { ComposeEditor }
 })
 class ComposeDeploy extends Vue {
     portal = usePortal()
@@ -246,7 +245,7 @@ export default toNative(ComposeDeploy)
             <ComposeEditor v-model="content" :disabled="loading" />
           </div>
           <div class="min-w-0">
-            <EnvEditor :model-value="envContent" :disabled="loading" @update:model-value="onEnvContentChange" />
+            <ComposeEditor filename=".env" :model-value="envContent" :disabled="loading" @update:model-value="onEnvContentChange" />
           </div>
         </div>
 

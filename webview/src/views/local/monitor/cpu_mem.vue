@@ -6,8 +6,7 @@ import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 import type { SystemStat } from '@/service/types'
 
 import Chart from '@/helper/chart'
-import { formatMonitorBytes } from '@/helper/format'
-import { appendMonitorPoint, usagePercent, semanticColor } from '@/helper/monitor'
+import { appendMonitorPoint, formatMonitorBytes, usagePercent, semanticColor } from '@/helper/monitor'
 
 interface ChartCallbackContext {
     parsed: { y: number | null }

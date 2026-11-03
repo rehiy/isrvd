@@ -9,7 +9,6 @@ import type {
     ApisixRoute,
     ApisixRouteUpstreamFormNode,
     ApisixRouteUpstreamMode,
-    ApisixRouteUpstreamModeCard,
     ApisixUpstream,
     ApisixUpstreamConfig,
     ApisixUpstreamScheme,
@@ -26,14 +25,21 @@ import {
     upstreamHostError
 } from '@/helper/apisix'
 
+import ContainerPortSelect from '@/component/docker/container-port-select.vue'
+import ContainerSelect from '@/component/docker/container-select.vue'
 import BaseModal from '@/component/modal.vue'
 import ToggleCard from '@/component/toggle-card.vue'
 
-import ContainerPortSelect from '@/views/docker/widget/container-port-select.vue'
-import ContainerSelect from '@/views/docker/widget/container-select.vue'
-
 import PluginConfigPanel from './plugin-config-panel.vue'
 import UpstreamHostFields from './upstream-host-fields.vue'
+
+interface ApisixRouteUpstreamModeCard {
+    value: ApisixRouteUpstreamMode
+    title: string
+    desc: string
+    icon: string
+    tone: 'indigo' | 'emerald' | 'slate'
+}
 
 // ─── 模块级静态常量 ───
 

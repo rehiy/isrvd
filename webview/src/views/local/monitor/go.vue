@@ -6,8 +6,7 @@ import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 import type { SystemStat, SystemGoRuntimeStat } from '@/service/types'
 
 import Chart, { makeLineDataset } from '@/helper/chart'
-import { formatMonitorBytes } from '@/helper/format'
-import { appendMonitorPoint } from '@/helper/monitor'
+import { appendMonitorPoint, formatMonitorBytes } from '@/helper/monitor'
 
 @Component
 class SystemGo extends Vue {

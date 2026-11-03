@@ -164,6 +164,12 @@ class ApiService {
         return http.get<AuditLog[]>('system/audit/logs', { params })
     }
 
+    // ==================== Copilot 接口目录 ====================
+
+    copilotCatalog(params?: { tag?: string; q?: string; path?: string; method?: string }) {
+        return http.get('copilot/catalog', { params })
+    }
+
     // ==================== Account 账户相关 ====================
 
     accountLogin(data: AuthLogin) {

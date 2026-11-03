@@ -3,6 +3,8 @@ import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
 import type { DockerImageInfo } from '@/service/types'
 
+import { stringColor } from '@/helper/format'
+
 import Combobox from '@/component/combobox.vue'
 
 interface ImageGroup {
@@ -20,21 +22,7 @@ class ImageSelect extends Vue {
     @Prop({ type: String, default: '选择或输入镜像名称' }) readonly placeholder!: string
     @Prop({ type: Boolean, default: false }) readonly disabled!: boolean
 
-    // ─── 常量 ───
-    readonly colorPalette = [
-        '#0ea5e9', '#6366f1', '#10b981', '#f59e0b', '#ef4444',
-        '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#06b6d4',
-        '#84cc16', '#e11d48', '#a855f7', '#3b82f6', '#d946ef'
-    ]
-
-    // ─── 方法 ───
-    domainColor(domain: string) {
-        let hash = 0
-        for (let i = 0; i < domain.length; i++) {
-            hash = ((hash << 5) - hash + domain.charCodeAt(i)) | 0
-        }
-        return this.colorPalette[Math.abs(hash) % this.colorPalette.length]
-    }
+    domainColor = stringColor
 
     domainOf(repoTag: string) {
         if (!repoTag) {

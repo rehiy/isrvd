@@ -50,20 +50,6 @@ export const formatFileSize = (bytes: number): string => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-export const formatMonitorBytes = (bytes: number, rate = false): string => {
-    if (!bytes || bytes < 0) {
-        return rate ? '0 B/s' : '0 B'
-    }
-    const units = rate ? ['B/s', 'KB/s', 'MB/s', 'GB/s'] : ['B', 'KB', 'MB', 'GB', 'TB']
-    let unitIndex = 0
-    let value = bytes
-    while (value >= 1024 && unitIndex < units.length - 1) {
-        value /= 1024
-        unitIndex++
-    }
-    return `${value.toFixed(1)} ${units[unitIndex]}`
-}
-
 export const formatTime = (timeString?: string): string => {
     if (!timeString) {
         return '-'
@@ -78,6 +64,20 @@ export const formatUnixTime = (ts: number): string => {
 
 export const formatUnixDateTime = (ts?: number): string => {
     return ts ? new Date(ts * 1000).toLocaleString() : '-'
+}
+
+const STRING_COLORS = [
+    '#0ea5e9', '#6366f1', '#10b981', '#f59e0b', '#ef4444',
+    '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#06b6d4',
+    '#84cc16', '#e11d48', '#a855f7', '#3b82f6', '#d946ef'
+]
+
+export const stringColor = (value: string): string => {
+    let hash = 0
+    for (let i = 0; i < value.length; i++) {
+        hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0
+    }
+    return STRING_COLORS[Math.abs(hash) % STRING_COLORS.length]
 }
 
 export const hexToRgba = (hex: string, alpha: number): string => {

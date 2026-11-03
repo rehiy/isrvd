@@ -457,14 +457,20 @@ def check_desktop_badge_shape(filepath, lines, tmpl, tmpl_line0):
 
 def check_h_tags_in_mobile(filepath, lines, tmpl, tmpl_line0):
     """移动端卡片内不应使用 h2-h6 标签"""
-    mobile_start = tmpl.find('md:hidden space-y-3')
-    if mobile_start == -1:
-        return
-    base_lineno = tmpl_line0 + tmpl[:mobile_start].count('\n')
-    for i, line in enumerate(tmpl[mobile_start:].splitlines()):
-        if re.search(r'<h[2-6]\b', line.strip()):
-            report(filepath, base_lineno + i + 1, "WARN",
-                   f"移动端卡片内不应使用 h2-h6 标签: {line.strip()[:60]}")
+    parser = FormTemplateParser()
+    parser.feed(tmpl)
+
+    def walk(node, in_mobile=False):
+        classes = set((node['attrs'].get('class') or '').split())
+        in_mobile = in_mobile or {'md:hidden', 'space-y-3'} <= classes
+        if in_mobile and node['tag'] in {'h2', 'h3', 'h4', 'h5', 'h6'}:
+            lineno = tmpl_line0 + node['line'] - 1
+            report(filepath, lineno, "WARN",
+                   f"移动端卡片内不应使用 h2-h6 标签: {lines[lineno - 1].strip()[:60]}")
+        for child in node['children']:
+            walk(child, in_mobile)
+
+    walk(parser.root)
 
 
 # 6.9.1 状态关键词

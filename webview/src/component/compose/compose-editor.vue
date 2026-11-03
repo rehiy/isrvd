@@ -12,14 +12,7 @@ class ComposeEditor extends Vue {
     @Prop({ default: false }) disabled!: boolean
     @Prop({ default: '50vh' }) height!: string
     @Prop({ default: '' }) warning!: string
-
-    get content() {
-        return this.modelValue
-    }
-
-    set content(val: string) {
-        this.$emit('update:modelValue', val)
-    }
+    @Prop({ default: 'compose.yml' }) filename!: 'compose.yml' | '.env'
 }
 
 export default toNative(ComposeEditor)
@@ -29,9 +22,10 @@ export default toNative(ComposeEditor)
   <div class="space-y-3">
     <div>
       <label class="form-label">
-        <i class="fas fa-file-code mr-1 text-slate-400"></i>compose.yml
+        <i class="fas fa-file-code mr-1 text-slate-400"></i>{{ filename }}
       </label>
-      <CodeEditor v-model="content" filename="compose.yml" :height="height" :disabled="disabled" />
+      <CodeEditor :model-value="modelValue" :filename="filename" :height="height" :disabled="disabled" @update:model-value="$emit('update:modelValue', $event)" />
+      <p v-if="filename === '.env'" class="text-xs text-slate-400 mt-1">{{ $t('每行 KEY=VALUE，用于 Compose 变量插值') }}</p>
     </div>
     <div v-if="warning" class="bg-amber-50 border border-amber-200 rounded-lg p-3">
       <p class="text-sm text-amber-700">

@@ -3,7 +3,7 @@ import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import type { SwarmServiceInfo } from '@/service/types'
 
-import RedeployModal from '@/views/compose/widget/redeploy-modal.vue'
+import RedeployModal from '@/component/compose/redeploy-modal.vue'
 
 @Component({
     expose: ['show'],

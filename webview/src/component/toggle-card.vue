@@ -8,6 +8,7 @@ class ToggleCard extends Vue {
   @Prop({ type: String, default: '' }) desc!: string
   @Prop({ type: Boolean, default: false }) violet!: boolean
   @Prop({ type: Boolean, default: false }) disabled!: boolean
+  @Prop({ type: Boolean, default: false }) alwaysExpanded!: boolean
 
   get hasBody(): boolean {
     return !!this.$slots.default
@@ -30,16 +31,51 @@ export default toNative(ToggleCard)
 
 <template>
   <!-- 有 body：toggle-expand-card 样式（收缩时普通 toggle-row，展开时变 card） -->
-  <div v-if="hasBody" class="toggle-expand-card" :class="{ 'toggle-expand-card-open': modelValue }">
+  <div v-if="hasBody" class="toggle-expand-card" :class="{ 'toggle-expand-card-open': modelValue || alwaysExpanded }">
     <div class="toggle-row">
-      <div>
-        <span class="text-sm text-slate-600">{{ label }}</span>
+      <div class="min-w-0 flex-1">
+        <slot name="label">
+          <span class="text-sm text-slate-600">{{ label }}</span>
+        </slot>
         <p v-if="hasDesc" class="text-xs text-slate-400 mt-0.5">
           <slot name="desc">
             {{ desc }}
           </slot>
         </p>
       </div>
+      <slot name="control">
+        <button
+          type="button"
+          class="toggle"
+          :class="{ 'toggle-on': modelValue, 'toggle-violet': violet, 'opacity-50 cursor-not-allowed': disabled }"
+          :disabled="disabled"
+          role="switch"
+          :aria-label="label"
+          :aria-checked="modelValue"
+          @click="toggle"
+        >
+          <span class="toggle-thumb" />
+        </button>
+      </slot>
+    </div>
+    <div v-if="modelValue || alwaysExpanded" class="toggle-expand-body">
+      <slot />
+    </div>
+  </div>
+
+  <!-- 无 body：普通 toggle-row -->
+  <div v-else class="toggle-row">
+    <div class="min-w-0 flex-1">
+      <slot name="label">
+        <span class="text-sm text-slate-600">{{ label }}</span>
+      </slot>
+      <p v-if="hasDesc" class="text-xs text-slate-400 mt-0.5">
+        <slot name="desc">
+          {{ desc }}
+        </slot>
+      </p>
+    </div>
+    <slot name="control">
       <button
         type="button"
         class="toggle"
@@ -52,33 +88,6 @@ export default toNative(ToggleCard)
       >
         <span class="toggle-thumb" />
       </button>
-    </div>
-    <div v-if="modelValue" class="toggle-expand-body">
-      <slot />
-    </div>
-  </div>
-
-  <!-- 无 body：普通 toggle-row -->
-  <div v-else class="toggle-row">
-    <div>
-      <span class="text-sm text-slate-600">{{ label }}</span>
-      <p v-if="hasDesc" class="text-xs text-slate-400 mt-0.5">
-        <slot name="desc">
-          {{ desc }}
-        </slot>
-      </p>
-    </div>
-    <button
-      type="button"
-      class="toggle"
-      :class="{ 'toggle-on': modelValue, 'toggle-violet': violet, 'opacity-50 cursor-not-allowed': disabled }"
-      :disabled="disabled"
-      role="switch"
-      :aria-label="label"
-      :aria-checked="modelValue"
-      @click="toggle"
-    >
-      <span class="toggle-thumb" />
-    </button>
+    </slot>
   </div>
 </template>

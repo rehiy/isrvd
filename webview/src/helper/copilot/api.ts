@@ -2,6 +2,7 @@ import axios from 'axios'
 
 import { useLocaleStore } from '@/stores'
 
+import api from '@/service/api'
 import { http } from '@/service/client'
 
 import { packToolResult } from './blob'
@@ -232,7 +233,7 @@ async function ensureOperationDetail(operation: RegisteredOperation): Promise<{ 
         return { value: operation }
     }
     try {
-        const res = await http.get('copilot/catalog', { params: { path: operation.path, method: operation.method } })
+        const res = await api.copilotCatalog({ path: operation.path, method: operation.method })
         const payload = res?.payload
         if (!isRecord(payload)) {
             return { error: copilotError('OPERATION_CHANGED', t('接口定义已变化，请重新调用 lookup_api。'), true) }

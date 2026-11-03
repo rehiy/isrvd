@@ -6,14 +6,12 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { ComposeDeployTarget, ComposeHistoryInfo } from '@/service/types'
 
+import ComposeEditor from '@/component/compose/compose-editor.vue'
 import BaseModal from '@/component/modal.vue'
-
-import ComposeEditor from '@/views/compose/widget/compose-editor.vue'
-import EnvEditor from '@/views/compose/widget/env-editor.vue'
 
 @Component({
     expose: ['show'],
-    components: { BaseModal, ComposeEditor, EnvEditor },
+    components: { BaseModal, ComposeEditor },
     emits: ['success']
 })
 class RedeployModal extends Vue {
@@ -292,7 +290,7 @@ export default toNative(RedeployModal)
         <ComposeEditor v-model="composeContent" :disabled="modalLoading" height="min(42vh, 360px)" />
       </div>
       <div class="min-w-0">
-        <EnvEditor :model-value="envContent" :disabled="modalLoading" height="min(42vh, 360px)" @update:model-value="onEnvContentChange" />
+        <ComposeEditor filename=".env" :model-value="envContent" :disabled="modalLoading" height="min(42vh, 360px)" @update:model-value="onEnvContentChange" />
       </div>
       <div v-if="composeWarning" class="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:col-span-2">
         <p class="text-sm text-amber-700">

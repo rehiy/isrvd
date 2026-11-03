@@ -4,16 +4,34 @@ import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { CaddyHandler, CaddyHandlerFileServer, CaddyHandlerHeaders, CaddyHandlerKind, CaddyHandlerKindCard, CaddyHandlerReverseProxy, CaddyHandlerRewrite, CaddyHandlerStaticResponse, CaddyHeaderOp, CaddyRoute, CaddyRouteUpsert, DockerContainerInfo } from '@/service/types'
+import type { CaddyHandler, CaddyHandlerFileServer, CaddyHandlerHeaders, CaddyHandlerReverseProxy, CaddyHandlerRewrite, CaddyHandlerStaticResponse, CaddyRoute, CaddyRouteUpsert, DockerContainerInfo } from '@/service/types'
 
 import { parseHostPort } from '@/helper/format'
 
 import CodeEditor from '@/component/code-editor.vue'
+import ContainerPortSelect from '@/component/docker/container-port-select.vue'
+import ContainerSelect from '@/component/docker/container-select.vue'
 import BaseModal from '@/component/modal.vue'
 import ToggleCard from '@/component/toggle-card.vue'
 
-import ContainerPortSelect from '@/views/docker/widget/container-port-select.vue'
-import ContainerSelect from '@/views/docker/widget/container-select.vue'
+// 前端表单内部使用的 handler 类型标识（不提交到后端）
+type CaddyHandlerKind = 'reverse_proxy' | 'file_server' | 'static_response' | 'rewrite' | 'raw'
+
+// 单条请求头/响应头操作（前端表单内部使用）
+interface CaddyHeaderOp {
+    op: 'set' | 'add' | 'delete'
+    field: string
+    value: string
+}
+
+// handler kind 卡片
+interface CaddyHandlerKindCard {
+    value: CaddyHandlerKind
+    title: string
+    desc: string
+    icon: string
+    tone: 'indigo' | 'emerald' | 'amber' | 'violet' | 'rose' | 'slate'
+}
 
 const HANDLER_KIND_CARDS: CaddyHandlerKindCard[] = [
     { value: 'reverse_proxy', title: '反向代理', desc: '将请求转发到一个或多个上游服务器', icon: 'fa-diagram-project', tone: 'indigo' },

@@ -1,15 +1,5 @@
 // ─── Caddy 相关 ───
 
-// 前端表单内部使用的 handler 类型标识（不提交到后端）
-export type CaddyHandlerKind = 'reverse_proxy' | 'file_server' | 'static_response' | 'rewrite' | 'raw'
-
-// 单条请求头/响应头操作（前端表单内部使用）
-export interface CaddyHeaderOp {
-    op: 'set' | 'add' | 'delete'
-    field: string
-    value: string
-}
-
 // Caddy 原生 MatchSet（对应 routes[i].match[] 的单个元素）
 export interface CaddyMatchSet {
     host?: string[]
@@ -138,15 +128,6 @@ export interface CaddyServerCreate extends CaddyServerUpdate {
 
 export type CaddyServerDetail = CaddyServerInfo
 
-// handler kind 卡片
-export interface CaddyHandlerKindCard {
-    value: CaddyHandlerKind
-    title: string
-    desc: string
-    icon: string
-    tone: 'indigo' | 'emerald' | 'amber' | 'violet' | 'rose' | 'slate'
-}
-
 // ─── Basic Auth ───
 
 export interface CaddyBasicAuthUser {
@@ -204,12 +185,4 @@ export interface CaddyCert {
     notBefore?: string       // 证书生效时间
     notAfter?: string        // 证书过期时间
     sans?: string[]          // Subject Alternative Names（DNS）
-}
-
-export interface CaddyCertSourceCard {
-    value: CaddyCertSource
-    title: string
-    desc: string
-    icon: string
-    tone: 'indigo' | 'emerald' | 'amber' | 'cyan'
 }

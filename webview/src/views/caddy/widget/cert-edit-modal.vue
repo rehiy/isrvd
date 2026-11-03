@@ -4,9 +4,17 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { CaddyCert, CaddyCertSource, CaddyCertSourceCard } from '@/service/types'
+import type { CaddyCert, CaddyCertSource } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
+
+interface CaddyCertSourceCard {
+    value: CaddyCertSource
+    title: string
+    desc: string
+    icon: string
+    tone: 'indigo' | 'emerald' | 'amber' | 'cyan'
+}
 
 const SOURCE_CARDS: CaddyCertSourceCard[] = [
     { value: 'file', title: '磁盘文件', desc: '从本地磁盘路径加载证书和私钥文件', icon: 'fa-file-shield', tone: 'indigo' },

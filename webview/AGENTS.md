@@ -334,6 +334,9 @@ webview/src/
   | `desc` | `string` | 描述文字（可选，也可用 `#desc` slot 传入富文本） |
   | `violet` | `boolean` | 激活色为 violet（如 Caddy Global 场景） |
   | `disabled` | `boolean` | 禁用状态 |
+  | `alwaysExpanded` | `boolean` | 始终显示 default slot 内容，默认 false；适用于开关仅控制业务启停、说明需常显的卡片 |
+
+  可选插槽：`#label` 自定义标题区（图标、标题等，`label` 仍用于开关无障碍名称）；`#control` 替换右侧开关（如只读状态）；`#desc` 自定义说明；default slot 为开启后展开的内容。不传插槽时保留原有开关行为。
 
   ```html
   <!-- 无 body：普通 toggle 行 -->

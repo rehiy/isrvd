@@ -7,11 +7,11 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { DockerImageInfo, DockerNetworkInfo } from '@/service/types'
 
+import ImageSelect from '@/component/docker/image-select.vue'
 import BaseModal from '@/component/modal.vue'
 import ToggleCard from '@/component/toggle-card.vue'
 
 import CapSelect from './cap-select.vue'
-import ImageSelect from './image-select.vue'
 
 @Component({
     expose: ['show'],

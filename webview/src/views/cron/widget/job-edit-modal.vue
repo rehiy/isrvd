@@ -7,11 +7,10 @@ import api from '@/service/api'
 import type { CronJob, CronJobCreate, CronTypeInfo, DockerContainerInfo, DockerImageInfo } from '@/service/types'
 
 import CodeEditor from '@/component/code-editor.vue'
+import ContainerSelect from '@/component/docker/container-select.vue'
+import ImageSelect from '@/component/docker/image-select.vue'
 import BaseModal from '@/component/modal.vue'
 import ToggleCard from '@/component/toggle-card.vue'
-
-import ContainerSelect from '@/views/docker/widget/container-select.vue'
-import ImageSelect from '@/views/docker/widget/image-select.vue'
 
 const defaultFormData = (type = 'SHELL'): CronJobCreate => ({
     name: '',

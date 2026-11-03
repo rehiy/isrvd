@@ -42,14 +42,6 @@ export interface ApisixRouteUpstreamFormNode {
     weight: number
 }
 
-export interface ApisixRouteUpstreamModeCard {
-    value: ApisixRouteUpstreamMode
-    title: string
-    desc: string
-    icon: string
-    tone: 'indigo' | 'emerald' | 'slate'
-}
-
 // ==================== Route ====================
 
 export interface ApisixRoute {

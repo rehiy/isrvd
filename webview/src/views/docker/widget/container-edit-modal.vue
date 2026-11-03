@@ -4,7 +4,7 @@ import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 import type { DockerContainerInfo } from '@/service/types'
 import { COMPOSE_PROJECT_LABEL, COMPOSE_SERVICE_LABEL } from '@/service/types/docker'
 
-import RedeployModal from '@/views/compose/widget/redeploy-modal.vue'
+import RedeployModal from '@/component/compose/redeploy-modal.vue'
 
 @Component({
     expose: ['show'],

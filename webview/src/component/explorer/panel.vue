@@ -471,7 +471,7 @@ export default toNative(ExplorerPanel)
                         {{ file.name }}
                       </button>
                       <span v-else class="item-title">{{ file.name }}</span>
-                      <span v-if="file.isLink && file.linkTarget" class="text-xs text-slate-400 truncate block mt-0.5">{{ file.linkTarget }}</span>
+                      <span v-if="file.isLink && file.linkTarget" class="item-subtitle">{{ file.linkTarget }}</span>
                     </div>
                   </div>
                 </td>

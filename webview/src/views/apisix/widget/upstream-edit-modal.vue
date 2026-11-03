@@ -18,10 +18,9 @@ import type {
 
 import { normalizeUpstreamFormNodes, normalizeUpstreamScheme, normalizeUpstreamType, UPSTREAM_SCHEME_OPTIONS, upstreamAdvancedSummary, upstreamHostError } from '@/helper/apisix'
 
+import ContainerPortSelect from '@/component/docker/container-port-select.vue'
+import ContainerSelect from '@/component/docker/container-select.vue'
 import BaseModal from '@/component/modal.vue'
-
-import ContainerPortSelect from '@/views/docker/widget/container-port-select.vue'
-import ContainerSelect from '@/views/docker/widget/container-select.vue'
 
 import UpstreamHostFields from './upstream-host-fields.vue'
 

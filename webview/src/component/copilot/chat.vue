@@ -7,7 +7,7 @@ import { useRoute } from 'vue-router'
 
 import { useLocaleStore } from '@/stores'
 
-import { http } from '@/service/client'
+import api from '@/service/api'
 
 import { executeCopilotAPI, registerCopilotAPILookup, resetCopilotAPICallRefs } from '@/helper/copilot/api'
 import { blobRead } from '@/helper/copilot/blob'
@@ -47,13 +47,11 @@ useFrontendTool({
     ],
     handler: async ({ tag, q, path, method }) => {
         try {
-            const res = await http.get('copilot/catalog', {
-                params: {
-                    tag: tag || undefined,
-                    q: q || undefined,
-                    path: path || undefined,
-                    method: method || undefined,
-                },
+            const res = await api.copilotCatalog({
+                tag: tag || undefined,
+                q: q || undefined,
+                path: path || undefined,
+                method: method || undefined,
             })
             return { success: res?.success ?? true, message: res?.message ?? '', payload: registerCopilotAPILookup(res?.payload ?? null) }
         } catch (e) {
