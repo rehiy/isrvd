@@ -336,7 +336,9 @@ webview/src/
   | `disabled` | `boolean` | 禁用状态 |
   | `alwaysExpanded` | `boolean` | 始终显示 default slot 内容，默认 false；适用于开关仅控制业务启停、说明需常显的卡片 |
 
-  可选插槽：`#label` 自定义标题区（图标、标题等，`label` 仍用于开关无障碍名称）；`#control` 替换右侧开关（如只读状态）；`#desc` 自定义说明；default slot 为开启后展开的内容。不传插槽时保留原有开关行为。
+  功能开关标题统一使用文字，不添加装饰图标或彩色图标容器；必要的状态文字及加载转圈可保留。自定义标题沿用组件默认文字样式（`text-sm text-slate-600`），说明通过 `desc` / `#desc` 统一渲染。
+
+  可选插槽：`#label` 自定义标题区（标题、状态及加载反馈，`label` 仍用于开关无障碍名称）；`#control` 替换右侧开关（如只读状态）；`#desc` 自定义说明；default slot 为开启后展开的内容。不传插槽时保留原有开关行为。
 
   ```html
   <!-- 无 body：普通 toggle 行 -->

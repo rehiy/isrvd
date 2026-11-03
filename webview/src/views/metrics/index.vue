@@ -18,10 +18,10 @@ import PageSearch from '@/component/page-search.vue'
 import ToggleCard from '@/component/toggle-card.vue'
 
 const SOURCES = [
-    { name: 'host', label: '本机监控', icon: 'fas fa-server', color: 'bg-cyan-500', desc: 'CPU、内存、磁盘、网络与进程运行时指标' },
-    { name: 'containers', label: '容器监控', icon: 'fab fa-docker', color: 'bg-emerald-500', desc: '运行中容器的 CPU、内存、网络与磁盘指标' },
-    { name: 'apisix', label: 'APISIX', icon: 'fas fa-route', color: 'bg-indigo-500', desc: '请求数、状态码、耗时与响应流量' },
-    { name: 'caddy', label: 'Caddy', icon: 'fas fa-shield', color: 'bg-violet-500', desc: '请求数、状态码、耗时与响应流量' },
+    { name: 'host', label: '本机监控', desc: 'CPU、内存、磁盘、网络与进程运行时指标' },
+    { name: 'containers', label: '容器监控', desc: '运行中容器的 CPU、内存、网络与磁盘指标' },
+    { name: 'apisix', label: 'APISIX', desc: '请求数、状态码、耗时与响应流量' },
+    { name: 'caddy', label: 'Caddy', desc: '请求数、状态码、耗时与响应流量' },
 ] as const
 
 const REQUEST_SERIES = [
@@ -361,20 +361,15 @@ export default toNative(MonitoringMetrics)
               @update:model-value="updateSource(source.name, $event)"
             >
               <template #label>
-                <div class="inline-info">
-                  <div class="card-icon flex-shrink-0" :class="source.color"><i :class="source.icon" class="text-white text-xs"></i></div>
-                  <div class="min-w-0">
-                    <div class="inline-info flex-wrap">
-                      <h3 class="text-sm font-semibold text-slate-700">{{ $t(source.label) }}</h3>
-                      <i v-if="busy[source.name]" class="fas fa-spinner fa-spin text-xs text-slate-400" aria-hidden="true"></i>
-                      <span v-if="source.controllable" class="text-xs" :class="source.state.color">{{ $t(source.state.label) }}</span>
-                    </div>
-                    <p class="text-xs text-slate-500 mt-0.5">{{ $t(source.desc) }}</p>
-                  </div>
+                <div class="inline-info flex-wrap">
+                  <span class="text-sm text-slate-600">{{ $t(source.label) }}</span>
+                  <i v-if="busy[source.name]" class="fas fa-spinner fa-spin text-xs text-slate-400" aria-hidden="true"></i>
+                  <span v-if="source.controllable" class="text-xs" :class="source.state.color">{{ $t(source.state.label) }}</span>
                 </div>
               </template>
-              <template v-if="source.status?.error" #desc>
-                <span class="block text-red-500 break-all">{{ source.status.error }}</span>
+              <template #desc>
+                {{ $t(source.desc) }}
+                <span v-if="source.status?.error" class="block text-red-500 break-all">{{ source.status.error }}</span>
               </template>
               <template v-if="!source.controllable" #control>
                 <span class="text-xs flex-shrink-0" :class="source.state.color">{{ $t(source.state.label) }}</span>
