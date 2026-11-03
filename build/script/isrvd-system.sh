@@ -19,7 +19,6 @@ SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 ROLE_DIR="/etc/systemd/system/${SERVICE_NAME}.service.d"
 ROLE_FILE="$ROLE_DIR/installer.conf"
 DOCKER_DATA_DIR="/srv/data"
-DATA_DIR_CHOSEN=0
 
 SERVICE_AREA="auto"
 SYSTEM_COMPONENTS=""
@@ -130,7 +129,6 @@ parse_options() {
     SYSTEM_COMPONENTS="${SYSTEM_COMPONENTS:-$gateway}"
     select_components
     set_component_data_dir "${data:-$DOCKER_DATA_DIR}"
-    DATA_DIR_CHOSEN=1
 }
 
 select_components() {
@@ -486,7 +484,7 @@ set_component_data_dir() {
 restore_component_data_dir() {
     local container component mount destination suffix mode writable source root common=""
     local mounts=()
-    [ "$DATA_DIR_CHOSEN" -eq 0 ] || common="$DOCKER_DATA_DIR"
+    [ "$CONFIG_FILE" = "$INSTALL_DIR/config.yml" ] || common="$DOCKER_DATA_DIR"
     for container in "${COMPONENT_CONTAINERS[@]}"; do
         component="${container#isrvd-}"
         component="${component%-update-backup}"
@@ -636,7 +634,6 @@ discover_binary_data() {
         target=$(realpath -e -- "$legacy") || fail "Cannot resolve installed configuration"
         [[ "$target" = */conf/isrvd.yml ]] || fail "Unexpected installed configuration link"
         set_component_data_dir "${target%/conf/isrvd.yml}"
-        DATA_DIR_CHOSEN=1
         CONFIG_FILE="$target"
     elif [ -f "$legacy" ]; then
         root=$(awk '

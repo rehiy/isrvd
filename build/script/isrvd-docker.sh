@@ -320,7 +320,7 @@ preserve_apisix_data() {
     for dir in conf cert logs; do
         mkdir -p "$stage/$dir" "$DOCKER_DATA_DIR/apisix/$dir" || return 1
         if ! docker cp "$previous:/usr/local/apisix/$dir/." "$stage/$dir" || \
-            ! cp -an "$stage/$dir/." "$DOCKER_DATA_DIR/apisix/$dir/"; then
+            ! { tar -C "$stage/$dir" -cf - . | tar -C "$DOCKER_DATA_DIR/apisix/$dir" --skip-old-files -xf -; }; then
             echo "[error] Cannot preserve APISIX $dir; migration snapshot retained: $stage" >&2
             return 1
         fi
@@ -349,23 +349,18 @@ update() {
         slim|caddy|apisix) ;;
         *) previous_variant="${old_image##*:}" ;;
     esac
+    [ "$previous_variant" != latest ] || previous_variant=slim
     variant="$DOCKER_VARIANT"
     if [ -z "$variant" ]; then
         case "$DOCKER_TAG" in
             slim|latest) variant=slim ;;
             caddy|apisix) variant="$DOCKER_TAG" ;;
-            *) variant=$(docker inspect --format '{{index .Config.Labels "io.isrvd.variant"}}' "$SERVICE_NAME") ;;
+            *) variant="$previous_variant" ;;
         esac
     fi
     case "$variant" in
         slim|caddy|apisix) ;;
-        *)
-            case "${old_image##*:}" in
-                slim|latest) variant=slim ;;
-                caddy|apisix) variant="${old_image##*:}" ;;
-                *) fail "Unknown image layout; specify --variant slim, caddy, or apisix" ;;
-            esac
-            ;;
+        *) fail "Unknown image layout; specify --variant slim, caddy, or apisix" ;;
     esac
     tag="${DOCKER_TAG:-${old_image##*:}}"
     validate_image_layout "$tag" "$variant"
