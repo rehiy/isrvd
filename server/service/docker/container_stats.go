@@ -17,6 +17,7 @@ import (
 
 // ContainerStatsResponse 容器统计信息响应，保持前端稳定响应结构。
 type ContainerStatsResponse struct {
+	Ts            int64                      `json:"ts"`            // 服务端采样时间（Unix 秒）
 	ID            string                     `json:"id"`            // 容器 ID
 	Name          string                     `json:"name"`          // 容器名称
 	CPUPercent    float64                    `json:"cpuPercent"`    // CPU 使用率（百分比）
@@ -93,18 +94,18 @@ func containerStatsResponse(id string, v container.StatsResponse, top *container
 		cpuCores = 1
 	}
 
-	cpuDelta := float64(v.CPUStats.CPUUsage.TotalUsage - v.PreCPUStats.CPUUsage.TotalUsage)
-	systemDelta := float64(v.CPUStats.SystemUsage - v.PreCPUStats.SystemUsage)
+	cpuDelta := float64(v.CPUStats.CPUUsage.TotalUsage) - float64(v.PreCPUStats.CPUUsage.TotalUsage)
+	systemDelta := float64(v.CPUStats.SystemUsage) - float64(v.PreCPUStats.SystemUsage)
 	var cpuPercent float64
 	if systemDelta > 0 && cpuDelta > 0 {
 		cpuPercent = (cpuDelta / systemDelta) * float64(cpuCores) * 100.0
 	}
 
-	memCache := v.MemoryStats.Stats["inactive_file"]
-	if memCache == 0 {
-		memCache = v.MemoryStats.Stats["cache"]
+	memCache, cgroupV1 := v.MemoryStats.Stats["total_inactive_file"]
+	if !cgroupV1 {
+		memCache = v.MemoryStats.Stats["inactive_file"]
 	}
-	memoryUsage := v.MemoryStats.Usage - memCache
+	memoryUsage := v.MemoryStats.Usage - min(memCache, v.MemoryStats.Usage)
 	var memoryPercent float64
 	if v.MemoryStats.Limit > 0 {
 		memoryPercent = float64(memoryUsage) / float64(v.MemoryStats.Limit) * 100.0
@@ -124,6 +125,7 @@ func containerStatsResponse(id string, v container.StatsResponse, top *container
 	var blockRead, blockWrite int64
 	blockDetailMap := make(map[string]*StatsBlockDetail)
 	for _, blkStats := range v.BlkioStats.IoServiceBytesRecursive {
+		blkStats.Op = strings.ToLower(blkStats.Op)
 		switch blkStats.Op {
 		case "read":
 			blockRead += int64(blkStats.Value)
@@ -154,6 +156,7 @@ func containerStatsResponse(id string, v container.StatsResponse, top *container
 	}
 
 	return &ContainerStatsResponse{
+		Ts: time.Now().Unix(),
 		ID: id, Name: name, CPUPercent: math.Round(cpuPercent*100) / 100, CPUCores: cpuCores, CPUFreq: math.Round(getCPUFreq()*100) / 100,
 		MemoryUsage: int64(memoryUsage), MemoryLimit: int64(v.MemoryStats.Limit), MemoryPercent: math.Round(memoryPercent*100) / 100,
 		NetworkRx: networkRx, NetworkTx: networkTx, BlockRead: blockRead, BlockWrite: blockWrite,

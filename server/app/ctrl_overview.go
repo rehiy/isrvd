@@ -84,6 +84,7 @@ func (app *App) overviewUpgrade(c *gin.Context) {
 // 查询参数：
 //   - type:  "host"（默认）或 "container"
 //   - id:    容器 ID（type=container 时必填）
+//   - name:  容器历史可选，查询同名容器重建前后的记录
 //   - since: 时间窗口（秒），默认 3600；传 0 为实时模式（直接采集当前数据，不写入文件）
 func (app *App) overviewMonitor(c *gin.Context) {
 	if app.monitorCollector == nil {
@@ -111,6 +112,11 @@ func (app *App) overviewMonitor(c *gin.Context) {
 	if c.DefaultQuery("type", "host") == "container" {
 		if id = c.Query("id"); id == "" {
 			respondError(c, http.StatusBadRequest, "缺少容器 ID")
+			return
+		}
+		if name := c.Query("name"); name != "" {
+			records, err := app.monitorCollector.HistoryByName(c.Request.Context(), id, name, since)
+			respondResult(c, records, err)
 			return
 		}
 	}

@@ -3,7 +3,9 @@ package monitor
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/rehiy/libgo/jsonl"
@@ -28,6 +30,7 @@ type Collector struct {
 	docker  *docker.DockerService // 保留初始化时的实例，实时查询不读取重载中的全局指针
 	host    *jsonl.Store          // 主机监控数据
 	ctr     *jsonl.Store          // 容器监控数据
+	index   *recordIndex
 	cancel  context.CancelFunc
 	done    chan struct{}
 }
@@ -40,6 +43,7 @@ func NewCollector(dockerRaw *docker.DockerService) *Collector {
 		docker:  dockerRaw,
 		host:    openStore(dataDir, HostPrefix),
 		ctr:     openStore(dataDir, ContainerPrefix),
+		index:   newRecordIndex(),
 	}
 }
 
@@ -123,6 +127,48 @@ func (c *Collector) CollectContainerStatNow(ctx context.Context, id string) *Rec
 	return &Record{Ts: time.Now().Unix(), Data: raw}
 }
 
+// Latest 返回主机或指定容器最后保存的记录，不触发采集。
+func (c *Collector) Latest(containerID string) (*Record, error) {
+	if c == nil {
+		return nil, ErrMonitorUnavailable
+	}
+	if containerID == "" {
+		return readLatest(c.host, "")
+	}
+	return readLatest(c.ctr, containerID)
+}
+
+// History 查询最近 sinceSeconds 秒的历史监控记录；containerID 为空时查询主机
+func (c *Collector) History(containerID string, sinceSeconds int64) ([]Record, error) {
+	if containerID == "" {
+		return readSince(c.host, "", sinceSeconds)
+	}
+	if len(containerID) < 64 {
+		record, err := c.Latest(containerID)
+		if err != nil || record == nil {
+			return nil, err
+		}
+		containerID = record.ContainerID
+	}
+	return readSince(c.ctr, containerID, sinceSeconds)
+}
+
+// HistoryByName 显式查询同名容器历次重建的历史，先核对当前实例名称。
+func (c *Collector) HistoryByName(ctx context.Context, id, name string, sinceSeconds int64) ([]Record, error) {
+	if c == nil || c.docker == nil {
+		return nil, ErrMonitorUnavailable
+	}
+	current, err := c.docker.ContainerInspect(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	name = strings.TrimPrefix(name, "/")
+	if current.ContainerJSONBase == nil || name == "" || strings.TrimPrefix(current.Name, "/") != name {
+		return nil, errors.New("容器名称与 ID 不匹配")
+	}
+	return readContainerNameSince(c.ctr, name, sinceSeconds)
+}
+
 // collect 执行一次采集
 func (c *Collector) collect(ctx context.Context) {
 	if ctx.Err() != nil {
@@ -173,14 +219,6 @@ func (c *Collector) checkAlert(stat *HostStat) {
 		MemoryPercent: float64(sys.MemoryUsed) / float64(sys.MemoryTotal) * 100,
 		DiskPercent:   float64(sys.DiskUsed) / float64(sys.DiskTotal) * 100,
 	})
-}
-
-// History 查询最近 sinceSeconds 秒的历史监控记录；containerID 为空时查询主机
-func (c *Collector) History(containerID string, sinceSeconds int64) ([]Record, error) {
-	if containerID == "" {
-		return readSince(c.host, "", sinceSeconds)
-	}
-	return readSince(c.ctr, containerID, sinceSeconds)
 }
 
 // ─── 辅助函数 ───

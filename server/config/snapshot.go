@@ -195,7 +195,7 @@ func normalizeSnapshot(snapshot *Snapshot) error {
 	snapshot.Docker.ContainerRoot = PathToAbs(snapshot.Docker.ContainerRoot, snapshot.Server.RootDirectory)
 	snapshot.Monitor = normalizeMonitor(snapshot.Monitor)
 	if snapshot.Metrics == nil {
-		snapshot.Metrics = &MetricsConfig{}
+		snapshot.Metrics = &MetricsConfig{HostEnabled: true, ContainersEnabled: true}
 	}
 	if snapshot.Marketplace == nil {
 		snapshot.Marketplace = &MarketplaceConfig{}

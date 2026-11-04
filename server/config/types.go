@@ -1,6 +1,11 @@
 package config
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+
+	"github.com/goccy/go-yaml"
+)
 
 // 配置结构
 type Config struct {
@@ -87,10 +92,51 @@ type MonitorConfig struct {
 	Interval int `yaml:"interval" json:"interval"` // 采集间隔（秒），合法值：5/15/30/60；其他值均视为禁用
 }
 
-// MetricsConfig 只控制 Prometheus 指标出口；零值保持启用，不影响其他监控或告警。
+// MetricsConfig 只控制 Prometheus 指标出口；缺省启用，不影响其他监控或告警。
 type MetricsConfig struct {
-	HostDisabled       bool `yaml:"hostDisabled" json:"hostDisabled"`
-	ContainersDisabled bool `yaml:"containersDisabled" json:"containersDisabled"`
+	HostEnabled       bool `yaml:"hostEnabled" json:"hostEnabled"`
+	ContainersEnabled bool `yaml:"containersEnabled" json:"containersEnabled"`
+}
+
+type metricsConfigInput struct {
+	HostEnabled        *bool `yaml:"hostEnabled" json:"hostEnabled"`
+	ContainersEnabled  *bool `yaml:"containersEnabled" json:"containersEnabled"`
+	HostDisabled       *bool `yaml:"hostDisabled" json:"hostDisabled"`
+	ContainersDisabled *bool `yaml:"containersDisabled" json:"containersDisabled"`
+}
+
+func (c *MetricsConfig) applyInput(input metricsConfigInput) {
+	c.HostEnabled = true
+	c.ContainersEnabled = true
+	if input.HostEnabled != nil {
+		c.HostEnabled = *input.HostEnabled
+	} else if input.HostDisabled != nil {
+		c.HostEnabled = !*input.HostDisabled
+	}
+	if input.ContainersEnabled != nil {
+		c.ContainersEnabled = *input.ContainersEnabled
+	} else if input.ContainersDisabled != nil {
+		c.ContainersEnabled = !*input.ContainersDisabled
+	}
+}
+
+// UnmarshalJSON 兼容旧 disabled 字段；新字段优先，显式 false 不使用缺省值。
+func (c *MetricsConfig) UnmarshalJSON(data []byte) error {
+	var input metricsConfigInput
+	if err := json.Unmarshal(data, &input); err != nil {
+		return err
+	}
+	c.applyInput(input)
+	return nil
+}
+
+func (c *MetricsConfig) UnmarshalYAML(data []byte) error {
+	var input metricsConfigInput
+	if err := yaml.Unmarshal(data, &input); err != nil {
+		return err
+	}
+	c.applyInput(input)
+	return nil
 }
 
 // 告警通知配置

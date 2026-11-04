@@ -6031,53 +6031,6 @@
         ]
       }
     },
-    "/metrics/stats": {
-      "get": {
-        "operationId": "get_metrics_stats",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "since",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "message": {
-                      "description": "提示信息",
-                      "type": "string"
-                    },
-                    "payload": {
-                      "items": {
-                        "$ref": "#/components/schemas/metrics.GatewayStats"
-                      },
-                      "type": "array"
-                    },
-                    "success": {
-                      "description": "请求是否成功",
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "成功"
-          }
-        },
-        "summary": "查询网关访问统计",
-        "tags": [
-          "metrics"
-        ]
-      }
-    },
     "/metrics/status": {
       "get": {
         "operationId": "get_metrics_status",
@@ -6153,6 +6106,15 @@
       "get": {
         "operationId": "get_overview_monitor",
         "parameters": [
+          {
+            "description": "可选：按名称查询同节点容器重建前后的历史，须与当前 id 对应；不影响 since=0 实时查询",
+            "in": "query",
+            "name": "name",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "in": "query",
             "name": "since",
@@ -10014,12 +9976,12 @@
       },
       "config.MetricsConfig": {
         "properties": {
-          "containersDisabled": {
-            "description": "containersDisabled",
+          "containersEnabled": {
+            "description": "containersEnabled",
             "type": "boolean"
           },
-          "hostDisabled": {
-            "description": "hostDisabled",
+          "hostEnabled": {
+            "description": "hostEnabled",
             "type": "boolean"
           }
         },
@@ -11066,6 +11028,10 @@
           "processList": {
             "description": "容器内进程列表",
             "type": "object"
+          },
+          "ts": {
+            "description": "服务端采样时间（Unix 秒）",
+            "type": "integer"
           }
         },
         "type": "object"
@@ -12150,66 +12116,6 @@
         },
         "type": "object"
       },
-      "metrics.GatewayStats": {
-        "properties": {
-          "error": {
-            "description": "无法提供可靠统计时的说明",
-            "type": "string"
-          },
-          "name": {
-            "description": "网关标识：caddy / apisix",
-            "type": "string"
-          },
-          "series": {
-            "description": "趋势",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "sites": {
-            "description": "站点排行",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "summary": {
-            "description": "窗口汇总",
-            "type": "object"
-          }
-        },
-        "type": "object"
-      },
-      "metrics.SiteStat": {
-        "properties": {
-          "avg": {
-            "description": "平均耗时（ms）",
-            "type": "number"
-          },
-          "bytesOut": {
-            "description": "响应流量（字节）",
-            "type": "number"
-          },
-          "requests": {
-            "description": "请求总数",
-            "type": "number"
-          },
-          "s4xx": {
-            "description": "4xx 请求数",
-            "type": "number"
-          },
-          "s5xx": {
-            "description": "5xx 请求数",
-            "type": "number"
-          },
-          "site": {
-            "description": "site",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "metrics.SourceStatus": {
         "properties": {
           "available": {
@@ -12239,80 +12145,6 @@
           "url": {
             "description": "抓取地址",
             "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "metrics.StatsPoint": {
-        "properties": {
-          "avg": {
-            "description": "平均耗时（ms）",
-            "type": "number"
-          },
-          "rps": {
-            "description": "总请求速率",
-            "type": "number"
-          },
-          "s2xx": {
-            "description": "2xx 速率",
-            "type": "number"
-          },
-          "s3xx": {
-            "description": "3xx 速率",
-            "type": "number"
-          },
-          "s4xx": {
-            "description": "4xx 速率",
-            "type": "number"
-          },
-          "s5xx": {
-            "description": "5xx 速率",
-            "type": "number"
-          },
-          "ts": {
-            "description": "ts",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "metrics.StatsSummary": {
-        "properties": {
-          "avg": {
-            "description": "平均耗时（ms）",
-            "type": "number"
-          },
-          "bytesOut": {
-            "description": "响应流量（字节）",
-            "type": "number"
-          },
-          "errorRate": {
-            "description": "5xx 占比（0-1）",
-            "type": "number"
-          },
-          "requests": {
-            "description": "请求总数",
-            "type": "number"
-          },
-          "rps": {
-            "description": "平均请求速率",
-            "type": "number"
-          },
-          "s2xx": {
-            "description": "2xx 请求数",
-            "type": "number"
-          },
-          "s3xx": {
-            "description": "3xx 请求数",
-            "type": "number"
-          },
-          "s4xx": {
-            "description": "4xx 请求数",
-            "type": "number"
-          },
-          "s5xx": {
-            "description": "5xx 请求数",
-            "type": "number"
           }
         },
         "type": "object"

@@ -1,5 +1,4 @@
-// Package metrics 提供本机与容器指标出口开关、APISIX / Caddy 网关指标透传，
-// 以及供内置统计页使用的网关内存采样与查询。
+// Package metrics 提供本机与容器指标出口开关、APISIX / Caddy 网关指标透传。
 package metrics
 
 import (
@@ -11,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 
 	"isrvd/server/config"
@@ -40,20 +38,14 @@ type Switch interface {
 type source struct {
 	name string
 	url  string
-	sw   Switch       // 对应网关服务不可用时为 nil
-	last *observation // 上轮有效原始计数，仅由采样协程访问
+	sw   Switch // 对应网关服务不可用时为 nil
 }
 
-// Service 指标开关、网关透传与统计服务
+// Service 指标开关与网关透传服务
 type Service struct {
 	sources             []*source
 	client              *http.Client
 	containersAvailable bool
-
-	mu      sync.Mutex
-	history map[string][]record // 网关 → 采样记录（内存环形缓冲，重载或重启后清空）
-	cancel  context.CancelFunc
-	done    chan struct{}
 }
 
 const fetchTimeout = 5 * time.Second
@@ -64,7 +56,6 @@ func NewService(switches map[string]Switch, containersAvailable bool) *Service {
 	cfg := config.Current()
 	s := &Service{
 		containersAvailable: containersAvailable,
-		history:             map[string][]record{},
 		client: &http.Client{
 			Timeout: fetchTimeout,
 			// 抓取地址只来自管理员配置，不跟随重定向，避免被引导到其他内部地址
@@ -139,9 +130,9 @@ func LocalEnabled(name string) bool {
 	cfg := config.Current().Metrics
 	switch name {
 	case SourceHost:
-		return !cfg.HostDisabled
+		return cfg.HostEnabled
 	case SourceContainers:
-		return !cfg.ContainersDisabled
+		return cfg.ContainersEnabled
 	default:
 		return false
 	}
@@ -155,9 +146,9 @@ func (s *Service) Update(ctx context.Context, name string, enabled bool) error {
 				return err
 			}
 			if name == SourceHost {
-				draft.Metrics.HostDisabled = !enabled
+				draft.Metrics.HostEnabled = enabled
 			} else {
-				draft.Metrics.ContainersDisabled = !enabled
+				draft.Metrics.ContainersEnabled = enabled
 			}
 			return nil
 		})

@@ -19,6 +19,7 @@ var migrations = []migrateFn{
 	migratePasswords,
 	migrateTHA,
 	migrateCopilot,
+	migrateMetrics,
 }
 
 // migrate 依次执行所有迁移函数，返回是否有任何迁移发生
@@ -30,6 +31,17 @@ func migrate(conf *Config, data []byte) bool {
 		}
 	}
 	return migrated
+}
+
+// migrateMetrics 将兼容解码后的旧指标开关以 enabled 字段重新持久化。
+func migrateMetrics(conf *Config, data []byte) bool {
+	var input struct {
+		Metrics *metricsConfigInput `yaml:"metrics"`
+	}
+	if err := yaml.Unmarshal(data, &input); err != nil || input.Metrics == nil || conf.Metrics == nil {
+		return false
+	}
+	return input.Metrics.HostDisabled != nil || input.Metrics.ContainersDisabled != nil
 }
 
 // migrateSchema 将配置格式版本号设置为 schema.Version

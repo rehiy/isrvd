@@ -141,7 +141,7 @@ func (app *App) initServices(ctx context.Context) {
 	app.monitorCollector = monitor.NewCollector(dockerRaw)
 	app.monitorCollector.Start(ctx)
 
-	// 网关指标：指标透传出口与内置统计采样；仅注入已就绪的网关开关
+	// 网关指标透传出口；仅注入已就绪的网关开关
 	switches := map[string]metrics.Switch{}
 	if app.caddySvc != nil {
 		switches[metrics.GatewayCaddy] = app.caddySvc
@@ -150,7 +150,6 @@ func (app *App) initServices(ctx context.Context) {
 		switches[metrics.GatewayApisix] = app.apisixSvc
 	}
 	app.metricsSvc = metrics.NewService(switches, dockerRaw != nil)
-	app.metricsSvc.Start(ctx)
 	// 本机监控指标不依赖网关，模块始终可用；未配置的网关由各路由返回 404
 	app.markReady("metrics", nil)
 }
@@ -166,7 +165,6 @@ func (app *App) closeServices() <-chan struct{} {
 	if app.monitorCollector != nil {
 		app.monitorCollector.Stop()
 	}
-	app.metricsSvc.Stop()
 	if app.faultWatcher != nil {
 		app.faultWatcher.Stop()
 	}

@@ -2,15 +2,14 @@ package monitor
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/docker/docker/api/types/container"
 
-	"isrvd/pkgs/docker"
+	pkgDocker "isrvd/pkgs/docker"
 )
 
 // textRow 一行样本：labels 为 名称/取值 交替的键值对
@@ -120,88 +119,61 @@ func (h *HostStat) MetricsText() []byte {
 	return []byte(w.b.String())
 }
 
-// ErrDockerUnavailable Docker 不可用，无法采集容器指标
-var ErrDockerUnavailable = errors.New("Docker 服务不可用")
-
-const containerStatsConcurrency = 8 // 同时采集的容器数；单个容器采样约需 1 秒
-
-// ContainersMetricsText 采集全部运行中容器的资源指标并渲染为指标文本格式。
-// 单个容器采集失败时跳过；非空容器列表全部采集失败时返回错误。
-func (c *Collector) ContainersMetricsText(ctx context.Context) ([]byte, error) {
-	if c == nil || c.docker == nil {
-		return nil, ErrDockerUnavailable
+// HostMetricsText 直接将最后保存的主机记录渲染为指标文本。
+func (c *Collector) HostMetricsText() ([]byte, error) {
+	record, err := c.Latest("")
+	if err != nil || record == nil {
+		return nil, err
 	}
-	list, err := c.docker.ContainerList(ctx, false)
+	var stat HostStat
+	if err := json.Unmarshal(record.Data, &stat); err != nil {
+		return nil, err
+	}
+	return stat.MetricsText(), nil
+}
+
+// ContainersMetricsText 从各容器最后保存的记录渲染指标，不访问 Docker。
+func (c *Collector) ContainersMetricsText(ctx context.Context) ([]byte, error) {
+	if c == nil || c.index == nil {
+		return nil, ErrMonitorUnavailable
+	}
+	records, err := c.index.read(ctx, c.ctr)
 	if err != nil {
 		return nil, err
 	}
-
-	results := make([]struct {
-		stats container.StatsResponse
-		err   error
-	}, len(list))
-	sem := make(chan struct{}, containerStatsConcurrency)
-	var wg sync.WaitGroup
-	for i, ct := range list {
-		select {
-		case sem <- struct{}{}:
-			wg.Add(1)
-			go func() {
-				defer func() { <-sem; wg.Done() }()
-				results[i].stats, results[i].err = c.docker.ContainerStatsOnce(ctx, ct.ID)
-			}()
-		case <-ctx.Done():
-		}
-		if ctx.Err() != nil {
-			break
-		}
-	}
-	wg.Wait()
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-
 	var w textWriter
-	var firstErr error
 	var info, cpu, memUsed, memLimit, rx, tx, rd, wr, pids []textRow
-	for i, ct := range list {
-		if err := results[i].err; err != nil {
-			if firstErr == nil {
-				firstErr = err
-			}
-			continue
+	for _, record := range records {
+		if err := ctx.Err(); err != nil {
+			return nil, err
 		}
-		v := &results[i].stats
-		name := ""
-		if len(ct.Names) > 0 {
-			name = strings.TrimPrefix(ct.Names[0], "/")
+		var v container.StatsResponse
+		if err := json.Unmarshal(record.Data, &v); err != nil {
+			return nil, err
 		}
-		l := []string{"name", name}
-		info = append(info, textRow{[]string{"name", name, "id", docker.ShortID(ct.ID), "image", ct.Image}, 1})
-		cpu = append(cpu, textRow{l, float64(v.CPUStats.CPUUsage.TotalUsage) / 1e9})
-
+		name := strings.TrimPrefix(v.Name, "/")
+		if name == "" {
+			name = pkgDocker.ShortID(record.ContainerID)
+		}
+		l := []string{"name", name, "id", record.ContainerID}
+		info = append(info, textRow{[]string{"name", name, "id", record.ContainerID, "image", ""}, 1})
 		cache, cgroupV1 := v.MemoryStats.Stats["total_inactive_file"]
 		if !cgroupV1 {
 			cache = v.MemoryStats.Stats["inactive_file"]
 		}
-		working := v.MemoryStats.Usage
-		if cache < working {
-			working -= cache
-		}
-		memUsed = append(memUsed, textRow{l, float64(working)})
+		memUsed = append(memUsed, textRow{l, float64(v.MemoryStats.Usage - min(cache, v.MemoryStats.Usage))})
 		memLimit = append(memLimit, textRow{l, float64(v.MemoryStats.Limit)})
-
 		var rxBytes, txBytes, readBytes, writeBytes uint64
-		for _, n := range v.Networks {
-			rxBytes += n.RxBytes
-			txBytes += n.TxBytes
+		for _, net := range v.Networks {
+			rxBytes += net.RxBytes
+			txBytes += net.TxBytes
 		}
-		for _, b := range v.BlkioStats.IoServiceBytesRecursive {
-			switch strings.ToLower(b.Op) {
+		for _, block := range v.BlkioStats.IoServiceBytesRecursive {
+			switch strings.ToLower(block.Op) {
 			case "read":
-				readBytes += b.Value
+				readBytes += block.Value
 			case "write":
-				writeBytes += b.Value
+				writeBytes += block.Value
 			}
 		}
 		rx = append(rx, textRow{l, float64(rxBytes)})
@@ -209,11 +181,9 @@ func (c *Collector) ContainersMetricsText(ctx context.Context) ([]byte, error) {
 		rd = append(rd, textRow{l, float64(readBytes)})
 		wr = append(wr, textRow{l, float64(writeBytes)})
 		pids = append(pids, textRow{l, float64(v.PidsStats.Current)})
+		cpu = append(cpu, textRow{l, float64(v.CPUStats.CPUUsage.TotalUsage) / 1e9})
 	}
-	if len(info) == 0 && firstErr != nil {
-		return nil, fmt.Errorf("采集容器指标失败: %w", firstErr)
-	}
-	w.write("gauge", "isrvd_container_info", "Running container information; the value is always 1.", info...)
+	w.write("gauge", "isrvd_container_info", "Last recorded container information; the value is always 1.", info...)
 	w.write("counter", "isrvd_container_cpu_usage_seconds_total", "Cumulative CPU time consumed by the container in seconds.", cpu...)
 	w.write("gauge", "isrvd_container_memory_usage_bytes", "Container memory working set in bytes (usage minus inactive file cache).", memUsed...)
 	w.write("gauge", "isrvd_container_memory_limit_bytes", "Container memory limit in bytes.", memLimit...)
