@@ -515,22 +515,19 @@ export default toNative(ContainerStats)
                 </div>
                 <div class="min-w-0 flex-1">
                   <p class="monitor-card-title">{{ $t('硬盘') }}</p>
-                  <p v-if="statsData.blockDetail" class="mt-1 break-words text-xs text-slate-400">{{ $t('设备') }} <span class="tabular-nums">{{ Object.keys(statsData.blockDetail).length }} {{ $t('个') }}</span></p>
+                  <p v-if="statsData.blockDetail" class="break-words text-xs text-slate-400">{{ $t('设备') }} <span class="tabular-nums">{{ Object.keys(statsData.blockDetail).length }} {{ $t('个') }}</span></p>
                 </div>
               </div>
               <div class="monitor-card-metrics">
-                <div class="monitor-metrics-row text-slate-600">
-                  <span class="monitor-series"><span class="monitor-series-dot bg-amber-500"></span>{{ $t('读取') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(blkRRate, true) }}</span></span>
-                  <span class="monitor-series"><span class="monitor-series-dot bg-violet-500"></span>{{ $t('写入') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(blkWRate, true) }}</span></span>
-                </div>
-                <div class="monitor-metrics-row">
-                  <span>{{ $t('累计读') }} <span class="tabular-nums">{{ formatMonitorBytes(statsData.blockRead) }}</span></span>
-                  <span>{{ $t('累计写') }} <span class="tabular-nums">{{ formatMonitorBytes(statsData.blockWrite) }}</span></span>
-                </div>
+                <span class="monitor-headline">{{ $t('吞吐') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(blkRRate + blkWRate, true) }}</span></span>
               </div>
             </div>
             <div class="monitor-chart-box">
               <canvas ref="blkRef" class="w-full h-full"></canvas>
+            </div>
+            <div class="monitor-card-legend">
+              <span class="monitor-series"><span class="monitor-series-dot bg-amber-500"></span>{{ $t('读取') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(blkRRate, true) }}</span> <span class="whitespace-nowrap">· {{ $t('累计读') }} <span class="tabular-nums">{{ formatMonitorBytes(statsData.blockRead) }}</span></span></span>
+              <span class="monitor-series"><span class="monitor-series-dot bg-violet-500"></span>{{ $t('写入') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(blkWRate, true) }}</span> <span class="whitespace-nowrap">· {{ $t('累计写') }} <span class="tabular-nums">{{ formatMonitorBytes(statsData.blockWrite) }}</span></span></span>
             </div>
           </div>
 
@@ -544,22 +541,19 @@ export default toNative(ContainerStats)
                 </div>
                 <div class="min-w-0 flex-1">
                   <p class="monitor-card-title">{{ $t('网络') }}</p>
-                  <p v-if="statsData.networkDetail" class="mt-1 break-words text-xs text-slate-400">{{ $t('网卡') }} <span class="tabular-nums">{{ Object.keys(statsData.networkDetail).length }} {{ $t('块') }}</span></p>
+                  <p v-if="statsData.networkDetail" class="break-words text-xs text-slate-400">{{ $t('网卡') }} <span class="tabular-nums">{{ Object.keys(statsData.networkDetail).length }} {{ $t('块') }}</span></p>
                 </div>
               </div>
               <div class="monitor-card-metrics">
-                <div class="monitor-metrics-row text-slate-600">
-                  <span class="monitor-series"><span class="monitor-series-dot bg-emerald-500"></span>{{ $t('下行') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(netRxRate, true) }}</span></span>
-                  <span class="monitor-series"><span class="monitor-series-dot bg-blue-500"></span>{{ $t('上行') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(netTxRate, true) }}</span></span>
-                </div>
-                <div class="monitor-metrics-row">
-                  <span>{{ $t('累计收') }} <span class="tabular-nums">{{ formatMonitorBytes(statsData.networkRx) }}</span></span>
-                  <span>{{ $t('累计发') }} <span class="tabular-nums">{{ formatMonitorBytes(statsData.networkTx) }}</span></span>
-                </div>
+                <span class="monitor-headline">{{ $t('吞吐') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(netRxRate + netTxRate, true) }}</span></span>
               </div>
             </div>
             <div class="monitor-chart-box">
               <canvas ref="netRef" class="w-full h-full"></canvas>
+            </div>
+            <div class="monitor-card-legend">
+              <span class="monitor-series"><span class="monitor-series-dot bg-emerald-500"></span>{{ $t('下行') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(netRxRate, true) }}</span> <span class="whitespace-nowrap">· {{ $t('累计收') }} <span class="tabular-nums">{{ formatMonitorBytes(statsData.networkRx) }}</span></span></span>
+              <span class="monitor-series"><span class="monitor-series-dot bg-blue-500"></span>{{ $t('上行') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(netTxRate, true) }}</span> <span class="whitespace-nowrap">· {{ $t('累计发') }} <span class="tabular-nums">{{ formatMonitorBytes(statsData.networkTx) }}</span></span></span>
             </div>
           </div>
         </div>

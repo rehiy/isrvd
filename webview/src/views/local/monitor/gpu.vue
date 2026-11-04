@@ -180,26 +180,9 @@ export default toNative(SystemGpu)
           </div>
         </div>
         <div class="monitor-card-metrics">
-          <span class="monitor-series">
-            <span class="monitor-series-dot bg-emerald-500"></span>{{ $t('使用率') }}
+          <span class="monitor-headline">{{ $t('使用率') }}
             <span :class="['monitor-card-value', semanticColor(gpu.utilization)]">{{ gpu.utilization.toFixed(1) }}%</span>
           </span>
-          <div class="monitor-metrics-row">
-            <span v-if="gpu.memoryTotal > 0" class="monitor-series">
-              <span class="monitor-series-dot bg-violet-500"></span>{{ $t('显存') }}
-              <span class="text-slate-600 tabular-nums">{{ memPercent(gpu.memoryUsed, gpu.memoryTotal) }}%</span>
-            </span>
-            <span v-if="gpu.powerUsage >= 0" class="monitor-series">
-              <span class="monitor-series-dot bg-amber-500"></span>{{ $t('功耗') }}
-              <span class="text-slate-600 tabular-nums">{{ gpu.powerUsage.toFixed(1) }} W</span>
-            </span>
-            <span v-if="gpu.temperature >= 0" :class="['inline-flex shrink-0 items-center gap-1 whitespace-nowrap', gpuTempColor(gpu.temperature)]">
-              <i class="fas fa-temperature-half"></i>{{ gpu.temperature }}°C
-            </span>
-            <span v-if="gpu.fanSpeed >= 0" class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-slate-400">
-              <i class="fas fa-fan"></i>{{ gpu.fanSpeed }}%
-            </span>
-          </div>
         </div>
       </div>
       <div class="monitor-chart-box">
@@ -207,6 +190,23 @@ export default toNative(SystemGpu)
         <div v-if="!gpuHistories[gpuKey(gpu)]?.labels?.length" class="absolute inset-0 flex items-center justify-center">
           <span class="text-xs text-slate-300">{{ $t('等待数据...') }}</span>
         </div>
+      </div>
+      <div class="monitor-card-legend">
+        <span class="monitor-series"><span class="monitor-series-dot bg-emerald-500"></span>{{ $t('使用率') }}</span>
+        <span v-if="gpu.memoryTotal > 0" class="monitor-series">
+          <span class="monitor-series-dot bg-violet-500"></span>{{ $t('显存') }}
+          <span class="text-slate-600 tabular-nums">{{ memPercent(gpu.memoryUsed, gpu.memoryTotal) }}%</span>
+        </span>
+        <span v-if="gpu.powerUsage >= 0" class="monitor-series">
+          <span class="monitor-series-dot bg-amber-500"></span>{{ $t('功耗') }}
+          <span class="text-slate-600 tabular-nums">{{ gpu.powerUsage.toFixed(1) }} W</span>
+        </span>
+        <span v-if="gpu.temperature >= 0" :class="['inline-flex shrink-0 items-center gap-1 whitespace-nowrap', gpuTempColor(gpu.temperature)]">
+          <i class="fas fa-temperature-half"></i>{{ gpu.temperature }}°C
+        </span>
+        <span v-if="gpu.fanSpeed >= 0" class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap">
+          <i class="fas fa-fan"></i>{{ gpu.fanSpeed }}%
+        </span>
       </div>
     </div>
   </div>

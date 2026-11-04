@@ -251,26 +251,14 @@ export default toNative(SystemDisk)
             </div>
             <div class="min-w-0 flex-1">
               <p class="monitor-card-title" :title="`${$t('硬盘')} - ${dp.mountpoint}`">{{ $t('硬盘') }} - {{ dp.mountpoint }}</p>
-              <p class="mt-1 break-words text-xs text-slate-400" :title="`${dp.device} · ${dp.fstype} · ${formatMonitorBytes(dp.used)} / ${formatMonitorBytes(dp.total)}`">
+              <p class="break-words text-xs text-slate-400" :title="`${dp.device} · ${dp.fstype} · ${formatMonitorBytes(dp.used)} / ${formatMonitorBytes(dp.total)}`">
                 {{ dp.device }} · {{ dp.fstype }} · <span>{{ formatMonitorBytes(dp.used) }} / {{ formatMonitorBytes(dp.total) }}</span>
               </p>
             </div>
           </div>
           <div class="monitor-card-metrics">
-            <span class="monitor-series">
-              <span class="monitor-series-dot" :style="{ backgroundColor: usageLineColor(currentUsagePct(dp)) }"></span>{{ $t('使用率') }}
-              <span class="monitor-card-value text-slate-700">{{ currentUsagePct(dp) }}%</span>
-            </span>
-            <div v-if="diskIOByDevice(dp.device)" class="monitor-metrics-row">
-              <span class="monitor-series max-w-full">
-                <span class="monitor-series-dot bg-amber-500"></span>{{ $t('读取') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(currentDiskRate(diskIOHistoryKey(dp), 'read'), true) }}</span>
-                <span class="whitespace-nowrap">· {{ $t('累计读') }} <span class="tabular-nums">{{ formatMonitorBytes(diskIOByDevice(dp.device)?.readBytes ?? 0) }}</span></span>
-              </span>
-              <span class="monitor-series max-w-full">
-                <span class="monitor-series-dot bg-violet-500"></span>{{ $t('写入') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(currentDiskRate(diskIOHistoryKey(dp), 'write'), true) }}</span>
-                <span class="whitespace-nowrap">· {{ $t('累计写') }} <span class="tabular-nums">{{ formatMonitorBytes(diskIOByDevice(dp.device)?.writeBytes ?? 0) }}</span></span>
-              </span>
-            </div>
+            <span v-if="diskIOByDevice(dp.device)" class="monitor-headline">{{ $t('吞吐') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(currentDiskRate(diskIOHistoryKey(dp), 'read') + currentDiskRate(diskIOHistoryKey(dp), 'write'), true) }}</span></span>
+            <span v-else class="monitor-headline">{{ $t('使用率') }} <span class="monitor-card-value text-slate-700">{{ currentUsagePct(dp) }}%</span></span>
           </div>
         </div>
         <div v-if="diskIOByDevice(dp.device)" class="monitor-chart-box">
@@ -278,6 +266,19 @@ export default toNative(SystemDisk)
           <div v-if="!diskIOHistory[diskIOHistoryKey(dp)]?.read?.length" class="absolute inset-0 flex items-center justify-center">
             <span class="text-xs text-slate-300">{{ $t('等待数据...') }}</span>
           </div>
+        </div>
+        <div v-if="diskIOByDevice(dp.device)" class="monitor-card-legend">
+          <span class="monitor-series">
+            <span class="monitor-series-dot" :style="{ backgroundColor: usageLineColor(currentUsagePct(dp)) }"></span>{{ $t('使用率') }} <span class="tabular-nums text-slate-600">{{ currentUsagePct(dp) }}%</span>
+          </span>
+          <span class="monitor-series">
+            <span class="monitor-series-dot bg-amber-500"></span>{{ $t('读取') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(currentDiskRate(diskIOHistoryKey(dp), 'read'), true) }}</span>
+            <span class="whitespace-nowrap">· {{ $t('累计读') }} <span class="tabular-nums">{{ formatMonitorBytes(diskIOByDevice(dp.device)?.readBytes ?? 0) }}</span></span>
+          </span>
+          <span class="monitor-series">
+            <span class="monitor-series-dot bg-violet-500"></span>{{ $t('写入') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(currentDiskRate(diskIOHistoryKey(dp), 'write'), true) }}</span>
+            <span class="whitespace-nowrap">· {{ $t('累计写') }} <span class="tabular-nums">{{ formatMonitorBytes(diskIOByDevice(dp.device)?.writeBytes ?? 0) }}</span></span>
+          </span>
         </div>
       </div>
     </div>

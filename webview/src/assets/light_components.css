@@ -465,7 +465,10 @@
   .monitor-series { @apply inline-flex flex-wrap items-center justify-end gap-1.5; }
   .monitor-series-dot { @apply h-1.5 w-1.5 shrink-0 rounded-full; }
   .monitor-card-metrics { @apply ml-auto flex min-w-0 max-w-full flex-col items-end gap-1 text-right text-xs text-slate-400; }
+  .monitor-headline { @apply inline-flex flex-wrap items-baseline justify-end gap-1.5; }
   .monitor-metrics-row { @apply flex min-w-0 max-w-full flex-wrap items-center justify-end gap-x-3 gap-y-1; }
+  .monitor-card-legend { @apply mt-3 flex min-w-0 flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-slate-400; }
+  .monitor-card-legend .monitor-series { @apply max-w-full justify-center; }
   .monitor-legend-item { @apply flex items-center gap-1 shrink-0 whitespace-nowrap; }
   .metric-card { @apply bg-slate-50 rounded-xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden; }
   .metric-legend { @apply flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400; }

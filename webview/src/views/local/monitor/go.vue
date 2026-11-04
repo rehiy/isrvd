@@ -335,15 +335,15 @@ export default toNative(SystemGo)
             <span class="min-w-0 flex-1 monitor-card-title">Go - {{ $t('系统内存') }}</span>
           </div>
           <div class="monitor-card-metrics">
-            <span class="inline-flex flex-wrap items-baseline justify-end gap-1.5" :title="$t('Go 运行时占用估算：系统申请减去堆已释放，不等于进程 RSS')">{{ $t('实际占用') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(Math.max(0, current.sys - current.heapReleased)) }}</span></span>
-            <div class="monitor-metrics-row">
-              <span class="monitor-series"><span class="monitor-series-dot bg-emerald-500"></span>{{ $t('系统申请') }} <span class="tabular-nums">{{ formatMonitorBytes(current.sys) }}</span></span>
-              <span class="monitor-series"><span class="monitor-series-dot bg-blue-500"></span>{{ $t('累计分配') }} <span class="tabular-nums">{{ formatMonitorBytes(current.totalAlloc) }}</span></span>
-            </div>
+            <span class="monitor-headline" :title="$t('Go 运行时占用估算：系统申请减去堆已释放，不等于进程 RSS')">{{ $t('实际占用') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(Math.max(0, current.sys - current.heapReleased)) }}</span></span>
           </div>
         </div>
         <div class="monitor-chart-box">
           <canvas ref="sysCanvasRef" class="w-full h-full"></canvas>
+        </div>
+        <div class="monitor-card-legend">
+          <span class="monitor-series"><span class="monitor-series-dot bg-emerald-500"></span>{{ $t('系统申请') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(current.sys) }}</span></span>
+          <span class="monitor-series"><span class="monitor-series-dot bg-blue-500"></span>{{ $t('累计分配') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(current.totalAlloc) }}</span></span>
         </div>
       </div>
 
@@ -358,19 +358,19 @@ export default toNative(SystemGo)
             <span class="min-w-0 flex-1 monitor-card-title">Go - {{ $t('堆内存') }}</span>
           </div>
           <div class="monitor-card-metrics">
-            <span class="inline-flex flex-wrap items-baseline justify-end gap-1.5" :title="$t('使用中的堆跨度，包含跨度内未使用的空间，不等于堆对象分配量')">{{ $t('实际占用') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(current.heapInuse) }}</span></span>
-            <div class="monitor-metrics-row">
-              <span class="monitor-series"><span class="monitor-series-dot bg-violet-500"></span>{{ $t('堆已申请') }} <span class="tabular-nums">{{ formatMonitorBytes(current.heapSys) }}</span></span>
-              <span class="monitor-series"><span class="monitor-series-dot bg-blue-500"></span>{{ $t('已分配') }} <span class="tabular-nums">{{ formatMonitorBytes(current.alloc) }}</span></span>
-              <span class="monitor-series"><span class="monitor-series-dot bg-emerald-500"></span>{{ $t('堆已分配') }} <span class="tabular-nums">{{ formatMonitorBytes(current.heapAlloc) }}</span></span>
-              <span class="monitor-series"><span class="monitor-series-dot bg-amber-500"></span>{{ $t('堆使用中') }} <span class="tabular-nums">{{ formatMonitorBytes(current.heapInuse) }}</span></span>
-              <span class="monitor-series"><span class="monitor-series-dot bg-stone-400"></span>{{ $t('堆空闲') }} <span class="tabular-nums">{{ formatMonitorBytes(current.heapIdle) }}</span></span>
-              <span class="monitor-series"><span class="monitor-series-dot bg-rose-500"></span>{{ $t('堆已释放') }} <span class="tabular-nums">{{ formatMonitorBytes(current.heapReleased) }}</span></span>
-            </div>
+            <span class="monitor-headline" :title="$t('使用中的堆跨度，包含跨度内未使用的空间，不等于堆对象分配量')">{{ $t('实际占用') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(current.heapInuse) }}</span></span>
           </div>
         </div>
         <div class="monitor-chart-box">
           <canvas ref="memCanvasRef" class="w-full h-full"></canvas>
+        </div>
+        <div class="monitor-card-legend">
+          <span class="monitor-series"><span class="monitor-series-dot bg-violet-500"></span>{{ $t('堆已申请') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(current.heapSys) }}</span></span>
+          <span class="monitor-series"><span class="monitor-series-dot bg-blue-500"></span>{{ $t('已分配') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(current.alloc) }}</span></span>
+          <span class="monitor-series"><span class="monitor-series-dot bg-emerald-500"></span>{{ $t('堆已分配') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(current.heapAlloc) }}</span></span>
+          <span class="monitor-series"><span class="monitor-series-dot bg-amber-500"></span>{{ $t('堆使用中') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(current.heapInuse) }}</span></span>
+          <span class="monitor-series"><span class="monitor-series-dot bg-stone-400"></span>{{ $t('堆空闲') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(current.heapIdle) }}</span></span>
+          <span class="monitor-series"><span class="monitor-series-dot bg-rose-500"></span>{{ $t('堆已释放') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(current.heapReleased) }}</span></span>
         </div>
       </div>
 
@@ -385,15 +385,15 @@ export default toNative(SystemGo)
             <span class="min-w-0 flex-1 monitor-card-title">Go - {{ $t('栈内存') }}</span>
           </div>
           <div class="monitor-card-metrics">
-            <span class="inline-flex flex-wrap items-baseline justify-end gap-1.5" :title="$t('使用中的栈跨度，不包含未使用的栈申请空间')">{{ $t('实际占用') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(current.stackInuse) }}</span></span>
-            <div class="monitor-metrics-row">
-              <span class="monitor-series"><span class="monitor-series-dot bg-violet-500"></span>{{ $t('栈已申请') }} <span class="tabular-nums">{{ formatMonitorBytes(current.stackSys) }}</span></span>
-              <span class="monitor-series"><span class="monitor-series-dot bg-amber-500"></span>{{ $t('栈已使用') }} <span class="tabular-nums">{{ formatMonitorBytes(current.stackInuse) }}</span></span>
-            </div>
+            <span class="monitor-headline" :title="$t('使用中的栈跨度，不包含未使用的栈申请空间')">{{ $t('实际占用') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(current.stackInuse) }}</span></span>
           </div>
         </div>
         <div class="monitor-chart-box">
           <canvas ref="stackCanvasRef" class="w-full h-full"></canvas>
+        </div>
+        <div class="monitor-card-legend">
+          <span class="monitor-series"><span class="monitor-series-dot bg-violet-500"></span>{{ $t('栈已申请') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(current.stackSys) }}</span></span>
+          <span class="monitor-series"><span class="monitor-series-dot bg-amber-500"></span>{{ $t('栈已使用') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(current.stackInuse) }}</span></span>
         </div>
       </div>
 
@@ -408,16 +408,16 @@ export default toNative(SystemGo)
             <span class="min-w-0 flex-1 monitor-card-title">Go - {{ $t('计数器') }}</span>
           </div>
           <div class="monitor-card-metrics">
-            <span class="monitor-series" :title="lastGCTime">{{ $t('最后 GC 时间') }} <span class="monitor-card-value text-slate-700">{{ lastGCRelativeTime }}</span></span>
-            <div class="monitor-metrics-row">
-              <span class="monitor-series"><span class="monitor-series-dot bg-violet-500"></span>Goroutine <span class="tabular-nums">{{ current.numGoroutine }}</span></span>
-              <span class="monitor-series"><span class="monitor-series-dot bg-green-500"></span>{{ $t('堆对象') }} <span class="tabular-nums">{{ current.heapObjects }}</span></span>
-              <span class="monitor-series"><span class="monitor-series-dot bg-red-500"></span>{{ $t('GC 次数') }} <span class="tabular-nums">{{ current.numGC }}</span></span>
-            </div>
+            <span class="monitor-headline" :title="lastGCTime">{{ $t('最后 GC') }} <span class="monitor-card-value text-slate-700">{{ lastGCRelativeTime }}</span></span>
           </div>
         </div>
         <div class="monitor-chart-box">
           <canvas ref="goroutineCanvasRef" class="w-full h-full"></canvas>
+        </div>
+        <div class="monitor-card-legend">
+          <span class="monitor-series"><span class="monitor-series-dot bg-violet-500"></span>Goroutine <span class="tabular-nums text-slate-600">{{ current.numGoroutine }}</span></span>
+          <span class="monitor-series"><span class="monitor-series-dot bg-green-500"></span>{{ $t('堆对象') }} <span class="tabular-nums text-slate-600">{{ current.heapObjects }}</span></span>
+          <span class="monitor-series"><span class="monitor-series-dot bg-red-500"></span>{{ $t('GC 次数') }} <span class="tabular-nums text-slate-600">{{ current.numGC }}</span></span>
         </div>
       </div>
     </div>

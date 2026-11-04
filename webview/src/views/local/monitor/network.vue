@@ -11,8 +11,8 @@ import { appendMonitorPoint, formatMonitorBytes } from '@/helper/monitor'
 interface TimeSeriesHistory {
     ts: number[]
     labels: string[]
-    recv: number[]
-    sent: number[]
+    recv: (number | null)[]
+    sent: (number | null)[]
 }
 
 const NATURAL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
@@ -39,13 +39,15 @@ class SystemNetwork extends Vue {
             .sort((a, b) => NATURAL_COLLATOR.compare(a.name, b.name))
     }
 
-    currentRate(name: string, dir: string): number {
-        const h = this.netHistory[name]
-        if (!h) {
-            return 0
-        }
-        const arr = h[dir as keyof TimeSeriesHistory] as number[]
-        return arr?.length ? arr[arr.length - 1] : 0
+    currentRate(name: string, dir: 'recv' | 'sent'): number | null {
+        const values = this.netHistory[name]?.[dir]
+        return values?.length ? values[values.length - 1] : null
+    }
+
+    totalRate(name: string): number | null {
+        const recv = this.currentRate(name, 'recv')
+        const sent = this.currentRate(name, 'sent')
+        return recv === null || sent === null ? null : recv + sent
     }
 
     netChartOptions(): ChartOptions<'line'> {
@@ -96,7 +98,7 @@ class SystemNetwork extends Vue {
         this.currentIfaces = []
         this.netHistory = {}
         this.lastNetIO = {}
-        Object.values(this.netCharts).forEach(c => c.destroy())
+        Object.values(this.netCharts).forEach((c) => c.destroy())
         this.netCharts = {}
     }
 
@@ -117,18 +119,20 @@ class SystemNetwork extends Vue {
 
         const nowTime = ts * 1000
 
-        physicalIfaces.forEach(ni => {
+        physicalIfaces.forEach((ni) => {
             const name = ni.name
             const last = this.lastNetIO[name]
 
-            let recvRate = 0
-            let sentRate = 0
-
-            if (last && last.time > 0) {
+            let recvRate: number | null = null
+            let sentRate: number | null = null
+            if (!Number.isFinite(nowTime) || nowTime <= 0 || (last && nowTime <= last.time)) {
+                return
+            }
+            if (last) {
                 const dt = (nowTime - last.time) / 1000
-                if (dt > 0) {
-                    recvRate = Math.max(0, (ni.bytesRecv - last.recv) / dt)
-                    sentRate = Math.max(0, (ni.bytesSent - last.sent) / dt)
+                if (ni.bytesRecv >= last.recv && ni.bytesSent >= last.sent) {
+                    recvRate = (ni.bytesRecv - last.recv) / dt
+                    sentRate = (ni.bytesSent - last.sent) / dt
                 }
             }
 
@@ -147,7 +151,7 @@ class SystemNetwork extends Vue {
                     h.recv.push(recvRate)
                     h.sent.push(sentRate)
                 },
-                count => {
+                (count) => {
                     h.recv.splice(0, count)
                     h.sent.splice(0, count)
                 }
@@ -173,22 +177,12 @@ export default toNative(SystemNetwork)
             <div class="monitor-card-icon">
               <i class="fas fa-network-wired text-sm"></i>
             </div>
-            <p class="min-w-0 flex-1 monitor-card-title" :title="`${$t('网络')} - ${ni.name}`">{{ $t('网络') }} - {{ ni.name }}</p>
+            <div class="min-w-0 flex-1">
+              <p class="monitor-card-title" :title="`${$t('网络')} - ${ni.name}`">{{ $t('网络') }} - {{ ni.name }}</p>
+            </div>
           </div>
           <div class="monitor-card-metrics">
-            <div class="monitor-metrics-row">
-              <span class="inline-flex flex-wrap items-baseline justify-end gap-1.5" :title="$t('未获取网卡带宽，无法计算使用率')" :aria-label="`${$t('使用率')}：${$t('未获取网卡带宽，无法计算使用率')}`">{{ $t('使用率') }} <span class="monitor-card-value text-slate-700">—</span></span>
-            </div>
-            <div class="monitor-metrics-row">
-              <span class="monitor-series max-w-full">
-                <span class="monitor-series-dot bg-emerald-500"></span>{{ $t('下行') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(currentRate(ni.name, 'recv'), true) }}</span>
-                <span class="whitespace-nowrap">· {{ $t('累计收') }} <span class="tabular-nums">{{ formatMonitorBytes(ni.bytesRecv) }}</span></span>
-              </span>
-              <span class="monitor-series max-w-full">
-                <span class="monitor-series-dot bg-blue-500"></span>{{ $t('上行') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(currentRate(ni.name, 'sent'), true) }}</span>
-                <span class="whitespace-nowrap">· {{ $t('累计发') }} <span class="tabular-nums">{{ formatMonitorBytes(ni.bytesSent) }}</span></span>
-              </span>
-            </div>
+            <span class="monitor-headline">{{ $t('吞吐') }} <span class="monitor-card-value text-slate-700">{{ totalRate(ni.name) === null ? '—' : formatMonitorBytes(totalRate(ni.name) ?? 0, true) }}</span></span>
           </div>
         </div>
         <div class="monitor-chart-box">
@@ -196,6 +190,18 @@ export default toNative(SystemNetwork)
           <div v-if="!netHistory[ni.name]?.labels?.length" class="absolute inset-0 flex items-center justify-center">
             <span class="text-xs text-slate-300">{{ $t('等待数据...') }}</span>
           </div>
+        </div>
+        <div class="monitor-card-legend">
+          <span class="monitor-series">
+            <span class="monitor-series-dot bg-emerald-500"></span>{{ $t('下行') }}
+            <span class="tabular-nums text-slate-600">{{ currentRate(ni.name, 'recv') === null ? '—' : formatMonitorBytes(currentRate(ni.name, 'recv') ?? 0, true) }}</span>
+            <span class="whitespace-nowrap">· {{ $t('累计收') }} <span class="tabular-nums">{{ formatMonitorBytes(ni.bytesRecv) }}</span></span>
+          </span>
+          <span class="monitor-series">
+            <span class="monitor-series-dot bg-blue-500"></span>{{ $t('上行') }}
+            <span class="tabular-nums text-slate-600">{{ currentRate(ni.name, 'sent') === null ? '—' : formatMonitorBytes(currentRate(ni.name, 'sent') ?? 0, true) }}</span>
+            <span class="whitespace-nowrap">· {{ $t('累计发') }} <span class="tabular-nums">{{ formatMonitorBytes(ni.bytesSent) }}</span></span>
+          </span>
         </div>
       </div>
     </div>

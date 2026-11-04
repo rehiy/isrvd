@@ -1100,7 +1100,6 @@ const messages: Record<string, string> = {
     '内存使用': 'メモリ使用量',
     // Usage
     '使用率': '使用率',
-    '未获取网卡带宽，无法计算使用率': 'ネットワークインターフェースの帯域幅が不明なため、使用率を計算できません。',
     // Service Status Overview
     '服务状态总览': 'サービス状態の概要',
     // Total Routes
@@ -3053,6 +3052,7 @@ const messages: Record<string, string> = {
     // System Memory
     '系统内存': 'システムメモリ',
     '实际占用': '実使用量',
+    '吞吐': 'スループット',
     'Go 运行时占用估算：系统申请减去堆已释放，不等于进程 RSS': 'Go ランタイムの推定使用量：Sys から HeapReleased を差し引いた値で、プロセスの RSS ではありません。',
     '使用中的堆跨度，包含跨度内未使用的空间，不等于堆对象分配量': '使用中のヒープスパンです。スパン内の未使用領域を含み、ヒープオブジェクトの割り当て量とは異なります。',
     '使用中的栈跨度，不包含未使用的栈申请空间': '使用中のスタックスパンです。未使用の予約済みスタック領域は含みません。',
@@ -3063,7 +3063,7 @@ const messages: Record<string, string> = {
     // Counters
     '计数器': 'カウンター',
     // Last GC
-    '最后 GC 时间': '前回の GC 時間',
+    '最后 GC': '前回の GC',
     // No module to view
     '暂无可查看的模块': '現在表示するモジュールはありません',
     // This account has no module permissions
