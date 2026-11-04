@@ -1,13 +1,9 @@
 package monitor
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
-	"io"
-	"os"
 	"slices"
 	"strings"
 	"time"
@@ -30,11 +26,10 @@ const (
 // ErrMonitorUnavailable 监控存储未就绪。
 var ErrMonitorUnavailable = errors.New("监控采集器未启动")
 
-// recordIndex 保存容器最后落盘记录，并沿按日追加的文件增量读取。
+// recordIndex 聚合各容器最后保存记录，文件读取由 JSONL 游标负责。
 type recordIndex struct {
 	gate   chan struct{}
-	date   time.Time
-	offset int64
+	cursor jsonl.Cursor
 	latest map[string]Record
 }
 
@@ -56,34 +51,16 @@ func (i *recordIndex) read(ctx context.Context, s *jsonl.Store) ([]Record, error
 		return nil, ctx.Err()
 	}
 
-	now := time.Now()
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	first := today.AddDate(0, 0, -retainDays)
-	cutoff := now.AddDate(0, 0, -retainDays).Unix()
-	if err := ctx.Err(); err != nil {
+	cutoff := time.Now().AddDate(0, 0, -retainDays).Unix()
+	err := i.cursor.ScanSince(ctx, s, cutoff, "ts", nil, func(line []byte) bool {
+		var record Record
+		if json.Unmarshal(line, &record) == nil && record.ContainerID != "" && len(record.Data) > 0 && string(record.Data) != "null" {
+			i.latest[record.ContainerID] = record
+		}
+		return true
+	})
+	if err != nil {
 		return nil, err
-	}
-	// 首次恢复或跨日前刷完缓冲，避免游标前移后漏读旧日记录。
-	if !i.date.Equal(today) {
-		if err := s.Flush(); err != nil {
-			return nil, err
-		}
-	}
-	if i.date.IsZero() || i.date.Before(first) || i.date.After(today) {
-		i.date, i.offset = first, 0
-		clear(i.latest)
-	}
-	for {
-		if err := ctx.Err(); err != nil {
-			return nil, err
-		}
-		if err := i.readFile(ctx, s.FilePath(i.date.Format("2006-01-02")), cutoff); err != nil {
-			return nil, err
-		}
-		if i.date.Equal(today) {
-			break
-		}
-		i.date, i.offset = i.date.AddDate(0, 0, 1), 0
 	}
 
 	records := make([]Record, 0, len(i.latest))
@@ -99,43 +76,6 @@ func (i *recordIndex) read(ctx context.Context, s *jsonl.Store) ([]Record, error
 	}
 	slices.SortFunc(records, func(a, b Record) int { return strings.Compare(a.ContainerID, b.ContainerID) })
 	return records, ctx.Err()
-}
-
-func (i *recordIndex) readFile(ctx context.Context, path string, cutoff int64) error {
-	file, err := os.Open(path)
-	if errors.Is(err, os.ErrNotExist) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	if _, err := file.Seek(i.offset, io.SeekStart); err != nil {
-		return err
-	}
-	scanner := bufio.NewScanner(file)
-	scanner.Buffer(make([]byte, 64*1024), 1024*1024)
-	// 不消费尚未写完的末行，下一次从该行起点继续读取。
-	scanner.Split(func(data []byte, _ bool) (int, []byte, error) {
-		if end := bytes.IndexByte(data, '\n'); end >= 0 {
-			return end + 1, data[:end], nil
-		}
-		return 0, nil, nil
-	})
-	for scanner.Scan() {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		var record Record
-		if json.Unmarshal(scanner.Bytes(), &record) == nil && record.Ts >= cutoff && record.ContainerID != "" && len(record.Data) > 0 && string(record.Data) != "null" {
-			i.latest[record.ContainerID] = record
-		}
-		i.offset += int64(len(scanner.Bytes()) + 1)
-	}
-	if err := scanner.Err(); err != nil {
-		return err
-	}
-	return ctx.Err()
 }
 
 // CleanOldFiles 删除 dir 下所有 *_YYYY-MM-DD.jsonl 中超过 retainDays 天的旧文件
