@@ -77,7 +77,6 @@
 | `metrics` | `GET /api/metrics/host` | 指标（本机监控指标出口） |
 | `metrics` | `GET /api/metrics/containers` | 指标（容器监控指标出口） |
 | `metrics` | `GET /api/metrics/status` | 指标（本机、容器及网关状态） |
-| `metrics` | `GET /api/metrics/stats` | 网关指标（访问统计） |
 | `metrics` | `PUT /api/metrics/gateway/:name` | 指标（本机、容器及网关开启/关闭） |
 | `cron` | `POST /api/cron/jobs` | 计划任务（创建） |
 | `cron` | `POST /api/cron/jobs/:id/run` | 计划任务（立即执行） |

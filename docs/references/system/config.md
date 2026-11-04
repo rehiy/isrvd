@@ -54,7 +54,7 @@ etcd 配置监听在首次连接、重连后重新读取最新状态，读取失
 | `caddy` | Caddy Admin API 地址 |
 | `docker` | Docker 守护进程地址（支持 `tcp://` + TLS 证书连接远程 Docker / Swarm）、容器数据目录、镜像仓库账号 |
 | `monitor` | 系统与容器监控的采集间隔（5/15/30/60 秒；未配置或其他值禁用自动采集） |
-| `metrics` | 本机与容器 Prometheus 出口禁用标志（`hostDisabled` / `containersDisabled`；默认 false，不影响其他监控或告警） |
+| `metrics` | 本机与容器 Prometheus 出口开关（`hostEnabled` / `containersEnabled`；缺省 true，false 关闭出口，不影响其他监控或告警） |
 | `notify` | Webhook 通道、CPU/内存/磁盘规则，以及容器异常、任务失败和网关证书到期告警；默认关闭应用故障告警 |
 | `marketplace` | 应用市场地址 |
 | `portmap` | 中控端口转发（`range` 监听端口范围 / `bind` 监听地址；仅 center 模式使用，修改后重启生效；与 Docker 容器端口映射无关） |
@@ -126,7 +126,7 @@ isrvd_get "/system/config"
 | caddy | object | `{adminUrl}` |
 | docker | object | `{host, tls, containerRoot, registries}`（registry password、`tls.key` 不返回） |
 | monitor | object | `{interval}`（采集间隔秒数；未配置或非法值表示禁用） |
-| metrics | object | `{hostDisabled, containersDisabled}`（各自默认 false；true 禁用对应 Prometheus 出口，不影响其他监控或告警） |
+| metrics | object | `{hostEnabled, containersEnabled}`（缺省 true；false 关闭对应 Prometheus 出口，不影响其他监控或告警） |
 | marketplace | object | `{url}` |
 | portmap | object | `{range, bind}`（中控端口转发，与 Docker 容器端口映射无关；`range` 如 `20000-20999` 或单个端口，留空不启用；`bind` 为监听 IP，默认 `127.0.0.1`；格式无效返回 `400`；修改后重启生效） |
 | links | object[] | `{label, url, icon}` |
@@ -145,7 +145,7 @@ isrvd_put "/system/config" '<CURRENT_CONFIG_WITH_CHANGES>'
 
 支持按分区提交：请求中为 `null` 或未提交的分区跳过更新。保存成功后自动触发配置重载。
 
-`metrics` 分区控制本机与容器指标出口，两个字段未配置时默认 false。通过 `/metrics/gateway/host`、`/metrics/gateway/containers` 修改开关时，保存成功即生效，不触发本进程服务重载，不清空网关统计历史；详见 [监控指标 API](../metrics.md)。
+`metrics` 分区使用 `hostEnabled`、`containersEnabled` 控制本机与容器指标出口，字段缺失时默认 true，显式 false 会持久化并在重启后保留。旧 YAML/JSON 中的 `hostDisabled`、`containersDisabled` 仍可读取并取反，新字段同时存在时优先；旧配置加载后自动回写为 enabled 格式，API 响应只返回新字段。系统配置的「监控指标」页面（`/system/config/metrics`）管理 `monitor` 采集间隔与 `metrics` 出口开关，两者互不联动且随「保存」提交；`notify` 通道和告警规则独立位于「告警通知」页面（`/system/config/alert`）。仅有指标权限的用户不读取系统配置，也不能查看或修改采集与告警配置。APISIX/Caddy 仍修改网关自身配置并立即生效，不在本地重复存储开关。兼容的 `/metrics/gateway/host`、`/metrics/gateway/containers` API 仍可保存后立即生效，不触发本进程重载，不影响原监控查看与后台采集；详见 [监控指标 API](../metrics.md)。
 
 状态码：`400` 为通知阈值非法、`portmap` 非法、受管模式启用 THA；其余校验失败（JWT 密钥不足 32 字符、Passkey/OIDC/Docker TLS 校验失败、关闭全部登录方式、配置正在重载等）返回 `500`。
 

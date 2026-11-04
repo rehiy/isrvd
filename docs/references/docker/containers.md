@@ -167,12 +167,13 @@ isrvd_get "/docker/container/<CONTAINER_ID>/stats"
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
+| ts | number | 服务端采样时间（Unix 秒，与监控历史时间戳使用同一时钟） |
 | id | string | 容器 ID |
 | name | string | 容器名 |
 | cpuPercent | number | CPU 使用率 (%) |
 | cpuCores | number | 可用 CPU 核数 |
 | cpuFreq | number | CPU 主频（MHz） |
-| memoryUsage | number | 内存使用（字节，已扣除 `inactive_file` / `cache`） |
+| memoryUsage | number | 内存工作集（字节，cgroup v1 扣除 `total_inactive_file`，v2 扣除 `inactive_file`，不扣除全部 `cache`） |
 | memoryLimit | number | 内存限制（字节） |
 | memoryPercent | number | 内存使用率 (%) |
 | networkRx | number | 网络接收（字节） |
