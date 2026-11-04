@@ -79,12 +79,26 @@ isrvd_get "/overview/monitor?type=container&since=3600&id=<CONTAINER_ID>"
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| system | object | 系统资源明细：`hostId`、`hostName`、`os`、`platform`、`kernelArch`、`createAt`、`uptime`、`cpuCore`、`cpuCoreLogic`、`cpuModel[]`、`cpuPercent[]`、`memoryTotal`、`memoryUsed`、`swapTotal`、`swapUsed`、`diskTotal`、`diskUsed`、`diskReadBytes`、`diskWriteBytes`、`diskPartition[]{device, mountpoint, fstype, total, used}`、`netBytesRecv`、`netBytesSent`、`netInterface[]{name, bytesRecv, bytesSent, dropin, dropout, ipv4List, ipv6List}`、`publicIpv4`、`publicIpv6` 等（字节单位；分区与汇总值已过滤虚拟挂载） |
+| system | object | 系统资源明细：`hostId`、`hostName`、`os`、`platform`、`kernelArch`、`createAt`、`uptime`、`cpuCore`、`cpuCoreLogic`、`cpu`、`cpuPercent[]`、`memoryTotal`、`memoryUsed`、`swapTotal`、`swapUsed`、`diskTotal`、`diskUsed`、`diskReadBytes`、`diskWriteBytes`、`diskPartition[]{device, mountpoint, fstype, total, used}`、`netBytesRecv`、`netBytesSent`、`netInterface[]{name, bytesRecv, bytesSent, dropin, dropout, ipv4List, ipv6List}`、`publicIpv4`、`publicIpv6` 等（字节单位；分区与汇总值已过滤虚拟挂载） |
 | time | string | 系统当前本地时间，格式 `YYYY-MM-DD HH:mm:ss` |
 | timezone | string | 系统当前时区，包含 UTC 偏移，如 `CST UTC+08:00` 或 `UTC+00:00` |
 | diskIO | object[] | `{name, readBytes, writeBytes, readCount, writeCount}`（累计值） |
 | gpu | object[] \| null | `{index, deviceKey, name, vendor, memoryUsed, memoryTotal, utilization, temperature, powerUsage, fanSpeed}`；无 GPU 时为 `null` |
 | go | object | Go 运行态：`version`、`numCPU`、`numGoroutine` 及内存统计 |
+
+**`system.cpu`（CPU 静态信息，必填）：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| models | string[] | 非空型号去重列表；不表示 CPU 封装数 |
+| packages | number \| null | 系统报告的逻辑处理器所涉及的封装数；不含空插槽和完全不可见的离线封装，逐逻辑处理器数据完整且封装 ID 均可确认时才返回数量 |
+| physicalCores | number \| null | 系统报告的物理核心总数；无法确认时为 `null` |
+| logicalCPUs | number \| null | 系统报告的逻辑处理器总数；无法获取时为 `null` |
+| processors | object[] | 按逻辑处理器 `id` 排序，每项 `{id, packageId, coreId, model, vendor}`；未知 `packageId` / `coreId` 为 `null`，字符串 `"0"` 有效 |
+
+`processors` 的每项是一个逻辑处理器，不是物理 CPU 或物理核心；物理核心按 `(packageId, coreId)` 识别，任一 ID 未知时不能推断。相同封装可包含多个型号，多个封装也可使用相同型号。当前依赖仅在 Linux 提供可确认的逐逻辑处理器信息，其他平台返回空 `processors`、未知 `packages`，保留型号及可确认的汇总数量；物理核数仅采用 Linux、Windows、macOS 的平台采集结果。未知数量不是 0，`processors.length` 也不保证等于逻辑处理器总数。
+
+型号与拓扑统一使用 `cpu`，页面直接展示 `cpu.models`；原 `cpuModel[]` 已删除，不兼容或迁移旧 CPU 记录。`cpuCore`、`cpuCoreLogic` 和聚合 `cpuPercent[]` 仍用于概要及使用率统计。独立计数小于已识别的处理器或物理核心数，以及物理核心数大于逻辑数时，相应 `cpu` 数量字段置为 `null`；已识别型号和处理器记录保留，原概要统计字段不变。
 
 ---
 

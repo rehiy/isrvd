@@ -82,14 +82,30 @@ export interface SystemGoRuntimeStat {
     lastGC: number
 }
 
+export interface SystemCPUProcessor {
+    id: number
+    packageId: string | null
+    coreId: string | null
+    model: string
+    vendor: string
+}
+
+export interface SystemCPUInfo {
+    models: string[]
+    packages: number | null
+    physicalCores: number | null
+    logicalCPUs: number | null
+    processors: SystemCPUProcessor[]
+}
+
 export interface SystemInfo {
+    cpu: SystemCPUInfo
     hostName: string
     platform: string
     kernelArch: string
     uptime: number
     cpuCore: number
     cpuCoreLogic: number
-    cpuModel: string[]
     cpuPercent: number[]
     memoryUsed: number
     memoryTotal: number

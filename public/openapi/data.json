@@ -12630,6 +12630,150 @@
         },
         "type": "object"
       },
+      "psutil.CPUProcessor": {
+        "properties": {
+          "coreId": {
+            "description": "封装内物理核心 ID；须与 packageId 一起使用，未知为 null",
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "系统逻辑处理器 ID",
+            "type": "integer"
+          },
+          "model": {
+            "type": "string"
+          },
+          "packageId": {
+            "description": "系统封装 ID；0 有效，未知为 null",
+            "nullable": true,
+            "type": "string"
+          },
+          "vendor": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "packageId",
+          "coreId",
+          "model",
+          "vendor"
+        ],
+        "type": "object"
+      },
+      "psutil.CPUStat": {
+        "properties": {
+          "logicalCPUs": {
+            "description": "系统报告的逻辑处理器总数；未知为 null",
+            "nullable": true,
+            "type": "integer"
+          },
+          "models": {
+            "description": "非空型号去重，不表示封装数",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "packages": {
+            "description": "系统报告的逻辑处理器所涉及的封装数，不含空插槽和不可见封装；拓扑不完整时未知",
+            "nullable": true,
+            "type": "integer"
+          },
+          "physicalCores": {
+            "description": "物理核心总数；无法确认时未知",
+            "nullable": true,
+            "type": "integer"
+          },
+          "processors": {
+            "description": "Linux 可识别的逻辑处理器；其他平台或无数据时为空数组",
+            "items": {
+              "$ref": "#/components/schemas/psutil.CPUProcessor"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "models",
+          "packages",
+          "physicalCores",
+          "logicalCPUs",
+          "processors"
+        ],
+        "type": "object"
+      },
+      "psutil.DetailStat": {
+        "description": "系统资源明细，其他字段见 overview 接口文档",
+        "properties": {
+          "cpu": {
+            "$ref": "#/components/schemas/psutil.CPUStat"
+          },
+          "cpuCore": {
+            "type": "integer"
+          },
+          "cpuCoreLogic": {
+            "type": "integer"
+          },
+          "cpuPercent": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "netInterface": {
+            "items": {
+              "$ref": "#/components/schemas/psutil.NetInterface"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "cpu"
+        ],
+        "type": "object"
+      },
+      "psutil.NetInterface": {
+        "properties": {
+          "bytesRecv": {
+            "description": "累计接收字节数",
+            "type": "integer"
+          },
+          "bytesSent": {
+            "description": "累计发送字节数",
+            "type": "integer"
+          },
+          "dropin": {
+            "type": "integer"
+          },
+          "dropout": {
+            "type": "integer"
+          },
+          "ipv4List": {
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "ipv6List": {
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "bytesRecv",
+          "bytesSent"
+        ],
+        "type": "object"
+      },
       "shell.BridgeOptions": {
         "properties": {
           "Cleanup": {
@@ -13317,6 +13461,44 @@
           "name",
           "addr"
         ],
+        "type": "object"
+      },
+      "webssh.SFTPListResult": {
+        "properties": {
+          "files": {
+            "items": {
+              "properties": {
+                "isDir": {
+                  "type": "boolean"
+                },
+                "isLink": {
+                  "type": "boolean"
+                },
+                "linkTarget": {
+                  "type": "string"
+                },
+                "modTime": {
+                  "type": "integer"
+                },
+                "mode": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "path": {
+            "description": "实际目录路径",
+            "type": "string"
+          }
+        },
         "type": "object"
       }
     },

@@ -21,7 +21,7 @@ class SystemCpuMem extends Vue {
     private cpuHistory: { ts: number[]; labels: string[]; data: number[] } = { ts: [], labels: [], data: [] }
     private memHistory: { ts: number[]; labels: string[]; data: number[] } = { ts: [], labels: [], data: [] }
 
-    current: Pick<SystemStat['system'], 'cpuPercent' | 'cpuModel' | 'memoryUsed' | 'memoryTotal'> | null = null
+    current: Pick<SystemStat['system'], 'cpu' | 'cpuPercent' | 'memoryUsed' | 'memoryTotal'> | null = null
     formatMonitorBytes = formatMonitorBytes
 
     get cpuVal() {
@@ -33,7 +33,7 @@ class SystemCpuMem extends Vue {
     }
 
     get cpuModel() {
-        return this.current?.cpuModel?.[0] || ''
+        return this.current?.cpu?.models?.join(' / ') || ''
     }
 
     get memUsed() { return this.current?.memoryUsed ?? 0 }
@@ -123,7 +123,7 @@ class SystemCpuMem extends Vue {
 
     pushData(payload: SystemStat, ts: number) {
         const s = payload.system
-        this.current = { cpuPercent: s.cpuPercent, cpuModel: s.cpuModel, memoryUsed: s.memoryUsed, memoryTotal: s.memoryTotal }
+        this.current = { cpu: s.cpu, cpuPercent: s.cpuPercent, memoryUsed: s.memoryUsed, memoryTotal: s.memoryTotal }
 
         appendMonitorPoint(
             this.cpuHistory,
@@ -160,8 +160,7 @@ export default toNative(SystemCpuMem)
           </div>
           <div class="min-w-0 flex-1">
             <p class="monitor-card-title">{{ $t('CPU 使用率') }}</p>
-            <p v-if="cpuModel" class="truncate text-xs text-slate-400" :title="cpuModel">{{ cpuModel }}</p>
-            <p v-else class="text-xs text-slate-300">—</p>
+            <p class="truncate text-xs text-slate-400" :title="cpuModel || undefined">{{ cpuModel || '—' }}</p>
           </div>
         </div>
         <span :class="['monitor-card-value ml-auto whitespace-nowrap text-right', semanticColor(cpuVal)]">{{ cpuVal }}%</span>

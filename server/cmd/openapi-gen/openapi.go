@@ -66,6 +66,12 @@ func buildOpenAPI() *OpenAPI {
 		oa.Components.Schemas[name] = schemaDef
 	}
 
+	for name, schema := range externalSchemas {
+		if _, exists := oa.Components.Schemas[name]; !exists {
+			oa.Components.Schemas[name] = schema
+		}
+	}
+
 	// 按模块分组路由
 	modules := make(map[string][]RouteDef)
 	for _, r := range routes {
@@ -500,6 +506,53 @@ func oapiPath(ginPath string) string {
 // externalSchemas 无法从仓库源码解析的第三方类型（如 libgo 的类型别名）的手写描述。
 // 字段需与第三方定义保持一致，升级依赖时同步核对。
 var externalSchemas = map[string]map[string]any{
+	"psutil.DetailStat": {
+		"type":        "object",
+		"description": "系统资源明细，其他字段见 overview 接口文档",
+		"required":    []string{"cpu"},
+		"properties": map[string]any{
+			"cpu":          map[string]any{"$ref": "#/components/schemas/psutil.CPUStat"},
+			"cpuCore":      map[string]any{"type": "integer"},
+			"cpuCoreLogic": map[string]any{"type": "integer"},
+			"cpuPercent":   map[string]any{"type": "array", "items": map[string]any{"type": "number"}},
+			"netInterface": map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/psutil.NetInterface"}},
+		},
+	},
+	"psutil.NetInterface": {
+		"type":     "object",
+		"required": []string{"name", "bytesRecv", "bytesSent"},
+		"properties": map[string]any{
+			"name":      map[string]any{"type": "string"},
+			"bytesRecv": map[string]any{"type": "integer", "description": "累计接收字节数"},
+			"bytesSent": map[string]any{"type": "integer", "description": "累计发送字节数"},
+			"dropin":    map[string]any{"type": "integer"},
+			"dropout":   map[string]any{"type": "integer"},
+			"ipv4List":  map[string]any{"type": "array", "nullable": true, "items": map[string]any{"type": "string"}},
+			"ipv6List":  map[string]any{"type": "array", "nullable": true, "items": map[string]any{"type": "string"}},
+		},
+	},
+	"psutil.CPUStat": {
+		"type":     "object",
+		"required": []string{"models", "packages", "physicalCores", "logicalCPUs", "processors"},
+		"properties": map[string]any{
+			"models":        map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "非空型号去重，不表示封装数"},
+			"packages":      map[string]any{"type": "integer", "nullable": true, "description": "系统报告的逻辑处理器所涉及的封装数，不含空插槽和不可见封装；拓扑不完整时未知"},
+			"physicalCores": map[string]any{"type": "integer", "nullable": true, "description": "物理核心总数；无法确认时未知"},
+			"logicalCPUs":   map[string]any{"type": "integer", "nullable": true, "description": "系统报告的逻辑处理器总数；未知为 null"},
+			"processors":    map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/psutil.CPUProcessor"}, "description": "Linux 可识别的逻辑处理器；其他平台或无数据时为空数组"},
+		},
+	},
+	"psutil.CPUProcessor": {
+		"type":     "object",
+		"required": []string{"id", "packageId", "coreId", "model", "vendor"},
+		"properties": map[string]any{
+			"id":        map[string]any{"type": "integer", "description": "系统逻辑处理器 ID"},
+			"packageId": map[string]any{"type": "string", "nullable": true, "description": "系统封装 ID；0 有效，未知为 null"},
+			"coreId":    map[string]any{"type": "string", "nullable": true, "description": "封装内物理核心 ID；须与 packageId 一起使用，未知为 null"},
+			"model":     map[string]any{"type": "string"},
+			"vendor":    map[string]any{"type": "string"},
+		},
+	},
 	// github.com/rehiy/libgo/webssh.ListResult
 	"webssh.SFTPListResult": {
 		"type": "object",
