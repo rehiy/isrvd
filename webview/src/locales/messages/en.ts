@@ -1533,7 +1533,6 @@ const messages: Record<string, string> = {
     '累计写:': 'Total written: ',
     '显存': 'Memory',
     '显卡': 'GPU',
-    '已分配': 'Allocated',
     '堆已分配': 'Heap Allocated',
     '堆使用中': 'Heap In Use',
     '堆空闲': 'Heap Idle',

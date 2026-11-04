@@ -67,7 +67,6 @@ export interface SystemGoRuntimeStat {
     version: string
     numCPU: number
     numGoroutine: number
-    alloc: number
     sys: number
     heapAlloc: number
     heapInuse: number

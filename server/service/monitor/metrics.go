@@ -113,7 +113,7 @@ func (h *HostStat) MetricsText() []byte {
 	if g := h.Go; g != nil {
 		w.write("gauge", "isrvd_go_goroutines", "Number of goroutines of the isrvd process.", one(float64(g.NumGoroutine)))
 		if g.GoMemoryStat != nil {
-			w.write("gauge", "isrvd_go_memory_alloc_bytes", "Bytes of allocated heap objects in the isrvd process.", one(float64(g.Alloc)))
+			w.write("gauge", "isrvd_go_memory_alloc_bytes", "Bytes of allocated heap objects in the isrvd process.", one(float64(g.HeapAlloc)))
 		}
 	}
 	return []byte(w.b.String())

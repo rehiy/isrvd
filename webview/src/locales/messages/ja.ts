@@ -3025,8 +3025,6 @@ const messages: Record<string, string> = {
     '显存': 'ビデオメモリ',
     // GPU
     '显卡': 'グラフィックスカード',
-    // Allocated
-    '已分配': '割り当てられた',
     // Heap Allocated
     '堆已分配': '割り当てられたヒープ',
     // Heap In Use

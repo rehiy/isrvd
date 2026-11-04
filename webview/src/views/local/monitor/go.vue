@@ -25,7 +25,7 @@ class SystemGo extends Vue {
     private stackChart: Chart<'line'> | null = null
     private sysChart: Chart<'line'> | null = null
 
-    private memHistory: { ts: number[]; labels: string[]; alloc: number[]; heapAlloc: number[]; heapInuse: number[]; heapIdle: number[]; heapReleased: number[]; heapSys: number[] } = { ts: [], labels: [], alloc: [], heapAlloc: [], heapInuse: [], heapIdle: [], heapReleased: [], heapSys: [] }
+    private memHistory: { ts: number[]; labels: string[]; heapAlloc: number[]; heapInuse: number[]; heapIdle: number[]; heapReleased: number[]; heapSys: number[] } = { ts: [], labels: [], heapAlloc: [], heapInuse: [], heapIdle: [], heapReleased: [], heapSys: [] }
     private goroutineHistory: { ts: number[]; labels: string[]; goroutine: number[]; gc: number[]; heapObjects: number[] } = { ts: [], labels: [], goroutine: [], gc: [], heapObjects: [] }
     private stackHistory: { ts: number[]; labels: string[]; stackInuse: number[]; stackSys: number[] } = { ts: [], labels: [], stackInuse: [], stackSys: [] }
     private sysHistory: { ts: number[]; labels: string[]; totalAlloc: number[]; sys: number[] } = { ts: [], labels: [], totalAlloc: [], sys: [] }
@@ -87,7 +87,6 @@ class SystemGo extends Vue {
             ts,
             this.rangeSeconds,
             () => {
-                this.memHistory.alloc.push(payload.go.alloc)
                 this.memHistory.heapAlloc.push(payload.go.heapAlloc)
                 this.memHistory.heapInuse.push(payload.go.heapInuse)
                 this.memHistory.heapIdle.push(payload.go.heapIdle)
@@ -95,7 +94,6 @@ class SystemGo extends Vue {
                 this.memHistory.heapSys.push(payload.go.heapSys)
             },
             count => {
-                this.memHistory.alloc.splice(0, count)
                 this.memHistory.heapAlloc.splice(0, count)
                 this.memHistory.heapInuse.splice(0, count)
                 this.memHistory.heapIdle.splice(0, count)
@@ -176,7 +174,6 @@ class SystemGo extends Vue {
                 data: {
                     labels: [...this.memHistory.labels],
                     datasets: [
-                        makeLineDataset(this.memHistory.alloc, '#3b82f6', this.$t('已分配')),
                         makeLineDataset(this.memHistory.heapAlloc, '#10b981', this.$t('堆已分配')),
                         makeLineDataset(this.memHistory.heapInuse, '#f59e0b', this.$t('堆使用中')),
                         makeLineDataset(this.memHistory.heapIdle, '#a8a29e', this.$t('堆空闲')),
@@ -261,12 +258,11 @@ class SystemGo extends Vue {
             return
         }
         this.memChart.data.labels = [...this.memHistory.labels]
-        this.memChart.data.datasets[0].data = [...this.memHistory.alloc]
-        this.memChart.data.datasets[1].data = [...this.memHistory.heapAlloc]
-        this.memChart.data.datasets[2].data = [...this.memHistory.heapInuse]
-        this.memChart.data.datasets[3].data = [...this.memHistory.heapIdle]
-        this.memChart.data.datasets[4].data = [...this.memHistory.heapReleased]
-        this.memChart.data.datasets[5].data = [...this.memHistory.heapSys]
+        this.memChart.data.datasets[0].data = [...this.memHistory.heapAlloc]
+        this.memChart.data.datasets[1].data = [...this.memHistory.heapInuse]
+        this.memChart.data.datasets[2].data = [...this.memHistory.heapIdle]
+        this.memChart.data.datasets[3].data = [...this.memHistory.heapReleased]
+        this.memChart.data.datasets[4].data = [...this.memHistory.heapSys]
         this.memChart.update('none')
 
         this.goroutineChart.data.labels = [...this.goroutineHistory.labels]
@@ -288,7 +284,7 @@ class SystemGo extends Vue {
 
     clearData() {
         this.current = null
-        this.memHistory = { ts: [], labels: [], alloc: [], heapAlloc: [], heapInuse: [], heapIdle: [], heapReleased: [], heapSys: [] }
+        this.memHistory = { ts: [], labels: [], heapAlloc: [], heapInuse: [], heapIdle: [], heapReleased: [], heapSys: [] }
         this.goroutineHistory = { ts: [], labels: [], goroutine: [], gc: [], heapObjects: [] }
         this.stackHistory = { ts: [], labels: [], stackInuse: [], stackSys: [] }
         this.sysHistory = { ts: [], labels: [], totalAlloc: [], sys: [] }
@@ -366,7 +362,6 @@ export default toNative(SystemGo)
         </div>
         <div class="monitor-card-legend">
           <span class="monitor-series"><span class="monitor-series-dot bg-violet-500"></span>{{ $t('堆已申请') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(current.heapSys) }}</span></span>
-          <span class="monitor-series"><span class="monitor-series-dot bg-blue-500"></span>{{ $t('已分配') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(current.alloc) }}</span></span>
           <span class="monitor-series"><span class="monitor-series-dot bg-emerald-500"></span>{{ $t('堆已分配') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(current.heapAlloc) }}</span></span>
           <span class="monitor-series"><span class="monitor-series-dot bg-amber-500"></span>{{ $t('堆使用中') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(current.heapInuse) }}</span></span>
           <span class="monitor-series"><span class="monitor-series-dot bg-stone-400"></span>{{ $t('堆空闲') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(current.heapIdle) }}</span></span>
