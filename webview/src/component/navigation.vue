@@ -13,7 +13,10 @@ class NavigationBar extends Vue {
     portal = usePortal()
     @Prop({ type: Boolean, default: false }) readonly collapsed!: boolean
 
-    configGroups = configGroups
+    get configGroups() {
+        const canViewConfig = this.portal.hasPerm('GET /api/system/config') || this.portal.hasPerm('PUT /api/system/config')
+        return configGroups.filter(item => canViewConfig || item.id === 'metrics' && this.portal.hasPerm('metrics'))
+    }
 
     // ─── 数据属性 ───
     mobileSidebarVisible = false
@@ -615,12 +618,6 @@ export default toNative(NavigationBar)
         </template>
       </div>
 
-      <!-- 监控指标 -->
-      <router-link v-if="portal.hasPerm('metrics')" to="/metrics" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('监控指标') : ''">
-        <i class="fas fa-chart-line"></i>
-        <span v-if="!collapsed">{{ $t('监控指标') }}</span>
-      </router-link>
-
       <!-- 计划任务 -->
       <router-link v-if="portal.hasPerm('GET /api/cron/jobs')" to="/cron/jobs" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('计划任务') : ''">
         <i class="fas fa-clock"></i>
@@ -663,8 +660,8 @@ export default toNative(NavigationBar)
         </template>
       </div>
 
-      <!-- 系统配置折叠子菜单（GET 或 PUT 任一权限即显示，只读成员同样可查看） -->
-      <div v-if="portal.hasPerm('GET /api/system/config') || portal.hasPerm('PUT /api/system/config')">
+      <!-- 系统配置折叠子菜单 -->
+      <div v-if="configGroups.length">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
         <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isConfigActive }" :title="$t('系统配置')" @click.stop="toggleConfig">
           <i class="fas fa-gear"></i>

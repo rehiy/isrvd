@@ -1100,6 +1100,7 @@ const messages: Record<string, string> = {
     '内存使用': 'メモリ使用量',
     // Usage
     '使用率': '使用率',
+    '未获取网卡带宽，无法计算使用率': 'ネットワークインターフェースの帯域幅が不明なため、使用率を計算できません。',
     // Service Status Overview
     '服务状态总览': 'サービス状態の概要',
     // Total Routes
@@ -2690,6 +2691,7 @@ const messages: Record<string, string> = {
     '累计写': '書き込み合計',
     // Process Info
     '进程信息': 'プロセス情報',
+    '线程（含主线程）': 'スレッド（メインスレッドを含む）',
     // / limit
     '/ 限制': '/制限',
     // No process info
@@ -3050,6 +3052,10 @@ const messages: Record<string, string> = {
     'Go 运行态': '実行状態に移行',
     // System Memory
     '系统内存': 'システムメモリ',
+    '实际占用': '実使用量',
+    'Go 运行时占用估算：系统申请减去堆已释放，不等于进程 RSS': 'Go ランタイムの推定使用量：Sys から HeapReleased を差し引いた値で、プロセスの RSS ではありません。',
+    '使用中的堆跨度，包含跨度内未使用的空间，不等于堆对象分配量': '使用中のヒープスパンです。スパン内の未使用領域を含み、ヒープオブジェクトの割り当て量とは異なります。',
+    '使用中的栈跨度，不包含未使用的栈申请空间': '使用中のスタックスパンです。未使用の予約済みスタック領域は含みません。',
     // Heap Memory
     '堆内存': 'ヒープメモリ',
     // Stack Memory
@@ -3480,8 +3486,8 @@ const messages: Record<string, string> = {
     '30 秒': '30秒',
     // 60 seconds
     '60 秒': '60秒',
-    // Collection frequency of system and container metrics; when disabled, history collection and resource threshold alerts stop; app fault alerts below still run independently
-    '系统与容器监控数据的采集频率，禁用后停止历史采集与资源阈值告警；下方应用故障告警仍可独立运行': 'システムおよびコンテナの監視データの収集頻度。これを無効にすると、履歴収集とリソースしきい値アラームが停止します。以下のアプリケーション障害アラームは引き続き独立して実行できます。',
+    // Collection frequency of system and container metrics; when disabled, history collection and resource threshold alerts stop; app fault alerts still run independently
+    '系统与容器监控数据的采集频率，禁用后停止历史采集与资源阈值告警；应用故障告警仍可独立运行': 'システムおよびコンテナの監視データの収集頻度。これを無効にすると、履歴収集とリソースしきい値アラームが停止します。アプリケーション障害アラームは引き続き独立して実行できます。',
     // Notification Channels
     '通知通道': '通知チャネル',
     // Configure webhook URL and message format, resource and app fault alerts are pushed to all channels
@@ -3810,84 +3816,32 @@ const messages: Record<string, string> = {
     // ─── 监控指标 ───
     // Monitoring Metrics
     '监控指标': '監視メトリクス',
-    // Caddy / APISIX access statistics based on gateway metrics
-    '基于网关指标的 Caddy / APISIX 访问统计': 'ゲートウェイのメトリクスに基づく Caddy / APISIX アクセス統計',
-    // Caddy / APISIX access stats
-    'Caddy / APISIX 访问统计': 'Caddy / APISIX アクセス統計',
-    // Time range
-    '时间范围': '時間範囲',
-    // 15 minutes
-    '15 分钟': '15 分',
-    // 6 hours
-    '6 小时': '6 時間',
-    // Neither Caddy nor APISIX Admin URL is configured
-    '未配置 Caddy 或 APISIX 的 Admin 地址': 'Caddy / APISIX の Admin URL が設定されていません',
-    // Metrics on
-    '指标已开启': 'メトリクス有効',
+    'Prometheus 指标出口': 'Prometheus メトリクスエンドポイント',
+    '保存后生效': '保存後に反映',
+    '立即生效': '即時反映',
+    '指标导出': 'メトリクス出力',
+    '告警通知': 'アラートと通知',
+    '监控采集与指标出口': '監視データの収集とメトリクスエンドポイント',
+    '通知通道、资源阈值与应用故障告警': '通知チャネル・リソースしきい値・アプリケーション障害アラート',
+    '本机与容器开关保存后生效；网关开关立即生效。关闭出口不停止采集，开启出口不会自动开启采集。': 'ホストとコンテナのスイッチは保存後に反映され、ゲートウェイのスイッチは即時反映されます。エンドポイントを無効にしても収集は停止せず、有効にしても収集は自動で開始されません。',
     // Metrics off
     '指标未开启': 'メトリクス無効',
     // Scrapable
     '可抓取': '取得可能',
     // Not scrapable
     '不可抓取': '取得不可',
-    // Enable metrics
-    '开启指标': 'メトリクスを有効化',
-    // Disable metrics
-    '关闭指标': 'メトリクスを無効化',
-    // Gateway metrics enabled
-    '网关指标已开启': 'ゲートウェイのメトリクスを有効にしました',
-    // Gateway metrics disabled
-    '网关指标已关闭': 'ゲートウェイのメトリクスを無効にしました',
-    // No statistics yet. Data appears within about 1 minute after metrics are enabled and traffic arrives.
-    '暂无统计数据。开启指标并产生访问后，约 1 分钟内开始出现。': '統計データはまだありません。メトリクスを有効にしてアクセスが発生すると、約 1 分以内に表示されます。',
-    // Total requests
-    '请求总数': 'リクエスト総数',
-    // Average QPS
-    '平均 QPS': 'QPS（平均）',
-    // 5xx ratio
-    '5xx 占比': '5xx 比率',
-    // Average latency
-    '平均耗时': '平均レイテンシ',
-    // Response traffic
-    '响应流量': 'レスポンストラフィック',
-    '2xx 请求数': '2xx リクエスト数',
-    '3xx 请求数': '3xx リクエスト数',
-    '4xx 请求数': '4xx リクエスト数',
-    '5xx 请求数': '5xx リクエスト数',
-    // Request rate (by status code)
-    '请求速率（按状态码）': 'リクエストレート（ステータスコード別）',
-    // Top routes
-    '路由排行': 'ルートランキング',
-    // Top sites
-    '站点排行': 'サイトランキング',
-    // Site
-    '站点': 'サイト',
-    // Requests
-    '请求数': 'リクエスト数',
-    // No data
-    '暂无数据': 'データなし',
-    // External monitoring systems can scrape the endpoints below (authenticate with a token created on the API Keys page as a Bearer token):
-    '外部监控系统可分别抓取以下出口（使用「API 密钥」页创建的令牌以 Bearer 方式认证）：': '外部の監視システムは以下のエンドポイントを取得できます（「API キー」ページで作成したトークンを Bearer 認証に使用）：',
     // Host monitor
     '本机监控': 'ホスト監視',
-    // Metric endpoints and access statistics for hosts, containers and gateways
-    '主机、容器与网关的指标出口及访问统计': 'ホスト・コンテナ・ゲートウェイのメトリクスエンドポイントとアクセス統計',
+    '主机、容器与网关的指标出口与开关': 'ホスト・コンテナ・ゲートウェイのメトリクスエンドポイントとスイッチ',
     // Hosts, containers and gateways
     '主机、容器与网关': 'ホスト・コンテナ・ゲートウェイ',
     // Metric sources
     '指标来源': 'メトリクスの収集元',
     // CPU, memory, disk, network and process runtime metrics
     'CPU、内存、磁盘、网络与进程运行时指标': 'CPU・メモリ・ディスク・ネットワーク・プロセスランタイムのメトリクス',
-    // CPU, memory, network and disk metrics for running containers
-    '运行中容器的 CPU、内存、网络与磁盘指标': '実行中コンテナの CPU・メモリ・ネットワーク・ディスクのメトリクス',
+    '最后保存的容器 CPU、内存、网络与磁盘指标': '最後に保存されたコンテナの CPU・メモリ・ネットワーク・ディスクのメトリクス',
     // Requests, status codes, latency and response traffic
     '请求数、状态码、耗时与响应流量': 'リクエスト数・ステータスコード・レイテンシ・レスポンストラフィック',
-    // Collected on demand
-    '按需采集': 'リクエスト時に収集',
-    // Docker available
-    'Docker 可用': 'Docker 利用可能',
-    // Docker unavailable
-    'Docker 不可用': 'Docker 利用不可',
     // Check failed
     '检查失败': '確認に失敗',
     // Status not checked
@@ -3896,19 +3850,6 @@ const messages: Record<string, string> = {
     '复制地址': 'アドレスをコピー',
     // Scrape permission for this endpoint has not been granted
     '未授予此出口的抓取权限': 'このエンドポイントの取得権限が付与されていません',
-    // Enable metrics
-    '启用指标': 'メトリクスを有効化',
-    // Configured through the gateway management API
-    '通过网关管理接口配置': 'ゲートウェイ管理 API で設定',
-    '仅控制指标出口，不影响其他监控或告警': 'メトリクスエンドポイントのみを制御し、他の監視やアラートには影響しません',
-    // Gateway access statistics
-    '网关访问统计': 'ゲートウェイのアクセス統計',
-    // Sampled every 30 seconds, retained for up to 24 hours; cleared on restart or reload.
-    '30 秒采样，最多保留 24 小时；重启或重载后清空。': '30 秒間隔で収集し、最大 24 時間保持します。再起動や再読み込みで消去されます。',
-    // Statistics are temporarily unavailable. Refresh to retry.
-    '统计暂不可用，请刷新重试': '統計を一時的に利用できません。更新して再試行してください。',
-    // Search sites or routes...
-    '搜索站点或路由...': 'サイトまたはルートを検索...',
 }
 
 const language: LanguageModule = {

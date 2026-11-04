@@ -133,8 +133,8 @@ export interface MonitorConfig {
 }
 
 export interface MetricsConfig {
-    hostDisabled: boolean
-    containersDisabled: boolean
+    hostEnabled: boolean
+    containersEnabled: boolean
 }
 
 export interface MarketplaceConfig {
@@ -159,7 +159,7 @@ export interface AllConfig {
     caddy: CaddyConfig
     docker: DockerConfig
     monitor: MonitorConfig
-    metrics?: MetricsConfig
+    metrics: MetricsConfig
     marketplace: MarketplaceConfig
     links: LinkConfig[]
 }

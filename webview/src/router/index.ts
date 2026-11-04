@@ -306,7 +306,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/metrics',
     name: 'metrics',
-    component: () => import('@/views/metrics/index.vue'),
+    redirect: '/system/config/metrics',
     meta: { title: '监控指标', permissions: ['metrics'] }
   },
   {
@@ -372,7 +372,13 @@ const routes: RouteRecordRaw[] = [
         path: 'alert',
         name: 'config-alert',
         component: () => import('@/views/system/config/alert.vue'),
-        meta: { title: '监控告警' }
+        meta: { title: '告警通知' }
+      },
+      {
+        path: 'metrics',
+        name: 'config-metrics',
+        component: () => import('@/views/system/config/metrics.vue'),
+        meta: { title: '监控指标', permissions: ['GET /api/system/config', 'PUT /api/system/config', 'metrics'] }
       },
       {
         path: 'integrations',

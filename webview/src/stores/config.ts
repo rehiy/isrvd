@@ -26,11 +26,12 @@ export type ConfigSection =
     | 'caddy'
     | 'docker'
     | 'monitor'
+    | 'metrics'
     | 'marketplace'
     | 'links'
 
 /** 配置分组，一个分组包含若干配置分区，对应一个子路由 */
-export type ConfigGroup = 'service' | 'auth' | 'gateway' | 'alert' | 'integrations'
+export type ConfigGroup = 'service' | 'auth' | 'gateway' | 'alert' | 'metrics' | 'integrations'
 
 export interface ConfigGroupMeta {
     id: ConfigGroup
@@ -45,7 +46,8 @@ export const configGroups = ([
     { id: 'service', label: '基础服务', description: '端口、目录、上传、跨域与 JWT', icon: 'fa-server', sections: ['server'] },
     { id: 'auth', label: '登录认证', description: '密码、Passkey、OIDC 与代理 Header 登录', icon: 'fa-shield-halved', sections: ['password', 'passkey', 'oidc', 'tha'] },
     { id: 'gateway', label: '网关容器', description: 'APISIX、Caddy 与 Docker 连接参数', icon: 'fa-route', sections: ['apisix', 'caddy', 'docker'] },
-    { id: 'alert', label: '监控告警', description: '采集间隔、Webhook 通道、资源阈值与应用故障', icon: 'fa-bell', sections: ['monitor', 'notify'] },
+    { id: 'metrics', label: '监控指标', description: '监控采集与指标出口', icon: 'fa-chart-line', sections: ['monitor', 'metrics'] },
+    { id: 'alert', label: '告警通知', description: '通知通道、资源阈值与应用故障告警', icon: 'fa-bell', sections: ['notify'] },
     { id: 'integrations', label: '扩展集成', description: 'AI 助手、应用市场与导航链接', icon: 'fa-puzzle-piece', sections: ['copilot', 'marketplace', 'links'] },
 ] satisfies ConfigGroupMeta[])
     .filter(item => !nodeLocation().id || item.id !== 'auth')
@@ -69,6 +71,7 @@ function defaultConfig(): AllConfig {
         caddy: { adminUrl: '' },
         docker: { host: '', tls: { enabled: false, skipVerify: false, ca: '', cert: '', key: '' }, containerRoot: '', registries: [] },
         monitor: { interval: 0 },
+        metrics: { hostEnabled: true, containersEnabled: true },
         marketplace: { url: '' },
         links: [],
     }
@@ -129,6 +132,7 @@ export const useConfigStore = defineStore('config', () => {
             caddy: { ...defaults.caddy, ...payload.caddy },
             docker: { ...defaults.docker, ...payload.docker, tls: { ...defaults.docker.tls, ...payload.docker?.tls }, registries: (payload.docker?.registries || []).map(item => ({ ...item })) },
             monitor: { ...defaults.monitor, ...payload.monitor },
+            metrics: { ...defaults.metrics, ...payload.metrics },
             marketplace: { ...defaults.marketplace, ...payload.marketplace },
             links: (payload.links || []).map(link => ({ ...link })),
         }

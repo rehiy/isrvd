@@ -103,7 +103,6 @@ import type {
     ComposeDeploy,
     ComposeRedeploy,
     // Metrics
-    MetricsGatewayStats,
     MetricsSourceName,
     MetricsSourceStatus,
     // Cron
@@ -141,8 +140,8 @@ class ApiService {
     overviewMonitor(params: { type?: 'host'; id?: string; since: 0 }): Promise<{ payload?: MonitorHostRecord | null }>
     overviewMonitor(params: { type: 'container'; id: string; since: 0 }): Promise<{ payload?: MonitorContainerRecord | null }>
     overviewMonitor(params?: { type?: 'host'; id?: string; since?: number }): Promise<{ payload?: MonitorHostRecord[] }>
-    overviewMonitor(params?: { type: 'container'; id: string; since?: number }): Promise<{ payload?: MonitorContainerRecord[] }>
-    overviewMonitor(params?: { type?: 'host' | 'container'; id?: string; since?: number }): Promise<{ payload?: MonitorHostRecord | MonitorContainerRecord | MonitorHostRecord[] | MonitorContainerRecord[] | null }> {
+    overviewMonitor(params?: { type: 'container'; id: string; name?: string; since?: number }): Promise<{ payload?: MonitorContainerRecord[] }>
+    overviewMonitor(params?: { type?: 'host' | 'container'; id?: string; name?: string; since?: number }): Promise<{ payload?: MonitorHostRecord | MonitorContainerRecord | MonitorHostRecord[] | MonitorContainerRecord[] | null }> {
         return http.get<MonitorHostRecord | MonitorContainerRecord | MonitorHostRecord[] | MonitorContainerRecord[] | null>('overview/monitor', { params })
     }
 
@@ -835,14 +834,10 @@ class ApiService {
         return http.post<{ pid: number }>(`local/process/${pid}/kill`, { force })
     }
 
-    // ==================== 监控指标与网关访问统计 ====================
+    // ==================== 监控指标 ====================
 
-    metricsStatus() {
-        return http.get<MetricsSourceStatus[]>('metrics/status')
-    }
-
-    metricsStats(since: number) {
-        return http.get<MetricsGatewayStats[]>('metrics/stats', { params: { since } })
+    metricsStatus(signal?: AbortSignal) {
+        return http.get<MetricsSourceStatus[]>('metrics/status', { signal })
     }
 
     metricsSourceUpdate(name: MetricsSourceName, enabled: boolean) {

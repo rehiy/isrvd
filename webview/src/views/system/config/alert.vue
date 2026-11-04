@@ -141,27 +141,6 @@ export default toNative(ConfigAlert)
 
 <template>
   <div class="max-w-4xl space-y-6">
-    <!-- 监控采集 -->
-    <section class="space-y-4">
-      <div class="config-section-heading">
-        <div>
-          <h2 class="config-section-title">{{ $t('监控日志') }}</h2>
-          <p class="config-section-description">{{ $t('系统与容器监控采集') }}</p>
-        </div>
-      </div>
-      <div>
-        <label class="form-label">{{ $t('监控采集间隔') }}</label>
-        <select v-model.number="config.draft.monitor.interval" class="input">
-          <option :value="0">{{ $t('禁用') }}</option>
-          <option :value="5">{{ $t('5 秒') }}</option>
-          <option :value="15">{{ $t('15 秒') }}</option>
-          <option :value="30">{{ $t('30 秒') }}</option>
-          <option :value="60">{{ $t('60 秒') }}</option>
-        </select>
-        <p class="mt-1 text-xs text-slate-400">{{ $t('系统与容器监控数据的采集频率，禁用后停止历史采集与资源阈值告警；下方应用故障告警仍可独立运行') }}</p>
-      </div>
-    </section>
-
     <!-- Webhook 通道 -->
     <section class="space-y-4">
       <div class="config-section-heading">
