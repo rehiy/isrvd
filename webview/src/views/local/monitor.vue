@@ -125,9 +125,18 @@ class MonitorPage extends Vue {
         this.stopPoll()
         const version = this.dataVersion
         const historyOk = await this.loadHistory(version)
+        if (this.destroyed || version !== this.dataVersion) {
+            return
+        }
         const realtimeOk = await this.loadData(version)
+        if (this.destroyed || version !== this.dataVersion) {
+            return
+        }
         this.ready = historyOk || realtimeOk
         this.loading = false
+        if (this.ready) {
+            this.updateCharts()
+        }
         // 只有5分钟模式才启动轮询
         if (this.selectedRange === 300) {
             this.startPoll()
@@ -139,6 +148,7 @@ class MonitorPage extends Vue {
             const ok = await this.fetchRealtime(version)
             if (ok) {
                 this.ready = true
+                this.updateCharts()
             }
             return ok
         } catch {
@@ -178,16 +188,26 @@ class MonitorPage extends Vue {
                 this.loading = true
                 this.ready = false
                 const version = this.dataVersion
-                await this.loadHistory(version)
-                await this.loadData(version)
+                const historyOk = await this.loadHistory(version)
+                if (this.destroyed || version !== this.dataVersion) {
+                    return
+                }
+                const realtimeOk = await this.loadData(version)
+                if (this.destroyed || version !== this.dataVersion) {
+                    return
+                }
+                this.ready = historyOk || realtimeOk
                 this.loading = false
+                if (this.ready) {
+                    this.updateCharts()
+                }
                 this.startPoll()
             }
         }
     }
 
     startPoll() {
-        if (this.pollTimer) {
+        if (this.destroyed || document.hidden || this.selectedRange !== 300 || this.pollTimer) {
             return
         }
         this.pollTimer = setInterval(() => {
@@ -209,9 +229,18 @@ class MonitorPage extends Vue {
         this.clearAllData()
         const version = this.dataVersion
         const historyOk = await this.loadHistory(version)
+        if (this.destroyed || version !== this.dataVersion) {
+            return
+        }
         const realtimeOk = await this.loadData(version)
+        if (this.destroyed || version !== this.dataVersion) {
+            return
+        }
         this.ready = historyOk || realtimeOk
         this.loading = false
+        if (this.ready) {
+            this.updateCharts()
+        }
         // 只有5分钟模式才启动轮询
         if (this.selectedRange === 300) {
             this.startPoll()

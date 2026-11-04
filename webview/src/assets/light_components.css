@@ -457,6 +457,15 @@
 
   /* 监控图表区域 */
   .monitor-chart-box { @apply relative h-28 bg-slate-50 rounded-lg overflow-hidden; }
+  .monitor-card-header { @apply mb-3 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2; }
+  .monitor-card-heading { @apply flex min-w-0 flex-1 basis-40 items-center gap-2; }
+  .monitor-card-icon { @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500; }
+  .monitor-card-title { @apply truncate text-sm font-semibold text-slate-700; }
+  .monitor-card-value { @apply text-lg font-semibold tabular-nums; }
+  .monitor-series { @apply inline-flex flex-wrap items-center justify-end gap-1.5; }
+  .monitor-series-dot { @apply h-1.5 w-1.5 shrink-0 rounded-full; }
+  .monitor-card-metrics { @apply ml-auto flex min-w-0 max-w-full flex-col items-end gap-1 text-right text-xs text-slate-400; }
+  .monitor-metrics-row { @apply flex min-w-0 max-w-full flex-wrap items-center justify-end gap-x-3 gap-y-1; }
   .monitor-legend-item { @apply flex items-center gap-1 shrink-0 whitespace-nowrap; }
   .metric-card { @apply bg-slate-50 rounded-xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden; }
   .metric-legend { @apply flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400; }

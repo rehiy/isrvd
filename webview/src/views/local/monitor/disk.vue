@@ -3,10 +3,9 @@ import type { ChartOptions } from 'chart.js'
 import { markRaw } from 'vue'
 import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import type { SystemStat, SystemDiskIO, SystemDiskPartition } from '@/service/types'
+import type { SystemDiskIO, SystemDiskPartition, SystemStat } from '@/service/types'
 
-import Chart from '@/helper/chart'
-import { hexToRgba } from '@/helper/format'
+import Chart, { findMonitorCanvas, makeLineDataset, makeMonitorChartOptions, makeMonitorScale, syncMonitorCharts } from '@/helper/chart'
 import { appendMonitorPoint, formatMonitorBytes, usagePercent } from '@/helper/monitor'
 
 interface DiskIOSeriesHistory {
@@ -15,11 +14,6 @@ interface DiskIOSeriesHistory {
     read: number[]
     write: number[]
     pct: number[]
-}
-
-interface ChartCallbackContext {
-    parsed: { y: number | null }
-    dataset: { label?: string; yAxisID?: string }
 }
 
 const NATURAL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
@@ -75,8 +69,8 @@ class SystemDisk extends Vue {
             || this.currentDiskIO.find(d => devName?.startsWith(d.name)) || null
     }
 
-    diskIOHistoryKey(device: string): string {
-        return this.diskIOByDevice(device)?.name || device.split('/').pop() || device
+    diskIOHistoryKey(dp: SystemDiskPartition): string {
+        return JSON.stringify([dp.device, dp.mountpoint])
     }
 
     currentDiskRate(name: string, dir: string): number {
@@ -89,59 +83,29 @@ class SystemDisk extends Vue {
     }
 
     currentUsagePct(dp: SystemDiskPartition): number {
-        const h = this.diskIOHistory[this.diskIOHistoryKey(dp.device)]
-        if (!h?.pct?.length) {
-            return this.memPercent(dp.used, dp.total)
-        }
-        return h.pct[h.pct.length - 1]
+        return this.memPercent(dp.used, dp.total)
     }
 
     diskChartOptions(pctColor: string): ChartOptions<'line'> {
-        return {
-            responsive: true, maintainAspectRatio: false, animation: false,
-            interaction: { intersect: false, mode: 'index' as const },
-            plugins: {
-                legend: { display: true, position: 'bottom' as const, labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
-                tooltip: {
-                    backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
-                    callbacks: {
-                        label: (ctx: ChartCallbackContext) => {
-                            if (ctx.dataset.yAxisID === 'y1') {
-                                return this.$t('使用率: ') + (ctx.parsed.y ?? 0).toFixed(1) + '%'
-                            }
-                            return (ctx.dataset.label ?? '') + ': ' + formatMonitorBytes(ctx.parsed.y ?? 0, true)
-                        }
-                    }
-                }
+        return makeMonitorChartOptions(
+            {
+                y: makeMonitorScale('rate', { position: 'left' }),
+                y1: makeMonitorScale('percent', {
+                    min: 0, position: 'right', grid: { drawOnChartArea: false },
+                    ticks: { color: pctColor }
+                })
             },
-            scales: {
-                x: { display: false },
-                y: {
-                    display: true, beginAtZero: true, position: 'left' as const,
-                    grid: { color: 'rgba(148,163,184,0.08)' }, border: { display: false },
-                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => formatMonitorBytes(Number(v), true) }
-                },
-                y1: {
-                    display: true, min: 0, max: 100, position: 'right' as const,
-                    grid: { drawOnChartArea: false },
-                    border: { display: false },
-                    ticks: { font: { size: 9 }, color: pctColor, maxTicksLimit: 4, padding: 4, callback: (v: string | number) => Number(v) + '%' }
+            ctx => {
+                if (ctx.dataset.yAxisID === 'y1') {
+                    return this.$t('使用率: ') + (ctx.parsed.y ?? 0).toFixed(1) + '%'
                 }
-            },
-            elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.4, borderWidth: 1.5 } }
-        }
-    }
-
-    makeDataset(data: number[], color: string, label: string, yAxisID = 'y') {
-        return { label, data: [...data], borderColor: color, backgroundColor: hexToRgba(color, 0.1), fill: yAxisID === 'y', yAxisID }
-    }
-
-    getDiskCanvas(name: string) {
-        return this.diskIOContainerRef?.querySelector(`[data-disk="${name}"]`) ?? null
+                return (ctx.dataset.label ?? '') + ': ' + formatMonitorBytes(ctx.parsed.y ?? 0, true)
+            }
+        )
     }
 
     initDiskChart(name: string) {
-        const canvas = this.getDiskCanvas(name)
+        const canvas = findMonitorCanvas(this.diskIOContainerRef, 'data-disk', name)
         if (!canvas) {
             return
         }
@@ -150,14 +114,14 @@ class SystemDisk extends Vue {
         this.diskIOHistory[name] = h
         const pct = h.pct[h.pct.length - 1] ?? 0
         const pctColor = this.usageLineColor(pct)
-        const chart = new Chart(canvas as HTMLCanvasElement, {
+        const chart = new Chart(canvas, {
             type: 'line' as const,
             data: {
                 labels: [...h.labels],
                 datasets: [
-                    this.makeDataset(h.read, '#f59e0b', this.$t('读取'), 'y'),
-                    this.makeDataset(h.write, '#8b5cf6', this.$t('写入'), 'y'),
-                    this.makeDataset(h.pct, pctColor, this.$t('使用率'), 'y1'),
+                    makeLineDataset(h.read, '#f59e0b', this.$t('读取'), { yAxisID: 'y' }),
+                    makeLineDataset(h.write, '#8b5cf6', this.$t('写入'), { yAxisID: 'y' }),
+                    makeLineDataset(h.pct, pctColor, this.$t('使用率'), { yAxisID: 'y1', fill: false }),
                 ]
             },
             options: this.diskChartOptions(pctColor)
@@ -175,18 +139,23 @@ class SystemDisk extends Vue {
         chart.data.datasets[0].data = [...h.read]
         chart.data.datasets[1].data = [...h.write]
         chart.data.datasets[2].data = [...h.pct]
+        const pctColor = this.usageLineColor(h.pct[h.pct.length - 1] ?? 0)
+        chart.data.datasets[2].borderColor = pctColor
+        if (chart.options.scales?.y1?.ticks) {
+            chart.options.scales.y1.ticks.color = pctColor
+        }
         chart.update('none')
     }
 
     flushCharts() {
         this.$nextTick(() => {
-            Object.keys(this.diskIOHistory).forEach(name => {
-                if (this.diskIOCharts[name]) {
-                    this.updateDiskChart(name)
-                } else {
-                    this.initDiskChart(name)
-                }
-            })
+            const keys = (this.current?.diskPartition ?? [])
+                .filter(dp => this.diskIOByDevice(dp.device))
+                .map(dp => this.diskIOHistoryKey(dp))
+            syncMonitorCharts(
+                this.diskIOCharts, this.diskIOContainerRef, 'data-disk', keys,
+                name => this.initDiskChart(name), name => this.updateDiskChart(name)
+            )
         })
     }
 
@@ -206,19 +175,25 @@ class SystemDisk extends Vue {
         const diskIO = this.sortedDiskIO(payload.diskIO)
         this.currentDiskIO = diskIO
 
-        if (!diskIO.length || !s.diskPartition) {
-            return
+        const activeDevices = new Set(diskIO.map(dio => dio.name))
+        for (const name of Object.keys(this.lastDiskIO)) {
+            if (!activeDevices.has(name)) {
+                delete this.lastDiskIO[name]
+            }
+        }
+        const activePartitions = new Set(partitions.filter(dp => this.diskIOByDevice(dp.device)).map(dp => this.diskIOHistoryKey(dp)))
+        for (const key of Object.keys(this.diskIOHistory)) {
+            if (!activePartitions.has(key)) {
+                delete this.diskIOHistory[key]
+            }
         }
 
         const nowTime = ts * 1000
-
-        diskIO.forEach(dio => {
-            const name = dio.name
-            const last = this.lastDiskIO[name]
-
+        const rates = new Map<string, { read: number; write: number }>()
+        for (const dio of diskIO) {
+            const last = this.lastDiskIO[dio.name]
             let readRate = 0
             let writeRate = 0
-
             if (last && last.time > 0) {
                 const dt = (nowTime - last.time) / 1000
                 if (dt > 0) {
@@ -226,29 +201,26 @@ class SystemDisk extends Vue {
                     writeRate = Math.max(0, (dio.writeBytes - last.write) / dt)
                 }
             }
+            rates.set(dio.name, { read: readRate, write: writeRate })
+            this.lastDiskIO[dio.name] = { read: dio.readBytes, write: dio.writeBytes, time: nowTime }
+        }
 
-            this.lastDiskIO[name] = { read: dio.readBytes, write: dio.writeBytes, time: nowTime }
-
-            if (!this.diskIOHistory[name]) {
-                this.diskIOHistory[name] = { ts: [], labels: [], read: [], write: [], pct: [] }
+        for (const dp of partitions) {
+            const dio = this.diskIOByDevice(dp.device)
+            const rate = dio ? rates.get(dio.name) : null
+            if (!rate) {
+                continue
             }
-            const h = this.diskIOHistory[name]
-
-            // 找到该设备对应的分区使用率
-            const dp = partitions.find(p => {
-                const devName = p.device.split('/').pop()
-                return devName === name || devName?.startsWith(name)
-            })
-            const pct = dp ? this.memPercent(dp.used, dp.total) : (h.pct[h.pct.length - 1] ?? 0)
-
+            const key = this.diskIOHistoryKey(dp)
+            const h = this.diskIOHistory[key] ??= { ts: [], labels: [], read: [], write: [], pct: [] }
             appendMonitorPoint(
                 h,
                 ts,
                 this.rangeSeconds,
                 () => {
-                    h.read.push(readRate)
-                    h.write.push(writeRate)
-                    h.pct.push(pct)
+                    h.read.push(rate.read)
+                    h.write.push(rate.write)
+                    h.pct.push(this.memPercent(dp.used, dp.total))
                 },
                 count => {
                     h.read.splice(0, count)
@@ -256,12 +228,11 @@ class SystemDisk extends Vue {
                     h.pct.splice(0, count)
                 }
             )
-        })
+        }
     }
 
     unmounted() {
-        Object.values(this.diskIOCharts).forEach(c => c.destroy())
-        this.diskIOCharts = {}
+        this.clearData()
     }
 }
 
@@ -269,50 +240,44 @@ export default toNative(SystemDisk)
 </script>
 
 <template>
-  <div v-if="current?.diskPartition?.length" class="panel-frame">
-    <div class="card-header">
-      <div class="card-icon bg-amber-500">
-        <i class="fas fa-hard-drive text-white text-xs"></i>
-      </div>
-      <span class="text-sm font-semibold text-slate-700">{{ $t('硬盘 I/O') }}</span>
-      <span class="ml-auto text-xs text-slate-400">
-        {{ $t('总计') }} {{ formatMonitorBytes(current.diskTotal) }} {{ $t('，已用') }} {{ formatMonitorBytes(current.diskUsed) }}
-      </span>
-    </div>
-    <div ref="diskIOContainerRef" class="divide-y divide-slate-100">
-      <div v-for="dp in current.diskPartition" :key="dp.mountpoint" class="px-4 py-3">
-        <div class="flex flex-col gap-2">
-          <div class="flex items-center justify-between gap-x-3 gap-y-1 flex-wrap">
-            <div class="inline-info flex-1">
-              <p class="text-xs font-semibold text-slate-700 truncate">{{ dp.mountpoint }}</p>
-              <p class="text-xs text-slate-400 shrink-0">{{ dp.device }} · {{ dp.fstype }}</p>
+  <div v-if="current?.diskPartition?.length" class="space-y-3">
+    <div ref="diskIOContainerRef" class="grid grid-cols-1 gap-4">
+      <div v-for="dp in current.diskPartition" :key="diskIOHistoryKey(dp)" class="metric-card min-w-0">
+        <div class="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-amber-400 to-transparent"></div>
+        <div class="monitor-card-header">
+          <div class="monitor-card-heading">
+            <div class="monitor-card-icon">
+              <i class="fas fa-hard-drive text-sm"></i>
             </div>
-            <div class="flex items-center justify-end gap-x-3 gap-y-1 flex-wrap flex-1 min-w-0">
-              <span class="text-xs text-slate-600 font-mono shrink-0 whitespace-nowrap">{{ formatMonitorBytes(dp.used) }} / {{ formatMonitorBytes(dp.total) }} ({{ currentUsagePct(dp) }}%)</span>
-              <template v-if="diskIOByDevice(dp.device)">
-                <span class="flex items-center gap-1 text-xs shrink-0 whitespace-nowrap">
-                  <i class="fas fa-arrow-down text-amber-500"></i>
-                  <span class="font-mono text-slate-600">{{ formatMonitorBytes(currentDiskRate(diskIOHistoryKey(dp.device), 'read'), true) }}</span>
-                </span>
-                <span class="flex items-center gap-1 text-xs shrink-0 whitespace-nowrap">
-                  <i class="fas fa-arrow-up text-violet-500"></i>
-                  <span class="font-mono text-slate-600">{{ formatMonitorBytes(currentDiskRate(diskIOHistoryKey(dp.device), 'write'), true) }}</span>
-                </span>
-              </template>
+            <div class="min-w-0 flex-1">
+              <p class="monitor-card-title" :title="`${$t('硬盘')} - ${dp.mountpoint}`">{{ $t('硬盘') }} - {{ dp.mountpoint }}</p>
+              <p class="mt-1 break-words text-xs text-slate-400" :title="`${dp.device} · ${dp.fstype} · ${formatMonitorBytes(dp.used)} / ${formatMonitorBytes(dp.total)}`">
+                {{ dp.device }} · {{ dp.fstype }} · <span>{{ formatMonitorBytes(dp.used) }} / {{ formatMonitorBytes(dp.total) }}</span>
+              </p>
             </div>
           </div>
-          <template v-if="diskIOByDevice(dp.device)">
-            <div class="monitor-chart-box">
-              <canvas :data-disk="diskIOHistoryKey(dp.device)" class="w-full h-full"></canvas>
-              <div v-if="!diskIOHistory[diskIOHistoryKey(dp.device)]?.read?.length" class="absolute inset-0 flex items-center justify-center">
-                <span class="text-xs text-slate-300">{{ $t('等待数据...') }}</span>
-              </div>
+          <div class="monitor-card-metrics">
+            <span class="monitor-series">
+              <span class="monitor-series-dot" :style="{ backgroundColor: usageLineColor(currentUsagePct(dp)) }"></span>{{ $t('使用率') }}
+              <span class="monitor-card-value text-slate-700">{{ currentUsagePct(dp) }}%</span>
+            </span>
+            <div v-if="diskIOByDevice(dp.device)" class="monitor-metrics-row">
+              <span class="monitor-series max-w-full">
+                <span class="monitor-series-dot bg-amber-500"></span>{{ $t('读取') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(currentDiskRate(diskIOHistoryKey(dp), 'read'), true) }}</span>
+                <span class="whitespace-nowrap">· {{ $t('累计读') }} <span class="tabular-nums">{{ formatMonitorBytes(diskIOByDevice(dp.device)?.readBytes ?? 0) }}</span></span>
+              </span>
+              <span class="monitor-series max-w-full">
+                <span class="monitor-series-dot bg-violet-500"></span>{{ $t('写入') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(currentDiskRate(diskIOHistoryKey(dp), 'write'), true) }}</span>
+                <span class="whitespace-nowrap">· {{ $t('累计写') }} <span class="tabular-nums">{{ formatMonitorBytes(diskIOByDevice(dp.device)?.writeBytes ?? 0) }}</span></span>
+              </span>
             </div>
-            <div class="flex gap-4 text-xs text-slate-400">
-              <span>{{ $t('累计读:') }} {{ formatMonitorBytes(diskIOByDevice(dp.device)?.readBytes ?? 0) }}</span>
-              <span>{{ $t('累计写:') }} {{ formatMonitorBytes(diskIOByDevice(dp.device)?.writeBytes ?? 0) }}</span>
-            </div>
-          </template>
+          </div>
+        </div>
+        <div v-if="diskIOByDevice(dp.device)" class="monitor-chart-box">
+          <canvas :data-disk="diskIOHistoryKey(dp)" class="w-full h-full"></canvas>
+          <div v-if="!diskIOHistory[diskIOHistoryKey(dp)]?.read?.length" class="absolute inset-0 flex items-center justify-center">
+            <span class="text-xs text-slate-300">{{ $t('等待数据...') }}</span>
+          </div>
         </div>
       </div>
     </div>

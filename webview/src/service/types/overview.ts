@@ -128,7 +128,22 @@ export interface MonitorHostRecord {
     data: SystemStat
 }
 
+export interface DockerNativeStats {
+    id?: string
+    name?: string
+    cpu_stats?: {
+        cpu_usage?: { total_usage?: number; percpu_usage?: number[] }
+        system_cpu_usage?: number
+        online_cpus?: number
+    }
+    precpu_stats?: DockerNativeStats['cpu_stats']
+    memory_stats?: { usage?: number; limit?: number; stats?: Record<string, number> }
+    networks?: Record<string, { rx_bytes?: number; tx_bytes?: number }>
+    blkio_stats?: { io_service_bytes_recursive?: { op: string; value: number }[] }
+}
+
 export interface MonitorContainerRecord {
     ts: number
-    data: DockerContainerStats
+    container_id?: string
+    data: DockerNativeStats | DockerContainerStats
 }

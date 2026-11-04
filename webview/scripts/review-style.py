@@ -636,6 +636,16 @@ def check_redundant_component_classes(filepath, lines, tmpl, tmpl_line0):
         ("flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50", "overview-unavailable"),
         ("bg-blue-50 text-blue-700 hover:bg-blue-100", "nav-link-active"),
     ]
+    if "/local/monitor/" in str(filepath) or str(filepath).endswith("/docker/container-stats.vue"):
+        patterns.extend([
+            ("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500", "monitor-card-icon"),
+            ("mb-3 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2", "monitor-card-header"),
+            ("flex min-w-0 flex-1 basis-40 items-center gap-2", "monitor-card-heading"),
+            ("truncate text-sm font-semibold text-slate-700", "monitor-card-title"),
+            ("text-lg font-semibold tabular-nums", "monitor-card-value"),
+            ("inline-flex flex-wrap items-center justify-end gap-1.5", "monitor-series"),
+            ("h-1.5 w-1.5 shrink-0 rounded-full", "monitor-series-dot"),
+        ])
     for i, line in enumerate(tmpl.splitlines(), 1):
         for pattern, cls in patterns:
             if pattern in line:

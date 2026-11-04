@@ -122,6 +122,7 @@ export interface DockerContainerProcessList {
 }
 
 export interface DockerContainerStats {
+    ts: number
     id: string
     name: string
     cpuPercent: number

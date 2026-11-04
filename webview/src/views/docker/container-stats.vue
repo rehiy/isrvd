@@ -1,20 +1,16 @@
 <script lang="ts">
-import { Chart, registerables } from 'chart.js'
-import type { ChartOptions, TooltipItem } from 'chart.js'
+import type { TooltipItem } from 'chart.js'
 import { markRaw, nextTick } from 'vue'
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
 import type { DockerContainerInfo, DockerContainerStats } from '@/service/types'
 
-import { formatFileSize, hexToRgba, POLL_INTERVAL } from '@/helper/format'
-import { formatMonitorBytes } from '@/helper/monitor'
-
-Chart.register(...registerables)
-
-type ChartCallbackContext = TooltipItem<'line'>
+import Chart, { makeLineDataset, makeMonitorChartOptions, makeMonitorScale } from '@/helper/chart'
+import { POLL_INTERVAL } from '@/helper/format'
+import { containerHistoryValues, formatMonitorBytes, semanticColor } from '@/helper/monitor'
 
 @Component({
     beforeRouteLeave(this: unknown) {
@@ -34,16 +30,23 @@ class ContainerStats extends Vue {
     container: DockerContainerInfo | null = null
     statsData: DockerContainerStats | null = null
     statsLoading = true
+    statsFailed = false
     netRxRate = 0
     netTxRate = 0
     blkRRate = 0
     blkWRate = 0
-    formatFileSize = formatFileSize
+    formatMonitorBytes = formatMonitorBytes
+    semanticColor = semanticColor
 
     // ─── 私有属性（非响应式） ───
     private statsTimer: ReturnType<typeof setInterval> | null = null
     private destroyed = false
-    private readonly MAX_POINTS = 60
+    private generation = 0
+    private statsInFlight = false
+    private monitoredName = ''
+    private prevContainerId = ''
+    private readonly MAX_POINTS = 720
+    private timestamps: number[] = []
     private labels: string[] = []
     private cpuData: number[] = []
     private memData: number[] = []
@@ -62,13 +65,20 @@ class ContainerStats extends Vue {
     private blkChart: Chart<'line'> | null = null
 
     get containerId() {
-        return this.$route.params.id as string
+        return this.container?.id || this.$route.params.id as string
+    }
+
+    @Watch('$route.fullPath')
+    onRouteChanged() {
+        this.loadContainer()
     }
 
     // ─── 方法 ───
     startStatsTimer() {
         this.stopStatsTimer()
-        this.statsTimer = setInterval(() => this.loadStats(), POLL_INTERVAL)
+        if (!this.destroyed && !document.hidden) {
+            this.statsTimer = setInterval(() => this.loadStats(), POLL_INTERVAL)
+        }
     }
 
     stopStatsTimer() {
@@ -81,105 +91,82 @@ class ContainerStats extends Vue {
     handleVisibilityChange() {
         if (document.hidden) {
             this.stopStatsTimer()
-        } else if (this.container?.state === 'running') {
+        } else if (this.monitoredName && !this.statsLoading) {
+            this.loadStats()
             this.startStatsTimer()
         }
     }
 
-    async loadHistory() {
+    async loadHistory(generation = this.generation) {
+        if (!this.portal.hasPerm('GET /api/overview/monitor')) {
+            return
+        }
         try {
-            const res = await api.overviewMonitor({ type: 'container', id: this.containerId, since: 3600 })
-            if (!res.payload || res.payload.length < 2) {
+            const res = await api.overviewMonitor({ type: 'container', id: this.containerId, name: this.container?.name, since: 3600 })
+            if (this.destroyed || generation !== this.generation) {
                 return
             }
-            // 历史数据需要相邻两条计算速率，逐对推入
-            for (let i = 0; i < res.payload.length; i++) {
-                const rec = res.payload[i]
-                const data = rec.data
-                const ts = rec.ts * 1000 // 转毫秒
-
-                const label = new Date(ts).toLocaleTimeString('zh-CN', { hour12: false })
-                this.labels.push(label)
-                this.cpuData.push(+(data.cpuPercent || 0).toFixed(2))
-                this.memData.push(+(data.memoryPercent || 0).toFixed(2))
-
-                if (i > 0) {
-                    const prevRec = res.payload[i - 1]
-                    const elapsed = rec.ts - prevRec.ts
-                    if (elapsed > 0) {
-                        const rxRate = +Math.max(0, ((data.networkRx || 0) - (prevRec.data.networkRx || 0)) / elapsed).toFixed(0)
-                        const txRate = +Math.max(0, ((data.networkTx || 0) - (prevRec.data.networkTx || 0)) / elapsed).toFixed(0)
-                        const brRate = +Math.max(0, ((data.blockRead || 0) - (prevRec.data.blockRead || 0)) / elapsed).toFixed(0)
-                        const bwRate = +Math.max(0, ((data.blockWrite || 0) - (prevRec.data.blockWrite || 0)) / elapsed).toFixed(0)
-                        this.netRxData.push(rxRate)
-                        this.netTxData.push(txRate)
-                        this.blkRData.push(brRate)
-                        this.blkWData.push(bwRate)
-                    } else {
-                        this.netRxData.push(0)
-                        this.netTxData.push(0)
-                        this.blkRData.push(0)
-                        this.blkWData.push(0)
-                    }
-                } else {
-                    this.netRxData.push(0)
-                    this.netTxData.push(0)
-                    this.blkRData.push(0)
-                    this.blkWData.push(0)
-                }
-
-                if (this.labels.length > this.MAX_POINTS) {
-                    this.labels.shift()
-                    this.cpuData.shift()
-                    this.memData.shift()
-                    this.netRxData.shift()
-                    this.netTxData.shift()
-                    this.blkRData.shift()
-                    this.blkWData.shift()
-                }
+            for (const record of [...res.payload || []].sort((a, b) => a.ts - b.ts)) {
+                this.pushPoint(containerHistoryValues(record), record.ts * 1000, record.container_id || record.data.id || this.containerId)
             }
-            // 用最后一条记录初始化 prev 状态，供后续实时轮询计算速率
-            const last = res.payload[res.payload.length - 1]
-            this.prevNetRx = last.data.networkRx || 0
-            this.prevNetTx = last.data.networkTx || 0
-            this.prevBlkR = last.data.blockRead || 0
-            this.prevBlkW = last.data.blockWrite || 0
-            this.prevTime = last.ts * 1000
-            // 用最后一条记录初始化 statsData，触发图表渲染
-            this.statsData = last.data
         } catch {
             /* ignore */
         }
     }
 
-    async loadStats() {
+    async loadStats(generation = this.generation, recover = true) {
+        if (this.destroyed || generation !== this.generation || this.statsInFlight) {
+            return
+        }
+        this.statsInFlight = true
         try {
+            if (!this.container || this.container.state !== 'running') {
+                await this.recoverContainer(generation)
+                return
+            }
             const res = await api.dockerContainerStats(this.containerId)
-            if (this.destroyed || !res.payload) {
+            if (this.destroyed || generation !== this.generation || !res.payload) {
                 return
             }
             const isFirst = !this.statsData
             this.statsData = res.payload
-            this.pushPoint(res.payload)
+            this.statsFailed = false
+            this.pushPoint(res.payload, res.payload.ts * 1000)
             if (isFirst) {
                 await nextTick()
+                if (this.destroyed || generation !== this.generation) {
+                    return
+                }
                 this.initCharts()
             }
             this.renderCharts()
         } catch {
-            // 静默失败
+            if (!this.destroyed && generation === this.generation) {
+                this.statsFailed = true
+                if (recover) {
+                    await this.recoverContainer(generation)
+                }
+            }
+        } finally {
+            if (generation === this.generation) {
+                this.statsInFlight = false
+            }
         }
     }
 
-    pushPoint(data: DockerContainerStats) {
-        const now = new Date()
+    pushPoint(data: ReturnType<typeof containerHistoryValues>, nowMs: number, instanceId = this.containerId) {
+        if (!Number.isFinite(nowMs) || nowMs <= this.prevTime) {
+            return
+        }
+        const now = new Date(nowMs)
         const label = now.getHours().toString().padStart(2, '0') + ':' +
             now.getMinutes().toString().padStart(2, '0') + ':' +
             now.getSeconds().toString().padStart(2, '0')
 
-        const nowMs = Date.now()
-        const elapsed = this.prevTime > 0 ? (nowMs - this.prevTime) / 1000 : 0
+        const sameInstance = !!this.prevContainerId && (this.prevContainerId.startsWith(instanceId) || instanceId.startsWith(this.prevContainerId))
+        const elapsed = this.prevTime > 0 && sameInstance ? (nowMs - this.prevTime) / 1000 : 0
 
+        this.timestamps.push(nowMs)
         this.labels.push(label)
         this.cpuData.push(+(data.cpuPercent || 0).toFixed(2))
         this.memData.push(+(data.memoryPercent || 0).toFixed(2))
@@ -202,15 +189,18 @@ class ContainerStats extends Vue {
             this.netTxData.push(0)
             this.blkRData.push(0)
             this.blkWData.push(0)
+            this.netRxRate = this.netTxRate = this.blkRRate = this.blkWRate = 0
         }
 
+        this.prevContainerId = instanceId
         this.prevNetRx = data.networkRx || 0
         this.prevNetTx = data.networkTx || 0
         this.prevBlkR = data.blockRead || 0
         this.prevBlkW = data.blockWrite || 0
         this.prevTime = nowMs
 
-        if (this.labels.length > this.MAX_POINTS) {
+        while (this.labels.length > this.MAX_POINTS || this.timestamps[0] < nowMs - 3600_000) {
+            this.timestamps.shift()
             this.labels.shift()
             this.cpuData.shift()
             this.memData.shift()
@@ -221,84 +211,25 @@ class ContainerStats extends Vue {
         }
     }
 
-    baseOptions(yOptions: Record<string, unknown> = {}, tooltipCb: ((ctx: ChartCallbackContext) => string) | null = null): ChartOptions<'line'> {
-        return {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            interaction: { intersect: false, mode: 'index' as const },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: 'rgba(15,23,42,0.9)',
-                    titleFont: { size: 10 },
-                    bodyFont: { size: 10 },
-                    padding: 8,
-                    cornerRadius: 6,
-                    callbacks: tooltipCb ? { label: tooltipCb } : {}
-                }
-            },
-            scales: {
-                x: { display: false },
-                y: {
-                    display: true,
-                    beginAtZero: true,
-                    grid: { color: 'rgba(148,163,184,0.08)' },
-                    border: { display: false },
-                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4 },
-                    ...yOptions
-                }
-            },
-            elements: {
-                point: { radius: 0, hoverRadius: 3 },
-                line: { tension: 0.4, borderWidth: 1.5 }
-            }
-        }
-    }
-
-    makeDataset(data: number[], color: string, label = '') {
-        return {
-            label,
-            data: [...data],
-            borderColor: color,
-            backgroundColor: hexToRgba(color, 0.08),
-            fill: true
-        }
-    }
-
-    makeIOChartOptions(tooltipCb: (ctx: ChartCallbackContext) => string): ChartOptions<'line'> {
-        return {
-            ...this.baseOptions({ ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => formatMonitorBytes(Number(v), true) } }),
-            plugins: {
-                legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
-                tooltip: {
-                    backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
-                    callbacks: { label: tooltipCb }
-                }
-            }
-        }
-    }
-
     initCharts() {
         this.destroyCharts()
 
-        const pctYOptions = { max: 100, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => v + '%' } }
-        const pctTooltipCb = (ctx: ChartCallbackContext) => (ctx.parsed.y ?? 0).toFixed(1) + '%'
-        const ioTooltipCb = (ctx: ChartCallbackContext) => ctx.dataset.label + ': ' + formatMonitorBytes(ctx.parsed.y ?? 0, true)
+        const pctTooltipCb = (ctx: TooltipItem<'line'>) => (ctx.parsed.y ?? 0).toFixed(1) + '%'
+        const ioTooltipCb = (ctx: TooltipItem<'line'>) => ctx.dataset.label + ': ' + formatMonitorBytes(ctx.parsed.y ?? 0, true)
 
         if (this.cpuRef) {
             this.cpuChart = markRaw(new Chart(this.cpuRef, {
                 type: 'line' as const,
-                data: { labels: [...this.labels], datasets: [this.makeDataset(this.cpuData, '#3b82f6')] },
-                options: this.baseOptions(pctYOptions, pctTooltipCb)
+                data: { labels: [...this.labels], datasets: [makeLineDataset(this.cpuData, '#3b82f6', '', { opacity: 0.6, fillOpacity: 0.08 })] },
+                options: makeMonitorChartOptions({ y: makeMonitorScale('percent', { max: undefined, suggestedMax: 100 }) }, pctTooltipCb)
             }))
         }
 
         if (this.memRef) {
             this.memChart = markRaw(new Chart(this.memRef, {
                 type: 'line' as const,
-                data: { labels: [...this.labels], datasets: [this.makeDataset(this.memData, '#8b5cf6')] },
-                options: this.baseOptions(pctYOptions, pctTooltipCb)
+                data: { labels: [...this.labels], datasets: [makeLineDataset(this.memData, '#6366f1', '', { opacity: 0.6, fillOpacity: 0.08 })] },
+                options: makeMonitorChartOptions({ y: makeMonitorScale('percent') }, pctTooltipCb)
             }))
         }
 
@@ -308,11 +239,11 @@ class ContainerStats extends Vue {
                 data: {
                     labels: [...this.labels],
                     datasets: [
-                        { ...this.makeDataset(this.netRxData, '#14b8a6'), label: this.$t('接收') },
-                        { ...this.makeDataset(this.netTxData, '#0d9488'), label: this.$t('发送') }
+                        makeLineDataset(this.netRxData, '#10b981', this.$t('下行')),
+                        makeLineDataset(this.netTxData, '#3b82f6', this.$t('上行'))
                     ]
                 },
-                options: this.makeIOChartOptions(ioTooltipCb)
+                options: makeMonitorChartOptions({ y: makeMonitorScale('rate') }, ioTooltipCb)
             }))
         }
 
@@ -322,11 +253,11 @@ class ContainerStats extends Vue {
                 data: {
                     labels: [...this.labels],
                     datasets: [
-                        { ...this.makeDataset(this.blkRData, '#f59e0b'), label: this.$t('读取') },
-                        { ...this.makeDataset(this.blkWData, '#d97706'), label: this.$t('写入') }
+                        makeLineDataset(this.blkRData, '#f59e0b', this.$t('读取')),
+                        makeLineDataset(this.blkWData, '#8b5cf6', this.$t('写入'))
                     ]
                 },
-                options: this.makeIOChartOptions(ioTooltipCb)
+                options: makeMonitorChartOptions({ y: makeMonitorScale('rate') }, ioTooltipCb)
             }))
         }
     }
@@ -376,49 +307,100 @@ class ContainerStats extends Vue {
     }
 
     clearHistory() {
+        this.timestamps.length = 0
         this.labels.length = 0; this.cpuData.length = 0; this.memData.length = 0
         this.netRxData.length = 0; this.netTxData.length = 0; this.blkRData.length = 0; this.blkWData.length = 0
         this.prevNetRx = this.prevNetTx = this.prevBlkR = this.prevBlkW = this.prevTime = 0
+        this.prevContainerId = ''
         this.netRxRate = this.netTxRate = this.blkRRate = this.blkWRate = 0
+    }
+
+    async loadContainer(name = typeof this.$route.query.name === 'string' ? this.$route.query.name : '') {
+        if (this.destroyed) {
+            return
+        }
+        const generation = ++this.generation
+        this.stopStatsTimer()
+        this.destroyCharts()
+        this.clearHistory()
+        this.container = null
+        this.statsData = null
+        this.statsInFlight = false
+        this.statsLoading = true
+        this.statsFailed = false
+        this.monitoredName = name
+        try {
+            const res = await api.dockerContainerList(true)
+            if (this.destroyed || generation !== this.generation) {
+                return
+            }
+            const id = this.$route.params.id as string
+            const list = res.payload || []
+            const ct = list.find(c => c.id === id || c.name === id || (id.length === 64 && id.startsWith(c.id)))
+                || list.find(c => name && c.name === name)
+            if (!ct) {
+                if (name) {
+                    this.statsFailed = true
+                    this.statsLoading = false
+                    this.startStatsTimer()
+                } else {
+                    this.portal.showNotification('error', this.$t('容器不存在'))
+                    this.$router.push('/docker/containers')
+                }
+                return
+            }
+            await this.onContainerLoaded(ct, generation)
+        } catch {
+            if (!this.destroyed && generation === this.generation) {
+                this.statsFailed = true
+                this.statsLoading = false
+                if (name) {
+                    this.startStatsTimer()
+                }
+            }
+        }
+    }
+
+    async recoverContainer(generation: number) {
+        if (!this.monitoredName) {
+            return
+        }
+        try {
+            const res = await api.dockerContainerList(true)
+            if (this.destroyed || generation !== this.generation) {
+                return
+            }
+            const ct = (res.payload || []).find(c => c.name === this.monitoredName)
+            if (ct && (ct.id !== this.container?.id || ct.state !== this.container.state)) {
+                await this.loadContainer(this.monitoredName)
+            }
+        } catch {
+            /* ignore */
+        }
+    }
+
+    async onContainerLoaded(ct: DockerContainerInfo, generation = this.generation) {
+        this.container = ct
+        this.monitoredName = ct.name
+        if (ct.state === 'running') {
+            await this.loadHistory(generation)
+            if (this.destroyed || generation !== this.generation) {
+                return
+            }
+            await this.loadStats(generation, false)
+        }
+        if (!this.destroyed && generation === this.generation) {
+            this.statsLoading = false
+            if (!document.hidden && this.monitoredName) {
+                this.startStatsTimer()
+            }
+        }
     }
 
     // ─── 生命周期 ───
     mounted() {
         document.addEventListener('visibilitychange', this.handleVisibilityChange)
         this.loadContainer()
-    }
-
-    async loadContainer() {
-        try {
-            const res = await api.dockerContainerList(true)
-            const ct = (res.payload || []).find((c: DockerContainerInfo) => c.id === this.containerId) ?? null
-            if (!ct) {
-                this.portal.showNotification('error', this.$t('容器不存在'))
-                this.$router.push('/docker/containers')
-                return
-            }
-            this.onContainerLoaded(ct)
-        } catch {
-            this.$router.push('/docker/containers')
-        }
-    }
-
-    async onContainerLoaded(ct: DockerContainerInfo) {
-        this.container = ct
-        if (ct.state === 'running') {
-            await this.loadHistory()
-            if (this.statsData) {
-                // 历史数据加载成功，先渲染图表再开始实时轮询
-                await nextTick()
-                this.initCharts()
-                this.renderCharts()
-            }
-            await this.loadStats()
-            this.statsLoading = false
-            this.startStatsTimer()
-        } else {
-            this.statsLoading = false
-        }
     }
 
     unmounted() {
@@ -463,6 +445,7 @@ export default toNative(ContainerStats)
     </div>
     <!-- 内容区域 -->
     <div class="card-body space-y-4">
+      <p v-if="statsFailed" class="text-sm text-amber-600" role="status">{{ $t('加载失败') }} · {{ $t('请检查服务状态后刷新重试') }}</p>
       <!-- 加载状态 -->
       <div v-if="statsLoading && !statsData" class="empty-state gap-3 text-slate-400 text-sm">
         <div class="w-8 h-8 spinner"></div>
@@ -471,121 +454,150 @@ export default toNative(ContainerStats)
 
       <template v-else-if="statsData">
         <!-- 核心指标：CPU 和 内存 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <!-- CPU 使用率 -->
-          <div class="metric-card">
+          <div class="metric-card min-w-0">
             <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 to-transparent"></div>
-            <div class="flex items-center gap-2 mb-1">
-              <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                <i class="fas fa-microchip text-white text-[9px]"></i>
+            <div class="monitor-card-header">
+              <div class="monitor-card-heading">
+                <div class="monitor-card-icon">
+                  <i class="fas fa-microchip text-sm"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="monitor-card-title">{{ $t('CPU 使用率') }}</p>
+                  <div v-if="statsData.cpuCores || statsData.cpuFreq || (statsData.cpuThrottled && statsData.cpuThrottled.throttledPeriods > 0)" class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+                    <span v-if="statsData.cpuCores">{{ $t('核心') }} <span class="tabular-nums">{{ statsData.cpuCores }} {{ $t('核') }}</span></span>
+                    <span v-if="statsData.cpuFreq">{{ $t('频率') }} <span class="tabular-nums">{{ statsData.cpuFreq.toFixed(0) }} MHz</span></span>
+                    <span v-if="statsData.cpuThrottled && statsData.cpuThrottled.throttledPeriods > 0" class="text-amber-500">
+                      {{ $t('节流') }} <span class="tabular-nums">{{ statsData.cpuThrottled.throttledPeriods }}</span>
+                    </span>
+                  </div>
+                  <p v-else class="text-xs text-slate-300">—</p>
+                </div>
               </div>
-              <span class="text-sm font-semibold text-slate-700">CPU</span>
-              <span class="ml-auto text-lg font-bold font-mono" :class="statsData.cpuPercent > 80 ? 'text-red-500' : statsData.cpuPercent > 60 ? 'text-amber-500' : 'text-blue-600'">
-                {{ statsData.cpuPercent }}%
-              </span>
+              <span :class="['monitor-card-value ml-auto whitespace-nowrap text-right', semanticColor(statsData.cpuPercent)]">{{ statsData.cpuPercent }}%</span>
             </div>
-            <div class="metric-legend">
-              <span v-if="statsData.cpuCores">{{ $t('核心') }} <span class="text-slate-600 font-medium">{{ statsData.cpuCores }} {{ $t('核') }}</span></span>
-              <span v-if="statsData.cpuFreq">{{ $t('频率') }} <span class="text-slate-600 font-medium">{{ statsData.cpuFreq.toFixed(0) }} MHz</span></span>
-              <span v-if="statsData.cpuThrottled && statsData.cpuThrottled.throttledPeriods > 0" class="text-amber-500">
-                <i class="fas fa-bolt"></i> {{ $t('节流') }} <span class="font-medium">{{ statsData.cpuThrottled.throttledPeriods }}</span>
-              </span>
+            <div class="monitor-chart-box">
+              <canvas ref="cpuRef" class="w-full h-full"></canvas>
             </div>
-            <div class="h-28"><canvas ref="cpuRef" class="w-full h-full"></canvas></div>
           </div>
 
           <!-- 内存使用 -->
-          <div class="metric-card">
-            <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-transparent"></div>
-            <div class="flex items-center gap-2 mb-1">
-              <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-                <i class="fas fa-memory text-white text-[9px]"></i>
+          <div class="metric-card min-w-0">
+            <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-400 to-transparent"></div>
+            <div class="monitor-card-header">
+              <div class="monitor-card-heading">
+                <div class="monitor-card-icon">
+                  <i class="fas fa-memory text-sm"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="monitor-card-title">{{ $t('内存使用') }}</p>
+                  <p class="break-words text-xs text-slate-400" :title="$t('内存') + ' / ' + $t('限制')">{{ formatMonitorBytes(statsData.memoryUsage) }} / {{ formatMonitorBytes(statsData.memoryLimit) }}</p>
+                </div>
               </div>
-              <span class="text-sm font-semibold text-slate-700">{{ $t('内存') }}</span>
-              <span class="ml-auto text-lg font-bold font-mono" :class="statsData.memoryPercent > 80 ? 'text-red-500' : statsData.memoryPercent > 60 ? 'text-amber-500' : 'text-purple-600'">
-                {{ statsData.memoryPercent }}%
-              </span>
+              <span :class="['monitor-card-value ml-auto whitespace-nowrap text-right', semanticColor(statsData.memoryPercent)]">{{ statsData.memoryPercent }}%</span>
             </div>
-            <div class="metric-legend">
-              <span>{{ $t('内存') }} <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryUsage) }}</span></span>
-              <span>{{ $t('限制') }} <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryLimit) }}</span></span>
+            <div class="monitor-chart-box">
+              <canvas ref="memRef" class="w-full h-full"></canvas>
             </div>
-            <div class="h-28"><canvas ref="memRef" class="w-full h-full"></canvas></div>
           </div>
         </div>
 
         <!-- I/O 指标卡片 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- 网络 I/O -->
-          <div class="metric-card">
-            <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-teal-400 to-transparent"></div>
-            <div class="flex items-center gap-2 mb-1">
-              <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
-                <i class="fas fa-network-wired text-white text-[9px]"></i>
+        <div class="grid grid-cols-1 gap-4">
+          <!-- 硬盘 I/O -->
+          <div class="metric-card min-w-0">
+            <div class="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-amber-400 to-transparent"></div>
+            <div class="monitor-card-header">
+              <div class="monitor-card-heading">
+                <div class="monitor-card-icon">
+                  <i class="fas fa-hard-drive text-sm"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="monitor-card-title">{{ $t('硬盘') }}</p>
+                  <p v-if="statsData.blockDetail" class="mt-1 break-words text-xs text-slate-400">{{ $t('设备') }} <span class="tabular-nums">{{ Object.keys(statsData.blockDetail).length }} {{ $t('个') }}</span></p>
+                </div>
               </div>
-              <span class="text-sm font-semibold text-slate-700">{{ $t('网络') }}</span>
-              <span class="ml-auto text-xs font-mono text-teal-600">
-                <span class="text-teal-500">↓</span> {{ formatFileSize(netRxRate) }}/s
-                <span class="mx-1 text-slate-300">·</span>
-                <span class="text-teal-700">↑</span> {{ formatFileSize(netTxRate) }}/s
-              </span>
+              <div class="monitor-card-metrics">
+                <div class="monitor-metrics-row text-slate-600">
+                  <span class="monitor-series"><span class="monitor-series-dot bg-amber-500"></span>{{ $t('读取') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(blkRRate, true) }}</span></span>
+                  <span class="monitor-series"><span class="monitor-series-dot bg-violet-500"></span>{{ $t('写入') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(blkWRate, true) }}</span></span>
+                </div>
+                <div class="monitor-metrics-row">
+                  <span>{{ $t('累计读') }} <span class="tabular-nums">{{ formatMonitorBytes(statsData.blockRead) }}</span></span>
+                  <span>{{ $t('累计写') }} <span class="tabular-nums">{{ formatMonitorBytes(statsData.blockWrite) }}</span></span>
+                </div>
+              </div>
             </div>
-            <div class="metric-legend">
-              <span v-if="statsData.networkDetail">{{ $t('网卡') }} <span class="text-slate-600 font-medium">{{ Object.keys(statsData.networkDetail).length }} {{ $t('块') }}</span></span>
-              <span>{{ $t('累计收') }} <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkRx) }}</span></span>
-              <span>{{ $t('累计发') }} <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkTx) }}</span></span>
+            <div class="monitor-chart-box">
+              <canvas ref="blkRef" class="w-full h-full"></canvas>
             </div>
-            <div class="h-28"><canvas ref="netRef" class="w-full h-full"></canvas></div>
           </div>
 
-          <!-- 硬盘 I/O -->
-          <div class="metric-card">
-            <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-transparent"></div>
-            <div class="flex items-center gap-2 mb-1">
-              <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
-                <i class="fas fa-hard-drive text-white text-[9px]"></i>
+          <!-- 网络 I/O -->
+          <div class="metric-card min-w-0">
+            <div class="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-cyan-400 to-transparent"></div>
+            <div class="monitor-card-header">
+              <div class="monitor-card-heading">
+                <div class="monitor-card-icon">
+                  <i class="fas fa-network-wired text-sm"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="monitor-card-title">{{ $t('网络') }}</p>
+                  <p v-if="statsData.networkDetail" class="mt-1 break-words text-xs text-slate-400">{{ $t('网卡') }} <span class="tabular-nums">{{ Object.keys(statsData.networkDetail).length }} {{ $t('块') }}</span></p>
+                </div>
               </div>
-              <span class="text-sm font-semibold text-slate-700">{{ $t('硬盘') }}</span>
-              <span class="ml-auto text-xs font-mono text-amber-600">
-                <span class="text-amber-500">↓</span> {{ formatFileSize(blkRRate) }}/s
-                <span class="mx-1 text-slate-300">·</span>
-                <span class="text-amber-700">↑</span> {{ formatFileSize(blkWRate) }}/s
-              </span>
+              <div class="monitor-card-metrics">
+                <div class="monitor-metrics-row text-slate-600">
+                  <span class="monitor-series"><span class="monitor-series-dot bg-emerald-500"></span>{{ $t('下行') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(netRxRate, true) }}</span></span>
+                  <span class="monitor-series"><span class="monitor-series-dot bg-blue-500"></span>{{ $t('上行') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(netTxRate, true) }}</span></span>
+                </div>
+                <div class="monitor-metrics-row">
+                  <span>{{ $t('累计收') }} <span class="tabular-nums">{{ formatMonitorBytes(statsData.networkRx) }}</span></span>
+                  <span>{{ $t('累计发') }} <span class="tabular-nums">{{ formatMonitorBytes(statsData.networkTx) }}</span></span>
+                </div>
+              </div>
             </div>
-            <div class="metric-legend">
-              <span v-if="statsData.blockDetail">{{ $t('设备') }} <span class="text-slate-600 font-medium">{{ Object.keys(statsData.blockDetail).length }} {{ $t('个') }}</span></span>
-              <span>{{ $t('累计读') }} <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockRead) }}</span></span>
-              <span>{{ $t('累计写') }} <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockWrite) }}</span></span>
+            <div class="monitor-chart-box">
+              <canvas ref="netRef" class="w-full h-full"></canvas>
             </div>
-            <div class="h-28"><canvas ref="blkRef" class="w-full h-full"></canvas></div>
           </div>
         </div>
 
         <!-- 进程信息 -->
-        <div class="bg-slate-50 rounded-xl p-5 border border-slate-200/60 relative overflow-hidden">
-          <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-rose-400 to-transparent"></div>
-          <div class="flex items-center gap-2 mb-4">
-            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center">
-              <i class="fas fa-list-ol text-white text-[10px]"></i>
+        <div class="metric-card min-w-0">
+          <div class="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-rose-400 to-transparent"></div>
+          <div class="monitor-card-header">
+            <div class="monitor-card-heading">
+              <div class="monitor-card-icon">
+                <i class="fas fa-list-ol text-sm"></i>
+              </div>
+              <span class="min-w-0 flex-1 monitor-card-title">{{ $t('进程信息') }}</span>
             </div>
-            <span class="text-sm font-semibold text-slate-700">{{ $t('进程信息') }}</span>
-            <span class="ml-auto text-xs text-slate-400">
-              <span class="font-semibold text-slate-700">{{ statsData.pids }}</span> {{ $t('运行中') }}
-              <span v-if="statsData.pidsLimit > 0"> {{ $t('/ 限制') }} {{ statsData.pidsLimit }}</span>
-            </span>
-            <div v-if="statsData.pidsLimit > 0" class="w-20 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-              <div
-                class="h-full rounded-full transition-all duration-500"
-                :class="statsData.pids / statsData.pidsLimit > 0.9 ? 'bg-red-500' : statsData.pids / statsData.pidsLimit > 0.7 ? 'bg-amber-500' : 'bg-emerald-500'"
-                :style="{ width: Math.min(statsData.pids / statsData.pidsLimit * 100, 100) + '%' }"
-              ></div>
+            <div class="monitor-card-metrics">
+              <span v-if="statsData.processList" class="inline-flex items-baseline gap-1.5 whitespace-nowrap">
+                <span class="text-xs text-slate-400">{{ $t('进程') }}</span>
+                <span class="monitor-card-value text-slate-700">{{ statsData.processList.processes?.length ?? 0 }}</span>
+              </span>
+              <span v-else class="text-xs text-slate-400">{{ $t('暂无进程信息') }}</span>
+              <div class="monitor-metrics-row">
+                <span>{{ $t('线程（含主线程）') }} <span class="tabular-nums text-slate-600">{{ statsData.pids }}</span></span>
+                <span v-if="statsData.pidsLimit > 0">{{ $t('限制') }} <span class="tabular-nums text-slate-600">{{ statsData.pidsLimit }}</span></span>
+                <div v-if="statsData.pidsLimit > 0" class="w-20 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                  <div
+                    class="h-full rounded-full transition-all duration-500"
+                    :class="statsData.pids / statsData.pidsLimit > 0.9 ? 'bg-red-500' : statsData.pids / statsData.pidsLimit > 0.7 ? 'bg-amber-500' : 'bg-emerald-500'"
+                    :style="{ width: Math.min(statsData.pids / statsData.pidsLimit * 100, 100) + '%' }"
+                  ></div>
+                </div>
+              </div>
             </div>
           </div>
           <div v-if="statsData.processList && statsData.processList.processes && statsData.processList.processes.length > 0" class="overflow-x-auto">
             <table class="w-full text-xs">
               <thead class="bg-slate-100">
                 <tr>
-                  <th v-for="title in statsData.processList.titles" :key="title" class="px-3 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                  <th v-for="title in statsData.processList.titles" :key="title" class="th-sm whitespace-nowrap">
                     {{ title }}
                   </th>
                 </tr>

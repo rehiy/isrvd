@@ -5,7 +5,7 @@ import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import type { SystemStat, SystemNetInterface } from '@/service/types'
 
-import Chart, { makeLineDataset } from '@/helper/chart'
+import Chart, { findMonitorCanvas, makeLineDataset, makeMonitorChartOptions, makeMonitorScale, syncMonitorCharts } from '@/helper/chart'
 import { appendMonitorPoint, formatMonitorBytes } from '@/helper/monitor'
 
 interface TimeSeriesHistory {
@@ -13,11 +13,6 @@ interface TimeSeriesHistory {
     labels: string[]
     recv: number[]
     sent: number[]
-}
-
-interface ChartCallbackContext {
-    parsed: { y: number | null }
-    dataset: { label?: string }
 }
 
 const NATURAL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
@@ -54,29 +49,14 @@ class SystemNetwork extends Vue {
     }
 
     netChartOptions(): ChartOptions<'line'> {
-        return {
-            responsive: true, maintainAspectRatio: false, animation: false,
-            interaction: { intersect: false, mode: 'index' as const },
-            plugins: {
-                legend: { display: true, position: 'bottom' as const, labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
-                tooltip: {
-                    backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
-                    callbacks: { label: (ctx: ChartCallbackContext) => (ctx.dataset.label ?? '') + ': ' + formatMonitorBytes(ctx.parsed.y ?? 0, true) }
-                }
-            },
-            scales: {
-                x: { display: false },
-                y: {
-                    display: true, beginAtZero: true, grid: { color: 'rgba(148,163,184,0.08)' }, border: { display: false },
-                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => formatMonitorBytes(Number(v), true) }
-                }
-            },
-            elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.4, borderWidth: 1.5 } }
-        }
+        return makeMonitorChartOptions(
+            { y: makeMonitorScale('rate') },
+            ctx => (ctx.dataset.label ?? '') + ': ' + formatMonitorBytes(ctx.parsed.y ?? 0, true)
+        )
     }
 
     initNetChart(name: string) {
-        const canvas = this.netContainerRef?.querySelector(`[data-iface="${name}"]`) as HTMLCanvasElement | null
+        const canvas = findMonitorCanvas(this.netContainerRef, 'data-iface', name)
         if (!canvas) {
             return
         }
@@ -105,13 +85,10 @@ class SystemNetwork extends Vue {
 
     flushCharts() {
         this.$nextTick(() => {
-            Object.keys(this.netHistory).forEach(name => {
-                if (this.netCharts[name]) {
-                    this.updateNetChart(name)
-                } else {
-                    this.initNetChart(name)
-                }
-            })
+            syncMonitorCharts(
+                this.netCharts, this.netContainerRef, 'data-iface', this.currentIfaces.map(ni => ni.name),
+                name => this.initNetChart(name), name => this.updateNetChart(name)
+            )
         })
     }
 
@@ -127,6 +104,13 @@ class SystemNetwork extends Vue {
         const ifaces = payload.system?.netInterface || []
         const physicalIfaces = this.physicalInterfaces(ifaces)
         this.currentIfaces = physicalIfaces
+        const active = new Set(physicalIfaces.map(ni => ni.name))
+        for (const name of Object.keys(this.netHistory)) {
+            if (!active.has(name)) {
+                delete this.netHistory[name]
+                delete this.lastNetIO[name]
+            }
+        }
         if (!ifaces.length) {
             return
         }
@@ -172,8 +156,7 @@ class SystemNetwork extends Vue {
     }
 
     unmounted() {
-        Object.values(this.netCharts).forEach(c => c.destroy())
-        this.netCharts = {}
+        this.clearData()
     }
 }
 
@@ -181,26 +164,31 @@ export default toNative(SystemNetwork)
 </script>
 
 <template>
-  <div v-if="currentIfaces.length" class="panel-frame">
-    <div class="card-header">
-      <div class="card-icon bg-cyan-500">
-        <i class="fas fa-network-wired text-white text-xs"></i>
-      </div>
-      <span class="text-sm font-semibold text-slate-700">{{ $t('网络接口') }}</span>
-    </div>
-    <div ref="netContainerRef" class="divide-y divide-slate-100">
-      <div v-for="ni in currentIfaces" :key="ni.name" class="px-4 py-3">
-        <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
-          <p class="text-xs font-semibold text-slate-700 shrink-0 whitespace-nowrap">{{ ni.name }}</p>
-          <div class="flex items-center justify-end gap-x-4 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
-            <span class="monitor-legend-item">
-              <i class="fas fa-arrow-down text-emerald-500"></i>
-              <span class="font-mono text-slate-600">{{ formatMonitorBytes(currentRate(ni.name, 'recv'), true) }}</span>
-            </span>
-            <span class="monitor-legend-item">
-              <i class="fas fa-arrow-up text-blue-500"></i>
-              <span class="font-mono text-slate-600">{{ formatMonitorBytes(currentRate(ni.name, 'sent'), true) }}</span>
-            </span>
+  <div v-if="currentIfaces.length" class="space-y-3">
+    <div ref="netContainerRef" class="grid grid-cols-1 gap-4">
+      <div v-for="ni in currentIfaces" :key="ni.name" class="metric-card min-w-0">
+        <div class="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-cyan-400 to-transparent"></div>
+        <div class="monitor-card-header">
+          <div class="monitor-card-heading">
+            <div class="monitor-card-icon">
+              <i class="fas fa-network-wired text-sm"></i>
+            </div>
+            <p class="min-w-0 flex-1 monitor-card-title" :title="`${$t('网络')} - ${ni.name}`">{{ $t('网络') }} - {{ ni.name }}</p>
+          </div>
+          <div class="monitor-card-metrics">
+            <div class="monitor-metrics-row">
+              <span class="inline-flex flex-wrap items-baseline justify-end gap-1.5" :title="$t('未获取网卡带宽，无法计算使用率')" :aria-label="`${$t('使用率')}：${$t('未获取网卡带宽，无法计算使用率')}`">{{ $t('使用率') }} <span class="monitor-card-value text-slate-700">—</span></span>
+            </div>
+            <div class="monitor-metrics-row">
+              <span class="monitor-series max-w-full">
+                <span class="monitor-series-dot bg-emerald-500"></span>{{ $t('下行') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(currentRate(ni.name, 'recv'), true) }}</span>
+                <span class="whitespace-nowrap">· {{ $t('累计收') }} <span class="tabular-nums">{{ formatMonitorBytes(ni.bytesRecv) }}</span></span>
+              </span>
+              <span class="monitor-series max-w-full">
+                <span class="monitor-series-dot bg-blue-500"></span>{{ $t('上行') }} <span class="tabular-nums text-slate-600">{{ formatMonitorBytes(currentRate(ni.name, 'sent'), true) }}</span>
+                <span class="whitespace-nowrap">· {{ $t('累计发') }} <span class="tabular-nums">{{ formatMonitorBytes(ni.bytesSent) }}</span></span>
+              </span>
+            </div>
           </div>
         </div>
         <div class="monitor-chart-box">
@@ -208,10 +196,6 @@ export default toNative(SystemNetwork)
           <div v-if="!netHistory[ni.name]?.labels?.length" class="absolute inset-0 flex items-center justify-center">
             <span class="text-xs text-slate-300">{{ $t('等待数据...') }}</span>
           </div>
-        </div>
-        <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-slate-400">
-          <span class="shrink-0 whitespace-nowrap">{{ $t('累计收:') }} {{ formatMonitorBytes(ni.bytesRecv) }}</span>
-          <span class="shrink-0 whitespace-nowrap">{{ $t('累计发:') }} {{ formatMonitorBytes(ni.bytesSent) }}</span>
         </div>
       </div>
     </div>

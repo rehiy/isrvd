@@ -3,9 +3,12 @@ import type { ChartOptions } from 'chart.js'
 import { markRaw } from 'vue'
 import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import type { SystemStat, SystemGoRuntimeStat } from '@/service/types'
+import { useLocaleStore } from '@/stores/locale'
 
-import Chart, { makeLineDataset } from '@/helper/chart'
+import type { SystemGoRuntimeStat, SystemStat } from '@/service/types'
+
+import Chart, { makeLineDataset, makeMonitorChartOptions, makeMonitorScale } from '@/helper/chart'
+import { POLL_INTERVAL } from '@/helper/format'
 import { appendMonitorPoint, formatMonitorBytes } from '@/helper/monitor'
 
 @Component
@@ -28,51 +31,55 @@ class SystemGo extends Vue {
     private sysHistory: { ts: number[]; labels: string[]; totalAlloc: number[]; sys: number[] } = { ts: [], labels: [], totalAlloc: [], sys: [] }
 
     current: SystemGoRuntimeStat | null = null
-    lastGCTime: string = '从未'
+    localeStore = useLocaleStore()
+    now = Date.now()
+    private timeTimer: ReturnType<typeof setInterval> | null = null
     formatMonitorBytes = formatMonitorBytes
 
-    fmtGCTime(ts: number) {
-        if (!ts) {
-            return this.$t('从未')
+    get lastGCDate() {
+        const ts = this.current?.lastGC
+        if (typeof ts !== 'number' || !Number.isFinite(ts) || ts <= 0) {
+            return null
         }
-        this.lastGCTime = new Date(ts * 1000).toLocaleString('zh-CN')
-        return this.lastGCTime
+        const date = new Date(ts * 1000)
+        return Number.isFinite(date.getTime()) ? date : null
+    }
+
+    get lastGCTime() {
+        return this.lastGCDate?.toLocaleString(this.localeStore.meta.tag, {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+        }) ?? (this.current?.lastGC === 0 ? this.$t('从未') : '—')
+    }
+
+    get lastGCRelativeTime() {
+        const date = this.lastGCDate
+        if (!date) {
+            return this.lastGCTime
+        }
+        const seconds = Math.floor((this.now - date.getTime()) / 1000)
+        if (seconds < 0) {
+            return this.lastGCTime
+        }
+        const formatter = new Intl.RelativeTimeFormat(this.localeStore.meta.tag, { numeric: 'auto' })
+        const units: [Intl.RelativeTimeFormatUnit, number][] = [
+            ['year', 31536000], ['month', 2592000], ['day', 86400],
+            ['hour', 3600], ['minute', 60], ['second', 1]
+        ]
+        const [unit, duration] = units.find(([, duration]) => seconds >= duration) ?? ['second', 1]
+        return formatter.format(-Math.floor(seconds / duration), unit)
     }
 
     goChartOptions(): ChartOptions<'line'> {
-        return {
-            responsive: true, maintainAspectRatio: false, animation: false,
-            interaction: { intersect: false, mode: 'index' as const },
-            plugins: {
-                legend: { display: true, position: 'bottom' as const, labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
-                tooltip: {
-                    backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
-                    callbacks: {
-                        label: (ctx: { parsed: { y: number | null }; dataset: { label?: string } }) => {
-                            const value = ctx.parsed.y ?? 0
-                            const label = ctx.dataset.label || ''
-                            if (label.includes('GC') || label === 'Goroutine' || label === '堆对象') {
-                                return `${label}: ${value}`
-                            }
-                            return `${label}: ${formatMonitorBytes(value)}`
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: { display: false },
-                y: {
-                    display: true, beginAtZero: true, grid: { color: 'rgba(148,163,184,0.08)' }, border: { display: false },
-                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => formatMonitorBytes(Number(v)) }
-                }
-            },
-            elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.4, borderWidth: 1.5 } }
-        }
+        return makeMonitorChartOptions(
+            { y: makeMonitorScale('bytes') },
+            ctx => `${ctx.dataset.label || ''}: ${formatMonitorBytes(ctx.parsed.y ?? 0)}`
+        )
     }
 
     pushData(payload: SystemStat, ts: number) {
         this.current = payload.go
-        this.fmtGCTime(payload.go.lastGC)
+        this.now = Date.now()
 
         // 堆内存数据（包含空闲和释放）
         appendMonitorPoint(
@@ -188,53 +195,18 @@ class SystemGo extends Vue {
                     labels: [...this.goroutineHistory.labels],
                     datasets: [
                         makeLineDataset(this.goroutineHistory.goroutine, '#8b5cf6', 'Goroutine'),
-                        { ...makeLineDataset(this.goroutineHistory.heapObjects, '#22c55e', this.$t('堆对象')), yAxisID: 'y1' },
-                        { ...makeLineDataset(this.goroutineHistory.gc, '#ef4444', this.$t('GC 次数')), yAxisID: 'y2' }
+                        makeLineDataset(this.goroutineHistory.heapObjects, '#22c55e', this.$t('堆对象'), { yAxisID: 'y1' }),
+                        makeLineDataset(this.goroutineHistory.gc, '#ef4444', this.$t('GC 次数'), { yAxisID: 'y2' })
                     ]
                 },
-                options: {
-                    responsive: true, maintainAspectRatio: false, animation: false,
-                    interaction: { intersect: false, mode: 'index' as const },
-                    plugins: {
-                        legend: { display: true, position: 'bottom' as const, labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
-                        tooltip: {
-                            backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
-                            callbacks: {
-                                label: (ctx: { parsed: { y: number | null }; dataset: { label?: string } }) => {
-                                    const value = ctx.parsed.y
-                                    const label = ctx.dataset.label || ''
-                                    return `${label}: ${value}`
-                                }
-                            }
-                        }
+                options: makeMonitorChartOptions(
+                    {
+                        y: makeMonitorScale('count', { position: 'left' }),
+                        y1: makeMonitorScale('count', { display: false, position: 'right', grid: { display: false } }),
+                        y2: makeMonitorScale('count', { display: false, position: 'right', grid: { display: false } })
                     },
-                    scales: {
-                        x: { display: false },
-                        y: {
-                            type: 'linear' as const,
-                            display: true, beginAtZero: true, position: 'left' as const,
-                            grid: { color: 'rgba(148,163,184,0.08)' }, border: { display: false },
-                            ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4 }
-                        },
-                        y1: {
-                            type: 'linear' as const,
-                            display: false,
-                            position: 'right' as const,
-                            beginAtZero: true,
-                            grid: { display: false },
-                            border: { display: false }
-                        },
-                        y2: {
-                            type: 'linear' as const,
-                            display: false,
-                            position: 'right' as const,
-                            beginAtZero: true,
-                            grid: { display: false },
-                            border: { display: false }
-                        }
-                    },
-                    elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.4, borderWidth: 1.5 } }
-                }
+                    ctx => `${ctx.dataset.label || ''}: ${ctx.parsed.y}`
+                )
             }))
         }
 
@@ -273,7 +245,10 @@ class SystemGo extends Vue {
      */
     flushCharts() {
         this.$nextTick(() => {
-            if (!this.memChart || !this.goroutineChart || !this.stackChart || !this.sysChart) {
+            if (!this.current || !this.memCanvasRef?.isConnected || !this.goroutineCanvasRef?.isConnected || !this.stackCanvasRef?.isConnected || !this.sysCanvasRef?.isConnected) {
+                return
+            }
+            if (!this.memChart || !this.goroutineChart || !this.stackChart || !this.sysChart || this.memChart.canvas !== this.memCanvasRef || this.goroutineChart.canvas !== this.goroutineCanvasRef || this.stackChart.canvas !== this.stackCanvasRef || this.sysChart.canvas !== this.sysCanvasRef) {
                 this.initCharts()
             } else {
                 this.updateCharts()
@@ -313,7 +288,6 @@ class SystemGo extends Vue {
 
     clearData() {
         this.current = null
-        this.lastGCTime = this.$t('从未')
         this.memHistory = { ts: [], labels: [], alloc: [], heapAlloc: [], heapInuse: [], heapIdle: [], heapReleased: [], heapSys: [] }
         this.goroutineHistory = { ts: [], labels: [], goroutine: [], gc: [], heapObjects: [] }
         this.stackHistory = { ts: [], labels: [], stackInuse: [], stackSys: [] }
@@ -328,11 +302,18 @@ class SystemGo extends Vue {
         this.sysChart = null
     }
 
+    mounted() {
+        this.timeTimer = setInterval(() => {
+            this.now = Date.now()
+        }, POLL_INTERVAL)
+    }
+
     unmounted() {
-        this.memChart?.destroy()
-        this.goroutineChart?.destroy()
-        this.stackChart?.destroy()
-        this.sysChart?.destroy()
+        if (this.timeTimer !== null) {
+            clearInterval(this.timeTimer)
+            this.timeTimer = null
+        }
+        this.clearData()
     }
 }
 
@@ -340,29 +321,25 @@ export default toNative(SystemGo)
 </script>
 
 <template>
-  <div class="panel-frame">
-    <div class="card-header">
-      <div class="card-icon bg-sky-500">
-        <i class="fas fa-code text-white text-xs"></i>
-      </div>
-      <span class="text-sm font-semibold text-slate-700">{{ $t('Go 运行态') }}</span>
-      <span v-if="current" class="ml-auto text-xs text-slate-400 font-mono">{{ current.version }}</span>
-      <span v-else class="ml-auto text-xs text-slate-400">{{ $t('加载中...') }}</span>
-    </div>
-    <div v-if="current" ref="goContainerRef" class="divide-y divide-slate-100">
+  <div class="space-y-3">
+    <p v-if="!current" class="text-right text-xs text-slate-400">{{ $t('加载中...') }}</p>
+    <div v-if="current" class="grid grid-cols-1 gap-4">
       <!-- 系统内存折线图 -->
-      <div class="px-4 py-3">
-        <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
-          <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">{{ $t('系统内存') }}</span>
-          <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
-            <span class="monitor-legend-item">
-              <span class="w-3 h-0.5 bg-blue-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.totalAlloc) }}</span>
-            </span>
-            <span class="monitor-legend-item">
-              <span class="w-3 h-0.5 bg-emerald-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.sys) }}</span>
-            </span>
+      <div class="metric-card min-w-0">
+        <div class="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-sky-400 to-transparent"></div>
+        <div class="monitor-card-header">
+          <div class="monitor-card-heading">
+            <div class="monitor-card-icon">
+              <i class="fas fa-memory text-sm"></i>
+            </div>
+            <span class="min-w-0 flex-1 monitor-card-title">Go - {{ $t('系统内存') }}</span>
+          </div>
+          <div class="monitor-card-metrics">
+            <span class="inline-flex flex-wrap items-baseline justify-end gap-1.5" :title="$t('Go 运行时占用估算：系统申请减去堆已释放，不等于进程 RSS')">{{ $t('实际占用') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(Math.max(0, current.sys - current.heapReleased)) }}</span></span>
+            <div class="monitor-metrics-row">
+              <span class="monitor-series"><span class="monitor-series-dot bg-emerald-500"></span>{{ $t('系统申请') }} <span class="tabular-nums">{{ formatMonitorBytes(current.sys) }}</span></span>
+              <span class="monitor-series"><span class="monitor-series-dot bg-blue-500"></span>{{ $t('累计分配') }} <span class="tabular-nums">{{ formatMonitorBytes(current.totalAlloc) }}</span></span>
+            </div>
           </div>
         </div>
         <div class="monitor-chart-box">
@@ -371,34 +348,25 @@ export default toNative(SystemGo)
       </div>
 
       <!-- 堆内存折线图 -->
-      <div class="px-4 py-3">
-        <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
-          <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">{{ $t('堆内存') }}</span>
-          <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
-            <span class="monitor-legend-item">
-              <span class="w-3 h-0.5 bg-blue-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.alloc) }}</span>
-            </span>
-            <span class="monitor-legend-item">
-              <span class="w-3 h-0.5 bg-emerald-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.heapAlloc) }}</span>
-            </span>
-            <span class="monitor-legend-item">
-              <span class="w-3 h-0.5 bg-amber-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.heapInuse) }}</span>
-            </span>
-            <span class="monitor-legend-item">
-              <span class="w-3 h-0.5 bg-gray-400 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.heapIdle) }}</span>
-            </span>
-            <span class="monitor-legend-item">
-              <span class="w-3 h-0.5 bg-rose-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.heapReleased) }}</span>
-            </span>
-            <span class="monitor-legend-item">
-              <span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.heapSys) }}</span>
-            </span>
+      <div class="metric-card min-w-0">
+        <div class="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-emerald-400 to-transparent"></div>
+        <div class="monitor-card-header">
+          <div class="monitor-card-heading">
+            <div class="monitor-card-icon">
+              <i class="fas fa-cubes text-sm"></i>
+            </div>
+            <span class="min-w-0 flex-1 monitor-card-title">Go - {{ $t('堆内存') }}</span>
+          </div>
+          <div class="monitor-card-metrics">
+            <span class="inline-flex flex-wrap items-baseline justify-end gap-1.5" :title="$t('使用中的堆跨度，包含跨度内未使用的空间，不等于堆对象分配量')">{{ $t('实际占用') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(current.heapInuse) }}</span></span>
+            <div class="monitor-metrics-row">
+              <span class="monitor-series"><span class="monitor-series-dot bg-violet-500"></span>{{ $t('堆已申请') }} <span class="tabular-nums">{{ formatMonitorBytes(current.heapSys) }}</span></span>
+              <span class="monitor-series"><span class="monitor-series-dot bg-blue-500"></span>{{ $t('已分配') }} <span class="tabular-nums">{{ formatMonitorBytes(current.alloc) }}</span></span>
+              <span class="monitor-series"><span class="monitor-series-dot bg-emerald-500"></span>{{ $t('堆已分配') }} <span class="tabular-nums">{{ formatMonitorBytes(current.heapAlloc) }}</span></span>
+              <span class="monitor-series"><span class="monitor-series-dot bg-amber-500"></span>{{ $t('堆使用中') }} <span class="tabular-nums">{{ formatMonitorBytes(current.heapInuse) }}</span></span>
+              <span class="monitor-series"><span class="monitor-series-dot bg-stone-400"></span>{{ $t('堆空闲') }} <span class="tabular-nums">{{ formatMonitorBytes(current.heapIdle) }}</span></span>
+              <span class="monitor-series"><span class="monitor-series-dot bg-rose-500"></span>{{ $t('堆已释放') }} <span class="tabular-nums">{{ formatMonitorBytes(current.heapReleased) }}</span></span>
+            </div>
           </div>
         </div>
         <div class="monitor-chart-box">
@@ -407,18 +375,21 @@ export default toNative(SystemGo)
       </div>
 
       <!-- 栈内存折线图 -->
-      <div class="px-4 py-3">
-        <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
-          <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">{{ $t('栈内存') }}</span>
-          <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
-            <span class="monitor-legend-item">
-              <span class="w-3 h-0.5 bg-amber-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.stackInuse) }}</span>
-            </span>
-            <span class="monitor-legend-item">
-              <span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.stackSys) }}</span>
-            </span>
+      <div class="metric-card min-w-0">
+        <div class="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-amber-400 to-transparent"></div>
+        <div class="monitor-card-header">
+          <div class="monitor-card-heading">
+            <div class="monitor-card-icon">
+              <i class="fas fa-layer-group text-sm"></i>
+            </div>
+            <span class="min-w-0 flex-1 monitor-card-title">Go - {{ $t('栈内存') }}</span>
+          </div>
+          <div class="monitor-card-metrics">
+            <span class="inline-flex flex-wrap items-baseline justify-end gap-1.5" :title="$t('使用中的栈跨度，不包含未使用的栈申请空间')">{{ $t('实际占用') }} <span class="monitor-card-value text-slate-700">{{ formatMonitorBytes(current.stackInuse) }}</span></span>
+            <div class="monitor-metrics-row">
+              <span class="monitor-series"><span class="monitor-series-dot bg-violet-500"></span>{{ $t('栈已申请') }} <span class="tabular-nums">{{ formatMonitorBytes(current.stackSys) }}</span></span>
+              <span class="monitor-series"><span class="monitor-series-dot bg-amber-500"></span>{{ $t('栈已使用') }} <span class="tabular-nums">{{ formatMonitorBytes(current.stackInuse) }}</span></span>
+            </div>
           </div>
         </div>
         <div class="monitor-chart-box">
@@ -427,26 +398,22 @@ export default toNative(SystemGo)
       </div>
 
       <!-- Goroutine & GC & 堆对象折线图 -->
-      <div class="px-4 py-3">
-        <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
-          <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">{{ $t('计数器') }}</span>
-          <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
-            <span class="monitor-legend-item" :title="$t('最后 GC 时间')">
-              <i class="fas fa-clock mr-1"></i>
-              <span class="font-mono text-slate-600">{{ $t(lastGCTime) }}</span>
-            </span>
-            <span class="monitor-legend-item">
-              <span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ current.numGoroutine }}</span>
-            </span>
-            <span class="monitor-legend-item">
-              <span class="w-3 h-0.5 bg-green-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ current.heapObjects }}</span>
-            </span>
-            <span class="monitor-legend-item">
-              <span class="w-3 h-0.5 bg-red-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ current.numGC }}</span>
-            </span>
+      <div class="metric-card min-w-0">
+        <div class="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-violet-400 to-transparent"></div>
+        <div class="monitor-card-header">
+          <div class="monitor-card-heading">
+            <div class="monitor-card-icon">
+              <i class="fas fa-hashtag text-sm"></i>
+            </div>
+            <span class="min-w-0 flex-1 monitor-card-title">Go - {{ $t('计数器') }}</span>
+          </div>
+          <div class="monitor-card-metrics">
+            <span class="monitor-series" :title="lastGCTime">{{ $t('最后 GC 时间') }} <span class="monitor-card-value text-slate-700">{{ lastGCRelativeTime }}</span></span>
+            <div class="monitor-metrics-row">
+              <span class="monitor-series"><span class="monitor-series-dot bg-violet-500"></span>Goroutine <span class="tabular-nums">{{ current.numGoroutine }}</span></span>
+              <span class="monitor-series"><span class="monitor-series-dot bg-green-500"></span>{{ $t('堆对象') }} <span class="tabular-nums">{{ current.heapObjects }}</span></span>
+              <span class="monitor-series"><span class="monitor-series-dot bg-red-500"></span>{{ $t('GC 次数') }} <span class="tabular-nums">{{ current.numGC }}</span></span>
+            </div>
           </div>
         </div>
         <div class="monitor-chart-box">

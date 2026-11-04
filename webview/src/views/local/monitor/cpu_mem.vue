@@ -5,13 +5,8 @@ import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import type { SystemStat } from '@/service/types'
 
-import Chart from '@/helper/chart'
+import Chart, { makeLineDataset, makeMonitorChartOptions, makeMonitorScale } from '@/helper/chart'
 import { appendMonitorPoint, formatMonitorBytes, usagePercent, semanticColor } from '@/helper/monitor'
-
-interface ChartCallbackContext {
-    parsed: { y: number | null }
-    dataset: { label?: string }
-}
 
 @Component
 class SystemCpuMem extends Vue {
@@ -56,22 +51,10 @@ class SystemCpuMem extends Vue {
     semanticColor = semanticColor
 
     bgChartOptions(): ChartOptions<'line'> {
-        return {
-            responsive: true, maintainAspectRatio: false, animation: false,
-            interaction: { intersect: false, mode: 'index' as const },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: 'rgba(15,23,42,0.85)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 6, cornerRadius: 6,
-                    callbacks: { label: (ctx: ChartCallbackContext) => (ctx.parsed.y ?? 0).toFixed(1) + '%' }
-                }
-            },
-            scales: {
-                x: { display: false },
-                y: { display: false, beginAtZero: true, max: 100, grid: { display: false }, border: { display: false } }
-            },
-            elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.4, borderWidth: 2 } }
-        }
+        return makeMonitorChartOptions(
+            { y: makeMonitorScale('percent') },
+            ctx => (ctx.parsed.y ?? 0).toFixed(1) + '%'
+        )
     }
 
     initCharts() {
@@ -89,7 +72,7 @@ class SystemCpuMem extends Vue {
                 type: 'line' as const,
                 data: {
                     labels: [...this.cpuHistory.labels],
-                    datasets: [{ data: [...this.cpuHistory.data], borderColor: 'rgba(59,130,246,0.6)', backgroundColor: 'rgba(59,130,246,0.08)', fill: true }]
+                    datasets: [makeLineDataset(this.cpuHistory.data, '#3b82f6', '', { opacity: 0.6, fillOpacity: 0.08 })]
                 },
                 options: this.bgChartOptions()
             })
@@ -101,7 +84,7 @@ class SystemCpuMem extends Vue {
                 type: 'line' as const,
                 data: {
                     labels: [...this.memHistory.labels],
-                    datasets: [{ data: [...this.memHistory.data], borderColor: 'rgba(99,102,241,0.6)', backgroundColor: 'rgba(99,102,241,0.08)', fill: true }]
+                    datasets: [makeLineDataset(this.memHistory.data, '#6366f1', '', { opacity: 0.6, fillOpacity: 0.08 })]
                 },
                 options: this.bgChartOptions()
             })
@@ -111,7 +94,10 @@ class SystemCpuMem extends Vue {
 
     flushCharts() {
         this.$nextTick(() => {
-            if (!this.cpuChart || !this.memChart) {
+            if (!this.current || !this.cpuCanvasRef?.isConnected || !this.memCanvasRef?.isConnected) {
+                return
+            }
+            if (!this.cpuChart || !this.memChart || this.cpuChart.canvas !== this.cpuCanvasRef || this.memChart.canvas !== this.memCanvasRef) {
                 this.initCharts()
                 return
             }
@@ -156,8 +142,7 @@ class SystemCpuMem extends Vue {
     }
 
     unmounted() {
-        this.cpuChart?.destroy()
-        this.memChart?.destroy()
+        this.clearData()
     }
 }
 
@@ -165,45 +150,43 @@ export default toNative(SystemCpuMem)
 </script>
 
 <template>
-  <div v-if="current" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-    <div class="relative panel-frame">
-      <div class="absolute inset-0 pointer-events-none">
-        <canvas ref="cpuCanvasRef" class="w-full h-full"></canvas>
-      </div>
-      <div class="relative p-4">
-        <div class="flex items-center justify-between gap-x-3 gap-y-1 flex-wrap">
-          <div class="inline-info">
-            <div class="w-7 h-7 rounded-lg bg-blue-500/90 flex items-center justify-center">
-              <i class="fas fa-microchip text-white text-xs"></i>
-            </div>
-            <span class="text-sm font-semibold text-slate-700">{{ $t('CPU 使用率') }}</span>
+  <div v-if="current" class="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <div class="metric-card min-w-0">
+      <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 to-transparent"></div>
+      <div class="monitor-card-header">
+        <div class="monitor-card-heading">
+          <div class="monitor-card-icon">
+            <i class="fas fa-microchip text-sm"></i>
           </div>
-          <span :class="['text-2xl font-bold tabular-nums', semanticColor(cpuVal)]">
-            {{ cpuVal }}<span class="text-sm font-medium ml-0.5">%</span>
-          </span>
+          <div class="min-w-0 flex-1">
+            <p class="monitor-card-title">{{ $t('CPU 使用率') }}</p>
+            <p v-if="cpuModel" class="truncate text-xs text-slate-400" :title="cpuModel">{{ cpuModel }}</p>
+            <p v-else class="text-xs text-slate-300">—</p>
+          </div>
         </div>
-        <p v-if="cpuModel" class="text-xs text-slate-400 mt-3 truncate">{{ cpuModel }}</p>
-        <p v-else class="mt-3 text-xs text-slate-300">—</p>
+        <span :class="['monitor-card-value ml-auto whitespace-nowrap text-right', semanticColor(cpuVal)]">{{ cpuVal }}%</span>
+      </div>
+      <div class="monitor-chart-box">
+        <canvas ref="cpuCanvasRef" class="w-full h-full"></canvas>
       </div>
     </div>
 
-    <div class="relative panel-frame">
-      <div class="absolute inset-0 pointer-events-none">
-        <canvas ref="memCanvasRef" class="w-full h-full"></canvas>
-      </div>
-      <div class="relative p-4">
-        <div class="flex items-center justify-between gap-x-3 gap-y-1 flex-wrap">
-          <div class="inline-info">
-            <div class="w-7 h-7 rounded-lg bg-indigo-500/90 flex items-center justify-center">
-              <i class="fas fa-memory text-white text-xs"></i>
-            </div>
-            <span class="text-sm font-semibold text-slate-700">{{ $t('内存使用') }}</span>
+    <div class="metric-card min-w-0">
+      <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-400 to-transparent"></div>
+      <div class="monitor-card-header">
+        <div class="monitor-card-heading">
+          <div class="monitor-card-icon">
+            <i class="fas fa-memory text-sm"></i>
           </div>
-          <span :class="['text-2xl font-bold tabular-nums', semanticColor(memVal)]">
-            {{ memVal }}<span class="text-sm font-medium ml-0.5">%</span>
-          </span>
+          <div class="min-w-0 flex-1">
+            <p class="monitor-card-title">{{ $t('内存使用') }}</p>
+            <p class="break-words text-xs text-slate-400">{{ formatMonitorBytes(memUsed) }} / {{ formatMonitorBytes(memTotal) }}</p>
+          </div>
         </div>
-        <p class="text-xs text-slate-400 mt-3">{{ formatMonitorBytes(memUsed) }} / {{ formatMonitorBytes(memTotal) }}</p>
+        <span :class="['monitor-card-value ml-auto whitespace-nowrap text-right', semanticColor(memVal)]">{{ memVal }}%</span>
+      </div>
+      <div class="monitor-chart-box">
+        <canvas ref="memCanvasRef" class="w-full h-full"></canvas>
       </div>
     </div>
   </div>
