@@ -77,7 +77,7 @@ export default toNative(NodeSwitcher)
         :class="viewingNode
           ? 'text-primary-600 bg-primary-50 hover:bg-primary-100'
           : 'text-slate-600 hover:text-primary-600 hover:bg-primary-50'"
-        :title="viewingNode ? $t(`当前节点：${label}`) : $t('切换节点')"
+        :title="viewingNode ? $t('当前节点：{0}', label) : $t('切换节点')"
         @click="toggle"
       >
         <i class="fas fa-sitemap"></i>

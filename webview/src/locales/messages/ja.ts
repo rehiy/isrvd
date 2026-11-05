@@ -3730,6 +3730,7 @@ const messages: Record<string, string> = {
     '接入并管理受管机': '管理対象マシンへのアクセスと管理',
     // No managed node yet
     '暂无受管节点': '管理対象ノードはまだありません',
+    '当前节点：{0}': '現在のノード：{0}',
     // Node renamed
     '节点已重命名': 'ノードの名前が変更されました',
     // Rename Node

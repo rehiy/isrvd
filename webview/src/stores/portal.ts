@@ -151,6 +151,7 @@ export const usePortalStore = defineStore('portal', () => {
         currentNodeId: nodeLocation().id,
         nodes: nodeRefs.nodes,
         nodesLoading: nodeRefs.loading,
+        nodesLoadFailed: nodeRefs.loadFailed,
         // Node Store 方法
         nodeLoad: nodeStore.load,
         nodePoll: nodeStore.poll,

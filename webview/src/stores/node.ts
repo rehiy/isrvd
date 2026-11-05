@@ -16,6 +16,7 @@ export const useNodeStore = defineStore('node', () => {
 
     const nodes = ref<NodeInfo[]>([])
     const loading = ref(true) // 首次加载或手动刷新期间为 true；静默刷新不改变它
+    const loadFailed = ref(false) // 最近一次加载失败；用于区分「加载失败」与「暂无节点」
 
     // ─── 操作定义 ───
 
@@ -27,9 +28,13 @@ export const useNodeStore = defineStore('node', () => {
             loading.value = true
         }
         inflight ??= api.nodeList()
-            .then(res => { nodes.value = res.payload || [] })
+            .then(res => {
+                nodes.value = res.payload || []
+                loadFailed.value = false
+            })
             .catch(() => {
                 // 错误提示由请求拦截器统一处理，保留现有列表
+                loadFailed.value = true
             })
             .finally(() => { inflight = null })
         return inflight.finally(() => { loading.value = false })
@@ -44,12 +49,14 @@ export const useNodeStore = defineStore('node', () => {
     function reset() {
         nodes.value = []
         loading.value = true
+        loadFailed.value = false
     }
 
     return {
         // 状态
         nodes,
         loading,
+        loadFailed,
         // 操作
         load,
         poll,

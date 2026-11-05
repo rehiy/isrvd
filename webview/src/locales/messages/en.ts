@@ -1888,6 +1888,7 @@ const messages: Record<string, string> = {
     '接入受管机，并切换到节点进行管理': 'Connect managed hosts and switch to a node to manage it',
     '接入并管理受管机': 'Connect and Manage Hosts',
     '暂无受管节点': 'No managed node yet',
+    '当前节点：{0}': 'Current node: {0}',
     '节点已重命名': 'Node renamed',
     '重命名节点': 'Rename Node',
     '节点管理': 'Node Management',
