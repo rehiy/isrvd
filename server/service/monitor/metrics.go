@@ -6,11 +6,25 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/docker/docker/api/types/container"
 
 	pkgDocker "isrvd/pkgs/docker"
+	"isrvd/server/config"
 )
+
+// minStaleAfter 过期判定的下限（秒）：容器逐个串行采集，一轮耗时可能超过短采集间隔。
+const minStaleAfter = 60
+
+// staleAfter 返回容器记录判定为过期的秒数（3 倍采集间隔，不低于下限）；
+// 采集间隔不合法（采集未启动）时返回 0，表示不过滤。
+func staleAfter(interval int) int64 {
+	if interval <= 0 {
+		return 0
+	}
+	return max(3*int64(interval), minStaleAfter)
+}
 
 // textRow 一行样本：labels 为 名称/取值 交替的键值对
 type textRow struct {
@@ -129,11 +143,18 @@ func (c *Collector) HostMetricsText() ([]byte, error) {
 	if err := json.Unmarshal(record.Data, &stat); err != nil {
 		return nil, err
 	}
-	return stat.MetricsText(), nil
+	var w textWriter
+	w.write("gauge", "isrvd_host_last_collect_timestamp_seconds", "Unix time of the last saved host record.", textRow{value: float64(record.Ts)})
+	return append([]byte(w.b.String()), stat.MetricsText()...), nil
 }
 
 // ContainersMetricsText 从各容器最后保存的记录渲染指标，不访问 Docker。
 func (c *Collector) ContainersMetricsText(ctx context.Context) ([]byte, error) {
+	return c.containersMetricsText(ctx, staleAfter(config.Current().Monitor.Interval))
+}
+
+// containersMetricsText 渲染容器指标；stale 大于 0 时跳过超过该秒数未更新的容器。
+func (c *Collector) containersMetricsText(ctx context.Context, stale int64) ([]byte, error) {
 	if c == nil || c.index == nil {
 		return nil, ErrMonitorUnavailable
 	}
@@ -142,10 +163,15 @@ func (c *Collector) ContainersMetricsText(ctx context.Context) ([]byte, error) {
 		return nil, err
 	}
 	var w textWriter
-	var info, cpu, memUsed, memLimit, rx, tx, rd, wr, pids []textRow
+	var info, ts, cpu, memUsed, memLimit, rx, tx, rd, wr, pids []textRow
+	now := time.Now().Unix()
 	for _, record := range records {
 		if err := ctx.Err(); err != nil {
 			return nil, err
+		}
+		// 已停止或删除的容器不再更新记录，超过期限不输出，避免旧值被当作当前值。
+		if stale > 0 && now-record.Ts > stale {
+			continue
 		}
 		var v container.StatsResponse
 		if err := json.Unmarshal(record.Data, &v); err != nil {
@@ -156,7 +182,8 @@ func (c *Collector) ContainersMetricsText(ctx context.Context) ([]byte, error) {
 			name = pkgDocker.ShortID(record.ContainerID)
 		}
 		l := []string{"name", name, "id", record.ContainerID}
-		info = append(info, textRow{[]string{"name", name, "id", record.ContainerID, "image", ""}, 1})
+		info = append(info, textRow{l, 1})
+		ts = append(ts, textRow{l, float64(record.Ts)})
 		cache, cgroupV1 := v.MemoryStats.Stats["total_inactive_file"]
 		if !cgroupV1 {
 			cache = v.MemoryStats.Stats["inactive_file"]
@@ -184,6 +211,7 @@ func (c *Collector) ContainersMetricsText(ctx context.Context) ([]byte, error) {
 		cpu = append(cpu, textRow{l, float64(v.CPUStats.CPUUsage.TotalUsage) / 1e9})
 	}
 	w.write("gauge", "isrvd_container_info", "Last recorded container information; the value is always 1.", info...)
+	w.write("gauge", "isrvd_container_last_collect_timestamp_seconds", "Unix time of the last saved record of the container.", ts...)
 	w.write("counter", "isrvd_container_cpu_usage_seconds_total", "Cumulative CPU time consumed by the container in seconds.", cpu...)
 	w.write("gauge", "isrvd_container_memory_usage_bytes", "Container memory working set in bytes (usage minus inactive file cache).", memUsed...)
 	w.write("gauge", "isrvd_container_memory_limit_bytes", "Container memory limit in bytes.", memLimit...)

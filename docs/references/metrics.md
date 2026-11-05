@@ -64,24 +64,26 @@ scrape_configs:
 
 本机和容器出口未配置开关时默认启用。禁用时在读取记录前返回 503 和统一 JSON 错误 `指标出口已禁用`，不输出指标文本；开关只控制出口读取，不影响后台采集、历史保存或告警。开关与成员抓取权限相互独立。
 
-`/api/metrics/host` 每次请求直接读取最后保存的主机记录，不重新采集。记录的新鲜度由 `monitor.interval` 和存储刷盘决定；后台采集关闭时仅能读取既有记录。尚无保存记录时返回 200 和空文本，存储未就绪返回 503，读取或解析失败返回 502。输出指标（`_total` 为 counter，其余为 gauge）：
+`/api/metrics/host` 每次请求直接读取最后保存的主机记录，不重新采集。记录的新鲜度由 `monitor.interval` 和存储刷盘决定；后台采集关闭时仅能读取既有记录。尚无保存记录时返回 200 和空文本，存储未就绪返回 503，读取或解析失败返回 502。其余指标均为该记录中的采样值，`isrvd_host_cpu_usage_percent` 为各逻辑核使用率的算术平均，反映采集时刻而非区间平均。出口不输出逐样本时间戳，抓取端可用 `time() - isrvd_host_last_collect_timestamp_seconds` 判断数据是否过期。输出指标（`_total` 为 counter，其余为 gauge）：
 
 | 指标 | 标签 |
 |------|------|
 | `isrvd_host_uptime_seconds`、`isrvd_host_cpu_usage_percent` | |
+| `isrvd_host_last_collect_timestamp_seconds` | 最后保存记录的采集时间（Unix 秒） |
 | `isrvd_host_memory_total_bytes`、`isrvd_host_memory_used_bytes` | |
 | `isrvd_host_swap_total_bytes`、`isrvd_host_swap_used_bytes` | |
 | `isrvd_host_filesystem_size_bytes`、`isrvd_host_filesystem_used_bytes` | `device` `mountpoint` `fstype` |
 | `isrvd_host_network_receive_bytes_total`、`isrvd_host_network_transmit_bytes_total` | `interface` |
 | `isrvd_host_disk_read_bytes_total`、`isrvd_host_disk_written_bytes_total` | `device` |
 | `isrvd_host_gpu_utilization_percent`、`_memory_used_bytes`、`_memory_total_bytes`、`_temperature_celsius` | `gpu` `name`（无 GPU 时不输出） |
-| `isrvd_go_goroutines`、`isrvd_go_memory_alloc_bytes` | isrvd 进程自身 |
+| `isrvd_go_goroutines`、`isrvd_go_memory_alloc_bytes`（堆已分配字节） | isrvd 进程自身，不属于主机 |
 
-`/api/metrics/containers` 从保留文件中取各完整容器 ID 最后保存的记录，不列举容器，也不请求 Docker Stats / Top。首次抓取恢复保留期内的记录，此后沿按日追加的文件只读取新增完整行，复用各容器最后落盘记录并清理过期记录；等待与读取均响应请求取消。尚无保存记录时返回 200 和空文本；Docker 暂时不可用不阻止读取已有记录。存储未就绪返回 503，读取或解析失败返回 502。停止或删除的容器仍可能保留最后记录，直到记录过期；出口不宣称其仍在运行。全部容器样本以 `name` 和完整 `id` 标识，避免重建、重名或短 ID 冲突产生重复序列；原监控记录不保存镜像信息，因此信息指标的 `image` 标签为空，不为补全标签改动监控记录结构：
+`/api/metrics/containers` 从保留文件中取各完整容器 ID 最后保存的记录，不列举容器，也不请求 Docker Stats / Top。首次抓取恢复保留期内的记录，此后沿按日追加的文件只读取新增完整行，复用各容器最后落盘记录并清理过期记录；等待与读取均响应请求取消。尚无保存记录时返回 200 和空文本；Docker 暂时不可用不阻止读取已有记录。存储未就绪返回 503，读取或解析失败返回 502。超过 `max(3 × monitor.interval, 60)` 秒未更新的容器记录不输出，避免已停止或删除的容器以旧值被当作当前值；`monitor.interval` 不合法（后台采集未启动）时不过滤，请依据 `isrvd_container_last_collect_timestamp_seconds` 判断新鲜度。全部容器样本以 `name` 和完整 `id` 标识，避免重建、重名或短 ID 冲突产生重复序列；原监控记录不保存镜像信息，因此信息指标不含 `image` 标签：
 
 | 指标 | 标签 | 说明 |
 |------|------|------|
-| `isrvd_container_info` | `name` `id` `image` | 容器信息，值恒为 1 |
+| `isrvd_container_info` | `name` `id` | 容器信息，值恒为 1 |
+| `isrvd_container_last_collect_timestamp_seconds` | `name` `id` | 该容器最后保存记录的采集时间（Unix 秒） |
 | `isrvd_container_cpu_usage_seconds_total` | `name` `id` | 累计 CPU 时间（秒），用 `rate()` 得到使用率 |
 | `isrvd_container_memory_usage_bytes` | `name` `id` | 内存工作集（cgroup v1 扣除 `total_inactive_file`，v2 扣除 `inactive_file`；不扣除全部 `cache`） |
 | `isrvd_container_memory_limit_bytes` | `name` `id` | 内存上限；未设置上限时 Docker 返回宿主机内存总量 |
