@@ -8,7 +8,7 @@ SERVICE_NAME="isrvd"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 INSTALL_DIR="/usr/local/isrvd"
 DOCKER_NETWORK="sdnet"
-DOCKER_DATA_DIR="/srv/data"
+DATA_DIR="/srv/isrvd"
 INSTALLER_LABEL="io.isrvd.installer"
 SERVICE_AREA="auto"
 DOCKER_VARIANT=""
@@ -112,7 +112,17 @@ parse_options() {
     fi
     DOCKER_TAG="${DOCKER_TAG:-$DOCKER_VARIANT}"
     validate_image_layout "$DOCKER_TAG" "$DOCKER_VARIANT"
-    resolve_data_dir "${data:-$DOCKER_DATA_DIR}"
+    resolve_data_dir "${data:-$(default_data_dir)}"
+}
+
+# 未指定 --data 且仅旧默认目录 /srv/data 有主配置时沿用它。
+default_data_dir() {
+    if [ ! -e "$DATA_DIR/conf/isrvd.yml" ] && [ -f /srv/data/conf/isrvd.yml ]; then
+        echo "[info] Reusing existing data directory: /srv/data" >&2
+        printf '%s' /srv/data
+    else
+        printf '%s' "$DATA_DIR"
+    fi
 }
 
 resolve_data_dir() {
@@ -125,10 +135,10 @@ resolve_data_dir() {
     [[ "$data" != "$install_dir" && "$data" != "$install_dir/"* && "$install_dir" != "$data/"* ]] \
         || fail "Data directory must not overlap the installation directory"
     [ ! -e "$data" ] || [ -d "$data" ] || fail "Data path is not a directory"
-    paths=("$data/"{conf/isrvd.yml,conf/caddy.json,conf/apisix.yaml,caddy,etcd,apisix/conf,apisix/cert,apisix/logs})
+    paths=("$data/"{conf/isrvd.yml,caddy,caddy/caddy.json,caddy/config,etcd,apisix/apisix.yaml,apisix/conf,apisix/cert,apisix/logs})
     resolved=$(realpath -m -- "${paths[@]}") || fail "Cannot resolve managed data paths"
     [ "$resolved" = "$(printf '%s\n' "${paths[@]}")" ] || fail "Managed data paths must not be redirected by symbolic links"
-    DOCKER_DATA_DIR="$data"
+    DATA_DIR="$data"
 }
 
 restore_data_dir() {
@@ -234,7 +244,7 @@ ensure_swarm_and_network() {
 }
 
 portmap_range() {
-    local file="$DOCKER_DATA_DIR/conf/isrvd.yml" value
+    local file="$DATA_DIR/conf/isrvd.yml" value
     [ -f "$file" ] || return 0
     value=$(awk '
         /^[^[:space:]#]/ { in_portmap = ($0 ~ /^portmap:[[:space:]]*(#.*)?$/); next }
@@ -268,7 +278,7 @@ run_isrvd_container() {
         --label "io.isrvd.variant=$variant" \
         --network "$DOCKER_NETWORK" \
         "${ports[@]+"${ports[@]}"}" \
-        -v "$DOCKER_DATA_DIR:/data" \
+        -v "$DATA_DIR:/data" \
         -v /var/run/docker.sock:/var/run/docker.sock \
         "${environment[@]+"${environment[@]}"}" \
         "$image"
@@ -291,15 +301,15 @@ install() {
     DOCKER_IMAGE="$DOCKER_IMAGE:$DOCKER_TAG"
     print_banner "Docker Installer"
     echo "  Image:   $DOCKER_IMAGE"
-    mkdir -p "$DOCKER_DATA_DIR"
+    mkdir -p "$DATA_DIR"
     docker pull "$DOCKER_IMAGE"
     run_isrvd_container "$DOCKER_VARIANT" "$DOCKER_IMAGE"
     container_started || fail "isrvd container exited unexpectedly"
     cat <<EOF
 [info] Installation complete
   Container: $SERVICE_NAME
-  Data:      $DOCKER_DATA_DIR
-  Config:    $DOCKER_DATA_DIR/conf/isrvd.yml
+  Data:      $DATA_DIR
+  Config:    $DATA_DIR/conf/isrvd.yml
   Mode:      $DEPLOYMENT_MODE
 EOF
     if [ "$DEPLOYMENT_MODE" = agent ]; then
@@ -315,17 +325,32 @@ EOF
 preserve_apisix_data() {
     local previous="$1" variant="$2" stage dir
     [ "$variant" = apisix ] || return 0
-    mkdir -p "$DOCKER_DATA_DIR/apisix" || return 1
-    stage=$(mktemp -d "$DOCKER_DATA_DIR/.apisix-migration.XXXXXX") || return 1
+    mkdir -p "$DATA_DIR/apisix" || return 1
+    stage=$(mktemp -d "$DATA_DIR/.apisix-migration.XXXXXX") || return 1
     for dir in conf cert logs; do
-        mkdir -p "$stage/$dir" "$DOCKER_DATA_DIR/apisix/$dir" || return 1
+        mkdir -p "$stage/$dir" "$DATA_DIR/apisix/$dir" || return 1
         if ! docker cp "$previous:/usr/local/apisix/$dir/." "$stage/$dir" || \
-            ! { tar -C "$stage/$dir" -cf - . | tar -C "$DOCKER_DATA_DIR/apisix/$dir" --skip-old-files -xf -; }; then
+            ! { tar -C "$stage/$dir" -cf - . | tar -C "$DATA_DIR/apisix/$dir" --skip-old-files -xf -; }; then
             echo "[error] Cannot preserve APISIX $dir; migration snapshot retained: $stage" >&2
             return 1
         fi
     done
     rm -rf -- "$stage"
+}
+
+declare -A LEGACY_CONFIG_FILE=([caddy]=caddy.json [apisix]=apisix.yaml)
+
+# conf/{caddy.json,apisix.yaml} -> caddy/、apisix/：启动前复制，新容器启动后才删旧副本（失败回滚仍需旧文件）。
+migrate_legacy_config() {
+    local variant="$1" file="${LEGACY_CONFIG_FILE[$1]:-}"
+    [ -n "$file" ] && [ -f "$DATA_DIR/conf/$file" ] && [ ! -L "$DATA_DIR/conf/$file" ] && [ ! -e "$DATA_DIR/$variant/$file" ] || return 0
+    mkdir -p "$DATA_DIR/$variant" && cp -p -- "$DATA_DIR/conf/$file" "$DATA_DIR/$variant/$file"
+}
+
+cleanup_legacy_config() {
+    local variant="$1" file="${LEGACY_CONFIG_FILE[$1]:-}"
+    [ -n "$file" ] && [ -f "$DATA_DIR/$variant/$file" ] || return 0
+    rm -f -- "$DATA_DIR/conf/$file" || echo "[warn] Could not remove $DATA_DIR/conf/$file" >&2
 }
 
 update() {
@@ -375,8 +400,10 @@ update() {
         docker rename "$backup" "$SERVICE_NAME"
         fail "Cannot stop the previous container"
     fi
-    if preserve_apisix_data "$backup" "$previous_variant" && run_isrvd_container "$variant" "$DOCKER_IMAGE" && container_started; then
+    if preserve_apisix_data "$backup" "$previous_variant" && migrate_legacy_config "$variant" \
+        && run_isrvd_container "$variant" "$DOCKER_IMAGE" && container_started; then
         docker rm "$backup"
+        cleanup_legacy_config "$variant"
         echo "[info] Docker deployment updated: $DOCKER_IMAGE"
         return
     fi
@@ -400,7 +427,7 @@ uninstall() {
     assert_isrvd_container
     restore_data_dir
     docker rm -f "$SERVICE_NAME"
-    echo "[info] Docker deployment removed; data preserved: $DOCKER_DATA_DIR"
+    echo "[info] Docker deployment removed; data preserved: $DATA_DIR"
 }
 
 print_usage() {
@@ -423,11 +450,14 @@ Install reads exported environment variables:
   ISRVD_NODE_TOKEN    Required for agent
 Agents do not publish 8080. Centers publish portmap.range (TCP/UDP) from the config;
 also set portmap.bind: 0.0.0.0 and run update.
---data PATH selects all installer-managed persistent files on install (default: /srv/data), mounted at /data.
+--data PATH selects all installer-managed persistent files on install (default: /srv/isrvd), mounted at /data.
+Layout: conf/isrvd.yml, caddy/{caddy.json,config}, etcd/, apisix/{apisix.yaml,conf,cert,logs}.
+Without --data, a legacy /srv/data with conf/isrvd.yml is reused if /srv/isrvd has none.
+Update moves legacy conf/caddy.json and conf/apisix.yaml into caddy/ and apisix/ after the new container starts.
 Data paths must be absolute, non-root, outside $INSTALL_DIR, and managed subpaths must not redirect via symlinks.
 Updates restore the actual /data bind mount; --data does not migrate an existing deployment.
 Docker daemon storage, explicit external paths and etcd key namespaces are not rewritten.
-Data: $DOCKER_DATA_DIR; config: $DOCKER_DATA_DIR/conf/isrvd.yml.
+Data: $DATA_DIR; config: $DATA_DIR/conf/isrvd.yml.
 Uninstall preserves the actual configuration and data directory, system services and components.
 EOF
 }

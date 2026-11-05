@@ -18,17 +18,23 @@ BIN_LINK="/usr/local/bin/isrvd"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 ROLE_DIR="/etc/systemd/system/${SERVICE_NAME}.service.d"
 ROLE_FILE="$ROLE_DIR/installer.conf"
-DOCKER_DATA_DIR="/srv/data"
+DATA_DIR="/srv/isrvd"
 
 SERVICE_AREA="auto"
 SYSTEM_COMPONENTS=""
 COMPONENT_NAMES=()
 COMPONENT_CONTAINERS=()
-COMPONENT_CONFIG_DIR="$DOCKER_DATA_DIR/conf/components"
 declare -A COMPONENT_MOUNTS=(
     [etcd]="/etcd:/etcd-data"
-    [caddy]="/conf/components/caddy.json:/etc/caddy/caddy.json:ro /caddy:/data/caddy /caddy-config:/config"
-    [apisix]="/conf/components/apisix.yaml:/isrvd-config/apisix.yaml:ro /apisix/conf:/usr/local/apisix/conf /apisix/cert:/usr/local/apisix/cert /apisix/logs:/usr/local/apisix/logs"
+    [caddy]="/caddy/caddy.json:/etc/caddy/caddy.json:ro /caddy:/data/caddy /caddy/config:/config"
+    [apisix]="/apisix/apisix.yaml:/isrvd-config/apisix.yaml:ro /apisix/conf:/usr/local/apisix/conf /apisix/cert:/usr/local/apisix/cert /apisix/logs:/usr/local/apisix/logs"
+)
+# 旧版挂载后缀（按容器内目标路径索引），用于识别已有部署。
+declare -A LEGACY_MOUNT_SUFFIX=(
+    [/etc/caddy/caddy.json]="/conf/components/caddy.json"
+    [/config]="/caddy-config"
+    [/isrvd-config/apisix.yaml]="/conf/components/apisix.yaml"
+    [/usr/local/apisix/conf/config.yaml]="/conf/components/apisix.yaml"
 )
 INSTALLER_LABEL="io.isrvd.installer"
 CADDY_IMAGE="caddy:2.8.4"
@@ -128,7 +134,17 @@ parse_options() {
     [ -z "$gateway" ] || [ -z "$SYSTEM_COMPONENTS" ] || fail "Use a gateway shortcut or --components, not both"
     SYSTEM_COMPONENTS="${SYSTEM_COMPONENTS:-$gateway}"
     select_components
-    set_component_data_dir "${data:-$DOCKER_DATA_DIR}"
+    set_component_data_dir "${data:-$(default_data_dir)}"
+}
+
+# 未指定 --data 且仅旧默认目录 /srv/data 有主配置时沿用它。
+default_data_dir() {
+    if [ ! -e "$DATA_DIR/conf/isrvd.yml" ] && [ -f /srv/data/conf/isrvd.yml ]; then
+        echo "[info] Reusing existing data directory: /srv/data" >&2
+        printf '%s' /srv/data
+    else
+        printf '%s' "$DATA_DIR"
+    fi
 }
 
 select_components() {
@@ -219,7 +235,7 @@ get_bin_file() {
 }
 
 service_install() {
-    local bin_file entry component working_dir="${DOCKER_DATA_DIR//\"/\\\"}"
+    local bin_file entry component working_dir="${DATA_DIR//\"/\\\"}"
     bin_file=$(get_bin_file)
 
     cat > "$SERVICE_FILE" << EOF
@@ -342,7 +358,7 @@ rollback_install() {
         rm -f "$BIN_LINK"
     fi
     if [ "$INSTALL_DIR_CREATED" -eq 1 ]; then rm -rf -- "$INSTALL_DIR"; fi
-    echo "[error] Installation rolled back; data preserved: $DOCKER_DATA_DIR" >&2
+    echo "[error] Installation rolled back; data preserved: $DATA_DIR" >&2
 }
 
 install_binary() {
@@ -468,23 +484,22 @@ resolve_data_dir() {
     [[ "$data" != "$install_dir" && "$data" != "$install_dir/"* && "$install_dir" != "$data/"* ]] \
         || fail "Data directory must not overlap the installation directory"
     [ ! -e "$data" ] || [ -d "$data" ] || fail "Data path is not a directory"
-    DOCKER_DATA_DIR="$data"
+    DATA_DIR="$data"
 }
 
 set_component_data_dir() {
     local data resolved paths
     resolve_data_dir "$1"
-    data="$DOCKER_DATA_DIR"
-    paths=("$data/"{conf/isrvd.yml,etcd,caddy,caddy-config,apisix/conf,apisix/cert,apisix/logs,conf/components/caddy.json,conf/components/apisix.yaml})
+    data="$DATA_DIR"
+    paths=("$data/"{conf/isrvd.yml,etcd,caddy,caddy/caddy.json,caddy/config,apisix/apisix.yaml,apisix/conf,apisix/cert,apisix/logs})
     resolved=$(realpath -m -- "${paths[@]}") || fail "Cannot resolve component data paths"
     [ "$resolved" = "$(printf '%s\n' "${paths[@]}")" ] || fail "Component data paths must not be redirected by symbolic links"
-    COMPONENT_CONFIG_DIR="$data/conf/components"
 }
 
 restore_component_data_dir() {
     local container component mount destination suffix mode writable source root common=""
     local mounts=()
-    [ "$CONFIG_FILE" = "$INSTALL_DIR/config.yml" ] || common="$DOCKER_DATA_DIR"
+    [ "$CONFIG_FILE" = "$INSTALL_DIR/config.yml" ] || common="$DATA_DIR"
     for container in "${COMPONENT_CONTAINERS[@]}"; do
         component="${container#isrvd-}"
         component="${component%-update-backup}"
@@ -493,7 +508,7 @@ restore_component_data_dir() {
         if [ "$component" = apisix ]; then
             source=$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/usr/local/apisix/conf/config.yaml"}}{{println .Source}}{{end}}{{end}}' "$container") \
                 || fail "Cannot read the previous APISIX configuration mount"
-            [ -z "$source" ] || mounts=("/conf/components/apisix.yaml:/usr/local/apisix/conf/config.yaml:ro")
+            [ -z "$source" ] || mounts=("/apisix/apisix.yaml:/usr/local/apisix/conf/config.yaml:ro")
         fi
         for mount in "${mounts[@]}"; do
             IFS=: read -r suffix destination mode <<< "$mount"
@@ -501,11 +516,14 @@ restore_component_data_dir() {
             [ "$mode" != ro ] || writable=false
             source=$(docker inspect --format "{{range .Mounts}}{{if and (eq .Destination \"$destination\") (eq .Type \"bind\") (eq .RW $writable)}}{{println .Source}}{{end}}{{end}}" "$container") \
                 || fail "Cannot read component data mount: $container"
+            if [[ -n "$source" && "$source" != *"$suffix" && -n "${LEGACY_MOUNT_SUFFIX[$destination]:-}" ]]; then
+                suffix="${LEGACY_MOUNT_SUFFIX[$destination]}"
+            fi
             [[ -n "$source" && "$source" = *"$suffix" ]] || fail "Unexpected component data mount: $container ($destination)"
             root="${source%"$suffix"}"
             set_component_data_dir "$root"
-            [ -z "$common" ] || [ "$common" = "$DOCKER_DATA_DIR" ] || fail "Component data mounts use different directories; refusing to change them"
-            common="$DOCKER_DATA_DIR"
+            [ -z "$common" ] || [ "$common" = "$DATA_DIR" ] || fail "Component data mounts use different directories; refusing to change them"
+            common="$DATA_DIR"
         done
     done
 }
@@ -551,15 +569,14 @@ prepare_component_credentials() {
 }
 
 prepare_component_configs() {
-    local component storage_root="${DOCKER_DATA_DIR//\"/\\\"}/caddy"
-    mkdir -p "$COMPONENT_CONFIG_DIR"
+    local component storage_root="${DATA_DIR//\"/\\\"}/caddy"
     for component in "${COMPONENT_NAMES[@]}"; do
         case "$component" in
-            etcd) mkdir -p "$DOCKER_DATA_DIR/etcd" ;;
+            etcd) mkdir -p "$DATA_DIR/etcd" ;;
             caddy)
-                mkdir -p "$DOCKER_DATA_DIR/caddy" "$DOCKER_DATA_DIR/caddy-config"
-                if [ ! -e "$COMPONENT_CONFIG_DIR/caddy.json" ]; then
-                    cat > "$COMPONENT_CONFIG_DIR/caddy.json" <<EOF
+                mkdir -p "$DATA_DIR/caddy/config"
+                if [ ! -e "$DATA_DIR/caddy/caddy.json" ]; then
+                    cat > "$DATA_DIR/caddy/caddy.json" <<EOF
 {
   "admin": {"listen": "127.0.0.1:2019", "config": {"persist": true}},
   "apps": {"http": {"servers": {"srv0": {
@@ -574,8 +591,9 @@ EOF
                 ;;
             apisix)
                 [ -n "${APISIX_ADMIN_KEY:-}" ] || fail "APISIX credentials are not prepared"
-                if [ ! -e "$COMPONENT_CONFIG_DIR/apisix.yaml" ]; then
-                    cat > "$COMPONENT_CONFIG_DIR/apisix.yaml" <<'EOF'
+                mkdir -p "$DATA_DIR/apisix"
+                if [ ! -e "$DATA_DIR/apisix/apisix.yaml" ]; then
+                    cat > "$DATA_DIR/apisix/apisix.yaml" <<'EOF'
 apisix:
   node_listen: 80
   enable_ipv6: false
@@ -614,9 +632,9 @@ EOF
 }
 
 install_data_config() {
-    local target="$DOCKER_DATA_DIR/conf/isrvd.yml"
-    set_component_data_dir "$DOCKER_DATA_DIR"
-    mkdir -p "$DOCKER_DATA_DIR/conf"
+    local target="$DATA_DIR/conf/isrvd.yml"
+    set_component_data_dir "$DATA_DIR"
+    mkdir -p "$DATA_DIR/conf"
     if [ -e "$target" ]; then
         [ -f "$target" ] && [ ! -L "$target" ] || fail "Expected a regular config file: $target"
         rm -f "$INSTALL_DIR/config.yml"
@@ -657,11 +675,11 @@ discover_binary_data() {
 }
 
 preserve_legacy_config() {
-    local target="$DOCKER_DATA_DIR/conf/isrvd.yml"
+    local target="$DATA_DIR/conf/isrvd.yml"
     [ "$CONFIG_FILE" = "$INSTALL_DIR/config.yml" ] && [ -f "$CONFIG_FILE" ] && [ ! -L "$CONFIG_FILE" ] || return 0
-    set_component_data_dir "$DOCKER_DATA_DIR"
+    set_component_data_dir "$DATA_DIR"
     [ ! -e "$target" ] && [ ! -L "$target" ] || fail "Refusing to overwrite preserved configuration: $target"
-    mkdir -p "$DOCKER_DATA_DIR/conf"
+    mkdir -p "$DATA_DIR/conf"
     cp -p -- "$CONFIG_FILE" "$target"
     chmod 600 "$target"
 }
@@ -671,7 +689,7 @@ configure_root_directory() {
     [ -f "$CONFIG_FILE" ] && [ ! -L "$CONFIG_FILE" ] || fail "Expected a regular config file: $CONFIG_FILE"
     tmp=$(mktemp "$(dirname "$CONFIG_FILE")/.config.XXXXXX")
     cp -p -- "$CONFIG_FILE" "$tmp" || { rm -f "$tmp"; fail "Cannot copy config file attributes: $CONFIG_FILE"; }
-    if ! ROOT_DIRECTORY="$DOCKER_DATA_DIR" awk '
+    if ! ROOT_DIRECTORY="$DATA_DIR" awk '
         function root_config() {
             value = ENVIRON["ROOT_DIRECTORY"]
             gsub(/"/, "\\\"", value)
@@ -755,17 +773,17 @@ component_ready() {
 
 prepare_apisix_data() {
     local image="$1" previous="isrvd-apisix-update-backup" source dir
-    mkdir -p "$DOCKER_DATA_DIR/apisix/"{conf,cert,logs}
+    mkdir -p "$DATA_DIR/apisix/"{conf,cert,logs}
     if container_exists "$previous"; then
         source=$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/usr/local/apisix/conf/config.yaml"}}{{println .Source}}{{end}}{{end}}' "$previous") || return 1
         if [ -n "$source" ]; then
             for dir in conf cert logs; do
-                docker cp "$previous:/usr/local/apisix/$dir/." "$DOCKER_DATA_DIR/apisix/$dir" || return 1
+                docker cp "$previous:/usr/local/apisix/$dir/." "$DATA_DIR/apisix/$dir" || return 1
             done
         fi
     fi
     docker run --rm --network none --security-opt no-new-privileges:true \
-        -v "$DOCKER_DATA_DIR/apisix:/isrvd-state" --entrypoint /bin/sh "$image" -ec '
+        -v "$DATA_DIR/apisix:/isrvd-state" --entrypoint /bin/sh "$image" -ec '
         for dir in conf cert; do
             if [ -d "/usr/local/apisix/$dir" ]; then
                 cp -an "/usr/local/apisix/$dir/." "/isrvd-state/$dir/"
@@ -782,7 +800,7 @@ run_component_container() {
         --label "$INSTALLER_LABEL=component" --security-opt no-new-privileges:true)
     local mounts=() args=()
     read -r -a mounts <<< "${COMPONENT_MOUNTS[$component]:-}"
-    for mount in "${mounts[@]}"; do options+=(-v "$DOCKER_DATA_DIR$mount"); done
+    for mount in "${mounts[@]}"; do options+=(-v "$DATA_DIR$mount"); done
     case "$component" in
         etcd)
             args=(/usr/local/bin/etcd --name isrvd-etcd --data-dir /etcd-data
@@ -791,7 +809,7 @@ run_component_container() {
                 --initial-cluster isrvd-etcd=http://127.0.0.1:2380)
             ;;
         caddy)
-            [ "$DOCKER_DATA_DIR/caddy" = /data/caddy ] || options+=(-v "$DOCKER_DATA_DIR/caddy:$DOCKER_DATA_DIR/caddy")
+            [ "$DATA_DIR/caddy" = /data/caddy ] || options+=(-v "$DATA_DIR/caddy:$DATA_DIR/caddy")
             args=(caddy run --config /etc/caddy/caddy.json --resume)
             ;;
         apisix)
@@ -809,14 +827,57 @@ install_components() {
     for component in "${COMPONENT_NAMES[@]}"; do
         INSTALL_COMPONENTS_CREATED+=("isrvd-$component")
         if ! run_component_container "$component" "$(component_image "$component")" || ! component_ready "$component"; then
-            fail "Component installation failed; component data is preserved in $DOCKER_DATA_DIR"
+            fail "Component installation failed; component data is preserved in $DATA_DIR"
         fi
     done
+}
+
+# 旧布局迁移：停容器前只复制，新容器就绪后才清理（失败回滚的旧容器仍需旧文件）。
+migrate_legacy_component_data() {
+    local component="$1" legacy="$DATA_DIR/conf/components" file
+    case "$component" in
+        caddy)
+            mkdir -p "$DATA_DIR/caddy/config" || return 1
+            [ ! -d "$DATA_DIR/caddy-config" ] || cp -an "$DATA_DIR/caddy-config/." "$DATA_DIR/caddy/config/" || return 1
+            file=caddy.json
+            ;;
+        apisix)
+            mkdir -p "$DATA_DIR/apisix" || return 1
+            file=apisix.yaml
+            ;;
+        *) return 0 ;;
+    esac
+    if [ -f "$legacy/$file" ] && [ ! -L "$legacy/$file" ] && [ ! -e "$DATA_DIR/$component/$file" ]; then
+        cp -p -- "$legacy/$file" "$DATA_DIR/$component/$file" || return 1
+    fi
+    [ -f "$DATA_DIR/$component/$file" ] && [ ! -L "$DATA_DIR/$component/$file" ] \
+        || { echo "[error] Missing $component startup config: $DATA_DIR/$component/$file" >&2; return 1; }
+}
+
+# 新位置文件存在时才删除旧副本；失败只告警。
+cleanup_legacy_component_data() {
+    local component="$1" legacy="$DATA_DIR/conf/components" file
+    case "$component" in
+        caddy)
+            file=caddy.json
+            [ ! -d "$DATA_DIR/caddy/config" ] || rm -rf -- "$DATA_DIR/caddy-config" || echo "[warn] Could not remove $DATA_DIR/caddy-config" >&2
+            ;;
+        apisix) file=apisix.yaml ;;
+        *) return 0 ;;
+    esac
+    if [ -f "$DATA_DIR/$component/$file" ]; then
+        rm -f -- "$legacy/$file" || echo "[warn] Could not remove $legacy/$file" >&2
+    fi
+    rmdir "$legacy" 2>/dev/null || true
 }
 
 update_components() {
     local component image entry backup environment
     check_component_backups
+    # 先统一迁移并校验全部组件，任何一个失败都在停止容器之前中止。
+    for component in "${COMPONENT_NAMES[@]}"; do
+        migrate_legacy_component_data "$component" || fail "Cannot migrate legacy $component data into $DATA_DIR"
+    done
     for component in "${COMPONENT_NAMES[@]}"; do
         image=$(docker inspect --format '{{.Config.Image}}' "isrvd-$component")
         backup="isrvd-$component-update-backup"
@@ -838,6 +899,7 @@ update_components() {
         fi
         if run_component_container "$component" "$image" && component_ready "$component"; then
             docker rm "$backup"
+            cleanup_legacy_component_data "$component"
         else
             docker rm -f "isrvd-$component" >/dev/null 2>&1 || true
             docker rename "$backup" "isrvd-$component"
@@ -882,7 +944,7 @@ uninstall() {
             docker rm -f "$container"
             removed=1
         done
-        [ "$removed" -eq 0 ] || echo "[info] Docker data preserved: $DOCKER_DATA_DIR"
+        [ "$removed" -eq 0 ] || echo "[info] Docker data preserved: $DATA_DIR"
     fi
 
     if [ -f "$SERVICE_FILE" ] || [ -d "$INSTALL_DIR" ]; then
@@ -901,7 +963,7 @@ uninstall() {
     if [ "$removed" -eq 0 ]; then
         echo "[info] isrvd is not installed"
     else
-        echo "[info] Uninstallation complete; configuration and data preserved: $DOCKER_DATA_DIR"
+        echo "[info] Uninstallation complete; configuration and data preserved: $DATA_DIR"
     fi
 }
 
@@ -935,8 +997,11 @@ No gateway is selected by default; omit --components to install only isrvd, with
 --components optionally selects caddy or apisix (APISIX + etcd).
 --components none is still accepted for compatibility with existing commands.
 Standalone etcd and component combinations are not supported for new installations.
---data PATH selects the root of all installer-managed persistent files for install only (default: /srv/data), with or without a gateway.
+--data PATH selects the root of all installer-managed persistent files for install only (default: /srv/isrvd), with or without a gateway.
 Main config: DATA/conf/isrvd.yml (0600); DATA is also server.rootDirectory and the service working directory.
+Layout under DATA: conf/isrvd.yml, caddy/{caddy.json,config}, etcd/, apisix/{apisix.yaml,conf,cert,logs}.
+Updates migrate the legacy layout (conf/components, caddy-config) and remove the old files after the new container is ready.
+Without --data, a legacy /srv/data with conf/isrvd.yml is reused if /srv/isrvd has none.
 The directory must be absolute, non-root and outside $INSTALL_DIR; managed subpaths must not redirect via symlinks.
 Docker daemon storage, journal, explicit external paths and etcd key namespaces are not rewritten.
 Components run in separate host-network containers; APISIX automatically installs its etcd dependency.
@@ -955,7 +1020,7 @@ Interrupted component updates block further updates; restore backups or use unin
 Updates preserve the installed component key, role and actual bind mounts; inconsistent data paths abort before stopping components.
 Changing --data in an install command does not migrate an existing deployment. Centers use portmap.range and portmap.bind in $CONFIG_FILE.
 
-Config: $DOCKER_DATA_DIR/conf/isrvd.yml; data: $DOCKER_DATA_DIR.
+Config: $DATA_DIR/conf/isrvd.yml; data: $DATA_DIR.
 $INSTALL_DIR/config.yml is a compatibility link for new installations.
 Uninstall preserves configuration and data; legacy local configuration is copied to DATA/conf/isrvd.yml first.
 EOF

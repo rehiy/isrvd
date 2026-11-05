@@ -4,7 +4,7 @@ schema:
 server:
   title: ""                  # 浏览器标签页标题，仅登录后显示；留空使用 iSrvd
   listenAddr: :8080
-  rootDirectory: /srv/data
+  rootDirectory: /srv/isrvd
   maxUploadSize: 104857600    # 文件上传最大字节数，默认 104857600（100MB）
   allowedOrigins: []          # 允许的跨域 Origin，支持通配符 *
   jwtSecret: your-jwt-secret  # JWT 签名密钥，修改后所有用户需重新登录
