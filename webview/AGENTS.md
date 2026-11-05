@@ -587,7 +587,10 @@ try { await api.xxx() } catch { /* ... */ }
 | --- | --- | --- |
 | `.stat-card` | 概览 Widget 统计卡片（规范 1.12） | `rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow flex items-center gap-3` |
 | `.overview-loading` / `.overview-unavailable` | 概览 Widget 加载/不可用状态 | `flex items-center justify-center py-10`、`flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50` |
-| `.monitor-chart-box` / `.monitor-legend-item` / `.metric-card` / `.metric-legend` | 监控图表与指标块 | 对应监控图表容器、图例项、指标卡片和指标图例样式 |
+| `.metric-card` / `.monitor-chart-box` | 监控指标卡片与图表容器 | 对应卡片与图表容器样式 |
+| `.monitor-card-header` / `.monitor-card-heading` / `.monitor-card-icon` / `.monitor-card-title` | 监控卡片头部：图标、标题与副标题区 | 对应头部布局、图标块与标题样式 |
+| `.monitor-card-metrics` / `.monitor-headline` / `.monitor-card-value` / `.monitor-metrics-row` | 卡片右上角主指标（仅一个实时或汇总值，不带色块）与附加指标行 | 对应右对齐指标栈、标签加大号数值样式 |
+| `.monitor-card-legend` / `.monitor-series` / `.monitor-series-dot` | 图表下方居中图例：色块 + 名称 + 当前值（可含累计值） | 对应图例容器、图例项与色点样式 |
 
 **10. 终端页面（Terminal Page）**
 
