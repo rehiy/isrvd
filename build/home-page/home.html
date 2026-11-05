@@ -434,8 +434,8 @@
                             <p class="wizard-hint" id="hint-variant"></p>
                             <label class="block mt-3 text-xs muted" id="f-component-data" hidden>
                                 <span class="block mb-1">数据根目录（可选）</span>
-                                <input id="in-component-data" type="text" autocomplete="off" spellcheck="false" placeholder="/srv/data" oninput="renderBuilder()" class="field-input" aria-describedby="hint-component-data">
-                                <span class="block mt-1" id="hint-component-data">统一保存主配置、业务数据、日志和组件存储，留空使用 /srv/data；主配置位于 conf/isrvd.yml。</span>
+                                <input id="in-component-data" type="text" autocomplete="off" spellcheck="false" placeholder="/srv/isrvd" oninput="renderBuilder()" class="field-input" aria-describedby="hint-component-data">
+                                <span class="block mt-1" id="hint-component-data">统一保存主配置、业务数据、日志和组件存储，留空使用 /srv/isrvd（若仅存在旧版 /srv/data 则沿用）；主配置位于 conf/isrvd.yml。</span>
                             </label>
                             <label class="block mt-3 text-xs muted" id="f-tag" hidden>
                                 <span class="block mb-1">镜像标签（可选）</span>
@@ -465,7 +465,7 @@
                                 </label>
                                 <label class="block text-xs muted">
                                     <span class="block mb-1">数据目录 → /data</span>
-                                    <input id="in-data" type="text" autocomplete="off" spellcheck="false" placeholder="/srv/data" oninput="renderBuilder()" class="field-input">
+                                    <input id="in-data" type="text" autocomplete="off" spellcheck="false" placeholder="/srv/isrvd" oninput="renderBuilder()" class="field-input">
                                 </label>
                                 <label class="block text-xs muted" id="f-web">
                                     <span class="block mb-1">Web 端口 → 8080</span>
@@ -588,7 +588,7 @@
                 ['在中控「节点管理」页生成', 'Generate in the controller’s Nodes page'],
                 ['网关方案', 'Gateway option'],
                 ['数据根目录（可选）', 'Data root (optional)'],
-                ['统一保存主配置、业务数据、日志和组件存储，留空使用 /srv/data；主配置位于 conf/isrvd.yml。', 'Stores main configuration, business data, file logs and component storage. Leave blank for /srv/data; the main configuration is conf/isrvd.yml.'],
+                ['统一保存主配置、业务数据、日志和组件存储，留空使用 /srv/isrvd（若仅存在旧版 /srv/data 则沿用）；主配置位于 conf/isrvd.yml。', 'Stores main configuration, business data, file logs and component storage. Leave blank for /srv/isrvd (an existing legacy /srv/data is reused if only it exists); the main configuration is conf/isrvd.yml.'],
                 ['默认', 'Default'],
                 ['镜像标签（可选）', 'Image tag (optional)'],
                 ['留空使用所选布局的标签', 'Leave blank to use the selected layout’s tag'],
@@ -720,7 +720,7 @@
         }
 
         function parseDataDir(id, addError) {
-            var data = fieldVal(id) || '/srv/data';
+            var data = fieldVal(id) || '/srv/isrvd';
             if (!data.startsWith('/') || /^[/]+$/.test(data) || /(^|\/)\.\.?(\/|$)/.test(data) || /[:\\]/.test(data) || CONTROL_CHARS.test(data)) {
                 addError(id, '数据目录须为绝对路径，不能为根目录，也不能含 .、.. 路径段、冒号、反斜杠或控制字符', 'The data directory must be an absolute path other than root, with no . or .. segments, colons, backslashes or control characters');
             }
@@ -740,6 +740,8 @@
             }
             if (!isDocker) {
                 v.componentData = parseDataDir('in-component-data', addError);
+                // 留空时不传 --data，由脚本决定默认目录（含沿用旧版 /srv/data 的回退）。
+                v.componentDataFlag = fieldVal('in-component-data') ? v.componentData : '';
                 var installDir = '/usr/local/isrvd';
                 if (v.componentData && (v.componentData === installDir || v.componentData.startsWith(installDir + '/') || installDir.startsWith(v.componentData + '/'))) {
                     addError('in-component-data', '数据根目录不能与 /usr/local/isrvd 安装目录重叠，以免卸载时删除数据', 'The data root must not overlap /usr/local/isrvd, to prevent data deletion during uninstall');
@@ -810,12 +812,12 @@
 
         function buildBinary(s, v) {
             var componentFlag = v.variant === 'slim' ? '' : ' --components ' + v.variant;
-            var dataFlag = v.componentData ? ' --data ' + shq(v.componentData) : '';
+            var dataFlag = v.componentDataFlag ? ' --data ' + shq(v.componentDataFlag) : '';
             return [envPrefix(s, v) + installerRun('install' + componentFlag + dataFlag + sourceFlag(s))];
         }
 
         function buildScriptDocker(s, v) {
-            var dataFlag = v.componentData ? ' --data ' + shq(v.componentData) : '';
+            var dataFlag = v.componentDataFlag ? ' --data ' + shq(v.componentDataFlag) : '';
             return [envPrefix(s, v) + installerRun('install --variant ' + v.variant + ' --tag ' + shq(v.tag) + dataFlag + sourceFlag(s), DOCKER_SCRIPT_URL)];
         }
 

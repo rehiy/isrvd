@@ -58,22 +58,22 @@ isrvd
 
 **安装脚本**：系统服务使用 `/install/` 或本地 `isrvd-system.sh`，全容器化使用 `/install/?script=docker` 或本地 `isrvd-docker.sh`。在 `install` 前导出上述环境变量；默认角色为单机，系统服务写入仅 root 可读的 systemd drop-in（`installer.conf`），Docker 脚本传入容器环境。Docker 的 agent 模式不发布 8080（Caddy/APISIX 业务端口仍按镜像发布）。更新及卸载使用对应脚本，`update` 保留现有角色，不读取安装器环境来切换角色。
 
-两种安装脚本均可用 `install --data PATH` 指定全部安装器管理的持久化文件根目录，包括主配置、业务数据、文件日志和组件存储，默认 `/srv/data`；适用于单机、中控、受管机及无网关安装。例如 `bash isrvd-system.sh install --components caddy --data /mnt/isrvd-data` 或 `bash isrvd-docker.sh install --tag slim --data /mnt/isrvd-data`。主配置统一为 `DATA/conf/isrvd.yml`（0600）；新系统服务安装的 `/usr/local/isrvd/config.yml` 仅为兼容链接，`server.rootDirectory` 与工作目录使用 DATA，Docker 挂载 DATA 到 `/data`。目录须为非根绝对路径、不能与安装目录重叠，管理的子路径不能通过符号链接重定向。系统服务更新恢复配置链接及组件实际挂载目录，Docker 更新恢复原容器 `/data` 挂载；挂载不一致时中止，不接受 `--data` 迁移已有数据。卸载保留实际数据目录和主配置，旧系统部署的本地配置先复制到 `DATA/conf/isrvd.yml`，不覆盖已有文件。显式外部绝对路径、Docker 全局存储、系统 journal 和 etcd key 命名空间不随本地目录选项改写。
+两种安装脚本均可用 `install --data PATH` 指定全部安装器管理的持久化文件根目录，包括主配置、业务数据、文件日志和组件存储，默认 `/srv/isrvd`；适用于单机、中控、受管机及无网关安装。例如 `bash isrvd-system.sh install --components caddy --data /mnt/isrvd-data` 或 `bash isrvd-docker.sh install --tag slim --data /mnt/isrvd-data`。主配置统一为 `DATA/conf/isrvd.yml`（0600）；新系统服务安装的 `/usr/local/isrvd/config.yml` 仅为兼容链接，`server.rootDirectory` 与工作目录使用 DATA，Docker 挂载 DATA 到 `/data`。目录须为非根绝对路径、不能与安装目录重叠，管理的子路径不能通过符号链接重定向。系统服务更新恢复配置链接及组件实际挂载目录，Docker 更新恢复原容器 `/data` 挂载；挂载不一致时中止，不接受 `--data` 迁移已有数据。卸载保留实际数据目录和主配置，旧系统部署的本地配置先复制到 `DATA/conf/isrvd.yml`，不覆盖已有文件。显式外部绝对路径、Docker 全局存储、系统 journal 和 etcd key 命名空间不随本地目录选项改写。
 
 Docker `update` 将旧容器临时更名为 `isrvd-update-backup`，旧 APISIX 容器的配置、证书和文件日志先复制到数据根目录（已有持久化文件优先，复制失败保留快照并恢复旧容器），新容器通过启动检查（仅确认容器仍在运行，不代表已连上中控）后才删除旧容器；创建或启动检查失败时恢复旧容器。更新中断后遗留备份容器时，需先处理再重试。
 
-**Docker 手动运行**：提前准备完整的 `/srv/data/conf/isrvd.yml`，中控和受管机使用各自的数据目录：
+**Docker 手动运行**：提前准备完整的 `/srv/isrvd/conf/isrvd.yml`，中控和受管机使用各自的数据目录：
 
 ```bash
 # 中控（8080 为对外入口）
 docker run -d --name isrvd-center -e ISRVD_MODE=center --network sdnet -p 8080:8080 \
-  -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
+  -v /srv/isrvd:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
 
 # 受管机（不需要 -p）
 docker run -d --name isrvd-agent --network sdnet \
   -e ISRVD_MODE=agent -e ISRVD_CENTER_URL=https://center.example.com \
   -e ISRVD_NODE_TOKEN="<中控生成的 token>" \
-  -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
+  -v /srv/isrvd:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
 ```
 
 **数据位置**：中控的节点表存于 `node-list.yml`，与计划任务等业务数据一样位于 `rootDirectory`，使用 etcd 时随配置同步。受管机的 token 由环境变量提供，不写入主配置。
@@ -112,7 +112,7 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 - 隧道里转发流与 HTTP 流共用同一条连接，以首字节区分；UDP 按「2 字节长度 + 数据报」分帧。协商成功且受管机 `features` 不含 `portmap` 时，保存规则会被拒绝（清空规则不受限）；节点离线或无法协商时放行。
 - **转发的连接不经过 isrvd 的认证、权限与审计，鉴权完全由目标应用负责**。该权限等同于访问节点网络内任意地址，请仅授予创始人，且勿转发无认证的服务。目标应用看到的来源地址是受管机本机。
 - 并发上限：每条 TCP 规则 512 个连接，每条 UDP 规则 256 个来源（空闲 60 秒回收）。
-- Docker 部署：中控容器需发布监听范围（如 `-p 20000-20999:20000-20999 -p 20000-20999:20000-20999/udp`），并设置 `portmap.bind: 0.0.0.0`。使用 `isrvd-docker.sh` 时先在 `/srv/data/conf/isrvd.yml` 写好 `portmap.range` 与 `portmap.bind` 再执行 `update`，脚本按该范围发布 TCP/UDP 端口。受管机在容器内时，`127.0.0.1` 指向容器自身，访问宿主机服务请使用宿主机地址或 host 网络。
+- Docker 部署：中控容器需发布监听范围（如 `-p 20000-20999:20000-20999 -p 20000-20999:20000-20999/udp`），并设置 `portmap.bind: 0.0.0.0`。使用 `isrvd-docker.sh` 时先在 `/srv/isrvd/conf/isrvd.yml` 写好 `portmap.range` 与 `portmap.bind` 再执行 `update`，脚本按该范围发布 TCP/UDP 端口。受管机在容器内时，`127.0.0.1` 指向容器自身，访问宿主机服务请使用宿主机地址或 host 网络。
 
 ## 权限与边界
 

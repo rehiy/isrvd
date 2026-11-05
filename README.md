@@ -72,14 +72,14 @@ The Docker edition ships with the default admin account `admin` / `admin`; the f
 
 Two standalone scripts are provided; neither downloads or loads the other. Both accept `--auto` (default), `--cn`, or `--global` to select the source:
 
-- **System service + component containers (`isrvd-system.sh`)**: isrvd runs as a systemd service. No gateway is selected by default; run `install` without `--components` to install only isrvd. Optionally select `--components caddy|apisix`: `caddy` installs a separate Caddy container without etcd, and `apisix` automatically installs separate APISIX and etcd containers. The homepage lets you deselect a gateway by clicking it again. `--components none` remains accepted for compatibility with existing commands. Standalone etcd and comma-separated component combinations are not supported for new installations; existing owned components remain supported for updates and uninstall. Components use host networking, with admin APIs and etcd bound to `127.0.0.1`, and persist data in `/srv/data` by default. Set `--data PATH` during installation to select the root of all installer-managed persistent files, including the main configuration, business data, file logs and component storage. It sets isrvd's `server.rootDirectory` and service working directory. Docker is not required when no gateway is selected; the same data layout applies.
+- **System service + component containers (`isrvd-system.sh`)**: isrvd runs as a systemd service. No gateway is selected by default; run `install` without `--components` to install only isrvd. Optionally select `--components caddy|apisix`: `caddy` installs a separate Caddy container without etcd, and `apisix` automatically installs separate APISIX and etcd containers. The homepage lets you deselect a gateway by clicking it again. `--components none` remains accepted for compatibility with existing commands. Standalone etcd and comma-separated component combinations are not supported for new installations; existing owned components remain supported for updates and uninstall. Components use host networking, with admin APIs and etcd bound to `127.0.0.1`, and persist data in `/srv/isrvd` by default. Set `--data PATH` during installation to select the root of all installer-managed persistent files, including the main configuration, business data, file logs and component storage. It sets isrvd's `server.rootDirectory` and service working directory. Docker is not required when no gateway is selected; the same data layout applies.
 - **Fully containerized (`isrvd-docker.sh`)**: prepares Docker, a single-node Swarm and the attachable overlay network `sdnet`, then starts the selected all-in-one `isrvd:tag` image. The default tag is `slim`. Built-in `caddy` and `apisix` tags select their port layouts automatically; use `--variant slim|caddy|apisix` for a custom tag. `install --data PATH` selects the persistent host directory mounted at `/data` for every image layout; the homepage exposes the data root for both script methods, including slim.
 
 ```bash
 # System service only (default); no Docker required
 bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install
 
-# System service + Caddy (custom data directory), or APISIX + etcd (default /srv/data)
+# System service + Caddy (custom data directory), or APISIX + etcd (default /srv/isrvd)
 bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --components caddy --data /mnt/isrvd-data
 bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --components apisix
 
@@ -94,13 +94,13 @@ bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docke
 
 `isrvd-system.sh install --caddy` / `--apisix` now select separate components. For all-in-one containers, use `isrvd-docker.sh install --caddy` / `--apisix`. The `--systemd` and `--docker` flags are optional in their respective scripts. The main container is named `isrvd`; separate components are named `isrvd-caddy`, `isrvd-apisix` and `isrvd-etcd`.
 
-The data directory must be an absolute non-root path, without `.` or `..` segments, colons, backslashes or control characters, and must not overlap `/usr/local/isrvd`. Both scripts resolve paths using `realpath`; managed configuration and component subpaths must not redirect through symbolic links. The main isrvd configuration is `DATA/conf/isrvd.yml` (0600). New system installations retain `/usr/local/isrvd/config.yml` only as a compatibility symlink; binaries stay in `/usr/local/isrvd`. Business data, audit/monitor/cron file logs, default uploads and Compose projects/history use the selected root. Caddy uses `caddy` for certificates/storage and a persistent runtime configuration directory (`caddy-config` for separate components, `caddy/config` in the all-in-one image); etcd uses `etcd`. APISIX persists generated configuration, certificates and file logs in `apisix/{conf,cert,logs}`; separate component startup configuration uses `conf/components`. Docker image defaults use `/data` as their working/data directory and relative member home directories. `--data` applies only to new installations and does not migrate existing data. Explicit external absolute paths, Docker daemon storage/named volumes, system journal and etcd key namespaces remain independent; the option never rewrites unrelated services or external mounts.
+The data directory must be an absolute non-root path, without `.` or `..` segments, colons, backslashes or control characters, and must not overlap `/usr/local/isrvd`. Both scripts resolve paths using `realpath`; managed configuration and component subpaths must not redirect through symbolic links. The main isrvd configuration is `DATA/conf/isrvd.yml` (0600). New system installations retain `/usr/local/isrvd/config.yml` only as a compatibility symlink; binaries stay in `/usr/local/isrvd`. Business data, audit/monitor/cron file logs, default uploads and Compose projects/history use the selected root. Each component keeps its configuration and data in its own directory, identically for separate components and all-in-one images: `caddy/{caddy.json,config}` (plus certificates/storage), `etcd/`, and `apisix/{apisix.yaml,conf,cert,logs}`. `update` migrates the legacy layout (`conf/components`, `caddy-config`, `conf/caddy.json`, `conf/apisix.yaml`) and removes the old files once the new container is running; all-in-one images also copy them on start. Docker image defaults use `/data` as their working/data directory and relative member home directories. `--data` applies only to new installations and does not migrate existing data. Explicit external absolute paths, Docker daemon storage/named volumes, system journal and etcd key namespaces remain independent; the option never rewrites unrelated services or external mounts.
 
-Use the matching script for updates and uninstall; deployment methods are no longer detected automatically. `isrvd-system.sh update` updates the binary and owned components, restoring the component data directory from their actual bind mounts; inconsistent mounts abort before components are stopped. `isrvd-docker.sh update` rebuilds the main container. Existing configuration and role are preserved. Docker updates preserve the image tag; use `isrvd-docker.sh update --tag YOUR_PUBLISHED_TAG --variant apisix` to change it. Before replacing an APISIX container, the scripts copy its configuration, certificates and file logs into the selected data root; all-in-one updates preserve existing persistent files and retain a migration snapshot on copy failure. Failed migrations or container replacements restore the previous container. Components retain their pinned image versions rather than automatically upgrading across versions. Both update scripts restore the actual installed data directory, including Docker's `/data` bind mount and system configuration links; updates never reset it to `/srv/data`. `isrvd-system.sh uninstall` removes the system service and owned components while preserving main configuration and data; legacy local configuration is first copied to `DATA/conf/isrvd.yml` without overwriting an existing file. `isrvd-docker.sh uninstall` removes only the main container and preserves its actual mounted configuration and data directory. Keep independent backups before destructive management operations.
+Use the matching script for updates and uninstall; deployment methods are no longer detected automatically. `isrvd-system.sh update` updates the binary and owned components, restoring the component data directory from their actual bind mounts; inconsistent mounts abort before components are stopped. `isrvd-docker.sh update` rebuilds the main container. Existing configuration and role are preserved. Docker updates preserve the image tag; use `isrvd-docker.sh update --tag YOUR_PUBLISHED_TAG --variant apisix` to change it. Before replacing an APISIX container, the scripts copy its configuration, certificates and file logs into the selected data root; all-in-one updates preserve existing persistent files and retain a migration snapshot on copy failure. Failed migrations or container replacements restore the previous container. Components retain their pinned image versions rather than automatically upgrading across versions. Both update scripts restore the actual installed data directory, including Docker's `/data` bind mount and system configuration links; updates never reset it to `/srv/isrvd`. `isrvd-system.sh uninstall` removes the system service and owned components while preserving main configuration and data; legacy local configuration is first copied to `DATA/conf/isrvd.yml` without overwriting an existing file. `isrvd-docker.sh uninstall` removes only the main container and preserves its actual mounted configuration and data directory. Keep independent backups before destructive management operations.
 
 The online endpoint `/install/` (or `?script=systemd`) serves the system-service script; `/install/?script=docker` serves the Docker script. They use separate caches. Release packages contain both scripts; older local installers may reject the new package entries, so use the latest online script for updates.
 
-For systemd + APISIX, optionally provide `ISRVD_APISIX_ADMIN_KEY` through the environment (32-128 letters, digits, `_` or `-`, not numeric-only); otherwise the installer generates it. The script passes the same key to the APISIX container through its environment and writes `apisix.adminKey` in root-only `DATA/conf/isrvd.yml` (0600; legacy updates retain their installed config location), with the Admin URL `http://127.0.0.1:9180/apisix/admin`. It never prints the key or relies on a Go environment override. Updates retain the existing component key and repair the previously missing Admin path and credential without rotating keys from the installer environment. Protect the config file and its backups. Component startup configuration is in `conf/components` under the selected data directory (default `/srv/data/conf/components`); APISIX readiness also verifies its authenticated Admin API, so installation fails and rolls back if a preserved configuration does not match the supplied key.
+For systemd + APISIX, optionally provide `ISRVD_APISIX_ADMIN_KEY` through the environment (32-128 letters, digits, `_` or `-`, not numeric-only); otherwise the installer generates it. The script passes the same key to the APISIX container through its environment and writes `apisix.adminKey` in root-only `DATA/conf/isrvd.yml` (0600; legacy updates retain their installed config location), with the Admin URL `http://127.0.0.1:9180/apisix/admin`. It never prints the key or relies on a Go environment override. Updates retain the existing component key and repair the previously missing Admin path and credential without rotating keys from the installer environment. Protect the config file and its backups. APISIX readiness also verifies its authenticated Admin API, so installation fails and rolls back if a preserved configuration does not match the supplied key.
 
 System-service installation validates credentials, component images and the archive before extraction. Later failures or catchable interruptions roll back newly created binaries, links, service files and owned containers while preserving component data, allowing a retry. If a forced termination leaves `isrvd-COMPONENT-update-backup`, subsequent updates stop before stopping the service; verify ownership and restore the backup manually, or use `isrvd-system.sh uninstall` to remove owned normal and backup containers before reinstalling. Built-in `slim` / `latest` / `caddy` / `apisix` tags must match their port layouts: both installation and updates reject a conflicting `--variant`. Custom tags may specify their layout explicitly.
 
@@ -132,7 +132,7 @@ docker run -d \
   --name isrvd \
   --network sdnet \
   -p 8080:8080 \
-  -v /srv/data:/data \
+  -v /srv/isrvd:/data \
   -v /var/run/docker.sock:/var/run/docker.sock \
   rehiy/isrvd:slim
 ```
@@ -148,7 +148,7 @@ docker run -d \
   -p 8080:8080 \
   -p 80:9080 \
   -p 443:9443 \
-  -v /srv/data:/data \
+  -v /srv/isrvd:/data \
   -v /var/run/docker.sock:/var/run/docker.sock \
   rehiy/isrvd:apisix
 ```
@@ -164,7 +164,7 @@ docker run -d \
   -p 8080:8080 \
   -p 80:80 \
   -p 443:443 \
-  -v /srv/data:/data \
+  -v /srv/isrvd:/data \
   -v /var/run/docker.sock:/var/run/docker.sock \
   rehiy/isrvd:caddy
 ```
@@ -184,7 +184,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - /srv/data:/data
+      - /srv/isrvd:/data
       - /var/run/docker.sock:/var/run/docker.sock
 
 networks:
