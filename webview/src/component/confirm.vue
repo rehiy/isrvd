@@ -12,11 +12,10 @@ class ConfirmModal extends Vue {
     portal = usePortal()
 
     // ─── 计算属性 ───
-    get safeMessage() {
-        return this.portal.confirm.message.replace(
-            /<strong(?: class="[^"]*")?>|<\/strong>|[&<>"']/g,
-            (value) => (value.startsWith('<') ? value : `&#${value.charCodeAt(0)};`)
-        )
+    get messageParts() {
+        return this.portal.confirm.message
+            .split(/<strong(?: class="text-slate-900")?>([\s\S]*?)<\/strong>/)
+            .map((text, index) => ({ text, strong: index % 2 === 1 }))
     }
 
     get iconColorClass() {
@@ -48,9 +47,9 @@ export default toNative(ConfirmModal)
       <div class="empty-state-icon mx-auto" :class="iconColorClass.split(' ')[0]">
         <i class="fas text-3xl" :class="[portal.confirm.icon, iconColorClass.split(' ')[1]]"></i>
       </div>
-      <!-- safeMessage 仅保留 strong 标签，其余 HTML 均已转义 -->
-      <!-- eslint-disable-next-line vue/no-v-html -->
-      <p class="text-lg text-slate-700" v-html="safeMessage"></p>
+      <p class="text-lg text-slate-700 break-words">
+        <template v-for="(part, index) in messageParts" :key="index"><strong v-if="part.strong" class="text-slate-900">{{ part.text }}</strong><template v-else>{{ part.text }}</template></template>
+      </p>
       <p v-if="portal.confirm.danger" class="text-sm text-red-600 flex items-center justify-center mt-3">
         <i class="fas fa-exclamation-triangle mr-2"></i>
         {{ $t('此操作不可恢复！') }}

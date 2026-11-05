@@ -24,7 +24,7 @@ export default toNative(NotificationManager)
 
 <template>
   <Teleport to="body">
-    <div v-if="portal.notifications.length" class="fixed top-6 right-6 z-[9999] space-y-3">
+    <div v-if="portal.notifications.length" class="fixed top-4 left-4 right-4 sm:top-6 sm:left-auto sm:right-6 sm:max-w-lg z-[9999] space-y-3">
       <TransitionGroup
         enter-active-class="transition duration-300 ease-out"
         enter-from-class="opacity-0 translate-x-4"
@@ -33,11 +33,11 @@ export default toNative(NotificationManager)
         leave-from-class="opacity-100 translate-x-0"
         leave-to-class="opacity-0 translate-x-4"
       >
-        <div v-for="item in portal.notifications" :key="item.id" :class="['flex items-center px-5 py-4 rounded-xl min-w-80 animate-slide-down', notificationStyle(item.type)]">
+        <div v-for="item in portal.notifications" :key="item.id" :class="['flex items-center px-5 py-4 rounded-xl min-w-0 sm:min-w-80 animate-slide-down', notificationStyle(item.type)]">
           <div class="row-icon bg-white/20 mr-3">
             <i :class="['fas', notificationIcon(item.type)]"></i>
           </div>
-          <span class="flex-1 font-medium">{{ item.message }}</span>
+          <span class="flex-1 min-w-0 break-words font-medium">{{ item.message }}</span>
           <button type="button" class="btn-icon-sm text-white! hover:text-white! hover:bg-white/20!" @click="portal.clearNotification(item.id)">
             <i class="fas fa-times"></i>
           </button>
