@@ -1,9 +1,9 @@
 <script lang="ts">
-import { Component, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
-import type { NodePortMapInfo, NodeInfo } from '@/service/types'
+import type { NodeInfo, NodePortMapInfo } from '@/service/types'
 
 import { portmapIs, portmapPatch } from '@/helper/portmap'
 
@@ -16,6 +16,8 @@ import BaseModal from '@/component/modal.vue'
 })
 class NodePortMapModal extends Vue {
     portal = usePortal()
+
+    @Ref readonly formRef!: HTMLFormElement
 
     // ─── 数据属性 ───
     isOpen = false
@@ -61,7 +63,7 @@ class NodePortMapModal extends Vue {
     }
 
     async handleConfirm() {
-        if (this.invalid || this.modalLoading) {
+        if (this.invalid || this.modalLoading || !this.formRef.reportValidity()) {
             return
         }
         this.modalLoading = true
@@ -100,12 +102,14 @@ export default toNative(NodePortMapModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="editing ? $t('编辑转发') : $t('添加转发')" :loading="modalLoading" :confirm-disabled="invalid" confirm-class="btn-orange" show-footer @confirm="handleConfirm">
-    <form class="space-y-4" @submit.prevent="handleConfirm">
-      <p class="text-sm text-slate-600">{{ $t('中控监听指定端口，经隧道连接到节点上的目标地址，支持 TCP 与 UDP。') }}</p>
-      <p class="text-xs text-amber-600">
-        <i class="fas fa-triangle-exclamation mr-1"></i>{{ $t('转发的连接不经过 isrvd 认证，鉴权由目标应用负责；请勿转发无认证的服务。') }}
-      </p>
+  <BaseModal v-model="isOpen" :title="editing ? $t('编辑转发') : $t('添加转发')" :loading="modalLoading" :confirm-disabled="invalid" confirm-class="btn-orange" @confirm="handleConfirm">
+    <form ref="formRef" class="space-y-4" @submit.prevent="handleConfirm">
+      <div class="space-y-2">
+        <p class="text-sm text-slate-600">
+          {{ $t('中控监听指定端口，经隧道连接到节点上的目标地址，支持 TCP 与 UDP。') }}
+          <span class="text-amber-600">{{ $t('转发的连接不经过 isrvd 认证，鉴权由目标应用负责；请勿转发无认证的服务。') }}</span>
+        </p>
+      </div>
 
       <div>
         <label class="form-label">{{ $t('所属节点') }} <span class="text-red-500">*</span></label>
@@ -122,22 +126,25 @@ export default toNative(NodePortMapModal)
         </div>
       </div>
 
-      <div>
-        <label class="form-label">{{ $t('中控监听端口') }} <span class="text-red-500">*</span></label>
-        <input v-model.number="listen" type="number" min="1" max="65535" required class="input" placeholder="20022" />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('须在中控配置 portmap.range 允许的范围内') }}</p>
-      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="min-w-0">
+          <label class="form-label">{{ $t('中控监听端口') }} <span class="text-red-500">*</span></label>
+          <input v-model.number="listen" type="number" min="1" max="65535" required class="input" placeholder="20022" />
+          <p class="text-xs text-slate-400 mt-1">{{ $t('须在中控配置 portmap.range 允许的范围内') }}</p>
+        </div>
 
-      <div>
-        <label class="form-label">{{ $t('节点目标地址') }} <span class="text-red-500">*</span></label>
-        <input v-model="target" type="text" maxlength="200" required class="input font-mono text-sm" placeholder="127.0.0.1:22" />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('host:port；只填端口时默认指向节点本机 127.0.0.1') }}</p>
+        <div class="min-w-0">
+          <label class="form-label">{{ $t('节点目标地址') }} <span class="text-red-500">*</span></label>
+          <input v-model="target" type="text" maxlength="200" required class="input font-mono" placeholder="127.0.0.1:22" />
+          <p class="text-xs text-slate-400 mt-1">{{ $t('host:port；只填端口时默认指向节点本机 127.0.0.1') }}</p>
+        </div>
       </div>
 
       <div>
         <label class="form-label">{{ $t('备注') }}</label>
         <input v-model="name" type="text" maxlength="64" class="input" :placeholder="$t('如：SSH')" />
       </div>
+      <button type="submit" class="hidden"></button>
     </form>
 
     <template #confirm-text>{{ editing ? $t('保存') : $t('添加') }}</template>

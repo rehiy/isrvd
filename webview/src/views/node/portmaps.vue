@@ -99,13 +99,13 @@ export default toNative(NodePortMaps)
     <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="toolbar-desktop">
-        <div class="flex items-center gap-3">
+        <div class="title-group-static">
           <div class="page-icon bg-orange-500">
             <i class="fas fa-right-left text-white"></i>
           </div>
-          <div>
+          <div class="min-w-0">
             <h1 class="title-text">{{ $t('端口转发') }}</h1>
-            <p class="text-xs text-slate-500">{{ $t('中控监听端口，经隧道转发到节点（TCP / UDP）') }}</p>
+            <p class="text-xs text-slate-500 truncate">{{ $t('中控监听端口，经隧道转发到节点（TCP / UDP）') }}</p>
           </div>
         </div>
         <div class="action-group">
@@ -150,6 +150,16 @@ export default toNative(NodePortMaps)
       <div class="empty-state">
         <div class="spinner-lg"></div>
         <p class="text-slate-500">{{ $t('加载中...') }}</p>
+      </div>
+    </div>
+
+    <div v-else-if="portal.nodesLoadFailed && portal.nodes.length === 0" class="card-body">
+      <div class="empty-state" role="status">
+        <div class="empty-state-icon">
+          <i class="fas fa-triangle-exclamation text-4xl text-amber-500"></i>
+        </div>
+        <p class="text-slate-600 font-medium mb-1">{{ $t('加载失败') }}</p>
+        <p class="text-sm text-slate-400">{{ $t('请检查网络或权限后刷新重试') }}</p>
       </div>
     </div>
 
@@ -209,7 +219,7 @@ export default toNative(NodePortMaps)
       <div class="card-body md:hidden space-y-3">
         <div v-for="item in filteredItems" :key="itemKey(item)" class="card-interactive">
           <div class="card-info-row">
-            <div class="list-icon bg-orange-400 flex-shrink-0">
+            <div class="list-icon bg-orange-400">
               <i class="fas fa-right-left text-white text-base"></i>
             </div>
             <div class="min-w-0">
@@ -224,12 +234,12 @@ export default toNative(NodePortMaps)
           </div>
           <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('节点') }}</span>
-            <span class="text-xs text-slate-500">{{ item.node.name }}</span>
-            <span class="text-xs" :class="nodeStatusClass(item)">{{ nodeStatusText(item) }}</span>
+            <span class="text-xs text-slate-500 min-w-0 flex-1 truncate" :title="item.node.name">{{ item.node.name }}</span>
+            <span class="text-xs flex-shrink-0" :class="nodeStatusClass(item)">{{ nodeStatusText(item) }}</span>
           </div>
           <div class="card-prop-row-start">
             <span class="prop-label-start">{{ $t('目标地址') }}</span>
-            <code class="text-xs bg-slate-100 px-2 py-0.5 rounded-lg break-all">{{ item.target }}</code>
+            <code class="code-chip bg-slate-100 min-w-0">{{ item.target }}</code>
           </div>
 
           <PortMapActions :item="item" @edit="openEdit" @success="portal.nodeLoad(true)" />
