@@ -78,11 +78,11 @@ class NodeManage extends Vue {
 
     // ─── 操作 ───
     openAdd() {
-        this.createModalRef?.show()
+        this.createModalRef.show()
     }
 
     openEdit(node: NodeInfo) {
-        this.editModalRef?.show(node)
+        this.editModalRef.show(node)
     }
 
     // ─── 生命周期 ───
@@ -99,13 +99,13 @@ export default toNative(NodeManage)
     <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="toolbar-desktop">
-        <div class="flex items-center gap-3">
+        <div class="title-group-static">
           <div class="page-icon bg-orange-500">
             <i class="fas fa-sitemap text-white"></i>
           </div>
-          <div>
+          <div class="min-w-0">
             <h1 class="title-text">{{ $t('节点管理') }}</h1>
-            <p class="text-xs text-slate-500">{{ $t('接入受管机，并切换到节点进行管理') }}</p>
+            <p class="text-xs text-slate-500 truncate">{{ $t('接入受管机，并切换到节点进行管理') }}</p>
           </div>
         </div>
         <div class="action-group">
@@ -153,6 +153,16 @@ export default toNative(NodeManage)
       </div>
     </div>
 
+    <div v-else-if="portal.nodesLoadFailed && portal.nodes.length === 0" class="card-body">
+      <div class="empty-state" role="status">
+        <div class="empty-state-icon">
+          <i class="fas fa-triangle-exclamation text-4xl text-amber-500"></i>
+        </div>
+        <p class="text-slate-600 font-medium mb-1">{{ $t('加载失败') }}</p>
+        <p class="text-sm text-slate-400">{{ $t('请检查网络或权限后刷新重试') }}</p>
+      </div>
+    </div>
+
     <div v-else-if="filteredNodes.length === 0" class="card-body">
       <div class="empty-state">
         <div class="empty-state-icon">
@@ -186,7 +196,7 @@ export default toNative(NodeManage)
                   </div>
                   <div class="min-w-0">
                     <span class="item-title">{{ node.name }}</span>
-                    <span class="item-subtitle">{{ node.hostname || node.id }}</span>
+                    <span :class="node.hostname ? 'item-subtitle' : 'item-subtitle-mono'">{{ node.hostname || node.id }}</span>
                   </div>
                 </div>
               </td>
@@ -209,12 +219,12 @@ export default toNative(NodeManage)
       <div class="card-body md:hidden space-y-3">
         <div v-for="node in filteredNodes" :key="node.id" class="card-interactive">
           <div class="card-info-row">
-            <div class="list-icon bg-orange-400 flex-shrink-0">
+            <div class="list-icon bg-orange-400">
               <i class="fas fa-server text-white text-base"></i>
             </div>
             <div class="min-w-0">
               <span class="item-title-sm">{{ node.name }}</span>
-              <span class="item-subtitle">{{ node.hostname || node.id }}</span>
+              <span :class="node.hostname ? 'item-subtitle' : 'item-subtitle-mono'">{{ node.hostname || node.id }}</span>
             </div>
           </div>
 
