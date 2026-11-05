@@ -77,10 +77,10 @@
 | `metrics` | `GET /api/metrics/host` | 指标（本机监控指标出口） |
 | `metrics` | `GET /api/metrics/containers` | 指标（容器监控指标出口） |
 | `metrics` | `GET /api/metrics/status` | 指标（本机、容器及网关状态） |
-| `metrics` | `PUT /api/metrics/gateway/:name` | 指标（本机、容器及网关开启/关闭） |
 | `cron` | `POST /api/cron/jobs` | 计划任务（创建） |
 | `cron` | `POST /api/cron/jobs/:id/run` | 计划任务（立即执行） |
 | `cron` | `GET /api/cron/jobs/:id/logs` | 计划任务（查看日志） |
+| `apisix` | `PUT /api/apisix/metrics` | APISIX 管理（开启/关闭指标） |
 | `apisix` | `GET /api/apisix/routes` | APISIX 管理（路由列出） |
 | `apisix` | `GET /api/apisix/consumers` | APISIX 管理（消费者列出） |
 | `apisix` | `GET /api/apisix/upstreams` | APISIX 管理（上游列出） |
@@ -109,6 +109,7 @@
 | `caddy` | `POST /api/caddy/config` | Caddy 管理（整体替换配置） |
 | `caddy` | `GET /api/caddy/global` | Caddy 管理（读取全局选项） |
 | `caddy` | `PUT /api/caddy/global` | Caddy 管理（更新全局选项） |
+| `caddy` | `PUT /api/caddy/metrics` | Caddy 管理（开启/关闭指标） |
 | `caddy` | `GET /api/caddy/servers` | Caddy 管理（HTTP 服务列出） |
 | `caddy` | `GET /api/caddy/routes` | Caddy 管理（路由列出） |
 | `caddy` | `GET /api/caddy/basic-auth` | Caddy 管理（Basic Auth 路由列出） |

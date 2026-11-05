@@ -6,8 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"isrvd/pkgs/cstore"
-	"isrvd/server/service/apisix"
 	"isrvd/server/service/metrics"
 	"isrvd/server/service/monitor"
 )
@@ -21,11 +19,10 @@ func (app *App) defineMetricsRoutes() []Route {
 		// apisix / caddy 原样透传网关指标，host / containers 导出最后保存的监控记录。
 		{Method: "GET", Path: "/metrics/apisix", Handler: app.metricsGatewayScrape(metrics.GatewayApisix), Module: "metrics", Label: "导出 APISIX 指标"},
 		{Method: "GET", Path: "/metrics/caddy", Handler: app.metricsGatewayScrape(metrics.GatewayCaddy), Module: "metrics", Label: "导出 Caddy 指标"},
-		{Method: "GET", Path: "/metrics/host", Handler: app.metricsHost, Module: "metrics", Label: "导出本机监控指标"},
-		{Method: "GET", Path: "/metrics/containers", Handler: app.metricsContainers, Module: "metrics", Label: "导出容器监控指标"},
-		// 指标状态与开关
+		{Method: "GET", Path: "/metrics/host", Handler: app.metricsLocalExport(metrics.SourceHost), Module: "metrics", Label: "导出本机监控指标"},
+		{Method: "GET", Path: "/metrics/containers", Handler: app.metricsLocalExport(metrics.SourceContainers), Module: "metrics", Label: "导出容器监控指标"},
+		// 指标状态；本机与容器出口开关在系统配置 metrics 分区，网关指标开关在各网关模块
 		{Method: "GET", Path: "/metrics/status", Handler: app.metricsStatus, Module: "metrics", Label: "查询指标状态"},
-		{Method: "PUT", Path: "/metrics/gateway/:name", Handler: app.metricsGatewayUpdate, Module: "metrics", Label: "开关监控指标"},
 	}
 }
 
@@ -45,59 +42,25 @@ func (app *App) metricsGatewayScrape(gateway string) gin.HandlerFunc {
 	}
 }
 
-// metricsHost 输出最后保存的主机监控指标。
-func (app *App) metricsHost(c *gin.Context) {
-	if !metrics.LocalEnabled(metrics.SourceHost) {
-		respondError(c, http.StatusServiceUnavailable, "指标出口已禁用")
-		return
+// metricsLocalExport 返回导出本机或容器已保存监控记录的处理函数；出口被系统配置禁用时返回 503。
+func (app *App) metricsLocalExport(source string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !metrics.LocalEnabled(source) {
+			respondError(c, http.StatusServiceUnavailable, "指标出口已禁用")
+			return
+		}
+		if source == metrics.SourceHost {
+			data, err := app.monitorCollector.HostMetricsText()
+			respondLocalMetrics(c, data, err)
+			return
+		}
+		data, err := app.monitorCollector.ContainersMetricsText(c.Request.Context())
+		respondLocalMetrics(c, data, err)
 	}
-	data, err := app.monitorCollector.HostMetricsText()
-	respondLocalMetrics(c, data, err)
-}
-
-// metricsContainers 输出各容器最后保存的资源指标。
-func (app *App) metricsContainers(c *gin.Context) {
-	if !metrics.LocalEnabled(metrics.SourceContainers) {
-		respondError(c, http.StatusServiceUnavailable, "指标出口已禁用")
-		return
-	}
-	data, err := app.monitorCollector.ContainersMetricsText(c.Request.Context())
-	respondLocalMetrics(c, data, err)
 }
 
 func (app *App) metricsStatus(c *gin.Context) {
 	respondSuccess(c, "", app.metricsSvc.Status(c.Request.Context()))
-}
-
-func (app *App) metricsGatewayUpdate(c *gin.Context) {
-	var req struct {
-		Enabled *bool `json:"enabled" binding:"required"` // true 开启，false 关闭
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
-		return
-	}
-	name := c.Param("name")
-	if err := app.metricsSvc.Update(c.Request.Context(), name, *req.Enabled); err != nil {
-		switch {
-		case errors.Is(err, metrics.ErrGatewayUnknown):
-			respondError(c, http.StatusNotFound, err.Error())
-		case errors.Is(err, metrics.ErrGatewayUnavailable):
-			respondError(c, http.StatusServiceUnavailable, err.Error())
-		case errors.Is(err, apisix.ErrMetricsExternallyManaged), errors.Is(err, cstore.ErrConflict):
-			respondError(c, http.StatusConflict, err.Error())
-		case name == metrics.SourceHost || name == metrics.SourceContainers:
-			respondError(c, http.StatusInternalServerError, err.Error())
-		default:
-			respondError(c, http.StatusBadGateway, err.Error())
-		}
-		return
-	}
-	if *req.Enabled {
-		respondSuccess(c, "指标已开启", nil)
-		return
-	}
-	respondSuccess(c, "指标已关闭", nil)
 }
 
 // ─── 辅助函数 ───
@@ -110,5 +73,23 @@ func respondLocalMetrics(c *gin.Context, data []byte, err error) {
 		respondError(c, http.StatusBadGateway, err.Error())
 	default:
 		c.Data(http.StatusOK, metricsContentType, data)
+	}
+}
+
+// respondMetricsToggled 输出网关指标开关结果；conflicts 中的错误映射为 409。
+func respondMetricsToggled(c *gin.Context, enabled bool, err error, conflicts ...error) {
+	for _, conflict := range conflicts {
+		if errors.Is(err, conflict) {
+			respondError(c, http.StatusConflict, err.Error())
+			return
+		}
+	}
+	switch {
+	case err != nil:
+		respondError(c, http.StatusBadGateway, err.Error())
+	case enabled:
+		respondSuccess(c, "指标已开启", nil)
+	default:
+		respondSuccess(c, "指标已关闭", nil)
 	}
 }

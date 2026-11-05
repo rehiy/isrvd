@@ -19,6 +19,8 @@ func (app *App) defineApisixRoutes() []Route {
 		{Method: "PUT", Path: "/apisix/route/:id", Handler: app.apisixRouteUpdate, Module: "apisix", Label: "更新 APISIX 路由"},
 		{Method: "PATCH", Path: "/apisix/route/:id/status", Handler: app.apisixRouteStatusPatch, Module: "apisix", Label: "切换 APISIX 路由状态"},
 		{Method: "DELETE", Path: "/apisix/route/:id", Handler: app.apisixRouteDelete, Module: "apisix", Label: "删除 APISIX 路由"},
+		// 指标开关（抓取出口见 /metrics/apisix）
+		{Method: "PUT", Path: "/apisix/metrics", Handler: app.apisixMetricsUpdate, Module: "apisix", Label: "开关 APISIX 指标"},
 		// Consumer 管理
 		{Method: "GET", Path: "/apisix/consumers", Handler: app.apisixConsumerList, Module: "apisix", Label: "查询 APISIX 消费者列表"},
 		{Method: "POST", Path: "/apisix/consumer", Handler: app.apisixConsumerCreate, Module: "apisix", Label: "创建 APISIX 消费者"},
@@ -49,6 +51,17 @@ func (app *App) defineApisixRoutes() []Route {
 		// 插件列表
 		{Method: "GET", Path: "/apisix/plugins", Handler: app.apisixPluginList, Module: "apisix", Label: "查询 APISIX 插件列表"},
 	}
+}
+
+func (app *App) apisixMetricsUpdate(c *gin.Context) {
+	var req struct {
+		Enabled *bool `json:"enabled" binding:"required"` // true 开启，false 关闭
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondMetricsToggled(c, *req.Enabled, app.apisixSvc.MetricsUpdate(c.Request.Context(), *req.Enabled), apisix.ErrMetricsExternallyManaged)
 }
 
 func (app *App) apisixRouteList(c *gin.Context) {

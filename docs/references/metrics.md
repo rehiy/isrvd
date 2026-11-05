@@ -2,10 +2,10 @@
 
 模块名：`metrics`。始终可用；未配置 Caddy / APISIX Admin 地址时，对应出口返回 404。所有路由需在成员 `permissions` 中逐条授予对应的 `METHOD /api/metrics...` 权限（创始人除外）。
 
-- **指标出口**：`/api/metrics/apisix`、`/api/metrics/caddy` 每次请求直接抓取并原样返回网关指标，不解析、差分、聚合或保存历史；`/api/metrics/host` 从最后保存的主机记录导出指标，`/api/metrics/containers` 从各容器最后保存的记录导出指标。各出口独立授权。
-- **范围**：最后保存记录仅用于 `/api/metrics/host`、`/api/metrics/containers` 指标出口；原 `/api/overview/monitor` 和 `/api/docker/container/:id/stats` 监控查看接口、实时采集、历史响应与页面行为不变。
-- **开关**：本机与容器指标出口独立控制，默认启用，持久化在 `metrics` 配置分区；禁用只阻止对应出口读取，不影响其他监控、监控日志或告警。Caddy / APISIX 仍通过 Admin API 开关网关指标。
-- **系统配置 → 监控指标**（`/system/config/metrics`，旧 `/metrics` 自动重定向）：统一管理监控采集间隔与指标出口，采集和出口开关互不联动；展示出口 URL、复制入口及权限和状态提示。告警规则与 Webhook 通道独立位于「告警通知」（`/system/config/alert`）。本机/容器开关绑定系统配置草稿，需系统配置 GET/PUT 权限，点击「保存」后持久化生效；APISIX/Caddy 开关仍通过原指标 API 立即生效，以网关实际配置为准。仅有指标权限的用户仍可访问该区域，不读取系统配置；网关操作不依赖系统配置写权限。未启用或不可用的模块隐藏来源卡片，关闭的出口保留启用入口。初始化、手动刷新、系统配置保存/重载和网关操作完成后查询状态，不轮询，不请求指标出口或预览指标文本；卸载时取消在途状态查询。桌面与移动端行为一致。抓取、预览、历史与聚合查询由外部监控系统处理。
+- **指标出口**：`/api/metrics/apisix`、`/api/metrics/caddy` 每次请求直接抓取并原样返回网关指标，不解析、差分、聚合或保存历史；`/api/metrics/host`、`/api/metrics/containers` 导出最后保存的监控记录，不重新采集。各出口独立授权。
+- **范围**：最后保存记录只用于上述两个本机/容器出口；`/api/overview/monitor`、`/api/docker/container/:id/stats` 及实时采集、历史响应不受影响。
+- **开关**：本机与容器出口默认启用，持久化在 `metrics` 配置分区，仅通过系统配置修改（保存后生效）；禁用只阻止对应出口读取，不影响其他监控、监控日志或告警。Caddy / APISIX 的指标开关是网关自身状态，经 Admin API 由 `PUT /api/caddy/metrics`、`PUT /api/apisix/metrics` 修改（立即生效）。
+- **页面**：系统配置 → 监控指标（`/system/config/metrics`）统一管理监控采集间隔与指标出口，两者互不联动；告警规则与 Webhook 通道位于「告警通知」。抓取、预览、历史与聚合查询由外部监控系统处理，页面不请求指标出口。
 
 ## 抓取地址
 
@@ -36,7 +36,7 @@ APISIX 与 Caddy 的指标名、标签、单位及计数语义由网关自身定
 | GET | `/api/metrics/host` | 最后保存的主机监控指标，指标文本格式；禁用或存储未就绪返回 503 |
 | GET | `/api/metrics/containers` | 各容器最后保存的资源指标，指标文本格式；禁用或存储未就绪返回 503 |
 | GET | `/api/metrics/status` | 本机、容器及已配置网关的指标状态 |
-| PUT | `/api/metrics/gateway/:name` | 开启或关闭指标，`name` 为 `host` / `containers` / `caddy` / `apisix`；保留原路径兼容已有调用 |
+| PUT | `/api/caddy/metrics`、`/api/apisix/metrics` | 开启或关闭对应网关的指标，属于网关模块；`/api/metrics/*` 仅用于读取 |
 
 ---
 
@@ -103,38 +103,39 @@ isrvd_get "/metrics/status"
 
 ```json
 [
-  { "name": "host", "available": true, "enabled": true, "scrapable": true, "url": "/api/metrics/host" },
-  { "name": "containers", "available": false, "enabled": false, "scrapable": false, "url": "/api/metrics/containers" },
-  { "name": "caddy", "available": true, "enabled": true, "scrapable": true, "url": "/api/metrics/caddy" }
+  { "name": "host", "configured": true, "available": true, "enabled": true, "scrapable": true, "url": "/api/metrics/host" },
+  { "name": "containers", "configured": true, "available": false, "enabled": false, "scrapable": false, "url": "/api/metrics/containers" },
+  { "name": "caddy", "configured": true, "available": true, "enabled": true, "scrapable": true, "url": "/api/metrics/caddy" },
+  { "name": "apisix", "configured": false, "available": false, "enabled": false, "scrapable": false, "url": "/api/metrics/apisix" }
 ]
 ```
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `name` | string | 来源标识：`host` / `containers` / `caddy` / `apisix`；本机和容器始终返回，网关仅返回已配置项 |
-| `available` | boolean | 本机始终为 true；容器表示 Docker 是否就绪（不影响保存开关）；网关表示管理服务是否可用 |
+| `name` | string | 来源标识，固定按 `host`、`containers`、`caddy`、`apisix` 顺序返回四项 |
+| `configured` | boolean | 是否已配置抓取地址；本机和容器始终为 true，未配置 Admin 地址的网关为 false（其余字段均为 false，不执行抓取检查） |
+| `available` | boolean | 本机始终为 true；容器表示 Docker 是否就绪（不影响保存开关）；网关表示管理服务是否可用（未配置时为 false） |
 | `enabled` | boolean | 对应来源是否已开启指标，与采集能力独立；`enabledUnknown` 为 true 时不能据此判断关闭 |
 | `enabledUnknown` | boolean? | 仅网关开关查询失败时返回 true；本机、容器、管理服务不可用或仅抓取失败时不返回 |
 | `scrapable` | boolean | 本机和容器由 enabled 与 available 推导，不执行采集，不保证实际采集成功；网关实际检查抓取结果 |
 | `url` | string | 所有来源均为 isrvd API 出口路径，不返回上游地址、URL 用户信息或查询凭据；节点和子路径部署需按当前 API 根路径生成出口地址 |
 | `error` | string? | 按请求语言翻译的最近一次检查失败原因；管理接口失败仅返回通用提示，不泄露上游响应或凭据 |
 
-指标区域等待 bootstrap 初始化完成后查询状态，需具有 `GET /api/metrics/status` 权限。无此权限时不请求状态接口；状态查询失败或开关状态未知时禁止网关开关操作，手动刷新可重试。本机/容器配置以系统配置草稿为准，不依赖指标状态读取权限；仅查看配置的用户不可修改开关。页面不发起指标出口请求，网关抓取检查仅属于服务端状态查询。开启本机/容器出口不会自动开启采集，也不保证记录持续更新；外部监控抓取仍须分别授予各指标出口的权限。
+页面在 bootstrap 完成后、手动刷新、系统配置保存/重载和网关操作后查询状态，不轮询，需 `GET /api/metrics/status` 权限；无此权限时不请求。状态查询失败或开关状态未知时禁止网关开关操作，手动刷新可重试。本机/容器开关以系统配置草稿为准，不依赖状态读取权限；仅有指标权限的用户可操作网关开关，无需系统配置权限。开启本机/容器出口不会自动开启采集，也不保证记录持续更新；外部监控抓取须分别授予各出口权限。
 
-### 开启或关闭指标
+### 开启或关闭网关指标
 
-**PUT** `/api/metrics/gateway/:name`
+**PUT** `/api/caddy/metrics`、**PUT** `/api/apisix/metrics`
 
 ```bash
-isrvd_put "/metrics/gateway/caddy" '{"enabled":true}'
-isrvd_put "/metrics/gateway/host" '{"enabled":false}'
-isrvd_put "/metrics/gateway/containers" '{"enabled":false}'
+isrvd_put "/caddy/metrics" '{"enabled":true}'
+isrvd_put "/apisix/metrics" '{"enabled":false}'
 ```
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `enabled` | boolean | `true` 开启，`false` 关闭（必填） |
 
-`name` 仅接受 `host`、`containers`、`caddy`、`apisix`；未知或未配置网关返回 404，`enabled` 缺失或为 null 返回 400。本机和容器开关通过配置 Provider 串行保存，成功后立即生效，不触发本进程服务重载；Docker 不可用时仍允许保存容器开关。配置存储冲突返回 409，其他本地配置保存错误返回 500，失败不发布新开关状态。更新权限统一使用 `PUT /api/metrics/gateway/:name`，可管理全部四类来源，无需系统配置写权限。
+网关指标开关属于网关自身状态，由各网关模块的路由修改，使用该模块的权限与可用性判断；`/api/metrics/*` 只负责读取（抓取出口与状态）。`enabled` 缺失或为 null 返回 400。本机与容器出口开关不经这两个接口，只能通过 `PUT /api/system/config` 的 `metrics` 分区修改，保存后随配置发布生效，需系统配置写权限。
 
-对应网关服务不可用返回 503，网关 Admin API 调用失败返回 502。关闭 APISIX 指标时若其他全局规则仍启用该插件，返回 409，不修改任何规则。
+对应网关服务不可用返回 503（与该模块其他接口一致），网关 Admin API 调用失败返回 502。关闭 APISIX 指标时若其他全局规则仍启用该插件，返回 409，不修改任何规则。

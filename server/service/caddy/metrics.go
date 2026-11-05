@@ -9,7 +9,16 @@ import (
 	"strings"
 
 	"isrvd/pkgs/caddy"
+	"isrvd/server/config"
 )
+
+// MetricsURL 返回 Caddy 指标抓取地址；未配置 Admin URL 时返回空串。
+func MetricsURL(cfg *config.CaddyConfig) string {
+	if cfg == nil || cfg.AdminURL == "" {
+		return ""
+	}
+	return strings.TrimRight(cfg.AdminURL, "/") + "/metrics"
+}
 
 // MetricsStatus 返回全部 HTTP server 是否都已启用指标。
 func (s *Service) MetricsStatus(ctx context.Context) (bool, error) {

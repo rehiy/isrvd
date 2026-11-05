@@ -145,7 +145,9 @@ isrvd_put "/system/config" '<CURRENT_CONFIG_WITH_CHANGES>'
 
 支持按分区提交：请求中为 `null` 或未提交的分区跳过更新。保存成功后自动触发配置重载。
 
-`metrics` 分区使用 `hostEnabled`、`containersEnabled` 控制本机与容器指标出口，字段缺失时默认 true，显式 false 会持久化并在重启后保留。旧 YAML/JSON 中的 `hostDisabled`、`containersDisabled` 仍可读取并取反，新字段同时存在时优先；旧配置加载后自动回写为 enabled 格式，API 响应只返回新字段。系统配置的「监控指标」页面（`/system/config/metrics`）管理 `monitor` 采集间隔与 `metrics` 出口开关，两者互不联动且随「保存」提交；`notify` 通道和告警规则独立位于「告警通知」页面（`/system/config/alert`）。仅有指标权限的用户不读取系统配置，也不能查看或修改采集与告警配置。APISIX/Caddy 仍修改网关自身配置并立即生效，不在本地重复存储开关。兼容的 `/metrics/gateway/host`、`/metrics/gateway/containers` API 仍可保存后立即生效，不触发本进程重载，不影响原监控查看与后台采集；详见 [监控指标 API](../metrics.md)。
+`metrics` 分区只含 `hostEnabled`、`containersEnabled`，缺省 true，显式 false 会持久化；旧 `hostDisabled`、`containersDisabled` 仍可读取并取反（新字段优先），加载后自动回写为 enabled 格式，响应只返回新字段。APISIX / Caddy 指标开关是网关自身状态，位于 `PUT /api/apisix/metrics`、`PUT /api/caddy/metrics`，不写入本分区；详见 [监控指标 API](../metrics.md)。
+
+「监控指标」页面（`/system/config/metrics`）管理 `monitor` 采集间隔与 `metrics` 出口开关，两者互不联动且随「保存」提交；`notify` 通道和告警规则位于「告警通知」页面（`/system/config/alert`）。仅有指标权限的用户不读取系统配置，也不能查看或修改采集与告警配置。
 
 状态码：`400` 为通知阈值非法、`portmap` 非法、受管模式启用 THA；其余校验失败（JWT 密钥不足 32 字符、Passkey/OIDC/Docker TLS 校验失败、关闭全部登录方式、配置正在重载等）返回 `500`。
 

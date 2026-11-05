@@ -21,6 +21,8 @@ func (app *App) defineCaddyRoutes() []Route {
 		{Method: "GET", Path: "/caddy/info", Handler: app.caddyInfoInspect, Module: "caddy", Label: "查询 Caddy 概览"},
 		{Method: "GET", Path: "/caddy/config", Handler: app.caddyConfigInspect, Module: "caddy", Label: "查询 Caddy 完整配置"},
 		{Method: "POST", Path: "/caddy/config", Handler: app.caddyConfigLoad, Module: "caddy", Label: "整体替换 Caddy 配置"},
+		// 指标开关（抓取出口见 /metrics/caddy）
+		{Method: "PUT", Path: "/caddy/metrics", Handler: app.caddyMetricsUpdate, Module: "caddy", Label: "开关 Caddy 指标"},
 		// 全局选项
 		{Method: "GET", Path: "/caddy/global", Handler: app.caddyGlobalInspect, Module: "caddy", Label: "查询 Caddy 全局选项"},
 		{Method: "PUT", Path: "/caddy/global", Handler: app.caddyGlobalUpdate, Module: "caddy", Label: "更新 Caddy 全局选项"},
@@ -47,6 +49,17 @@ func (app *App) defineCaddyRoutes() []Route {
 		{Method: "PUT", Path: "/caddy/cert/:key", Handler: app.caddyCertUpdate, Module: "caddy", Label: "更新 Caddy SSL 证书"},
 		{Method: "DELETE", Path: "/caddy/cert/:key", Handler: app.caddyCertDelete, Module: "caddy", Label: "删除 Caddy SSL 证书"},
 	}
+}
+
+func (app *App) caddyMetricsUpdate(c *gin.Context) {
+	var req struct {
+		Enabled *bool `json:"enabled" binding:"required"` // true 开启，false 关闭
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondMetricsToggled(c, *req.Enabled, app.caddySvc.MetricsUpdate(c.Request.Context(), *req.Enabled))
 }
 
 // ─── HTTP server CRUD ───

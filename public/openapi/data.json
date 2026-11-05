@@ -941,6 +941,37 @@
         ]
       }
     },
+    "/apisix/metrics": {
+      "put": {
+        "operationId": "put_apisix_metrics",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apisix.apisixMetricsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "开关 APISIX 指标",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
     "/apisix/plugin-config": {
       "post": {
         "operationId": "post_apisix_plugin_config",
@@ -2437,6 +2468,37 @@
           }
         },
         "summary": "查询 Caddy 概览",
+        "tags": [
+          "caddy"
+        ]
+      }
+    },
+    "/caddy/metrics": {
+      "put": {
+        "operationId": "put_caddy_metrics",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/caddy.caddyMetricsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "开关 Caddy 指标",
         "tags": [
           "caddy"
         ]
@@ -5969,47 +6031,6 @@
         ]
       }
     },
-    "/metrics/gateway/{name}": {
-      "put": {
-        "operationId": "put_metrics_gateway_name",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "name",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/metrics.metricsGatewayUpdate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
-                }
-              }
-            },
-            "description": "成功"
-          }
-        },
-        "summary": "开关监控指标",
-        "tags": [
-          "metrics"
-        ]
-      }
-    },
     "/metrics/host": {
       "get": {
         "operationId": "get_metrics_host",
@@ -8541,6 +8562,18 @@
         },
         "type": "object"
       },
+      "apisix.apisixMetricsUpdate": {
+        "properties": {
+          "enabled": {
+            "description": "true 开启，false 关闭",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "type": "object"
+      },
       "apisix.apisixRouteStatusPatch": {
         "properties": {
           "status": {
@@ -8715,7 +8748,7 @@
             "type": "string"
           },
           "key": {
-            "description": "复合主键 \u003csource\u003e-\u003cindex\u003e，cached 为 cached-\u003c相对路径\u003e；仅响应使用，请求中被忽略",
+            "description": "复合主键 <source>-<index>，cached 为 cached-<相对路径>；仅响应使用，请求中被忽略",
             "type": "string"
           },
           "keyContent": {
@@ -9457,6 +9490,18 @@
         },
         "required": [
           "config"
+        ],
+        "type": "object"
+      },
+      "caddy.caddyMetricsUpdate": {
+        "properties": {
+          "enabled": {
+            "description": "true 开启，false 关闭",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
         ],
         "type": "object"
       },
@@ -10600,7 +10645,7 @@
       "cronJobLogsReq": {
         "properties": {
           "limit": {
-            "description": "返回记录数上限（默认 50；\u003c=0 或 \u003e100 按 50）",
+            "description": "返回记录数上限（默认 50；<=0 或 >100 按 50）",
             "type": "integer"
           }
         },
@@ -12122,6 +12167,10 @@
             "description": "本机采集能力或网关管理服务是否可用",
             "type": "boolean"
           },
+          "configured": {
+            "description": "是否已配置抓取地址；本机与容器始终为 true",
+            "type": "boolean"
+          },
           "enabled": {
             "description": "是否已开启指标",
             "type": "boolean"
@@ -12147,18 +12196,6 @@
             "type": "string"
           }
         },
-        "type": "object"
-      },
-      "metrics.metricsGatewayUpdate": {
-        "properties": {
-          "enabled": {
-            "description": "true 开启，false 关闭",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "enabled"
-        ],
         "type": "object"
       },
       "monitor.DiskIOStat": {

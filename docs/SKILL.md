@@ -71,16 +71,16 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 | Swarm | [references/swarm/services.md](references/swarm/services.md) | 服务部署/扩缩容/更新 |
 | Swarm | [references/swarm/tasks.md](references/swarm/tasks.md) | 任务列表 |
 | Compose | [references/compose.md](references/compose.md) | Docker Compose / Swarm Stack 部署、重部署、部署记录与历史配置 |
-| APISIX | [references/apisix/routes.md](references/apisix/routes.md) | 路由 CRUD、启用/禁用 |
+| APISIX | [references/apisix/routes.md](references/apisix/routes.md) | 路由 CRUD、启用/禁用、指标开关 |
 | APISIX | [references/apisix/upstreams.md](references/apisix/upstreams.md) | 上游、负载均衡 |
 | APISIX | [references/apisix/consumers.md](references/apisix/consumers.md) | Consumer、访问授权 |
 | APISIX | [references/apisix/ssl.md](references/apisix/ssl.md) | SSL 证书、PluginConfig、插件列表 |
 | Caddy | [references/caddy/routes.md](references/caddy/routes.md) | 路由 CRUD（反向代理/静态文件） |
 | Caddy | [references/caddy/servers.md](references/caddy/servers.md) | 服务（srv0 等）增删改查 |
 | Caddy | [references/caddy/certs.md](references/caddy/certs.md) | SSL 证书管理 |
-| Caddy | [references/caddy/config.md](references/caddy/config.md) | 全局配置、原始 JSON 配置 |
+| Caddy | [references/caddy/config.md](references/caddy/config.md) | 全局配置、原始 JSON 配置、指标开关 |
 | Caddy | [references/caddy/basic-auth.md](references/caddy/basic-auth.md) | 路由 Basic Auth 账号 |
-| 监控指标 | [references/metrics.md](references/metrics.md) | APISIX / Caddy / 本机 / 容器监控指标出口、指标开关 |
+| 监控指标 | [references/metrics.md](references/metrics.md) | APISIX / Caddy / 本机 / 容器监控指标出口与状态 |
 | 系统 | [references/system/config.md](references/system/config.md) | 系统配置、配置/业务数据存储、重载、故障告警、审计日志 |
 | 系统 | [references/system/account.md](references/system/account.md) | 登录、成员管理、API Token |
 | 系统 | [references/system/filer.md](references/system/filer.md) | 文件管理、上传下载、压缩解压 |
@@ -149,7 +149,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
     ├── 成员/权限/Token/OIDC/TOTP 2FA → references/system/account.md
     ├── 文件管理         → references/system/filer.md
     ├── 计划任务         → references/system/cron.md
-    ├── 指标出口/来源开关 → references/metrics.md
+    ├── 指标出口与状态；网关指标开关 → references/metrics.md（开关路由见 caddy/config.md、apisix/routes.md）
     ├── SSH 主机管理     → references/ssh/hosts.md
     ├── SFTP 远程文件    → references/ssh/sftp.md
     ├── 创建/接入/吊销受管节点 → references/node/nodes.md

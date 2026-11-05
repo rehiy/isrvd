@@ -90,6 +90,20 @@ isrvd_patch "/apisix/route/<ROUTE_ID>/status" '{"status":1}'  # 启用
 
 `status` 缺省按 `0`（禁用）处理，取值须为 `0` 或 `1`，否则返回 500。
 
+## 指标开关
+
+**PUT** `/api/apisix/metrics`：开启或关闭 `prometheus` 插件（ID 为 `isrvd-metrics` 的 Global Rule），抓取出口为 `GET /api/metrics/apisix`。
+
+```bash
+isrvd_put "/apisix/metrics" '{"enabled":true}'
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `enabled` | boolean | `true` 开启，`false` 关闭（必填，缺失或为 null 返回 400） |
+
+立即生效，Admin API 调用失败返回 502；关闭时若其他全局规则仍启用该插件返回 409，不修改任何规则。状态查询与抓取说明见 [监控指标 API](../metrics.md)。
+
 ## 删除路由
 
 ```bash

@@ -103,7 +103,7 @@ import type {
     ComposeDeploy,
     ComposeRedeploy,
     // Metrics
-    MetricsSourceName,
+    MetricsGatewayName,
     MetricsSourceStatus,
     // Cron
     CronJob,
@@ -840,8 +840,8 @@ class ApiService {
         return http.get<MetricsSourceStatus[]>('metrics/status', { signal })
     }
 
-    metricsSourceUpdate(name: MetricsSourceName, enabled: boolean) {
-        return http.put<void>(`metrics/gateway/${name}`, { enabled })
+    metricsGatewayUpdate(name: MetricsGatewayName, enabled: boolean) {
+        return http.put<void>(`${name}/metrics`, { enabled })
     }
 
     // ==================== Cron 计划任务 ====================

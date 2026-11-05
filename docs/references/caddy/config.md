@@ -47,6 +47,20 @@ isrvd_put "/caddy/global" "$(echo "$GLOBAL" | jq '.email = "you@example.com" | .
 
 > ⚠️ `PUT /caddy/global` 为**全量替换**：未提交的字段会被清空（如日志级别、日志格式、ACME issuer、on_demand 开关、`gracePeriod`）。只传 `{"logLevel":"WARN"}` 会清掉 `email` / `acmeCA` / `gracePeriod` 等。
 
+## 指标开关
+
+**PUT** `/api/caddy/metrics`：为全部 HTTP server 开启或关闭 Prometheus 指标，抓取出口为 `GET /api/metrics/caddy`。
+
+```bash
+isrvd_put "/caddy/metrics" '{"enabled":true}'
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `enabled` | boolean | `true` 开启，`false` 关闭（必填，缺失或为 null 返回 400） |
+
+立即生效，Admin API 调用失败返回 502。状态查询与抓取说明见 [监控指标 API](../metrics.md)。
+
 ## 获取完整配置
 
 ```bash

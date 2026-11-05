@@ -5,7 +5,7 @@ import { useConfigStore, usePortal } from '@/stores'
 
 import api from '@/service/api'
 import { absUrl } from '@/service/client'
-import type { MetricsSourceName, MetricsSourceStatus } from '@/service/types'
+import type { MetricsGatewayName, MetricsLocalName, MetricsSourceName, MetricsSourceStatus } from '@/service/types'
 
 import { copyToClipboard } from '@/helper/dom'
 
@@ -32,7 +32,7 @@ class ConfigMetrics extends Vue {
     private controller?: AbortController
 
     get canReadStatus() { return this.portal.hasPerm('GET /api/metrics/status') }
-    get canUpdate() { return this.portal.hasPerm('PUT /api/metrics/gateway/:name') }
+    canUpdate(name: MetricsGatewayName) { return this.portal.hasPerm(`PUT /api/${name}/metrics`) }
     get statusKnown() { return this.canReadStatus && this.statusLoaded && !this.statusFailed }
     get canReadConfig() { return this.portal.hasPerm('GET /api/system/config') && this.config.loaded }
     get canEditConfig() {
@@ -40,7 +40,7 @@ class ConfigMetrics extends Vue {
             && !this.config.loading && !this.config.saving && !this.destroyed
     }
 
-    isLocal(name: MetricsSourceName) {
+    isLocal(name: MetricsSourceName): name is MetricsLocalName {
         return name === 'host' || name === 'containers'
     }
 
@@ -81,7 +81,10 @@ class ConfigMetrics extends Vue {
             return { label: '检查失败', color: 'text-red-500 font-medium' }
         }
         if (!status) {
-            return { label: this.statusLoaded ? '未配置' : '状态未查询', color: 'text-slate-500' }
+            return { label: '状态未查询', color: 'text-slate-500' }
+        }
+        if (!status.configured) {
+            return { label: '未配置', color: 'text-slate-500' }
         }
         if (!status.enabled) {
             return { label: '指标未开启', color: 'text-amber-600 font-medium' }
@@ -143,7 +146,7 @@ class ConfigMetrics extends Vue {
     }
 
     canToggle(status: MetricsSourceStatus) {
-        return !this.isLocal(status.name) && this.statusKnown && this.canUpdate && !this.destroyed && !this.loading
+        return !this.isLocal(status.name) && this.statusKnown && this.canUpdate(status.name) && !this.destroyed && !this.loading
             && !this.config.saving && !status.enabledUnknown && !this.busy[status.name]
             && status.available && this.sourceAvailable(status.name)
     }
@@ -165,7 +168,7 @@ class ConfigMetrics extends Vue {
         }
         this.busy[name] = true
         try {
-            await api.metricsSourceUpdate(name, enabled)
+            await api.metricsGatewayUpdate(name, enabled)
             if (!this.destroyed) {
                 status.enabled = enabled
                 await this.load()

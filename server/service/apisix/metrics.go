@@ -4,12 +4,32 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"net/url"
+
+	"isrvd/server/config"
 )
 
-// MetricsRuleID 由 isrvd 管理的指标全局规则 ID
-const MetricsRuleID = "isrvd-metrics"
+// metricsRuleID 由 isrvd 管理的指标全局规则 ID
+const metricsRuleID = "isrvd-metrics"
 
 var ErrMetricsExternallyManaged = errors.New("指标由其他全局规则开启，请在 APISIX 中关闭")
+
+// MetricsURL 返回 APISIX 指标抓取地址：优先使用显式配置；否则取 Admin URL 的主机加默认导出端口 9091。
+// 未配置 Admin URL 或无法解析时返回空串。
+func MetricsURL(cfg *config.ApisixConfig) string {
+	if cfg == nil || cfg.AdminURL == "" {
+		return ""
+	}
+	if cfg.MetricsURL != "" {
+		return cfg.MetricsURL
+	}
+	u, err := url.Parse(cfg.AdminURL)
+	if err != nil || u.Hostname() == "" {
+		return ""
+	}
+	return u.Scheme + "://" + net.JoinHostPort(u.Hostname(), "9091") + "/apisix/prometheus/metrics"
+}
 
 // MetricsStatus 返回 prometheus 插件是否已通过任意 Global Rule 对全部路由启用
 func (s *Service) MetricsStatus(ctx context.Context) (bool, error) {
@@ -39,10 +59,10 @@ func (s *Service) MetricsUpdate(ctx context.Context, enabled bool) error {
 		if enabled && hasMetrics {
 			return nil
 		}
-		if !enabled && hasMetrics && rule.ID != MetricsRuleID {
+		if !enabled && hasMetrics && rule.ID != metricsRuleID {
 			return ErrMetricsExternallyManaged
 		}
-		if rule.ID == MetricsRuleID && rule.Plugins != nil {
+		if rule.ID == metricsRuleID && rule.Plugins != nil {
 			plugins = rule.Plugins
 		}
 	}
@@ -58,7 +78,7 @@ func (s *Service) MetricsUpdate(ctx context.Context, enabled bool) error {
 			}
 		}
 		plugins["prometheus"] = plugin
-		if err := s.client.GlobalRuleSave(ctx, MetricsRuleID, plugins); err != nil {
+		if err := s.client.GlobalRuleSave(ctx, metricsRuleID, plugins); err != nil {
 			return fmt.Errorf("开启 APISIX 指标失败: %w", err)
 		}
 		return nil
@@ -68,9 +88,9 @@ func (s *Service) MetricsUpdate(ctx context.Context, enabled bool) error {
 	}
 	delete(plugins, "prometheus")
 	if len(plugins) == 0 {
-		err = s.client.GlobalRuleDelete(ctx, MetricsRuleID)
+		err = s.client.GlobalRuleDelete(ctx, metricsRuleID)
 	} else {
-		err = s.client.GlobalRuleSave(ctx, MetricsRuleID, plugins)
+		err = s.client.GlobalRuleSave(ctx, metricsRuleID, plugins)
 	}
 	if err != nil {
 		return fmt.Errorf("关闭 APISIX 指标失败: %w", err)

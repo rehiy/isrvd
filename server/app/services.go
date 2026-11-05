@@ -27,8 +27,6 @@ import (
 	"isrvd/server/service/system"
 	"isrvd/server/service/webssh"
 
-	pkgDocker "isrvd/pkgs/docker"
-
 	"isrvd/public"
 	"isrvd/server/config"
 )
@@ -87,7 +85,6 @@ func (app *App) initServices(ctx context.Context) {
 		app.markReady("caddy", caddySvc.CheckAvailability)
 	}
 
-	var dockerRaw *pkgDocker.DockerService
 	if dockerSvc, err := docker.NewService(); err != nil {
 		logman.Warn("Docker service unavailable", "error", err)
 		app.dockerSvc = nil
@@ -95,9 +92,8 @@ func (app *App) initServices(ctx context.Context) {
 	} else {
 		app.dockerSvc = dockerSvc
 		app.markReady("docker", dockerSvc.CheckAvailability)
-		dockerRaw = dockerSvc.Raw()
 		probeCtx, probeCancel = context.WithTimeout(ctx, 5*time.Second)
-		swarmSvc, err := swarm.NewService(probeCtx, dockerRaw)
+		swarmSvc, err := swarm.NewService(probeCtx, dockerSvc.Raw())
 		probeCancel()
 		if err != nil {
 			logman.Warn("Swarm service unavailable", "error", err)
@@ -108,6 +104,8 @@ func (app *App) initServices(ctx context.Context) {
 		}
 	}
 
+	// Docker 不可用时 app.dockerSvc 为 nil，Raw() 对 nil 接收者安全并返回 nil
+	dockerRaw := app.dockerSvc.Raw()
 	if composeSvc, err := compose.NewService(dockerRaw, app.swarmSvc.Raw()); err != nil {
 		logman.Warn("Compose service unavailable", "error", err)
 		app.composeSvc = nil
@@ -141,17 +139,23 @@ func (app *App) initServices(ctx context.Context) {
 	app.monitorCollector = monitor.NewCollector(dockerRaw)
 	app.monitorCollector.Start(ctx)
 
-	// 网关指标透传出口；仅注入已就绪的网关开关
-	switches := map[string]metrics.Switch{}
-	if app.caddySvc != nil {
-		switches[metrics.GatewayCaddy] = app.caddySvc
+	// 指标统一读出口；只登记已配置抓取地址的网关，管理服务不可用时不提供开关状态
+	app.metricsSvc = metrics.NewService(dockerRaw != nil)
+	cfg := config.Current()
+	if u := apisix.MetricsURL(cfg.Apisix); u != "" {
+		var status func(context.Context) (bool, error)
+		if app.apisixSvc != nil {
+			status = app.apisixSvc.MetricsStatus
+		}
+		app.metricsSvc.AddGateway(metrics.GatewayApisix, u, status)
 	}
-	if app.apisixSvc != nil {
-		switches[metrics.GatewayApisix] = app.apisixSvc
+	if u := caddy.MetricsURL(cfg.Caddy); u != "" {
+		var status func(context.Context) (bool, error)
+		if app.caddySvc != nil {
+			status = app.caddySvc.MetricsStatus
+		}
+		app.metricsSvc.AddGateway(metrics.GatewayCaddy, u, status)
 	}
-	app.metricsSvc = metrics.NewService(switches, dockerRaw != nil)
-	// 本机监控指标不依赖网关，模块始终可用；未配置的网关由各路由返回 404
-	app.markReady("metrics", nil)
 }
 
 // closeServices 释放所有有状态服务持有的资源，并返回旧计划任务全部结束的信号。
@@ -200,7 +204,7 @@ func (app *App) serviceAvailableMiddleware() gin.HandlerFunc {
 
 // optionalModules 依赖外部服务、初始化失败时整体不可用的模块。
 // 新增此类模块时：在此登记，并在 initServices 构造成功后调用 markReady。
-var optionalModules = map[string]bool{"ssh": true, "node": true, "apisix": true, "caddy": true, "metrics": true, "docker": true, "swarm": true, "compose": true}
+var optionalModules = map[string]bool{"ssh": true, "node": true, "apisix": true, "caddy": true, "docker": true, "swarm": true, "compose": true}
 
 // markReady 标记可选模块已就绪并登记探活函数（probe 为 nil 表示无需探活）。
 // 登记了未在 optionalModules 声明的模块会被忽略可用性判断，因此这里直接告警。
