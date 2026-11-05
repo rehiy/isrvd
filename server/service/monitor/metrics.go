@@ -10,21 +10,9 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 
-	pkgDocker "isrvd/pkgs/docker"
+	"isrvd/pkgs/docker"
 	"isrvd/server/config"
 )
-
-// minStaleAfter 过期判定的下限（秒）：容器逐个串行采集，一轮耗时可能超过短采集间隔。
-const minStaleAfter = 60
-
-// staleAfter 返回容器记录判定为过期的秒数（3 倍采集间隔，不低于下限）；
-// 采集间隔不合法（采集未启动）时返回 0，表示不过滤。
-func staleAfter(interval int) int64 {
-	if interval <= 0 {
-		return 0
-	}
-	return max(3*int64(interval), minStaleAfter)
-}
 
 // textRow 一行样本：labels 为 名称/取值 交替的键值对
 type textRow struct {
@@ -52,7 +40,9 @@ func (w *textWriter) write(typ, name, help string, rows ...textRow) {
 		if len(r.labels) > 0 {
 			w.b.WriteByte('}')
 		}
-		w.b.WriteString(" " + strconv.FormatFloat(r.value, 'g', -1, 64) + "\n")
+		w.b.WriteString(" ")
+		w.b.WriteString(strconv.FormatFloat(r.value, 'g', -1, 64))
+		w.b.WriteString("\n")
 	}
 }
 
@@ -179,7 +169,7 @@ func (c *Collector) containersMetricsText(ctx context.Context, stale int64) ([]b
 		}
 		name := strings.TrimPrefix(v.Name, "/")
 		if name == "" {
-			name = pkgDocker.ShortID(record.ContainerID)
+			name = docker.ShortID(record.ContainerID)
 		}
 		l := []string{"name", name, "id", record.ContainerID}
 		info = append(info, textRow{l, 1})
@@ -221,4 +211,18 @@ func (c *Collector) containersMetricsText(ctx context.Context, stale int64) ([]b
 	w.write("counter", "isrvd_container_disk_written_bytes_total", "Bytes written to block devices by the container.", wr...)
 	w.write("gauge", "isrvd_container_pids", "Number of processes in the container.", pids...)
 	return []byte(w.b.String()), nil
+}
+
+// ─── 辅助函数 ───
+
+// minStaleAfter 过期判定的下限（秒）：容器逐个串行采集，一轮耗时可能超过短采集间隔。
+const minStaleAfter = 60
+
+// staleAfter 返回容器记录判定为过期的秒数（3 倍采集间隔，不低于下限）；
+// 采集间隔不合法（采集未启动）时返回 0，表示不过滤。
+func staleAfter(interval int) int64 {
+	if interval <= 0 {
+		return 0
+	}
+	return max(3*int64(interval), minStaleAfter)
 }
