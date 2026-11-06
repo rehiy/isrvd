@@ -1,4 +1,4 @@
-package main
+package openapi
 
 import (
 	"fmt"
@@ -8,10 +8,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
-)
-
-var (
-	structCache = map[string]*SchemaInfo{} // "pkg.TypeName" -> schema
 )
 
 type SchemaInfo struct {
@@ -28,26 +24,26 @@ type FieldInfo struct {
 }
 
 // collectServiceTypes 遍历 service 及额外类型目录，解析所有类型定义
-func collectServiceTypes() {
+func (g *generator) collectServiceTypes() {
 	// 遍历 service 目录下的各个包子目录
-	serviceDir := filepath.Join(projectRoot, cfg.ServiceDir)
+	serviceDir := filepath.Join(g.root, g.cfg.ServiceDir)
 	entries, err := os.ReadDir(serviceDir)
 	if err == nil {
 		for _, entry := range entries {
 			if entry.IsDir() {
-				collectTypesFromDir(filepath.Join(serviceDir, entry.Name()))
+				g.collectTypesFromDir(filepath.Join(serviceDir, entry.Name()))
 			}
 		}
 	}
 
 	// 遍历额外的类型定义目录
-	for _, dir := range cfg.TypeDirs {
-		collectTypesFromDir(filepath.Join(projectRoot, dir))
+	for _, dir := range g.cfg.TypeDirs {
+		g.collectTypesFromDir(filepath.Join(g.root, dir))
 	}
 }
 
 // collectTypesFromDir 遍历目录，解析所有 Go 文件中的类型定义
-func collectTypesFromDir(dir string) {
+func (g *generator) collectTypesFromDir(dir string) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return
@@ -57,7 +53,7 @@ func collectTypesFromDir(dir string) {
 		if entry.IsDir() {
 			// 递归遍历子目录
 			subDir := filepath.Join(dir, entry.Name())
-			collectTypesFromDir(subDir)
+			g.collectTypesFromDir(subDir)
 			continue
 		}
 
@@ -66,19 +62,19 @@ func collectTypesFromDir(dir string) {
 		}
 
 		filename := filepath.Join(dir, entry.Name())
-		collectTypeDefinitionsFromFile(filename)
+		g.collectTypeDefinitionsFromFile(filename)
 	}
 }
 
 // collectTypeDefinitionsFromFile 解析文件中的顶层类型定义
-func collectTypeDefinitionsFromFile(filename string) {
-	f := parseFile(filename)
+func (g *generator) collectTypeDefinitionsFromFile(filename string) {
+	f := g.parseFile(filename)
 	if f == nil {
 		return
 	}
 
 	// 从文件路径提取包名
-	pkgName := extractPkgNameFromPath(filename)
+	pkgName := g.extractPkgNameFromPath(filename)
 
 	for _, decl := range f.Decls {
 		gd, ok := decl.(*ast.GenDecl)
@@ -106,7 +102,7 @@ func collectTypeDefinitionsFromFile(filename string) {
 			}
 
 			// 预收集仅包含 JSON 字段的类型；接口使用的空类型由 handler 分析按需解析。
-			if len(buildSchemaFromStruct(pkgName, typeName, st, filename).Fields) == 0 {
+			if len(g.buildSchemaFromStruct(pkgName, typeName, st, filename).Fields) == 0 {
 				continue
 			}
 			// 运行时配置快照只用于内部持久化和快照传递，不属于公开 API 契约。
@@ -116,14 +112,14 @@ func collectTypeDefinitionsFromFile(filename string) {
 
 			// 构建完整的类型名 (包名.类型名)
 			if pkgName != "" {
-				resolveStructSchema(pkgName+"."+typeName, nil, filename)
+				g.resolveStructSchema(pkgName+"."+typeName, nil, filename)
 			}
 		}
 	}
 }
 
-func collectAllTypesFromFile(filename string) {
-	f := parseFile(filename)
+func (g *generator) collectAllTypesFromFile(filename string) {
+	f := g.parseFile(filename)
 	if f == nil {
 		return
 	}
@@ -158,7 +154,7 @@ func collectAllTypesFromFile(filename string) {
 								typeName = fullSelName(sel)
 							}
 							if typeName != "" && typeName != "struct" {
-								resolveStructSchema(typeName, nil, filename)
+								g.resolveStructSchema(typeName, nil, filename)
 							}
 						}
 					}
@@ -169,7 +165,7 @@ func collectAllTypesFromFile(filename string) {
 					if comp, ok := as.Rhs[0].(*ast.CompositeLit); ok {
 						typeName := typeExprToString(comp.Type)
 						if typeName != "" && typeName != "struct" {
-							resolveStructSchema(typeName, nil, filename)
+							g.resolveStructSchema(typeName, nil, filename)
 						}
 					}
 				}
@@ -180,7 +176,7 @@ func collectAllTypesFromFile(filename string) {
 	}
 }
 
-func resolveStructSchema(typeName string, localTypes map[string]string, ctrlFile string) *SchemaInfo {
+func (g *generator) resolveStructSchema(typeName string, localTypes map[string]string, ctrlFile string) *SchemaInfo {
 	// 1. 检查本地类型别名（type X = pkg.Type）
 	if localTypes != nil {
 		if aliasTarget, ok := localTypes["__alias__"+typeName]; ok {
@@ -197,9 +193,9 @@ func resolveStructSchema(typeName string, localTypes map[string]string, ctrlFile
 			if name == typeName || strings.HasPrefix(typeName, name+".") {
 				// 优先从源文件提取完整 schema（含注释）
 				if ctrlFile != "" {
-					if schema := findStructInFile(ctrlFile, name, ""); schema != nil {
-						structCache[name] = schema
-						resolveNestedTypesInSchema(schema, ctrlFile)
+					if schema := g.findStructInFile(ctrlFile, name, ""); schema != nil {
+						g.structCache[name] = schema
+						g.resolveNestedTypesInSchema(schema, ctrlFile)
 						return schema
 					}
 				}
@@ -207,8 +203,8 @@ func resolveStructSchema(typeName string, localTypes map[string]string, ctrlFile
 				info := parseFieldsString(name, fields)
 				if info != nil {
 					cacheKey := name
-					structCache[cacheKey] = info
-					resolveNestedTypesInSchema(info, ctrlFile)
+					g.structCache[cacheKey] = info
+					g.resolveNestedTypesInSchema(info, ctrlFile)
 					return info
 				}
 			}
@@ -223,27 +219,27 @@ func resolveStructSchema(typeName string, localTypes map[string]string, ctrlFile
 
 	// 4. 从缓存中查找
 	cacheKey := pkgAlias + "." + structName
-	if cached, ok := structCache[cacheKey]; ok {
+	if cached, ok := g.structCache[cacheKey]; ok {
 		return cached
 	}
 
 	// 5. 解析对应的 service 文件
-	schema := parseServiceStruct(pkgAlias, structName, ctrlFile)
+	schema := g.parseServiceStruct(pkgAlias, structName, ctrlFile)
 	if schema != nil {
 		// 使用规范化名称作为缓存 key
 		normalizedKey := normalizeSchemaName(cacheKey)
-		structCache[normalizedKey] = schema
+		g.structCache[normalizedKey] = schema
 		// 同时也用原始 key
-		structCache[cacheKey] = schema
+		g.structCache[cacheKey] = schema
 
 		// 6. 递归解析嵌套结构体字段类型（如 *config.CopilotConfig）
-		resolveNestedTypesInSchema(schema, ctrlFile)
+		g.resolveNestedTypesInSchema(schema, ctrlFile)
 	}
 	return schema
 }
 
 // resolveNestedTypesInSchema 解析 schema 字段中引用的嵌套结构体类型
-func resolveNestedTypesInSchema(schema *SchemaInfo, ctrlFile string) {
+func (g *generator) resolveNestedTypesInSchema(schema *SchemaInfo, ctrlFile string) {
 	for _, field := range schema.Fields {
 		goType := strings.TrimPrefix(field.Type, "*")
 		goType = strings.TrimPrefix(goType, "[]")
@@ -254,15 +250,15 @@ func resolveNestedTypesInSchema(schema *SchemaInfo, ctrlFile string) {
 		if goType == "json.RawMessage" || goType == "any" || goType == "interface{}" {
 			continue
 		}
-		resolveStructSchema(goType, nil, ctrlFile)
+		g.resolveStructSchema(goType, nil, ctrlFile)
 	}
 }
 
-func parseServiceStruct(pkgAlias, structName string, ctrlFile string) *SchemaInfo {
-	serviceDir := filepath.Join(projectRoot, cfg.ServiceDir)
+func (g *generator) parseServiceStruct(pkgAlias, structName string, ctrlFile string) *SchemaInfo {
+	serviceDir := filepath.Join(g.root, g.cfg.ServiceDir)
 
 	// 构建搜索目录列表
-	searchDirs := buildSearchDirs(serviceDir, pkgAlias)
+	searchDirs := g.buildSearchDirs(serviceDir, pkgAlias)
 
 	for _, dir := range searchDirs {
 		entries, err := os.ReadDir(dir)
@@ -274,7 +270,7 @@ func parseServiceStruct(pkgAlias, structName string, ctrlFile string) *SchemaInf
 				continue
 			}
 			filename := filepath.Join(dir, entry.Name())
-			schema := findStructInFile(filename, structName, pkgAlias)
+			schema := g.findStructInFile(filename, structName, pkgAlias)
 			if schema != nil {
 				return schema
 			}
@@ -284,8 +280,8 @@ func parseServiceStruct(pkgAlias, structName string, ctrlFile string) *SchemaInf
 }
 
 // findStructInFile 在单个文件中查找结构体定义
-func findStructInFile(filename, structName, pkgAlias string) *SchemaInfo {
-	f := parseFile(filename)
+func (g *generator) findStructInFile(filename, structName, pkgAlias string) *SchemaInfo {
+	f := g.parseFile(filename)
 	if f == nil {
 		return nil
 	}
@@ -304,14 +300,14 @@ func findStructInFile(filename, structName, pkgAlias string) *SchemaInfo {
 			if !ok {
 				continue
 			}
-			return buildSchemaFromStruct(pkgAlias, structName, st, filename)
+			return g.buildSchemaFromStruct(pkgAlias, structName, st, filename)
 		}
 	}
 	return nil
 }
 
 // buildSchemaFromStruct 从 AST StructType 构建 SchemaInfo
-func buildSchemaFromStruct(pkgAlias, structName string, st *ast.StructType, filename string) *SchemaInfo {
+func (g *generator) buildSchemaFromStruct(pkgAlias, structName string, st *ast.StructType, filename string) *SchemaInfo {
 	schema := &SchemaInfo{
 		PkgName:  pkgAlias,
 		TypeName: structName,
@@ -320,7 +316,7 @@ func buildSchemaFromStruct(pkgAlias, structName string, st *ast.StructType, file
 	// 读取文件内容以获取字段注释
 	fieldComments := make(map[string]string)
 	if filename != "" {
-		fieldComments = extractFieldComments(filename, st)
+		fieldComments = g.extractFieldComments(filename, st)
 	}
 
 	for _, field := range st.Fields.List {
@@ -377,7 +373,7 @@ func inlineStructToSchema(st *ast.StructType) *SchemaInfo {
 	return schema
 }
 
-func structTypeToJSONSchema(st *ast.StructType, _ *token.FileSet) string {
+func structTypeToJSONSchema(st *ast.StructType) string {
 	if st.Fields == nil {
 		return ""
 	}
@@ -399,9 +395,9 @@ func structTypeToJSONSchema(st *ast.StructType, _ *token.FileSet) string {
 
 // extractPkgNameFromPath 从文件路径提取包名
 // 根据配置的目录结构动态推断包名
-func extractPkgNameFromPath(filename string) string {
+func (g *generator) extractPkgNameFromPath(filename string) string {
 	// 处理 service 目录（如 service/account/member.go → account）
-	svcMarker := "/" + filepath.ToSlash(cfg.ServiceDir) + "/"
+	svcMarker := "/" + filepath.ToSlash(g.cfg.ServiceDir) + "/"
 	if _, after, ok := strings.Cut(filename, svcMarker); ok {
 		rest := after
 		subDir, _, _ := strings.Cut(rest, "/")
@@ -409,7 +405,7 @@ func extractPkgNameFromPath(filename string) string {
 	}
 
 	// 处理额外的类型目录
-	for _, dir := range cfg.TypeDirs {
+	for _, dir := range g.cfg.TypeDirs {
 		marker := "/" + filepath.ToSlash(dir) + "/"
 		if _, after, ok := strings.Cut(filename, marker); ok {
 			rest := after
@@ -443,29 +439,29 @@ func normalizeAliasToDir(alias string) string {
 }
 
 // buildSearchDirs 构建需要搜索的目录列表
-func buildSearchDirs(serviceDir, pkgAlias string) []string {
+func (g *generator) buildSearchDirs(serviceDir, pkgAlias string) []string {
 	var dirs []string
 	if pkgAlias != "" {
 		dirs = append(dirs, filepath.Join(serviceDir, pkgAlias))
 		// 额外类型目录
-		for _, td := range cfg.TypeDirs {
-			dirs = append(dirs, filepath.Join(projectRoot, td, pkgAlias))
+		for _, td := range g.cfg.TypeDirs {
+			dirs = append(dirs, filepath.Join(g.root, td, pkgAlias))
 		}
-		dirs = append(dirs, filepath.Join(projectRoot, pkgAlias)) // 根级包
+		dirs = append(dirs, filepath.Join(g.root, pkgAlias)) // 根级包
 		// 类型目录自身即包目录（如 server/config → config）
-		for _, td := range cfg.TypeDirs {
+		for _, td := range g.cfg.TypeDirs {
 			if filepath.Base(td) == pkgAlias {
-				dirs = append(dirs, filepath.Join(projectRoot, td))
+				dirs = append(dirs, filepath.Join(g.root, td))
 			}
 		}
 	}
 
 	if normalized := normalizeAliasToDir(pkgAlias); normalized != "" && normalized != pkgAlias {
 		dirs = append(dirs, filepath.Join(serviceDir, normalized))
-		for _, td := range cfg.TypeDirs {
-			dirs = append(dirs, filepath.Join(projectRoot, td, normalized))
+		for _, td := range g.cfg.TypeDirs {
+			dirs = append(dirs, filepath.Join(g.root, td, normalized))
 		}
-		dirs = append(dirs, filepath.Join(projectRoot, normalized)) // 根级包
+		dirs = append(dirs, filepath.Join(g.root, normalized)) // 根级包
 	}
 	return dirs
 }
@@ -490,11 +486,11 @@ func extractComment(cg *ast.CommentGroup) string {
 //  1. 字段上方注释：// 字段描述
 //  2. 字段后面注释：FieldName Type `json:"..."` // 字段描述
 //  3. tag 中的 description："description" 字段描述
-func extractFieldComments(filename string, st *ast.StructType) map[string]string {
+func (g *generator) extractFieldComments(filename string, st *ast.StructType) map[string]string {
 	comments := make(map[string]string)
 
 	// 使用缓存的文件内容
-	lines := getFileLines(filename)
+	lines := g.getFileLines(filename)
 	if lines == nil {
 		return comments
 	}
@@ -506,7 +502,7 @@ func extractFieldComments(filename string, st *ast.StructType) map[string]string
 		}
 
 		// 获取字段所在的行号（AST 行号从 1 开始）
-		fieldLine := fsetCache.Position(field.Pos()).Line
+		fieldLine := g.fset.Position(field.Pos()).Line
 
 		// 1. 检查字段所在行的行内注释（trailing comment）
 		if fieldLine <= len(lines) {

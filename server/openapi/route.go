@@ -1,4 +1,4 @@
-package main
+package openapi
 
 import (
 	"fmt"
@@ -6,11 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-)
-
-var (
-	routes      []RouteDef
-	inlineFuncs = map[string]*ast.FuncLit{} // 内联 handler 闭包，键为 inline:<id>
 )
 
 type RouteDef struct {
@@ -42,8 +37,8 @@ type ParamDef struct {
 	Required bool
 }
 
-func parseCtrlFile(filename string) {
-	f := parseFile(filename)
+func (g *generator) parseCtrlFile(filename string) {
+	f := g.parseFile(filename)
 	if f == nil {
 		fmt.Fprintf(os.Stderr, "解析 %s 失败\n", filename)
 		return
@@ -87,7 +82,7 @@ func parseCtrlFile(filename string) {
 					if !ok {
 						continue
 					}
-					route := parseRouteLiteral(cl)
+					route := g.parseRouteLiteral(cl)
 					route.HandlerFile = filename
 					// AG-UI 是 CopilotKit 的内部流式协议，契约见 docs/references/copilot.md。
 					// 不加入通用 REST 文档，避免被当作普通 JSON 接口调用。
@@ -95,7 +90,7 @@ func parseCtrlFile(filename string) {
 						continue
 					}
 					if route.Method != "" {
-						routes = append(routes, route)
+						g.routes = append(g.routes, route)
 					}
 				}
 			}
@@ -108,19 +103,17 @@ func parseCtrlFile(filename string) {
 // ─── 辅助函数 ───
 
 // getCtrlFiles 从目录 entries 中筛选 handler 文件并返回完整路径列表
-func getCtrlFiles(dir string, entries []os.DirEntry) []string {
+func (g *generator) getCtrlFiles(dir string, entries []os.DirEntry) []string {
 	var files []string
 	for _, entry := range entries {
-		if !entry.IsDir() && strings.HasPrefix(entry.Name(), cfg.CtrlPrefix) && strings.HasSuffix(entry.Name(), ".go") {
+		if !entry.IsDir() && strings.HasPrefix(entry.Name(), g.cfg.CtrlPrefix) && strings.HasSuffix(entry.Name(), ".go") {
 			files = append(files, filepath.Join(dir, entry.Name()))
 		}
 	}
 	return files
 }
 
-var inlineSeq int // 内联 handler 序号
-
-func parseRouteLiteral(cl *ast.CompositeLit) RouteDef {
+func (g *generator) parseRouteLiteral(cl *ast.CompositeLit) RouteDef {
 	var r RouteDef
 	for _, elt := range cl.Elts {
 		kv, ok := elt.(*ast.KeyValueExpr)
@@ -160,9 +153,9 @@ func parseRouteLiteral(cl *ast.CompositeLit) RouteDef {
 				}
 			}
 			if fn, ok := kv.Value.(*ast.FuncLit); ok {
-				inlineSeq++
-				id := fmt.Sprintf("inline:%d", inlineSeq)
-				inlineFuncs[id] = fn
+				g.inlineSeq++
+				id := fmt.Sprintf("inline:%d", g.inlineSeq)
+				g.inlineFuncs[id] = fn
 				r.Handler = id
 			}
 		}

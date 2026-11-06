@@ -1,4 +1,4 @@
-package main
+package openapi
 
 // ProjectConfig 定义项目的目录结构和 OpenAPI 元数据
 // 修改 DefaultConfig() 即可适配不同项目

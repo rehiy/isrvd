@@ -1,4 +1,4 @@
-package main
+package openapi
 
 import (
 	"go/ast"
@@ -18,17 +18,15 @@ type handlerAnalysisState struct {
 	helpers    map[string]bool   // 已跟进过的同文件辅助函数（防递归）
 }
 
-var ctrlEntries []os.DirEntry // ctrl 目录条目缓存
-
-func analyzeHandler(r *RouteDef) {
+func (g *generator) analyzeHandler(r *RouteDef) {
 	// 内联 handler：直接从路由定义所在文件分析闭包体
-	if fn, ok := inlineFuncs[r.Handler]; ok {
-		f := parseFile(r.HandlerFile)
+	if fn, ok := g.inlineFuncs[r.Handler]; ok {
+		f := g.parseFile(r.HandlerFile)
 		var localTypes map[string]string
 		if f != nil {
-			localTypes = collectLocalTypes(f)
+			localTypes = g.collectLocalTypes(f)
 		}
-		analyzeFuncBody(r, fn.Body, localTypes, r.HandlerFile)
+		g.analyzeFuncBody(r, fn.Body, localTypes, r.HandlerFile)
 		return
 	}
 
@@ -38,23 +36,23 @@ func analyzeHandler(r *RouteDef) {
 		return
 	}
 
-	ctrlDir := filepath.Join(projectRoot, cfg.CtrlDir)
+	ctrlDir := filepath.Join(g.root, g.cfg.CtrlDir)
 
 	// 缓存目录条目，避免每个路由重复读取
-	if ctrlEntries == nil {
+	if g.ctrlEntries == nil {
 		var err error
-		ctrlEntries, err = os.ReadDir(ctrlDir)
+		g.ctrlEntries, err = os.ReadDir(ctrlDir)
 		if err != nil {
 			return
 		}
 	}
 
-	for _, entry := range ctrlEntries {
-		if !strings.HasPrefix(entry.Name(), cfg.CtrlPrefix) || !strings.HasSuffix(entry.Name(), ".go") {
+	for _, entry := range g.ctrlEntries {
+		if !strings.HasPrefix(entry.Name(), g.cfg.CtrlPrefix) || !strings.HasSuffix(entry.Name(), ".go") {
 			continue
 		}
 		filename := filepath.Join(ctrlDir, entry.Name())
-		f := parseFile(filename)
+		f := g.parseFile(filename)
 		if f == nil {
 			continue
 		}
@@ -71,10 +69,10 @@ func analyzeHandler(r *RouteDef) {
 			}
 
 			// 收集本地类型别名（如 filerPathQuery, cronJobEnableReq）
-			localTypes := collectLocalTypes(f)
+			localTypes := g.collectLocalTypes(f)
 
 			// 分析函数体
-			analyzeFuncBody(r, fd.Body, localTypes, filename)
+			g.analyzeFuncBody(r, fd.Body, localTypes, filename)
 			return
 		}
 	}
@@ -82,7 +80,7 @@ func analyzeHandler(r *RouteDef) {
 
 // ─── 辅助函数 ───
 
-func analyzeFuncBody(r *RouteDef, body *ast.BlockStmt, localTypes map[string]string, filename string) {
+func (g *generator) analyzeFuncBody(r *RouteDef, body *ast.BlockStmt, localTypes map[string]string, filename string) {
 	state := &handlerAnalysisState{
 		varTypes:   make(map[string]string),
 		localTypes: localTypes,
@@ -91,27 +89,27 @@ func analyzeFuncBody(r *RouteDef, body *ast.BlockStmt, localTypes map[string]str
 	}
 
 	ast.Inspect(body, func(n ast.Node) bool {
-		analyzeNode(n, r, state)
+		g.analyzeNode(n, r, state)
 		return true
 	})
 }
 
 // analyzeNode 按节点类型分发到各分析器
-func analyzeNode(n ast.Node, r *RouteDef, state *handlerAnalysisState) {
+func (g *generator) analyzeNode(n ast.Node, r *RouteDef, state *handlerAnalysisState) {
 	switch stmt := n.(type) {
 	case *ast.AssignStmt:
-		analyzeAssignStmtV2(stmt, r, state)
+		g.analyzeAssignStmtV2(stmt, r, state)
 	case *ast.DeclStmt:
-		analyzeDeclStmtV2(stmt, r, state)
+		g.analyzeDeclStmtV2(stmt, r, state)
 	case *ast.CallExpr:
-		analyzeCallExprV2(stmt, r, state)
+		g.analyzeCallExprV2(stmt, r, state)
 	case *ast.IndexExpr:
 		analyzeMultipartIndex(stmt, r)
 	}
 }
 
 // analyzeAssignStmtV2 处理赋值语句，跟踪变量类型
-func analyzeAssignStmtV2(stmt *ast.AssignStmt, r *RouteDef, state *handlerAnalysisState) {
+func (g *generator) analyzeAssignStmtV2(stmt *ast.AssignStmt, r *RouteDef, state *handlerAnalysisState) {
 	if len(stmt.Rhs) != 1 {
 		return
 	}
@@ -148,7 +146,7 @@ func analyzeAssignStmtV2(stmt *ast.AssignStmt, r *RouteDef, state *handlerAnalys
 
 		// 情况 2: resp, err := app.svc.Method()
 		if callExpr, ok := stmt.Rhs[0].(*ast.CallExpr); ok && len(lhsNames) >= 1 {
-			retType := resolveCallReturnType(callExpr, state.filename)
+			retType := g.resolveCallReturnType(callExpr, state.filename)
 			if retType != "" {
 				state.varTypes[lhsNames[0]] = retType
 			}
@@ -161,7 +159,7 @@ func analyzeAssignStmtV2(stmt *ast.AssignStmt, r *RouteDef, state *handlerAnalys
 	if len(stmt.Lhs) == 1 {
 		if ident, ok := stmt.Lhs[0].(*ast.Ident); ok {
 			if callExpr, ok := stmt.Rhs[0].(*ast.CallExpr); ok {
-				retType := resolveCallReturnType(callExpr, state.filename)
+				retType := g.resolveCallReturnType(callExpr, state.filename)
 				if retType != "" {
 					state.varTypes[ident.Name] = retType
 				}
@@ -171,7 +169,7 @@ func analyzeAssignStmtV2(stmt *ast.AssignStmt, r *RouteDef, state *handlerAnalys
 }
 
 // analyzeDeclStmtV2 处理声明语句，跟踪变量类型
-func analyzeDeclStmtV2(stmt *ast.DeclStmt, r *RouteDef, state *handlerAnalysisState) {
+func (g *generator) analyzeDeclStmtV2(stmt *ast.DeclStmt, r *RouteDef, state *handlerAnalysisState) {
 	gd, ok := stmt.Decl.(*ast.GenDecl)
 	if !ok || gd.Tok != token.VAR {
 		return
@@ -196,9 +194,9 @@ func analyzeDeclStmtV2(stmt *ast.DeclStmt, r *RouteDef, state *handlerAnalysisSt
 					cacheKey := r.Module + "." + extractHandlerName(r.Handler)
 					schema.TypeName = extractHandlerName(r.Handler)
 					schema.PkgName = r.Module
-					structCache[cacheKey] = schema
+					g.structCache[cacheKey] = schema
 					state.varTypes[varName] = cacheKey
-					resolveNestedTypesInSchema(schema, "")
+					g.resolveNestedTypesInSchema(schema, "")
 				}
 			}
 		}
@@ -206,32 +204,32 @@ func analyzeDeclStmtV2(stmt *ast.DeclStmt, r *RouteDef, state *handlerAnalysisSt
 }
 
 // analyzeCallExprV2 处理函数调用表达式
-func analyzeCallExprV2(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
+func (g *generator) analyzeCallExprV2(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
 	// 处理直接函数调用（如 respondSuccess、respondResult、respondResultMsg、respondError）
 	if ident, ok := stmt.Fun.(*ast.Ident); ok {
 		switch ident.Name {
 		case "respondSuccess":
 			if len(stmt.Args) >= 3 {
-				analyzeRespondSuccessV2(stmt, r, state)
+				g.analyzeRespondSuccessV2(stmt, r, state)
 			}
 			return
 		case "respondResult":
 			// respondResult(c, data, err)：data 位于第 2 个参数
 			if len(stmt.Args) >= 3 {
-				analyzeRespondData(stmt.Args[1], r, state)
+				g.analyzeRespondData(stmt.Args[1], r, state)
 			}
 			return
 		case "respondResultMsg":
 			// respondResultMsg(c, msg, data, err)：data 位于第 3 个参数
 			if len(stmt.Args) >= 4 {
-				analyzeRespondData(stmt.Args[2], r, state)
+				g.analyzeRespondData(stmt.Args[2], r, state)
 			}
 			return
 		case "respondError":
 			// 错误处理，无需特殊处理
 			return
 		default:
-			analyzeHelperFunc(r, state, ident.Name)
+			g.analyzeHelperFunc(r, state, ident.Name)
 			return
 		}
 	}
@@ -243,9 +241,9 @@ func analyzeCallExprV2(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisSt
 
 	switch sel.Sel.Name {
 	case "ShouldBindJSON":
-		analyzeShouldBindJSON(stmt, r, state)
+		g.analyzeShouldBindJSON(stmt, r, state)
 	case "ShouldBindQuery":
-		analyzeShouldBindQuery(stmt, r, state)
+		g.analyzeShouldBindQuery(stmt, r, state)
 	case "Query":
 		extractQueryParam(stmt, r, "string", false)
 	case "DefaultQuery":
@@ -278,13 +276,13 @@ func analyzeCallExprV2(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisSt
 // analyzeHelperFunc 跟进同文件辅助函数，分析其中的绑定与参数提取调用。
 // 例如 compose 部署把 JSON/multipart 绑定抽到了 bindComposeDeployRequest，
 // 不跟进会导致生成的 OpenAPI 缺失 requestBody。
-func analyzeHelperFunc(r *RouteDef, state *handlerAnalysisState, funcName string) {
+func (g *generator) analyzeHelperFunc(r *RouteDef, state *handlerAnalysisState, funcName string) {
 	if state.helpers[funcName] {
 		return
 	}
 	state.helpers[funcName] = true
 
-	f := parseFile(state.filename)
+	f := g.parseFile(state.filename)
 	if f == nil {
 		return
 	}
@@ -300,7 +298,7 @@ func analyzeHelperFunc(r *RouteDef, state *handlerAnalysisState, funcName string
 			helpers:    state.helpers,
 		}
 		ast.Inspect(fd.Body, func(n ast.Node) bool {
-			analyzeNode(n, r, sub)
+			g.analyzeNode(n, r, sub)
 			return true
 		})
 		return
@@ -308,7 +306,7 @@ func analyzeHelperFunc(r *RouteDef, state *handlerAnalysisState, funcName string
 }
 
 // analyzeShouldBindJSON 分析 ShouldBindJSON 调用
-func analyzeShouldBindJSON(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
+func (g *generator) analyzeShouldBindJSON(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
 	if len(stmt.Args) < 1 {
 		return
 	}
@@ -322,7 +320,7 @@ func analyzeShouldBindJSON(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalys
 		return
 	}
 	if typeName, ok := state.varTypes[varName]; ok && r.JSONBody == nil {
-		schema := resolveStructSchema(typeName, state.localTypes, state.filename)
+		schema := g.resolveStructSchema(typeName, state.localTypes, state.filename)
 		if schema != nil {
 			r.JSONBody = schema
 		}
@@ -330,7 +328,7 @@ func analyzeShouldBindJSON(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalys
 }
 
 // analyzeShouldBindQuery 分析 ShouldBindQuery 调用
-func analyzeShouldBindQuery(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
+func (g *generator) analyzeShouldBindQuery(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
 	if len(stmt.Args) < 1 {
 		return
 	}
@@ -344,7 +342,7 @@ func analyzeShouldBindQuery(stmt *ast.CallExpr, r *RouteDef, state *handlerAnaly
 		return
 	}
 	if typeName, ok := state.varTypes[varName]; ok && r.QueryType == nil {
-		schema := resolveStructSchema(typeName, state.localTypes, state.filename)
+		schema := g.resolveStructSchema(typeName, state.localTypes, state.filename)
 		if schema != nil {
 			r.QueryType = schema
 		}
@@ -352,16 +350,16 @@ func analyzeShouldBindQuery(stmt *ast.CallExpr, r *RouteDef, state *handlerAnaly
 }
 
 // analyzeRespondSuccessV2 分析 respondSuccess(c, msg, data) 调用
-func analyzeRespondSuccessV2(call *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
+func (g *generator) analyzeRespondSuccessV2(call *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
 	if len(call.Args) < 3 {
 		return
 	}
-	analyzeRespondData(call.Args[2], r, state)
+	g.analyzeRespondData(call.Args[2], r, state)
 }
 
 // analyzeRespondData 根据响应 data 参数表达式推断 payload 类型，
 // 供 respondSuccess(c, msg, data) 与 respondResult(c, data, err) 共用
-func analyzeRespondData(dataArg ast.Expr, r *RouteDef, state *handlerAnalysisState) {
+func (g *generator) analyzeRespondData(dataArg ast.Expr, r *RouteDef, state *handlerAnalysisState) {
 	// 情况 1: nil → 无 payload
 	if ident, ok := dataArg.(*ast.Ident); ok && ident.Name == "nil" {
 		return
@@ -373,7 +371,7 @@ func analyzeRespondData(dataArg ast.Expr, r *RouteDef, state *handlerAnalysisSta
 		if ok && typeName != "" {
 			r.ResponseBodyType = typeName
 			// 确保类型 schema 被解析到缓存
-			resolveStructSchema(typeName, state.localTypes, state.filename)
+			g.resolveStructSchema(typeName, state.localTypes, state.filename)
 		}
 		return
 	}
@@ -389,7 +387,7 @@ func analyzeRespondData(dataArg ast.Expr, r *RouteDef, state *handlerAnalysisSta
 
 	// 情况 4: 函数调用返回值，如 app.svc.Method()
 	if callExpr, ok := dataArg.(*ast.CallExpr); ok {
-		retType := resolveCallReturnType(callExpr, state.filename)
+		retType := g.resolveCallReturnType(callExpr, state.filename)
 		if retType != "" {
 			r.ResponseBodyType = retType
 		}

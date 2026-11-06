@@ -44,6 +44,7 @@ server/service/{shell,docker,system} → server/i18n（仅 TC / Translate，i18n
 - `server/app/`：Gin HTTP/WebSocket 入口、路由索引、中间件、服务生命周期与响应封装
 - `server/gateway/`：中控模式的网关（节点管理 API、`/n/<节点ID>/` 转发、受管机隧道入口），以 `http.Handler` 形式由 `cmd/server` 装配；不依赖 `server/app`、`server/config` 与 `server/service/account`（编译期只经 `service/node` 间接依赖 `config`），与账户体系的唯一接缝是 `Options` 里的 `UserHeader`、`TrustIdentity`、`CredentialHeaders`（实现见 `service/account/gateway.go`：`TrustGatewayIdentity` 内部身份头的清理与重建、`GatewayCredentialHeaders` 凭据头清单；center 模式下回环来源的身份头由 `account.Auth` 自行识别，认证中间件不感知模式），网关内不得直接读取配置或调用认证函数；无业务含义的 HTTP 小工具（`RemoteHost`、`IsWebSocket`、`MuxPattern`）统一放在 `pkgs/helper`，不得在各处重复实现；页面一律由 webview 提供；`?token=` 的适用范围与 isrvd 保持一致，由 `cmd/server` 通过 `Options.QueryTokenRoutes`（来自 `app.GatewayRoutes()`）注入，不得在网关里另写一份路由清单；需要转发的业务模块同样由 `cmd/server` 通过 `Options.NodeModules`（同样来自 `app.GatewayRoutes()`，默认全部转发，仅 `app/gateway.go` 的 `centerModules`（`account`、`copilot`）不转发，新增中控专属模块时只改这一处）注入，网关不维护模块白名单；节点管理路由元信息统一由 `service/node.PermissionRoutes()` 提供，中控权限目录与网关注册共用，Gin 路径到 `http.ServeMux` 模式的转换统一用 `helper.MuxPattern`；节点管理及业务转发经 `Options.Authorize`（`app.GatewayAuthorize`，位于 `app/gateway.go`，一次完成认证与路由权限校验）放行，禁止仅以是否登录放行；上游不可达返回 502，不得当作未登录（401）；操作经 `Options.Audit`（`app.Audit()`，写入 app 当前的审计服务，重载后自动指向新实例）按 isrvd 审计基线记录，不得另建 `AuditService` 写同一目录；会随配置重载变化的值（如 `allowedOrigins`）以函数传入、每次读取，不得在启动时固化
 - 节点模块按职责组织：`service/node/node.go` 定义持久化实体 `Node` 与在线响应 `NodeInfo`，`store.go` 只持久化 `Node` 并返回提交快照，`auth.go` 聚合认证、限流与 token 处理，`session.go` 管理会话与传输，`agent.go` 含两端共用的协商协议（版本、`AgentInfo`、能力标识）与受管机常连客户端（隧道流按首字节分流为 HTTP 与端口转发流），`proxy.go` 只负责改写目标并转发、不处理用户凭据（凭据由网关 `withoutCredentials` 在转发前剥离），`portmap.go` 定义端口转发规则与校验，`portmap_wire.go` 是两端共用的线路头部、UDP 分帧与中继工具及受管机侧转发流处理入口，`portmap_listener.go` 是中控侧 TCP/UDP 监听器与规则生命周期（监听范围与地址来自配置文件 `portmap` 分区，由 `config.PortMapConfig` 提供校验与判定，服务创建时读取一次，修改后重启生效）。网关的节点 HTTP/WebSocket 接入、转发、启动数据聚合、中间件、响应分别放在 `gateway/{node,proxy,bootstrap,middleware,response}.go`，`gateway.go` 只负责装配与路由。部署环境配置在 `server/config/cluster.go` 定义、读取与校验，端口转发配置在 `server/config/portmap.go`。
+- `server/openapi/`：OpenAPI 文档生成核心，静态解析 `server/app`、`server/service`、`server/config`、`pkgs` 源码（只读文件，不 import 任何业务包）；入口是 `server/cmd/openapi-gen`（仅参数解析与写文件）。一次 `Generate` 使用独立的 `generator`，状态不得放在包级变量
 - `server/cmd/server/`：`main.go` 按 `config.Init → run` 初始化并启动；`launch.go` 按环境变量 `ISRVD_MODE`（`server`/`center`/`agent`）装配并调用 `app.StartApp`，是唯一的组装点，业务逻辑不得写在这里。构建与运行一律用包路径 `./server/cmd/server`（含多个文件，不能再用单文件路径）
 
 ### 禁止
@@ -151,7 +152,7 @@ docs/
 ### HTTP 与响应
 
 - 状态码用 `net/http` 常量；HTTP JSON 响应统一走 `server/app/response.go` 的 `respondSuccess`、`respondError`、`respondResult`
-- `respondResult` 仅用于“成功 200、service 错误 500”的标准查询；需要自定义成功文案时用 `respondResultMsg(c, "中文提示", data, err)`（无数据负载传 `nil`）；需要 400/404/503 等其他状态码时显式调用对应响应函数。`server/cmd/openapi-gen` 识别 `respondSuccess`、`respondResult`、`respondResultMsg` 三者推断响应类型，新增响应封装函数时须同步更新生成器
+- `respondResult` 仅用于“成功 200、service 错误 500”的标准查询；需要自定义成功文案时用 `respondResultMsg(c, "中文提示", data, err)`（无数据负载传 `nil`）；需要 400/404/503 等其他状态码时显式调用对应响应函数。`server/openapi`（入口 `server/cmd/openapi-gen`）识别 `respondSuccess`、`respondResult`、`respondResultMsg` 三者推断响应类型，新增响应封装函数时须同步更新生成器
 - 绑定优先 `ShouldBindJSON/ShouldBindQuery/ShouldBindURI`，绑定失败返回 `err.Error()`
 - WebSocket 统一用 `wsConfig.Handler()`，不在 handler 中定义私有配置
 

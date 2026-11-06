@@ -1,4 +1,4 @@
-package main
+package openapi
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 )
 
 // resolveCallReturnType 解析函数调用的返回类型
-func resolveCallReturnType(call *ast.CallExpr, filename string) string {
+func (g *generator) resolveCallReturnType(call *ast.CallExpr, filename string) string {
 	sel, ok := call.Fun.(*ast.SelectorExpr)
 	if !ok {
 		return ""
@@ -24,7 +24,7 @@ func resolveCallReturnType(call *ast.CallExpr, filename string) string {
 		pkgName := inferPkgFromVar(filename, svcVarName)
 		if pkgName != "" {
 			// findMethodReturnType 已经处理了 import 别名解析和 pkgName 前缀
-			return findMethodReturnType(filename, pkgName, methodName)
+			return g.findMethodReturnType(filename, pkgName, methodName)
 		}
 	}
 
@@ -32,8 +32,8 @@ func resolveCallReturnType(call *ast.CallExpr, filename string) string {
 }
 
 // findMethodReturnType 在 service 包中查找方法的返回类型
-func findMethodReturnType(ctrlFile, pkgName, methodName string) string {
-	searchDir := filepath.Join(projectRoot, cfg.ServiceDir, pkgName)
+func (g *generator) findMethodReturnType(ctrlFile, pkgName, methodName string) string {
+	searchDir := filepath.Join(g.root, g.cfg.ServiceDir, pkgName)
 	entries, err := os.ReadDir(searchDir)
 	if err != nil {
 		return ""
@@ -44,10 +44,10 @@ func findMethodReturnType(ctrlFile, pkgName, methodName string) string {
 			continue
 		}
 		filename := filepath.Join(searchDir, entry.Name())
-		retType := findMethodReturnTypeInFile(filename, methodName)
+		retType := g.findMethodReturnTypeInFile(filename, methodName)
 		if retType != "" {
 			// 解析返回类型中的 import 别名
-			retType = resolveReturnType(filename, pkgName, retType)
+			retType = g.resolveReturnType(filename, pkgName, retType)
 			return retType
 		}
 	}
@@ -55,8 +55,8 @@ func findMethodReturnType(ctrlFile, pkgName, methodName string) string {
 }
 
 // findMethodReturnTypeInFile 在单个文件中查找方法的返回类型
-func findMethodReturnTypeInFile(filename, methodName string) string {
-	f := parseFile(filename)
+func (g *generator) findMethodReturnTypeInFile(filename, methodName string) string {
+	f := g.parseFile(filename)
 	if f == nil {
 		return ""
 	}
@@ -90,7 +90,7 @@ func findMethodReturnTypeInFile(filename, methodName string) string {
 // 处理 slice、指针、import 别名等情况
 // 输入如: []pkgApisix.Consumer, *LoginResponse, []*config.PasskeyCredential
 // 输出如: apisix.[]Consumer, account.LoginResponse, config.[]PasskeyCredential
-func resolveReturnType(svcFilename, pkgName, retType string) string {
+func (g *generator) resolveReturnType(svcFilename, pkgName, retType string) string {
 	// 提取 slice 前缀
 	slicePrefix := ""
 	inner := retType
@@ -103,7 +103,7 @@ func resolveReturnType(svcFilename, pkgName, retType string) string {
 
 	// 解析 import 别名
 	if strings.Contains(inner, ".") {
-		inner = resolveImportAlias(svcFilename, inner)
+		inner = g.resolveImportAlias(svcFilename, inner)
 	} else {
 		// 不包含 "."，说明是本包类型，添加 pkgName 前缀
 		inner = pkgName + "." + inner
@@ -125,7 +125,7 @@ func resolveReturnType(svcFilename, pkgName, retType string) string {
 
 // resolveImportAlias 解析导入别名，将别名.类型名 转换为实际的包名.类型名
 // 例如: pkgApisix.Consumer → apisix.Consumer
-func resolveImportAlias(filename, typeName string) string {
+func (g *generator) resolveImportAlias(filename, typeName string) string {
 	// 检查是否包含 "."，且第一部分可能是导入别名
 	alias, suffix, found := strings.Cut(typeName, ".")
 	if !found {
@@ -134,7 +134,7 @@ func resolveImportAlias(filename, typeName string) string {
 	typeSuffix := "." + suffix // 包含 "."
 
 	// 从文件中提取导入别名映射
-	importMap := extractImportAliases(filename)
+	importMap := g.extractImportAliases(filename)
 
 	// 如果别名在映射中，替换为实际的包名
 	if realPkg, ok := importMap[alias]; ok {
@@ -146,10 +146,10 @@ func resolveImportAlias(filename, typeName string) string {
 
 // extractImportAliases 从 Go 文件中提取导入别名映射
 // 返回 map[别名]实际包名
-func extractImportAliases(filename string) map[string]string {
+func (g *generator) extractImportAliases(filename string) map[string]string {
 	result := make(map[string]string)
 
-	f := parseFile(filename)
+	f := g.parseFile(filename)
 	if f == nil {
 		return result
 	}
@@ -183,7 +183,7 @@ func inferPkgFromVar(filename, varName string) string {
 	return ""
 }
 
-func collectLocalTypes(f *ast.File) map[string]string {
+func (g *generator) collectLocalTypes(f *ast.File) map[string]string {
 	result := make(map[string]string)
 	typeAliases := make(map[string]string) // 本地别名 → 原始类型
 
@@ -202,7 +202,7 @@ func collectLocalTypes(f *ast.File) map[string]string {
 				// type X = Y 类型别名
 				collectTypeAlias(ts, typeAliases)
 			} else if st, ok := ts.Type.(*ast.StructType); ok {
-				result[typeName] = structTypeToJSONSchema(st, fsetCache)
+				result[typeName] = structTypeToJSONSchema(st)
 			}
 		}
 	}

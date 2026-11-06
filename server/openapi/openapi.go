@@ -1,4 +1,4 @@
-package main
+package openapi
 
 import (
 	"maps"
@@ -36,15 +36,15 @@ type OpenAPIComponents struct {
 	SecuritySchemes map[string]any `json:"securitySchemes"`
 }
 
-func buildOpenAPI() *OpenAPI {
+func (g *generator) buildOpenAPI() *OpenAPI {
 	oa := &OpenAPI{
 		OpenAPI: "3.0.3",
 		Info: OpenAPIInfo{
-			Title:   cfg.Title,
-			Version: cfg.Version,
+			Title:   g.cfg.Title,
+			Version: g.cfg.Version,
 		},
 		Servers: []OpenAPIServer{
-			{URL: cfg.ServerURL, Description: cfg.ServerDesc},
+			{URL: g.cfg.ServerURL, Description: g.cfg.ServerDesc},
 		},
 		Paths: make(map[string]map[string]any),
 		Components: OpenAPIComponents{
@@ -60,7 +60,7 @@ func buildOpenAPI() *OpenAPI {
 	}
 
 	// 收集所有 schema
-	allSchemas := collectAllSchemas()
+	allSchemas := g.collectAllSchemas()
 	for name, schema := range allSchemas {
 		schemaDef := buildSchemaObject(schema, allSchemas)
 		oa.Components.Schemas[name] = schemaDef
@@ -74,14 +74,14 @@ func buildOpenAPI() *OpenAPI {
 
 	// 按模块分组路由
 	modules := make(map[string][]RouteDef)
-	for _, r := range routes {
+	for _, r := range g.routes {
 		modules[r.Module] = append(modules[r.Module], r)
 	}
 
 	// 排序模块名
 	for _, mod := range slices.Sorted(maps.Keys(modules)) {
 		for _, r := range modules[mod] {
-			addPathItem(oa, r, allSchemas)
+			g.addPathItem(oa, r, allSchemas)
 		}
 	}
 
@@ -90,9 +90,9 @@ func buildOpenAPI() *OpenAPI {
 
 // ─── 辅助函数 ───
 
-func collectAllSchemas() map[string]*SchemaInfo {
+func (g *generator) collectAllSchemas() map[string]*SchemaInfo {
 	result := make(map[string]*SchemaInfo)
-	for cacheKey, schema := range structCache {
+	for cacheKey, schema := range g.structCache {
 		// 只保留规范化名称
 		normalized := normalizeSchemaName(cacheKey)
 		result[normalized] = schema
@@ -175,7 +175,7 @@ func buildProperty(goType string, allSchemas map[string]*SchemaInfo) map[string]
 	}
 }
 
-func addPathItem(oa *OpenAPI, r RouteDef, allSchemas map[string]*SchemaInfo) {
+func (g *generator) addPathItem(oa *OpenAPI, r RouteDef, allSchemas map[string]*SchemaInfo) {
 	method := strings.ToLower(r.Method)
 	if method == "any" {
 		// ANY 路由通常是代理，跳过详细文档
@@ -188,13 +188,13 @@ func addPathItem(oa *OpenAPI, r RouteDef, allSchemas map[string]*SchemaInfo) {
 		oa.Paths[oapiPath] = make(map[string]any)
 	}
 
-	operation := buildOperation(r, allSchemas)
+	operation := g.buildOperation(r, allSchemas)
 	oa.Paths[oapiPath][method] = operation
 }
 
-func buildOperation(r RouteDef, allSchemas map[string]*SchemaInfo) map[string]any {
+func (g *generator) buildOperation(r RouteDef, allSchemas map[string]*SchemaInfo) map[string]any {
 	// 生成响应 schema
-	responseSchema := buildResponseSchema(r, allSchemas)
+	responseSchema := g.buildResponseSchema(r, allSchemas)
 	contentType := r.RawContentType
 	if contentType == "" {
 		contentType = "application/json"
@@ -311,13 +311,13 @@ func buildOperation(r RouteDef, allSchemas map[string]*SchemaInfo) map[string]an
 }
 
 // buildResponseSchema 根据 RouteDef 生成响应 schema
-func buildResponseSchema(r RouteDef, allSchemas map[string]*SchemaInfo) map[string]any {
+func (g *generator) buildResponseSchema(r RouteDef, allSchemas map[string]*SchemaInfo) map[string]any {
 	if r.RawContentType != "" {
 		return map[string]any{"type": "string"}
 	}
 	// 如果没有指定响应类型，使用默认的 ResponseStruct
 	if r.ResponseBodyType == "" {
-		return map[string]any{"$ref": "#/components/schemas/" + cfg.ResponseStruct}
+		return map[string]any{"$ref": "#/components/schemas/" + g.cfg.ResponseStruct}
 	}
 
 	// 解析响应类型，生成 payload 字段的 schema
