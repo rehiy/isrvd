@@ -777,13 +777,16 @@ prepare_apisix_data() {
     if container_exists "$previous"; then
         source=$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/usr/local/apisix/conf/config.yaml"}}{{println .Source}}{{end}}{{end}}' "$previous") || return 1
         if [ -n "$source" ]; then
-            for dir in conf cert logs; do
+            for dir in conf logs; do
                 docker cp "$previous:/usr/local/apisix/$dir/." "$DATA_DIR/apisix/$dir" || return 1
             done
+            # 官方镜像没有 /usr/local/apisix/cert，旧版部署也没有挂载它，缺失属正常情况。
+            docker cp "$previous:/usr/local/apisix/cert/." "$DATA_DIR/apisix/cert" 2>/dev/null || true
         fi
     fi
-    docker run --rm --network none --security-opt no-new-privileges:true \
+    docker run --rm --user root --network none --security-opt no-new-privileges:true \
         -v "$DATA_DIR/apisix:/isrvd-state" --entrypoint /bin/sh "$image" -ec '
+        rm -f /isrvd-state/conf/config.yaml
         for dir in conf cert; do
             if [ -d "/usr/local/apisix/$dir" ]; then
                 cp -an "/usr/local/apisix/$dir/." "/isrvd-state/$dir/"
@@ -791,6 +794,7 @@ prepare_apisix_data() {
         done
         rm -f /isrvd-state/conf/config.yaml
         ln -s /isrvd-config/apisix.yaml /isrvd-state/conf/config.yaml
+        chown -hR apisix:apisix /isrvd-state/conf /isrvd-state/cert /isrvd-state/logs
     '
 }
 
