@@ -65,7 +65,7 @@ func CollectHostStat(ctx context.Context) *HostStat {
 	diskIO := make([]*DiskIOStat, 0, len(ioCounters))
 
 	for name, counter := range ioCounters {
-		if hasDevicePrefix(name) {
+		if isVirtualBlock(name) {
 			continue
 		}
 
@@ -149,7 +149,7 @@ func filterDiskPartitions(partitions []psutil.DiskPartition) (result []psutil.Di
 	best := make(map[string]*bestEntry)
 
 	for _, dp := range partitions {
-		if isMountExcluded(dp.Mountpoint, dp.Fstype) {
+		if isMountExcluded(dp.Device, dp.Mountpoint) {
 			continue
 		}
 

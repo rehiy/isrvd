@@ -1,54 +1,27 @@
 package monitor
 
 import (
-	"slices"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
 // ─── 辅助函数 ───
 
-// 不应该显示的磁盘设备名前缀
-var excludeDevicePrefixes = []string{
-	"loop", // loop 设备
-	"sr",   // 光驱设备
+// 非物理存储的块设备名前缀（虚拟、只读镜像、可移动介质）
+// 注意：dm-/md 等逻辑卷、软 RAID 承载真实数据，不在此列
+var virtualBlockPrefixes = []string{
+	"loop", // loop 设备（snap、镜像挂载）
+	"ram",  // 内存盘
+	"zram", // 压缩内存盘
+	"sr",   // 光驱
+	"fd",   // 软驱
 }
 
-// 不应该显示的挂载点精确路径
-var excludeMountExact = []string{
-	"/etc/hosts",
-	"/etc/resolv.conf",
-	"/etc/hostname",
-}
-
-// 不应该显示的挂载点目录前缀（必须以 / 结尾）
-var excludeMountPrefixes = []string{
-	"/proc/",
-	"/sys/",
-	"/dev/pts/",
-}
-
-// 虚拟文件系统类型，不应该作为存储展示
-var excludeFstypes = map[string]bool{
-	"overlay":    true, // 容器层
-	"tmpfs":      true, // 内存文件系统
-	"devtmpfs":   true, // 设备文件系统
-	"sysfs":      true,
-	"proc":       true,
-	"cgroup":     true,
-	"cgroup2":    true,
-	"pstore":     true,
-	"securityfs": true,
-	"debugfs":    true,
-	"tracefs":    true,
-	"hugetlbfs":  true,
-	"mqueue":     true,
-	"fusectl":    true,
-	"bpf":        true,
-}
-
-// hasDevicePrefix 检查设备名是否匹配排除前缀
-func hasDevicePrefix(name string) bool {
-	for _, prefix := range excludeDevicePrefixes {
+// isVirtualBlock 判断设备（/dev/xxx 或 xxx）是否为非物理存储块设备
+func isVirtualBlock(device string) bool {
+	name := filepath.Base(device)
+	for _, prefix := range virtualBlockPrefixes {
 		if strings.HasPrefix(name, prefix) {
 			return true
 		}
@@ -56,21 +29,17 @@ func hasDevicePrefix(name string) bool {
 	return false
 }
 
-// isMountExcluded 检查挂载点是否应该被排除
-func isMountExcluded(mountpoint, fstype string) bool {
-	// 按文件系统类型过滤虚拟文件系统
-	if excludeFstypes[fstype] {
+// isMountExcluded 判断挂载是否不应作为存储展示。
+// 虚拟文件系统（tmpfs/overlay/proc/cgroup/fuse/nfs 等 nodev 类型）已由
+// psutil 依据内核 /proc/filesystems 过滤，这里只处理其余情形：
+//  1. 底层是虚拟块设备（loop/ram/sr 等）
+//  2. 挂载点不是目录（如容器内单文件 bind mount：/etc/hosts、/etc/resolv.conf）
+func isMountExcluded(device, mountpoint string) bool {
+	if isVirtualBlock(device) {
 		return true
 	}
-	// 精确路径匹配（用于 Docker 挂载的单个配置文件）
-	if slices.Contains(excludeMountExact, mountpoint) {
+	if fi, err := os.Stat(mountpoint); err != nil || !fi.IsDir() {
 		return true
-	}
-	// 目录前缀匹配
-	for _, prefix := range excludeMountPrefixes {
-		if strings.HasPrefix(mountpoint, prefix) {
-			return true
-		}
 	}
 	return false
 }
