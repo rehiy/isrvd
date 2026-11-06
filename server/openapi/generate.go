@@ -55,20 +55,15 @@ func Generate(root string, cfg *ProjectConfig) ([]byte, error) {
 }
 
 func (g *generator) run() ([]byte, error) {
-	// 0. 预注册 APIResponse schema（从源文件提取字段注释）
-	responseFile := filepath.Join(g.root, g.cfg.ResponseFile)
-	if schema := g.parseServiceStruct("", g.cfg.ResponseStruct, responseFile); schema != nil {
-		g.structCache[g.cfg.ResponseStruct] = schema
-	} else {
-		// 降级处理：如果无法从文件提取，使用默认值
-		g.structCache[g.cfg.ResponseStruct] = &SchemaInfo{
-			TypeName: g.cfg.ResponseStruct,
-			Fields: []FieldInfo{
-				{Name: "success", Type: "bool", Required: true, Description: "请求是否成功"},
-				{Name: "message", Type: "string", Description: "提示信息"},
-				{Name: "payload", Type: "any", Description: "响应数据负载"},
-			},
-		}
+	// 0. 预注册响应外壳 schema（对应 server/app/response.go 的 APIResponse；
+	// success 恒返回，故标记必填）
+	g.structCache[g.cfg.ResponseStruct] = &SchemaInfo{
+		TypeName: g.cfg.ResponseStruct,
+		Fields: []FieldInfo{
+			{Name: "success", Type: "bool", Required: true, Description: "请求是否成功"},
+			{Name: "message", Type: "string", Description: "提示信息"},
+			{Name: "payload", Type: "any", Description: "响应数据负载"},
+		},
 	}
 
 	// 1-2. 解析 ctrl 文件 & 预收集类型信息

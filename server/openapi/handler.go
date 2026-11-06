@@ -98,18 +98,18 @@ func (g *generator) analyzeFuncBody(r *RouteDef, body *ast.BlockStmt, localTypes
 func (g *generator) analyzeNode(n ast.Node, r *RouteDef, state *handlerAnalysisState) {
 	switch stmt := n.(type) {
 	case *ast.AssignStmt:
-		g.analyzeAssignStmtV2(stmt, r, state)
+		g.analyzeAssignStmt(stmt, state)
 	case *ast.DeclStmt:
-		g.analyzeDeclStmtV2(stmt, r, state)
+		g.analyzeDeclStmt(stmt, r, state)
 	case *ast.CallExpr:
-		g.analyzeCallExprV2(stmt, r, state)
+		g.analyzeCallExpr(stmt, r, state)
 	case *ast.IndexExpr:
 		analyzeMultipartIndex(stmt, r)
 	}
 }
 
-// analyzeAssignStmtV2 处理赋值语句，跟踪变量类型
-func (g *generator) analyzeAssignStmtV2(stmt *ast.AssignStmt, r *RouteDef, state *handlerAnalysisState) {
+// analyzeAssignStmt 处理赋值语句，跟踪变量类型
+func (g *generator) analyzeAssignStmt(stmt *ast.AssignStmt, state *handlerAnalysisState) {
 	if len(stmt.Rhs) != 1 {
 		return
 	}
@@ -168,8 +168,8 @@ func (g *generator) analyzeAssignStmtV2(stmt *ast.AssignStmt, r *RouteDef, state
 	}
 }
 
-// analyzeDeclStmtV2 处理声明语句，跟踪变量类型
-func (g *generator) analyzeDeclStmtV2(stmt *ast.DeclStmt, r *RouteDef, state *handlerAnalysisState) {
+// analyzeDeclStmt 处理声明语句，跟踪变量类型
+func (g *generator) analyzeDeclStmt(stmt *ast.DeclStmt, r *RouteDef, state *handlerAnalysisState) {
 	gd, ok := stmt.Decl.(*ast.GenDecl)
 	if !ok || gd.Tok != token.VAR {
 		return
@@ -203,14 +203,14 @@ func (g *generator) analyzeDeclStmtV2(stmt *ast.DeclStmt, r *RouteDef, state *ha
 	}
 }
 
-// analyzeCallExprV2 处理函数调用表达式
-func (g *generator) analyzeCallExprV2(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
+// analyzeCallExpr 处理函数调用表达式
+func (g *generator) analyzeCallExpr(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
 	// 处理直接函数调用（如 respondSuccess、respondResult、respondResultMsg、respondError）
 	if ident, ok := stmt.Fun.(*ast.Ident); ok {
 		switch ident.Name {
 		case "respondSuccess":
 			if len(stmt.Args) >= 3 {
-				g.analyzeRespondSuccessV2(stmt, r, state)
+				g.analyzeRespondSuccess(stmt, r, state)
 			}
 			return
 		case "respondResult":
@@ -349,8 +349,8 @@ func (g *generator) analyzeShouldBindQuery(stmt *ast.CallExpr, r *RouteDef, stat
 	}
 }
 
-// analyzeRespondSuccessV2 分析 respondSuccess(c, msg, data) 调用
-func (g *generator) analyzeRespondSuccessV2(call *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
+// analyzeRespondSuccess 分析 respondSuccess(c, msg, data) 调用
+func (g *generator) analyzeRespondSuccess(call *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
 	if len(call.Args) < 3 {
 		return
 	}

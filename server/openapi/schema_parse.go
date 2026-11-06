@@ -224,7 +224,7 @@ func (g *generator) resolveStructSchema(typeName string, localTypes map[string]s
 	}
 
 	// 5. 解析对应的 service 文件
-	schema := g.parseServiceStruct(pkgAlias, structName, ctrlFile)
+	schema := g.parseServiceStruct(pkgAlias, structName)
 	if schema != nil {
 		// 使用规范化名称作为缓存 key
 		normalizedKey := normalizeSchemaName(cacheKey)
@@ -254,7 +254,7 @@ func (g *generator) resolveNestedTypesInSchema(schema *SchemaInfo, ctrlFile stri
 	}
 }
 
-func (g *generator) parseServiceStruct(pkgAlias, structName string, ctrlFile string) *SchemaInfo {
+func (g *generator) parseServiceStruct(pkgAlias, structName string) *SchemaInfo {
 	serviceDir := filepath.Join(g.root, g.cfg.ServiceDir)
 
 	// 构建搜索目录列表

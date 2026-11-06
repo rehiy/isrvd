@@ -3,13 +3,12 @@ package openapi
 // ProjectConfig 定义项目的目录结构和 OpenAPI 元数据
 // 修改 DefaultConfig() 即可适配不同项目
 type ProjectConfig struct {
-	// 目录配置（相对于 projectRoot）
+	// 目录配置（相对于项目根目录）
 	CtrlDir        string   // handler 文件目录
 	CtrlPrefix     string   // handler 文件名前缀
 	ServiceDir     string   // service 层目录
 	TypeDirs       []string // 额外的类型定义目录
-	ResponseFile   string   // 响应结构体定义文件
-	ResponseStruct string   // 响应结构体名称
+	ResponseStruct string   // 响应外壳 schema 名称
 
 	// OpenAPI 元数据
 	Title      string // API 标题
@@ -28,7 +27,6 @@ func DefaultConfig() *ProjectConfig {
 		CtrlPrefix:     "ctrl_",
 		ServiceDir:     "server/service",
 		TypeDirs:       []string{"server/config", "pkgs"},
-		ResponseFile:   "server/app/response.go",
 		ResponseStruct: "APIResponse",
 		Title:          "isrvd API",
 		Version:        "1.0.0",
