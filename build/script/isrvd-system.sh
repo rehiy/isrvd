@@ -248,7 +248,8 @@ Wants=docker.service
 [Service]
 Type=simple
 User=root
-WorkingDirectory="${working_dir//%/%%}"
+# systemd 的 WorkingDirectory= 不支持引号语法，路径中的引号会被当作字面量导致 unit 校验失败
+WorkingDirectory=${working_dir//%/%%}
 $(systemd_environment "ISRVD_CONFIG=$CONFIG_FILE")
 ExecStart=$bin_file
 ExecReload=/bin/kill -HUP \$MAINPID
