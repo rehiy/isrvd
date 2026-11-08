@@ -53,6 +53,7 @@ INSTALL_DIR_CREATED=0
 INSTALL_SERVICE_CREATED=0
 INSTALL_ROLE_DIR_CREATED=0
 INSTALL_COMPONENTS_CREATED=()
+INSTALL_SYSCONF_CREATED=0
 
 installer_exit() {
     local status="$1"
@@ -359,6 +360,9 @@ rollback_install() {
         rm -f "$BIN_LINK"
     fi
     if [ "$INSTALL_DIR_CREATED" -eq 1 ]; then rm -rf -- "$INSTALL_DIR"; fi
+    if [ "$INSTALL_SYSCONF_CREATED" -eq 1 ]; then
+        rm -f /etc/sysctl.d/70-isrvd-unprivileged-ports.conf
+    fi
     echo "[error] Installation rolled back; data preserved: $DATA_DIR" >&2
 }
 
@@ -390,6 +394,7 @@ install_binary() {
     install_data_config
     configure_root_directory
     if [ "${#COMPONENT_NAMES[@]}" -gt 0 ]; then
+        [[ " ${COMPONENT_NAMES[*]} " = *" apisix "* ]] && prepare_unprivileged_ports
         install_components
         configure_binary_components
     fi
@@ -473,6 +478,21 @@ preflight_components() {
         ! container_exists "isrvd-$component" || fail "Container isrvd-$component already exists"
         docker pull "$(component_image "$component")"
     done
+}
+
+# APISIX 官方镜像默认以非 root 用户运行，--network host 下绑定 80/443
+# 依赖宿主机放开低端口绑定限制；已放开或无 sysctl 时不改系统配置。
+prepare_unprivileged_ports() {
+    local conf="/etc/sysctl.d/70-isrvd-unprivileged-ports.conf" current
+    command -v sysctl >/dev/null 2>&1 || return 0
+    current=$(sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null) || current=""
+    [ -n "$current" ] && [ "$current" -gt 0 ] 2>/dev/null || return 0
+    echo "[info] APISIX container binds 80/443 as a non-root user; lowering the bind restriction (net.ipv4.ip_unprivileged_port_start: $current -> 0)"
+    printf 'net.ipv4.ip_unprivileged_port_start = 0\n' > "$conf" \
+        || fail "Cannot write $conf"
+    INSTALL_SYSCONF_CREATED=1
+    sysctl -p "$conf" >/dev/null 2>&1 \
+        || fail "Cannot apply net.ipv4.ip_unprivileged_port_start=0; set it manually and rerun"
 }
 
 resolve_data_dir() {
@@ -1010,6 +1030,7 @@ Without --data, a legacy /srv/data with conf/isrvd.yml is reused if /srv/isrvd h
 The directory must be absolute, non-root and outside $INSTALL_DIR; managed subpaths must not redirect via symlinks.
 Docker daemon storage, journal, explicit external paths and etcd key namespaces are not rewritten.
 Components run in separate host-network containers; APISIX automatically installs its etcd dependency.
+The APISIX image runs as a non-root user; when net.ipv4.ip_unprivileged_port_start is above 0, install writes /etc/sysctl.d/70-isrvd-unprivileged-ports.conf (=0) so 80/443 can bind, and removes the file on rollback.
 Component admin APIs and etcd listen only on 127.0.0.1; gateways use ports 80/443.
 --caddy/--apisix select the corresponding gateway option; --systemd is accepted but not required.
 This script never updates or removes the fully containerized isrvd deployment.
