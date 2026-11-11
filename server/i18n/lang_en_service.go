@@ -138,6 +138,8 @@ func init() {
 		"获取插件配置列表失败":                     "get plugin config list failed",
 		"获取插件配置详情失败":                     "get plugin config details failed",
 		"Consumer %s 不存在，请先创建该 Consumer": "consumer %s does not exist, create it first",
+		"消费者 %s 未配置 key-auth":            "consumer %s has no key-auth configured",
+		"授权由插件配置或服务管理，请在其中修改":            "access control is managed by the plugin config or service, modify it there",
 		"创建消费者失败":                        "create consumer failed",
 		"更新消费者失败":                        "update consumer failed",
 		"删除消费者失败":                        "delete consumer failed",
