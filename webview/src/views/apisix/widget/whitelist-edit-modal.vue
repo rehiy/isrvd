@@ -37,10 +37,6 @@ class WhitelistEditModal extends Vue {
         return !!this.editingRoute
     }
 
-    get keyAuthConsumers() {
-        return this.consumers.filter(c => c.plugins?.['key-auth'])
-    }
-
     get modalTitle() {
         return this.isEdit ? this.$t('编辑路由访问授权') : this.$t('配置路由访问授权')
     }
@@ -122,7 +118,7 @@ class WhitelistEditModal extends Vue {
 
     filteredConsumers(query: string) {
         const q = query.toLowerCase()
-        return this.keyAuthConsumers
+        return this.consumers
             .filter(consumer => !this.whitelistConsumers.includes(consumer.username))
             .filter(consumer => {
                 if (!q) {
@@ -180,8 +176,8 @@ export default toNative(WhitelistEditModal)
       </div>
       <div v-else>
         <label class="form-label">{{ $t('路由') }} <span class="text-red-500">*</span></label>
-        <select v-model="formData.routeId" class="input">
-          <option value="">{{ $t('请选择未配置访问授权的路由') }}</option>
+        <select v-model="formData.routeId" class="input" :disabled="selectableRoutes.length === 0">
+          <option value="">{{ selectableRoutes.length === 0 ? $t('暂无可配置访问授权的路由') : $t('请选择未配置访问授权的路由') }}</option>
           <option v-for="route in selectableRoutes" :key="route.id" :value="route.id">
             {{ getRouteLabel(route) }}
           </option>
@@ -192,13 +188,10 @@ export default toNative(WhitelistEditModal)
         <p v-else class="text-xs text-slate-400 mt-1">{{ $t('仅展示尚未配置访问授权的路由') }}</p>
       </div>
 
-      <div v-if="!isEdit && selectableRoutes.length === 0" class="rounded-lg border border-amber-100 bg-amber-50/50 px-3 py-2 text-xs text-amber-700">
-        {{ $t('暂无可配置访问授权的路由') }}
-      </div>
-
       <div class="space-y-3">
         <div>
           <label class="form-label">{{ $t('key-auth 插件配置') }}</label>
+          <p class="text-xs text-slate-400 mt-1">{{ $t('若路由的认证已由其他认证插件管理，key-auth 配置会被忽略') }}</p>
         </div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
@@ -247,7 +240,7 @@ export default toNative(WhitelistEditModal)
                     <span class="block truncate text-sm font-medium text-slate-700">{{ consumer.username }}</span>
                     <span v-if="consumer.desc" class="mt-0.5 block truncate text-xs text-slate-400">{{ $t(consumer.desc) }}</span>
                   </span>
-                  <span class="rounded-lg bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700">key-auth</span>
+                  <span v-if="consumer.plugins?.['key-auth']" class="rounded-lg bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700">key-auth</span>
                 </button>
               </div>
             </template>
@@ -255,11 +248,11 @@ export default toNative(WhitelistEditModal)
             <template #empty>
               <div v-if="filteredConsumers('').length === 0" class="py-8 text-center">
                 <i class="fas fa-search text-2xl text-slate-300 mb-2"></i>
-                <p class="text-sm text-slate-400">{{ keyAuthConsumers.length === 0 ? $t('暂无已配置 key-auth 的 Consumer') : $t('全部已选') }}</p>
+                <p class="text-sm text-slate-400">{{ consumers.length === 0 ? $t('暂无消费者') : $t('全部已选') }}</p>
               </div>
             </template>
           </Combobox>
-          <p class="text-xs text-slate-400 mt-1">{{ $t('仅展示已配置 key-auth 插件的 Consumer；如需添加新用户，请先在 Consumer 管理中创建') }}</p>
+          <p class="text-xs text-slate-400 mt-1">{{ $t('路由使用 key-auth 认证时，仅已配置 key-auth 的 Consumer 可通过认证；如需添加新用户，请先在 Consumer 管理中创建') }}</p>
         </div>
       </div>
     </div>

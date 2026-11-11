@@ -1764,6 +1764,8 @@ const messages: Record<string, string> = {
     '仅展示尚未配置访问授权的路由': 'アクセス許可が設定されていないルートのみを表示します',
     // No route available for access control
     '暂无可配置访问授权的路由': '現在、アクセス許可を構成するルートはありません。',
+    // If authentication of the route is managed by other authentication plugins, the key-auth config is ignored
+    '若路由的认证已由其他认证插件管理，key-auth 配置会被忽略': 'ルートの認証が他の認証プラグインで管理されている場合、key-auth の設定は無視されます',
     // key-auth Plugin Config
     'key-auth 插件配置': 'キー認証プラグインの設定',
     // e.g. token
@@ -1786,12 +1788,10 @@ const messages: Record<string, string> = {
     '搜索 Consumer': '消費者の検索',
     // available
     '个可选': 'オプション',
-    // No consumer with key-auth configured
-    '暂无已配置 key-auth 的 Consumer': '現在、キー認証が構成されているコンシューマはありません。',
     // All selected
     '全部已选': 'すべて選択済み',
-    // Only consumers with key-auth are shown; create new users in Consumer management first
-    '仅展示已配置 key-auth 插件的 Consumer；如需添加新用户，请先在 Consumer 管理中创建': 'キー認証プラグインを構成したコンシューマのみが表示されます。新しいユーザーを追加する必要がある場合は、最初に消費者管理でユーザーを作成してください',
+    // For routes using key-auth, only consumers with key-auth configured can authenticate; create new users in Consumer management first
+    '路由使用 key-auth 认证时，仅已配置 key-auth 的 Consumer 可通过认证；如需添加新用户，请先在 Consumer 管理中创建': 'ルートが key-auth 認証を使う場合、key-auth を構成したコンシューマのみ認証できます。新しいユーザーは先にコンシューマ管理で作成してください',
     // Invalid JSON, check the error hint in the editor
     'JSON 格式有误，请检查编辑器中的错误提示': 'JSON 形式が正しくありません。エディタでエラー メッセージを確認してください。',
     // Submit Full Config
