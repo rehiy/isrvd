@@ -40,7 +40,7 @@ isrvd_put "/apisix/consumer/<USERNAME>" '{"desc":"<DESC>","plugins":{"key-auth":
 isrvd_delete "/apisix/consumer/<USERNAME>"
 ```
 
-不会清理路由白名单中对该 Consumer 的引用。
+Consumer 仍在任一路由的访问授权白名单中时拒绝删除（返回 500，并列出引用它的路由），需先移除授权；避免白名单残留用户名，日后同名 Consumer 被重建时自动获得访问权限。
 
 ---
 
