@@ -79,7 +79,7 @@ isrvd_post "/apisix/route" '{
 isrvd_put "/apisix/route/<ROUTE_ID>" '{"name":"<NAME>","uri":"<URI>","status":1,"upstream":{"type":"roundrobin","nodes":{"<HOST>:<PORT>":1}}}'
 ```
 
-更新调用 APISIX `PUT /routes/<ID>`，为全量替换，只下发上表字段：未传字段会被移除（含 `plugins`、`status`），APISIX 路由上的其他字段（`methods`、`labels`、`vars`、`service_id` 等）也会被清除。仅校验 `name` 必填，不校验 `uri`/`uris`。
+更新先读取路由，再调用 APISIX `PUT /routes/<ID>`。上表字段为全量替换：未传字段会被移除（含 `plugins`、`status`）；上表之外的 APISIX 路由字段（`methods`、`remote_addrs`、`vars`、`labels`、`service_id` 等）原样保留，不会因编辑路由而丢失访问限制。路由不存在时返回 500。仅校验 `name` 必填，不校验 `uri`/`uris`。
 
 ## 启用/禁用路由
 

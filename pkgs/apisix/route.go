@@ -3,8 +3,10 @@ package apisix
 import (
 	"context"
 	"errors"
+	"maps"
 	"net/http"
 	"net/url"
+	"slices"
 )
 
 // RouteTimeout Apisix 路由超时配置（单位：秒）
@@ -51,9 +53,29 @@ func (c *Client) RouteCreate(ctx context.Context, req Route) (*Route, error) {
 	return c.requestResource[Route](ctx, http.MethodPost, "/routes", buildRouteBody(req), "解析路由详情失败")
 }
 
-// RouteUpdate 更新路由
+// routeManagedFields 是 buildRouteBody 负责写入的字段；更新时先清除这些字段再覆盖，
+// 其余字段（methods、remote_addrs、vars、labels 等）原样保留，避免编辑路由时静默丢失访问限制
+var routeManagedFields = []string{
+	"name", "desc", "status", "priority", "enable_websocket",
+	"uri", "uris", "host", "hosts",
+	"plugin_config_id", "upstream_id", "upstream", "plugins", "timeout",
+	"create_time", "update_time",
+}
+
+// RouteUpdate 更新路由，保留请求模型之外的已有字段
 func (c *Client) RouteUpdate(ctx context.Context, routeID string, req Route) (*Route, error) {
-	return c.requestResource[Route](ctx, http.MethodPut, "/routes/"+url.PathEscape(routeID), buildRouteBody(req), "解析路由详情失败")
+	path := "/routes/" + url.PathEscape(routeID)
+	existing, err := c.requestResource[map[string]any](ctx, http.MethodGet, path, nil, "解析路由详情失败")
+	if err != nil {
+		return nil, err
+	}
+	body := map[string]any{}
+	maps.Copy(body, *existing)
+	maps.DeleteFunc(body, func(k string, _ any) bool {
+		return slices.Contains(routeManagedFields, k)
+	})
+	maps.Copy(body, buildRouteBody(req))
+	return c.requestResource[Route](ctx, http.MethodPut, path, body, "解析路由详情失败")
 }
 
 // RouteStatusPatch 仅更新路由的启用/禁用状态（1=启用 0=禁用）
