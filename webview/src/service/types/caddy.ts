@@ -91,6 +91,17 @@ export interface CaddyRouteUpsert {
     '@id'?: string | number
 }
 
+// 同一次读取返回的路由数组与版本，用于按下标修改时的并发校验。
+export interface CaddyRouteSnapshot {
+    routes: CaddyRoute[]
+    revision: string
+}
+
+export interface CaddyRoutePlacement {
+    index: number
+    revision: string
+}
+
 // 概览
 export interface CaddyInfo {
     servers: number

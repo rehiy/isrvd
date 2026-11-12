@@ -4,7 +4,7 @@ import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { CaddyHandler, CaddyRoute, CaddyServerInfo } from '@/service/types'
+import type { CaddyHandler, CaddyRoute, CaddyRouteSnapshot, CaddyServerInfo } from '@/service/types'
 
 import PageSearch from '@/component/page-search.vue'
 
@@ -43,11 +43,14 @@ class CaddyRoutes extends Vue {
     @Ref readonly editModalRef!: InstanceType<typeof RouteEditModal>
 
     routes: RouteWithServer[] = []
+    snapshots: Record<string, CaddyRouteSnapshot> = {}
     servers: CaddyServerInfo[] = []
     loading = false
     searchText = ''
     collapsedHosts: string[] = []
     loadRequestID = 0
+    viewMode = 'order'
+    moving = false
 
     get canListServers() {
         return this.portal.hasPerm('GET /api/caddy/servers')
@@ -81,11 +84,15 @@ class CaddyRoutes extends Vue {
     }
 
     get routeListRows(): RouteListRow[] {
+        if (this.viewMode === 'order') {
+            return this.filteredRoutes.map(route => ({
+                type: 'route', key: `${route.serverID}-${route.index}`, host: this.getRouteHosts(route), grouped: false, route
+            }))
+        }
         const allEntries = this.routes.flatMap(route =>
             this.getRouteGroupHosts(route).map(host => ({ host, route }))
         )
-        const grouped = this.routes.some(route => this.getRouteGroupHosts(route).length > 1) ||
-            new Set(allEntries.map(entry => entry.host)).size < allEntries.length
+        const grouped = allEntries.length > 0
         const entries = this.filteredRoutes.flatMap(route =>
             this.getRouteGroupHosts(route).map(host => ({ host, route }))
         )
@@ -93,7 +100,7 @@ class CaddyRoutes extends Vue {
             entries.sort((a, b) => {
                 const hostCompare = a.host.localeCompare(b.host)
                 const serverCompare = a.route.serverName.localeCompare(b.route.serverName)
-                return hostCompare || serverCompare || this.getRoutePaths(a.route).localeCompare(this.getRoutePaths(b.route))
+                return hostCompare || serverCompare || a.route.index - b.route.index
             })
         }
         const counts = new Map<string, number>()
@@ -116,6 +123,7 @@ class CaddyRoutes extends Vue {
         const requestID = ++this.loadRequestID
         this.loading = true
         this.routes = []
+        this.snapshots = {}
         this.collapsedHosts = []
         try {
             if (this.canListServers) {
@@ -135,13 +143,16 @@ class CaddyRoutes extends Vue {
                 this.servers = []
             }
             const routesByServer = await Promise.all(this.routeServerOptions.map(async server => {
-                const routes = (await api.caddyRouteList(server.name)).payload || []
-                return routes.map(route => ({ ...route, serverID: server.id, serverName: server.name }))
+                const snapshot = (await api.caddyRouteSnapshot(server.name)).payload || { routes: [], revision: '' }
+                return { server, snapshot }
             }))
             if (requestID !== this.loadRequestID) {
                 return
             }
-            this.routes = routesByServer.flat()
+            this.snapshots = Object.fromEntries(routesByServer.map(({ server, snapshot }) => [server.name, snapshot]))
+            this.routes = routesByServer.flatMap(({ server, snapshot }) =>
+                snapshot.routes.map(route => ({ ...route, serverID: server.id, serverName: server.name }))
+            )
             this.collapsedHosts = []
         } finally {
             if (requestID === this.loadRequestID) {
@@ -161,7 +172,30 @@ class CaddyRoutes extends Vue {
     }
 
     openEditModal(route: RouteWithServer) {
-        this.editModalRef?.show(route, route.serverName)
+        this.editModalRef?.show(route, route.serverName, this.snapshots[route.serverName]?.revision)
+    }
+
+    canMove(route: RouteWithServer, offset: number) {
+        const snapshot = this.snapshots[route.serverName]
+        const target = route.index + offset
+        return this.viewMode === 'order' && !this.searchText.trim() && !this.loading && !this.moving &&
+            !!snapshot?.revision && target >= 0 && target < snapshot.routes.length
+    }
+
+    async moveRoute(route: RouteWithServer, offset: number) {
+        if (!this.canMove(route, offset)) {
+            return
+        }
+        this.moving = true
+        try {
+            await api.caddyRouteMove(route.index, {
+                index: route.index + offset, revision: this.snapshots[route.serverName].revision
+            }, route.serverName)
+            this.portal.showNotification('success', this.$t('路由顺序已更新'))
+        } finally {
+            this.moving = false
+            await this.loadRoutes()
+        }
     }
 
     getRouteHosts(r: CaddyRoute) {
@@ -227,6 +261,7 @@ class CaddyRoutes extends Vue {
 
     deleteRoute(route: RouteWithServer) {
         const serverName = escapeHTML(route.serverName)
+        const revision = this.snapshots[route.serverName]?.revision
         this.portal.showConfirm({
             title: this.$t('删除路由'),
             message: this.$t('确定要删除服务 <strong class="text-slate-900">{0}</strong> 下的路由 <strong class="text-slate-900">#{1}</strong> 吗？此操作不可恢复。', serverName, route.index),
@@ -235,7 +270,7 @@ class CaddyRoutes extends Vue {
             confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
-                await api.caddyRouteDelete(route.index, route.serverName)
+                await api.caddyRouteDelete(route.index, route.serverName, revision)
                 this.portal.showNotification('success', this.$t('删除成功'))
                 this.loadRoutes()
             }
@@ -261,8 +296,8 @@ export default toNative(CaddyRoutes)
         </div>
         <div class="action-group">
           <PageSearch v-model="searchText" search-key="caddy-routes" :placeholder="$t('请输入搜索关键词...')" focus-color="indigo" type-to-search />
-          <button class="btn btn-secondary" @click="loadRoutes()"><i class="fas fa-rotate"></i>{{ $t('刷新') }}</button>
-          <button v-if="portal.hasPerm('POST /api/caddy/route')" class="btn btn-indigo" @click="openCreateModal()"><i class="fas fa-plus"></i>{{ $t('新建路由') }}</button>
+          <button class="btn btn-secondary" :disabled="loading || moving" @click="loadRoutes()"><i class="fas fa-rotate"></i>{{ $t('刷新') }}</button>
+          <button v-if="portal.hasPerm('POST /api/caddy/route')" class="btn btn-indigo" :disabled="loading || moving" @click="openCreateModal()"><i class="fas fa-plus"></i>{{ $t('新建路由') }}</button>
         </div>
       </div>
       <!-- 移动端 -->
@@ -275,10 +310,10 @@ export default toNative(CaddyRoutes)
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadRoutes()">
+          <button class="btn btn-secondary btn-square" :disabled="loading || moving" :title="$t('刷新')" @click="loadRoutes()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/caddy/route')" class="btn btn-indigo btn-square" :title="$t('新建路由')" @click="openCreateModal()">
+          <button v-if="portal.hasPerm('POST /api/caddy/route')" class="btn btn-indigo btn-square" :disabled="loading || moving" :title="$t('新建路由')" @click="openCreateModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -287,6 +322,13 @@ export default toNative(CaddyRoutes)
     <!-- 移动端搜索栏 -->
     <div class="mobile-search">
       <PageSearch v-model="searchText" search-key="caddy-routes" :placeholder="$t('请输入搜索关键词...')" width-class="w-full" focus-color="indigo" />
+    </div>
+    <div class="px-4 py-3 flex flex-wrap items-center gap-3">
+      <select v-model="viewMode" class="select-sm" :aria-label="$t('路由视图')" :disabled="moving">
+        <option value="order">{{ $t('执行顺序') }}</option>
+        <option value="host">{{ $t('按域名分组') }}</option>
+      </select>
+      <p class="text-xs text-slate-500">{{ viewMode === 'order' ? $t('同一服务内按序号执行；搜索时不能调整顺序。') : $t('分组仅用于浏览，序号表示实际执行顺序。') }}</p>
     </div>
     <div v-if="loading" class="card-body">
       <div class="empty-state"><div class="spinner-lg"></div><p class="text-slate-500">{{ $t('加载中...') }}</p></div>
@@ -305,18 +347,19 @@ export default toNative(CaddyRoutes)
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
               <th class="th">Host</th>
+              <th class="th">{{ $t('执行顺序') }}</th>
               <th class="th">{{ $t('服务') }}</th>
               <th class="th">Path</th>
               <th class="th">Method</th>
               <th class="th">{{ $t('类型') }}</th>
               <th class="th">{{ $t('处理器') }}</th>
-              <th class="w-32 th-right">{{ $t('操作') }}</th>
+              <th class="th-right">{{ $t('操作') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
             <template v-for="row in routeListRows" :key="row.key">
               <tr v-if="row.type === 'host'" class="bg-slate-50">
-                <td colspan="7" class="px-4 py-2">
+                <td colspan="8" class="px-4 py-2">
                   <button type="button" class="flex w-full items-center gap-2 text-left" :aria-expanded="!collapsedHosts.includes(row.host)" @click="toggleHost(row.host)">
                     <i class="fas fa-chevron-right text-slate-400 text-xs transition-transform" :class="{ 'rotate-90': !collapsedHosts.includes(row.host) }"></i>
                     <i class="fas fa-globe text-teal-500 text-xs"></i>
@@ -335,6 +378,7 @@ export default toNative(CaddyRoutes)
                     <span :class="getRouteHosts(row.route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm break-all">{{ getRouteHosts(row.route) }}</span>
                   </div>
                 </td>
+                <td class="td-text"><span class="font-mono">{{ row.route.index + 1 }}</span></td>
                 <td class="td-text"><span class="font-mono">{{ row.route.serverName }}</span></td>
                 <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getRoutePaths(row.route) }}</code></td>
                 <td class="px-4 py-3"><span class="text-xs text-slate-600">{{ getRouteMethods(row.route) }}</span></td>
@@ -342,8 +386,12 @@ export default toNative(CaddyRoutes)
                 <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getHandlerSummary(row.route) }}</code></td>
                 <td class="px-4 py-3">
                   <div class="table-actions">
-                    <button v-if="portal.hasPerm('PUT /api/caddy/route/:index')" class="btn-icon btn-icon-blue" :title="$t('编辑')" @click="openEditModal(row.route)"><i class="fas fa-pen text-xs"></i></button>
-                    <button v-if="portal.hasPerm('DELETE /api/caddy/route/:index')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="deleteRoute(row.route)"><i class="fas fa-trash text-xs"></i></button>
+                    <template v-if="viewMode === 'order' && portal.hasPerm('PUT /api/caddy/route/:index/position')">
+                      <button class="btn-icon" :class="canMove(row.route, -1) ? 'btn-icon-indigo' : 'text-slate-300 cursor-not-allowed'" :disabled="!canMove(row.route, -1)" :title="$t('上移')" @click="moveRoute(row.route, -1)"><i class="fas fa-arrow-up text-xs"></i></button>
+                      <button class="btn-icon" :class="canMove(row.route, 1) ? 'btn-icon-indigo' : 'text-slate-300 cursor-not-allowed'" :disabled="!canMove(row.route, 1)" :title="$t('下移')" @click="moveRoute(row.route, 1)"><i class="fas fa-arrow-down text-xs"></i></button>
+                    </template>
+                    <button v-if="portal.hasPerm('PUT /api/caddy/route/:index')" class="btn-icon btn-icon-blue" :disabled="moving" :title="$t('编辑')" @click="openEditModal(row.route)"><i class="fas fa-pen text-xs"></i></button>
+                    <button v-if="portal.hasPerm('DELETE /api/caddy/route/:index')" class="btn-icon btn-icon-red" :disabled="moving" :title="$t('删除')" @click="deleteRoute(row.route)"><i class="fas fa-trash text-xs"></i></button>
                   </div>
                 </td>
               </tr>
@@ -377,6 +425,10 @@ export default toNative(CaddyRoutes)
               <span class="prop-label-start">{{ $t('服务') }}</span>
               <code class="text-xs font-mono text-slate-700 break-all">{{ row.route.serverName }}</code>
             </div>
+            <div class="card-prop-row">
+              <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('执行顺序') }}</span>
+              <span class="text-xs text-slate-500">{{ row.route.index + 1 }}</span>
+            </div>
             <div class="card-prop-row-start">
               <span class="prop-label-start">Path</span>
               <code class="text-xs font-mono text-slate-700 break-all">{{ getRoutePaths(row.route) }}</code>
@@ -391,10 +443,14 @@ export default toNative(CaddyRoutes)
             </div>
 
             <div class="card-actions">
-              <button v-if="portal.hasPerm('PUT /api/caddy/route/:index')" class="btn-icon btn-icon-blue" :title="$t('编辑')" @click="openEditModal(row.route)">
+              <template v-if="viewMode === 'order' && portal.hasPerm('PUT /api/caddy/route/:index/position')">
+                <button class="btn-icon" :class="canMove(row.route, -1) ? 'btn-icon-indigo' : 'text-slate-300 cursor-not-allowed'" :disabled="!canMove(row.route, -1)" :title="$t('上移')" @click="moveRoute(row.route, -1)"><i class="fas fa-arrow-up text-xs"></i><span class="text-xs ml-1">{{ $t('上移') }}</span></button>
+                <button class="btn-icon" :class="canMove(row.route, 1) ? 'btn-icon-indigo' : 'text-slate-300 cursor-not-allowed'" :disabled="!canMove(row.route, 1)" :title="$t('下移')" @click="moveRoute(row.route, 1)"><i class="fas fa-arrow-down text-xs"></i><span class="text-xs ml-1">{{ $t('下移') }}</span></button>
+              </template>
+              <button v-if="portal.hasPerm('PUT /api/caddy/route/:index')" class="btn-icon btn-icon-blue" :disabled="moving" :title="$t('编辑')" @click="openEditModal(row.route)">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">{{ $t('编辑') }}</span>
               </button>
-              <button v-if="portal.hasPerm('DELETE /api/caddy/route/:index')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="deleteRoute(row.route)">
+              <button v-if="portal.hasPerm('DELETE /api/caddy/route/:index')" class="btn-icon btn-icon-red" :disabled="moving" :title="$t('删除')" @click="deleteRoute(row.route)">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('删除') }}</span>
               </button>
             </div>
