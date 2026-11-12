@@ -112,6 +112,7 @@
 | `caddy` | `PUT /api/caddy/metrics` | Caddy 管理（开启/关闭指标） |
 | `caddy` | `GET /api/caddy/servers` | Caddy 管理（HTTP 服务列出） |
 | `caddy` | `GET /api/caddy/routes` | Caddy 管理（路由列出） |
+| `caddy` | `PUT /api/caddy/route/:index/position` | Caddy 管理（调整路由执行顺序） |
 | `caddy` | `GET /api/caddy/basic-auth` | Caddy 管理（Basic Auth 路由列出） |
 | `caddy` | `GET /api/caddy/certs` | Caddy 管理（证书列出） |
 | `caddy` | `POST /api/caddy/cert` | Caddy 管理（创建证书） |

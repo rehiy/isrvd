@@ -75,7 +75,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 | APISIX | [references/apisix/upstreams.md](references/apisix/upstreams.md) | 上游、负载均衡 |
 | APISIX | [references/apisix/consumers.md](references/apisix/consumers.md) | Consumer、访问授权 |
 | APISIX | [references/apisix/ssl.md](references/apisix/ssl.md) | SSL 证书、PluginConfig、插件列表 |
-| Caddy | [references/caddy/routes.md](references/caddy/routes.md) | 路由 CRUD（反向代理/静态文件） |
+| Caddy | [references/caddy/routes.md](references/caddy/routes.md) | 路由 CRUD、插入位置与执行顺序（反向代理/静态文件） |
 | Caddy | [references/caddy/servers.md](references/caddy/servers.md) | 服务（srv0 等）增删改查 |
 | Caddy | [references/caddy/certs.md](references/caddy/certs.md) | SSL 证书管理 |
 | Caddy | [references/caddy/config.md](references/caddy/config.md) | 全局配置、原始 JSON 配置、指标开关 |
@@ -117,6 +117,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 │   ├── 重新部署         → references/swarm/services.md (action: force-update)
 │   ├── 修改路由/上游    → references/apisix/routes.md 或 references/apisix/upstreams.md
 │   ├── 修改 Caddy 路由  → references/caddy/routes.md（更新触发 /load 整体替换）
+│   ├── 调整 Caddy 路由顺序 / 通配符遮挡 → references/caddy/routes.md（快照版本 + 插入/移动）
 │   ├── 修改 Caddy 服务  → references/caddy/servers.md
 │   ├── 修改 Caddy 全局选项 → references/caddy/config.md (PUT /caddy/global)
 │   ├── 管理 Caddy Basic Auth → references/caddy/basic-auth.md

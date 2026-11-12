@@ -37,6 +37,7 @@ func (app *App) defineCaddyRoutes() []Route {
 		{Method: "GET", Path: "/caddy/route/:index", Handler: app.caddyRouteInspect, Module: "caddy", Label: "获取 Caddy 路由详情"},
 		{Method: "POST", Path: "/caddy/route", Handler: app.caddyRouteCreate, Module: "caddy", Label: "创建 Caddy 路由"},
 		{Method: "PUT", Path: "/caddy/route/:index", Handler: app.caddyRouteUpdate, Module: "caddy", Label: "更新 Caddy 路由"},
+		{Method: "PUT", Path: "/caddy/route/:index/position", Handler: app.caddyRouteMove, Module: "caddy", Label: "调整 Caddy 路由顺序"},
 		{Method: "DELETE", Path: "/caddy/route/:index", Handler: app.caddyRouteDelete, Module: "caddy", Label: "删除 Caddy 路由"},
 		// Basic Auth 账号管理
 		{Method: "GET", Path: "/caddy/basic-auth", Handler: app.caddyBasicAuthList, Module: "caddy", Label: "查询 Caddy Basic Auth 路由列表"},
@@ -194,10 +195,21 @@ func (app *App) caddyGlobalUpdate(c *gin.Context) {
 // ─── 路由 CRUD ───
 
 func (app *App) caddyRouteList(c *gin.Context) {
-	server := c.Query("server")
-	result, err := app.caddySvc.RouteList(c.Request.Context(), server)
+	var query struct {
+		Server   string `form:"server"`
+		Snapshot bool   `form:"snapshot"`
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	result, revision, err := app.caddySvc.RouteList(c.Request.Context(), query.Server)
 	if err != nil {
 		respondCaddyError(c, err)
+		return
+	}
+	if query.Snapshot {
+		respondSuccess(c, "", caddy.RouteSnapshot{Routes: result, Revision: revision})
 		return
 	}
 	respondSuccess(c, "", result)
@@ -219,13 +231,21 @@ func (app *App) caddyRouteInspect(c *gin.Context) {
 }
 
 func (app *App) caddyRouteCreate(c *gin.Context) {
-	server := c.Query("server")
+	var query struct {
+		Server   string `form:"server"`
+		Index    *int   `form:"index"`
+		Revision string `form:"revision"`
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
 	var req pkgCaddy.Route
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	idx, err := app.caddySvc.RouteCreate(c.Request.Context(), server, req)
+	idx, err := app.caddySvc.RouteCreate(c.Request.Context(), query.Server, req, query.Index, query.Revision)
 	if err != nil {
 		respondCaddyError(c, err)
 		return
@@ -245,7 +265,7 @@ func (app *App) caddyRouteUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.caddySvc.RouteUpdate(c.Request.Context(), server, idx, req); err != nil {
+	if err := app.caddySvc.RouteUpdate(c.Request.Context(), server, idx, req, c.Query("revision")); err != nil {
 		respondCaddyError(c, err)
 		return
 	}
@@ -259,11 +279,29 @@ func (app *App) caddyRouteDelete(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "index 必须为整数")
 		return
 	}
-	if err := app.caddySvc.RouteDelete(c.Request.Context(), server, idx); err != nil {
+	if err := app.caddySvc.RouteDelete(c.Request.Context(), server, idx, c.Query("revision")); err != nil {
 		respondCaddyError(c, err)
 		return
 	}
 	respondSuccess(c, "Caddy 路由删除成功", nil)
+}
+
+func (app *App) caddyRouteMove(c *gin.Context) {
+	idx, err := strconv.Atoi(c.Param("index"))
+	if err != nil {
+		respondError(c, http.StatusBadRequest, "index 必须为整数")
+		return
+	}
+	var req caddy.RouteMoveRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := app.caddySvc.RouteMove(c.Request.Context(), c.Query("server"), idx, req); err != nil {
+		respondCaddyError(c, err)
+		return
+	}
+	respondSuccess(c, "Caddy 路由顺序已更新", nil)
 }
 
 // ─── Basic Auth 账号管理 ───
@@ -393,6 +431,12 @@ func respondCaddyError(c *gin.Context, err error, fallbackStatus ...int) {
 	upstreamErr, isUpstream := errors.AsType[*pkgCaddy.HTTPError](err)
 	_, isTransport := errors.AsType[*url.Error](err)
 	switch {
+	case errors.Is(err, caddy.ErrRouteRevisionRequired):
+		status = http.StatusPreconditionRequired
+	case errors.Is(err, caddy.ErrRouteRevisionChanged):
+		status = http.StatusConflict
+	case errors.Is(err, caddy.ErrInvalidRoutePosition):
+		status = http.StatusBadRequest
 	case errors.Is(err, context.DeadlineExceeded):
 		status = http.StatusGatewayTimeout
 	case errors.Is(err, caddy.ErrServerNameInvalid), errors.Is(err, caddy.ErrServerConfigInvalid):
