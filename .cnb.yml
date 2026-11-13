@@ -76,3 +76,49 @@ $:
             docker buildx build --push --platform linux/amd64,linux/arm64 \
             --build-arg "ISRVD_VERSION=$CNB_BRANCH" --build-arg "ISRVD_DOWNLOAD_BASE=$ISRVD_DOWNLOAD_BASE" \
             -t $IMAGE_URL:caddy -f build/docker-caddy/Dockerfile .
+
+master:
+  "crontab: 0 3 * * *": # daily 03:00 Asia/Shanghai
+    - name: Sync from GitHub
+      lock:
+        key: github-to-cnb-sync
+        wait: true
+        timeout: 600
+      docker:
+        image: alpine:3.20
+      env:
+        SYNC_BRANCH: master
+        SYNC_GITHUB_REPO: https://github.com/rehiy/isrvd.git
+      stages:
+        - name: Fast-forward GitHub commits into CNB
+          timeout: 10m
+          retry: 1
+          script: |
+            set -eu
+
+            apk add --no-cache --quiet ca-certificates git
+            git config --global --add safe.directory "$(pwd)"
+
+            # Scheduled checkouts may be shallow; complete the CNB-side history first.
+            git fetch --unshallow origin "$SYNC_BRANCH" || git fetch origin "$SYNC_BRANCH"
+
+            git fetch --no-tags "$SYNC_GITHUB_REPO" \
+              "+refs/heads/$SYNC_BRANCH:refs/remotes/github/$SYNC_BRANCH"
+
+            local_sha=$(git rev-parse HEAD)
+            github_sha=$(git rev-parse "refs/remotes/github/$SYNC_BRANCH")
+
+            if [ "$local_sha" = "$github_sha" ]; then
+              echo "Already up to date: $SYNC_BRANCH is $local_sha"
+              exit 0
+            fi
+
+            # Diverged histories need a manual decision; never force-push CNB master.
+            if ! git merge-base --is-ancestor "$local_sha" "$github_sha"; then
+              echo "ERROR: CNB $SYNC_BRANCH ($local_sha) and GitHub $SYNC_BRANCH ($github_sha) have diverged; refusing to force-push. Resolve manually." >&2
+              exit 1
+            fi
+
+            git merge --ff-only "$github_sha"
+            git push origin "HEAD:refs/heads/$SYNC_BRANCH"
+            echo "Synced GitHub $github_sha into CNB $SYNC_BRANCH"

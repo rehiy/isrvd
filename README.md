@@ -334,6 +334,8 @@ The Windows script starts the backend in standalone mode using the root `config.
 
 GitHub Actions reads the Go version from `go.mod`; CNB builds images with `golang:1.27-bookworm`. If `GOTOOLCHAIN=local` is set, the locally installed Go must satisfy the minimum version in `go.mod`.
 
+A scheduled CNB pipeline on `master` (`crontab: 0 3 * * *`, Asia/Shanghai) fast-forwards new commits from the GitHub mirror into CNB `master` once a day. It never force-pushes: if the two branches have diverged, the build fails and asks for a manual merge. Tags and other branches are not synced automatically.
+
 ```bash
 # full distribution build
 ./build.sh
