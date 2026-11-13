@@ -55,6 +55,8 @@ import type {
     CaddyInfo,
     CaddyGlobal,
     CaddyRoute,
+    CaddyRoutePlacement,
+    CaddyRouteSnapshot,
     CaddyServerCreate,
     CaddyServerDetail,
     CaddyServerInfo,
@@ -491,16 +493,34 @@ class ApiService {
         return http.get<CaddyRoute[]>('caddy/routes', { params: server ? { server } : {} })
     }
 
-    caddyRouteCreate(data: CaddyRouteUpsert, server?: string) {
-        return http.post<{ index: number }>('caddy/route', data, { params: server ? { server } : {} })
+    caddyRouteSnapshot(server?: string) {
+        return http.get<CaddyRouteSnapshot>('caddy/routes', {
+            params: { server, snapshot: true }
+        })
     }
 
-    caddyRouteUpdate(index: number, data: CaddyRouteUpsert, server?: string) {
-        return http.put<void>(`caddy/route/${index}`, data, { params: server ? { server } : {} })
+    caddyRouteCreate(data: CaddyRouteUpsert, server?: string, placement?: CaddyRoutePlacement) {
+        return http.post<{ index: number }>('caddy/route', data, {
+            params: { server, index: placement?.index, revision: placement?.revision }
+        })
     }
 
-    caddyRouteDelete(index: number, server?: string) {
-        return http.delete<void>(`caddy/route/${index}`, { params: server ? { server } : {} })
+    caddyRouteUpdate(index: number, data: CaddyRouteUpsert, server?: string, revision?: string) {
+        return http.put<void>(`caddy/route/${index}`, data, {
+            params: { server, revision }
+        })
+    }
+
+    caddyRouteDelete(index: number, server?: string, revision?: string) {
+        return http.delete<void>(`caddy/route/${index}`, {
+            params: { server, revision }
+        })
+    }
+
+    caddyRouteMove(index: number, placement: CaddyRoutePlacement, server?: string) {
+        return http.put<void>(`caddy/route/${index}/position`, placement, {
+            params: { server }
+        })
     }
 
     caddyCertList() {

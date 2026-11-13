@@ -39,24 +39,25 @@ func (v RouteView) MarshalJSON() ([]byte, error) {
 }
 
 // RouteList 列出指定 server 的所有路由
-func (s *Service) RouteList(ctx context.Context, server string) ([]RouteView, error) {
+func (s *Service) RouteList(ctx context.Context, server string) ([]RouteView, string, error) {
 	server, err := normalizeServer(server)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	cfg, err := s.client.ConfigAll(ctx)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	srv := getServer(cfg, server)
 	if srv == nil {
-		return nil, ErrServerNotFound
+		return nil, "", ErrServerNotFound
 	}
 	out := make([]RouteView, len(srv.Routes))
 	for i, r := range srv.Routes {
 		out[i] = RouteView{Index: i, Route: r}
 	}
-	return out, nil
+	revision, err := routeRevision(srv.Routes)
+	return out, revision, err
 }
 
 // RouteInspect 获取单条路由
@@ -81,8 +82,8 @@ func (s *Service) RouteInspect(ctx context.Context, server string, index int) (*
 	return v, nil
 }
 
-// RouteCreate 追加一条路由，返回新下标
-func (s *Service) RouteCreate(ctx context.Context, server string, req caddy.Route) (int, error) {
+// RouteCreate 创建路由；未指定位置时追加，指定位置时校验列表版本后插入。
+func (s *Service) RouteCreate(ctx context.Context, server string, req caddy.Route, position *int, revision string) (int, error) {
 	server, err := normalizeServer(server)
 	if err != nil {
 		return -1, err
@@ -93,8 +94,17 @@ func (s *Service) RouteCreate(ctx context.Context, server string, req caddy.Rout
 		if srv == nil {
 			return ErrServerNotFound
 		}
-		srv.Routes = append(srv.Routes, req)
-		index = len(srv.Routes) - 1
+		index = len(srv.Routes)
+		if position != nil {
+			if err := checkRouteRevision(srv.Routes, revision); err != nil {
+				return err
+			}
+			index = *position
+			if index < 0 || index > len(srv.Routes) {
+				return ErrInvalidRoutePosition
+			}
+		}
+		srv.Routes = slices.Insert(srv.Routes, index, req)
 		return nil
 	})
 	if err != nil {
@@ -104,7 +114,7 @@ func (s *Service) RouteCreate(ctx context.Context, server string, req caddy.Rout
 }
 
 // RouteUpdate 更新指定下标的路由
-func (s *Service) RouteUpdate(ctx context.Context, server string, index int, req caddy.Route) error {
+func (s *Service) RouteUpdate(ctx context.Context, server string, index int, req caddy.Route, revision string) error {
 	server, err := normalizeServer(server)
 	if err != nil {
 		return err
@@ -113,6 +123,11 @@ func (s *Service) RouteUpdate(ctx context.Context, server string, index int, req
 		srv := getServer(cfg, server)
 		if srv == nil {
 			return ErrServerNotFound
+		}
+		if revision != "" {
+			if err := checkRouteRevision(srv.Routes, revision); err != nil {
+				return err
+			}
 		}
 		route, err := getRoute(srv, index)
 		if err != nil {
@@ -124,7 +139,7 @@ func (s *Service) RouteUpdate(ctx context.Context, server string, index int, req
 }
 
 // RouteDelete 删除指定下标的路由
-func (s *Service) RouteDelete(ctx context.Context, server string, index int) error {
+func (s *Service) RouteDelete(ctx context.Context, server string, index int, revision string) error {
 	server, err := normalizeServer(server)
 	if err != nil {
 		return err
@@ -133,6 +148,11 @@ func (s *Service) RouteDelete(ctx context.Context, server string, index int) err
 		srv := getServer(cfg, server)
 		if srv == nil {
 			return ErrServerNotFound
+		}
+		if revision != "" {
+			if err := checkRouteRevision(srv.Routes, revision); err != nil {
+				return err
+			}
 		}
 		if _, err := getRoute(srv, index); err != nil {
 			return err

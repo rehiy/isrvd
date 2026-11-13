@@ -4,6 +4,12 @@ package i18n
 
 func init() {
 	Register(langEN, map[string]string{
+		// ─── Caddy 路由顺序 ───
+		"路由位置超出范围":          "Route position is out of range",
+		"调整路由位置前请先获取路由列表版本": "Fetch the route list revision before changing route positions",
+		"路由列表已变化，请刷新后重试":    "The route list has changed. Refresh and try again",
+		"调整 Caddy 路由顺序":     "Reorder Caddy routes",
+		"Caddy 路由顺序已更新":     "Caddy route order updated",
 		// ─── 通用参数校验 ───
 		"%s %s 不存在": "%s %s not found",
 		"%s 必须是合法的 HTTP(S) 绝对地址": "%s must be a valid absolute HTTP(S) address",

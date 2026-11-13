@@ -9,6 +9,25 @@ import type { LanguageModule } from '../types'
 
 const messages: Record<string, string> = {
 
+    // ─── Caddy 路由顺序 ───
+    '路由顺序已更新': 'Route order updated',
+    '路由视图': 'Route view',
+    '执行顺序': 'Execution order',
+    '按域名分组': 'Group by host',
+    '同一服务内按序号执行；搜索时不能调整顺序。': 'Routes run in order within each server. Clear the search to reorder.',
+    '分组仅用于浏览，序号表示实际执行顺序。': 'Grouping is for browsing; numbers show the actual execution order.',
+    '上移': 'Move up',
+    '下移': 'Move down',
+    '插入位置': 'Insert position',
+    '末尾（默认）': 'End (default)',
+    '末尾': 'End',
+    '推荐：在第 {0} 条路由前插入': 'Recommended: insert before route {0}',
+    '在第 {0} 条路由前插入：{1}': 'Insert before route {0}: {1}',
+    '刷新路由位置': 'Refresh route positions',
+    '请刷新路由位置后重试': 'Refresh route positions and try again',
+    '第 {0} 条路由包含覆盖此域名的通配符或兜底规则，建议插入到它之前。': 'Route {0} has a wildcard or fallback covering this host. Insert before it.',
+    '路由按顺序执行；涉及鉴权、重写或复杂匹配时，请手动选择合适的位置。': 'Routes run in order. Choose a position manually for authentication, rewrites, or complex matchers.',
+
     // ─── 全局与头部 ───
     '加载中...': 'Loading...',
     'AI 助手': 'AI Assistant',

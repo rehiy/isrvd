@@ -4,8 +4,9 @@ import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { CaddyHandler, CaddyHandlerFileServer, CaddyHandlerHeaders, CaddyHandlerReverseProxy, CaddyHandlerRewrite, CaddyHandlerStaticResponse, CaddyRoute, CaddyRouteUpsert, DockerContainerInfo } from '@/service/types'
+import type { CaddyHandler, CaddyHandlerFileServer, CaddyHandlerHeaders, CaddyHandlerReverseProxy, CaddyHandlerRewrite, CaddyHandlerStaticResponse, CaddyRoute, CaddyRouteSnapshot, CaddyRouteUpsert, DockerContainerInfo } from '@/service/types'
 
+import { caddyRouteInsertionIndex } from '@/helper/caddy'
 import { parseHostPort } from '@/helper/format'
 
 import CodeEditor from '@/component/code-editor.vue'
@@ -107,8 +108,56 @@ class RouteEditModal extends Vue {
     modalLoading = false
     isEditMode = false
     editingIndex = -1
+    editingRevision = ''
     targetServer = 'srv0'
     containers: DockerContainerInfo[] = []
+    routeSnapshot: CaddyRouteSnapshot | null = null
+    positionsLoading = false
+    positionsRequestID = 0
+    insertPosition: 'recommended' | 'append' | number = 'recommended'
+
+    get recommendedPosition() {
+        if (!this.routeSnapshot || this.formData.kind === 'raw') {
+            return undefined
+        }
+        const raw = this.buildRawFromCurrent()
+        if (!raw) {
+            return undefined
+        }
+        return caddyRouteInsertionIndex({ match: this.formMatch, handle: JSON.parse(raw) }, this.routeSnapshot.routes)
+    }
+
+    get selectedPosition() {
+        if (typeof this.insertPosition === 'number') {
+            return this.insertPosition
+        }
+        if (this.insertPosition === 'recommended' && this.recommendedPosition !== undefined) {
+            return this.recommendedPosition
+        }
+        return this.routeSnapshot?.routes.length ?? 0
+    }
+
+    async loadRoutePositions() {
+        const requestID = ++this.positionsRequestID
+        this.routeSnapshot = null
+        this.positionsLoading = true
+        this.insertPosition = 'recommended'
+        try {
+            const snapshot = (await api.caddyRouteSnapshot(this.targetServer)).payload
+            if (requestID === this.positionsRequestID) {
+                this.routeSnapshot = snapshot || null
+            }
+        } finally {
+            if (requestID === this.positionsRequestID) {
+                this.positionsLoading = false
+            }
+        }
+    }
+
+    positionLabel(route: CaddyRoute) {
+        const hosts = route.match?.flatMap(match => match.host || []) || []
+        return this.$t('在第 {0} 条路由前插入：{1}', route.index + 1, hosts.join(', ') || '*')
+    }
 
     get canLoadDockerContainers() {
         return this.portal.hasPerm('GET /api/docker/containers')
@@ -442,8 +491,13 @@ class RouteEditModal extends Vue {
         this.containers = (res.payload || []).filter(c => c.state === 'running')
     }
 
-    show(route: CaddyRoute | null, server = '') {
+    show(route: CaddyRoute | null, server = '', revision = '') {
         this.targetServer = server || this.defaultServerName
+        this.editingRevision = revision
+        this.positionsRequestID++
+        this.routeSnapshot = null
+        this.positionsLoading = false
+        this.insertPosition = 'recommended'
         Object.assign(this.formData, defaultFormData())
         this.matchHeaderList = []
         this.enableMatchHeaders = false
@@ -468,6 +522,7 @@ class RouteEditModal extends Vue {
             if (handles.length === 0) {
                 this.isEditMode = false
                 this.editingIndex = -1
+                void this.loadRoutePositions()
                 this.isOpen = true
                 return
             }
@@ -574,6 +629,7 @@ class RouteEditModal extends Vue {
         } else {
             this.isEditMode = false
             this.editingIndex = -1
+            void this.loadRoutePositions()
         }
         this.isOpen = true
     }
@@ -604,6 +660,31 @@ class RouteEditModal extends Vue {
         return ops
     }
 
+    get formMatch(): CaddyRouteUpsert['match'] {
+        const hosts = this.formData.hosts.split('\n').map(t => t.trim()).filter(Boolean)
+        const paths = this.formData.paths.split('\n').map(t => t.trim()).filter(Boolean)
+        const methods = this.formData.methods.split(/\s+/).map(t => t.trim().toUpperCase()).filter(Boolean)
+        const headers = this.listToHeaders(this.matchHeaderList)
+        const protocol = this.formData.protocol || undefined
+        const matchSet: Record<string, unknown> = {}
+        if (hosts.length) {
+            matchSet.host = hosts
+        }
+        if (paths.length) {
+            matchSet.path = paths
+        }
+        if (methods.length) {
+            matchSet.method = methods
+        }
+        if (headers) {
+            matchSet.header = headers
+        }
+        if (protocol) {
+            matchSet.protocol = protocol
+        }
+        return Object.keys(matchSet).length ? [matchSet] : undefined
+    }
+
     buildPayload(): CaddyRouteUpsert | null {
         // raw 模式：直接解析用户编辑的 JSON
         if (this.formData.kind === 'raw') {
@@ -630,30 +711,7 @@ class RouteEditModal extends Vue {
         }
 
         // 表单模式：从 buildRawFromCurrent 生成 handle
-        const splitLines = (s: string) => s.split('\n').map(t => t.trim()).filter(Boolean)
-        const splitSpaces = (s: string) => s.split(/\s+/).map(t => t.trim()).filter(Boolean)
-        const hosts = splitLines(this.formData.hosts)
-        const paths = splitLines(this.formData.paths)
-        const methods = splitSpaces(this.formData.methods).map(s => s.toUpperCase())
-        const headers = this.listToHeaders(this.matchHeaderList)
-        const protocol = this.formData.protocol || undefined
-        const matchSet: Record<string, unknown> = {}
-        if (hosts.length) {
-            matchSet.host = hosts
-        }
-        if (paths.length) {
-            matchSet.path = paths
-        }
-        if (methods.length) {
-            matchSet.method = methods
-        }
-        if (headers) {
-            matchSet.header = headers
-        }
-        if (protocol) {
-            matchSet.protocol = protocol
-        }
-        const match = Object.keys(matchSet).length ? [matchSet] : undefined
+        const match = this.formMatch
 
         const rawStr = this.buildRawFromCurrent()
         if (!rawStr) {
@@ -675,6 +733,10 @@ class RouteEditModal extends Vue {
     }
 
     async handleConfirm() {
+        const revision = this.routeSnapshot?.revision
+        if (this.modalLoading || (!this.isEditMode && (this.positionsLoading || !revision))) {
+            return
+        }
         const payload = this.buildPayload()
         if (!payload) {
             return
@@ -683,10 +745,12 @@ class RouteEditModal extends Vue {
         this.modalLoading = true
         try {
             if (this.isEditMode) {
-                await api.caddyRouteUpdate(this.editingIndex, payload, this.targetServer)
+                await api.caddyRouteUpdate(this.editingIndex, payload, this.targetServer, this.editingRevision)
                 this.portal.showNotification('success', this.$t('路由更新成功'))
-            } else {
-                await api.caddyRouteCreate(payload, this.targetServer)
+            } else if (revision) {
+                await api.caddyRouteCreate(payload, this.targetServer, {
+                    index: this.selectedPosition, revision
+                })
                 this.portal.showNotification('success', this.$t('路由创建成功'))
             }
             this.isOpen = false
@@ -701,14 +765,30 @@ export default toNative(RouteEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="isEditMode ? $t('编辑路由') : $t('新建路由')" :loading="modalLoading" confirm-class="btn-indigo" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="isEditMode ? $t('编辑路由') : $t('新建路由')" :loading="modalLoading" :confirm-disabled="!isEditMode && (positionsLoading || !routeSnapshot?.revision)" confirm-class="btn-indigo" @confirm="handleConfirm">
     <div class="space-y-5 p-1">
       <div>
         <label class="form-label">{{ $t('服务') }} <span class="text-red-500">*</span></label>
-        <select v-model="targetServer" class="input font-mono" :disabled="isEditMode">
+        <select v-model="targetServer" class="input font-mono" :disabled="isEditMode || modalLoading" @change="loadRoutePositions">
           <option v-for="item in servers" :key="item.id" :value="item.name">{{ item.name }}</option>
         </select>
         <p class="text-xs text-slate-400 mt-1">{{ isEditMode ? $t('路由所属服务不可修改') : $t('选择新路由所属的服务') }}</p>
+      </div>
+
+      <div v-if="!isEditMode">
+        <label class="form-label">{{ $t('插入位置') }}</label>
+        <div class="flex items-center gap-2">
+          <select v-model="insertPosition" class="input" :disabled="positionsLoading || !routeSnapshot || modalLoading">
+            <option value="recommended">{{ recommendedPosition === undefined ? $t('末尾（默认）') : $t('推荐：在第 {0} 条路由前插入', recommendedPosition + 1) }}</option>
+            <option v-if="recommendedPosition !== undefined" value="append">{{ $t('末尾') }}</option>
+            <option v-for="route in routeSnapshot?.routes || []" :key="route.index" :value="route.index">{{ positionLabel(route) }}</option>
+          </select>
+          <button type="button" class="btn btn-secondary" :disabled="positionsLoading || modalLoading" :title="$t('刷新路由位置')" @click="loadRoutePositions"><i class="fas fa-rotate"></i></button>
+        </div>
+        <p v-if="positionsLoading" class="text-xs text-slate-400 mt-1">{{ $t('加载中...') }}</p>
+        <p v-else-if="!routeSnapshot" class="text-xs text-amber-600 mt-1">{{ $t('请刷新路由位置后重试') }}</p>
+        <p v-else-if="recommendedPosition !== undefined" class="text-xs mt-1" :class="selectedPosition > recommendedPosition ? 'text-amber-600' : 'text-slate-500'">{{ $t('第 {0} 条路由包含覆盖此域名的通配符或兜底规则，建议插入到它之前。', recommendedPosition + 1) }}</p>
+        <p v-else class="text-xs text-slate-400 mt-1">{{ $t('路由按顺序执行；涉及鉴权、重写或复杂匹配时，请手动选择合适的位置。') }}</p>
       </div>
 
       <!-- ── 匹配条件 ── -->
