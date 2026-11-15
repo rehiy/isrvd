@@ -334,6 +334,10 @@ The Windows script starts the backend in standalone mode using the root `config.
 
 GitHub Actions reads the Go version from `go.mod`; CNB builds images with `golang:1.27-bookworm`. If `GOTOOLCHAIN=local` is set, the locally installed Go must satisfy the minimum version in `go.mod`.
 
+For deployment builds, run `npm ci` in `webview` before `npm run build` (the full `build.sh` already does this). Do not reuse another checkout's `node_modules`: stale dependencies can produce bundles that compile successfully but fail during browser startup. The `prebuild` check rejects missing or incompatible direct dependencies; it does not replace the lockfile-based clean install.
+
+Before replacing a running binary, open the production build in a browser, confirm the login form renders, reload it, and check for uncaught JavaScript errors. HTTP 200 responses for HTML and assets alone do not verify that the application starts.
+
 A scheduled CNB pipeline on `master` (`crontab: 0 3 * * *`, Asia/Shanghai) fast-forwards new commits from the GitHub mirror into CNB `master` once a day. It never force-pushes: if the two branches have diverged, the build fails and asks for a manual merge. Tags and other branches are not synced automatically.
 
 ```bash

@@ -15,6 +15,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "dev": "vite",
+    "prebuild": "npm ls --depth=0",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "vue-tsc --noEmit && eslint src --ext .ts,.vue",
