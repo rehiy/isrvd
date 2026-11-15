@@ -39,7 +39,46 @@ isrvd_get "/swarm/nodes"
 isrvd_get "/swarm/node/NODE_ID"
 ```
 
-额外字段：`os, architecture, cpus, memoryBytes, labels, createdAt, updatedAt`
+除节点列表字段外，还包含以下字段（均只读）：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| version | number | Docker 节点版本，保存标签时原样提交，用于并发校验 |
+| os | string | 操作系统 |
+| architecture | string | CPU 架构 |
+| cpus | number | CPU 核心数 |
+| memoryBytes | number | 内存字节数 |
+| labels | object \| null | 节点标签键值表，值为字符串，允许空字符串 |
+| createdAt | string | 创建时间（RFC3339） |
+| updatedAt | string | 更新时间（RFC3339） |
+
+## 管理节点标签
+
+在连接 Swarm manager 的 Web 界面，进入「Swarm → 节点 → 节点详情 → 节点标签 → 编辑标签」，添加、修改或删除键值行后保存。没有标签时也显示编辑入口；只有读取权限的用户可以查看标签，编辑需要 `PUT /api/swarm/node/:id/labels` 权限。写操作按默认审计规则记录。
+
+标签用于表达节点属性，可被多个服务共用。例如两台广州节点都设置 `region=guangzhou`，服务使用 `node.labels.region == guangzhou` 约束。标签修改或删除可能触发服务重新调度。
+
+先获取节点详情中的 `version`，再提交完整标签集合：
+
+```bash
+isrvd_get "/swarm/node/NODE_ID"
+# 将 version 换为刚读取的节点版本；保留仍需要的其他标签
+isrvd_put "/swarm/node/NODE_ID/labels" '{"version":123,"labels":{"region":"guangzhou","cfs":"true"}}'
+```
+
+| 请求字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| version | number | 是 | 读取详情时的节点版本 |
+| labels | object | 是 | 完整标签集合；未提交的标签将删除；`{}` 清空全部标签，不能为 `null` |
+
+标签键不能为空或包含首尾空白，值必须为字符串，可以为空。删除部分标签时，在提交集合中移除对应的键。清空标签示例：
+
+```bash
+# 使用最新读取的 version
+isrvd_put "/swarm/node/NODE_ID/labels" '{"version":124,"labels":{}}'
+```
+
+成功返回 `200`，不携带 payload。非法请求返回 `400`，节点不存在返回 `404`，版本冲突返回 `409`（刷新详情后重新编辑），Docker 调用失败返回 `500`，Swarm 模块不可用返回 `503`。更新仅替换节点标签，保留节点角色、可用性及其他配置。
 
 ## 查看节点运行中的服务
 

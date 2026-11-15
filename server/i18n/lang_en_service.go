@@ -4,6 +4,14 @@ package i18n
 
 func init() {
 	Register(langEN, map[string]string{
+		// ─── Swarm 节点标签 ───
+		"更新 Swarm 节点标签":  "Update Swarm node labels",
+		"节点标签已更新":        "Node labels updated",
+		"节点已更新，请刷新后重试":   "The node has changed. Refresh and try again",
+		"节点版本和标签不能为空":    "Node version and labels are required",
+		"标签键不能为空或包含首尾空白": "Label keys must be nonempty and have no leading or trailing whitespace",
+		"标签必须是有效的 UTF-8": "Labels must be valid UTF-8",
+		"更新节点标签失败":       "Failed to update node labels",
 		// ─── Caddy 路由顺序 ───
 		"路由位置超出范围":          "Route position is out of range",
 		"调整路由位置前请先获取路由列表版本": "Fetch the route list revision before changing route positions",

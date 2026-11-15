@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/docker/docker/api/types/swarm"
 )
@@ -52,6 +53,7 @@ func (s *Service) NodeAction(ctx context.Context, id, action string) error {
 // NodeDetail 节点详情，保持前端稳定响应结构。
 type NodeDetail struct {
 	ID            string            `json:"id"`            // 节点 ID
+	Version       uint64            `json:"version"`       // 节点版本，更新标签时用于并发校验
 	Hostname      string            `json:"hostname"`      // 主机名
 	Role          string            `json:"role"`          // 角色（manager/worker）
 	Availability  string            `json:"availability"`  // 可用状态
@@ -78,6 +80,42 @@ func (s *Service) NodeInspect(ctx context.Context, id string) (*NodeDetail, erro
 		return nil, fmt.Errorf("获取节点详情失败: %w", err)
 	}
 	return nodeDetailFromRaw(node), nil
+}
+
+// NodeLabelUpdate 标签整体替换请求，空对象表示清空全部标签。
+type NodeLabelUpdate struct {
+	Version *uint64           `json:"version" binding:"required"` // 读取节点详情时的版本
+	Labels  map[string]string `json:"labels" binding:"required"`  // 完整标签集合，允许空值
+}
+
+// Validate 校验标签请求，不对已有键值做隐式规范化。
+func (req NodeLabelUpdate) Validate() error {
+	if req.Version == nil || req.Labels == nil {
+		return fmt.Errorf("节点版本和标签不能为空")
+	}
+	for key, value := range req.Labels {
+		if key == "" || key != strings.TrimSpace(key) {
+			return fmt.Errorf("标签键不能为空或包含首尾空白")
+		}
+		if !utf8.ValidString(key) || !utf8.ValidString(value) {
+			return fmt.Errorf("标签必须是有效的 UTF-8")
+		}
+	}
+	return nil
+}
+
+// NodeLabelUpdate 更新节点标签。
+func (s *Service) NodeLabelUpdate(ctx context.Context, id string, req NodeLabelUpdate) error {
+	if id == "" {
+		return fmt.Errorf("缺少节点 ID")
+	}
+	if err := req.Validate(); err != nil {
+		return err
+	}
+	if err := s.svc.NodeLabelUpdate(ctx, id, *req.Version, req.Labels); err != nil {
+		return fmt.Errorf("更新节点标签失败: %w", err)
+	}
+	return nil
 }
 
 // NodeServiceList 列出节点上实际运行的服务，runningTasks 仅统计当前节点。
@@ -134,7 +172,7 @@ func nodeInfoFromRaw(node swarm.Node) NodeInfo {
 func nodeDetailFromRaw(node swarm.Node) *NodeDetail {
 	info := nodeInfoFromRaw(node)
 	return &NodeDetail{
-		ID: info.ID, Hostname: info.Hostname, Role: info.Role, Availability: info.Availability, State: info.State,
+		ID: info.ID, Version: node.Version.Index, Hostname: info.Hostname, Role: info.Role, Availability: info.Availability, State: info.State,
 		Addr: info.Addr, EngineVersion: info.EngineVersion, Leader: info.Leader,
 		OS: node.Description.Platform.OS, Architecture: node.Description.Platform.Architecture,
 		CPUs: node.Description.Resources.NanoCPUs / 1e9, MemoryBytes: node.Description.Resources.MemoryBytes,

@@ -67,7 +67,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 | 网络 | [references/docker/networks.md](references/docker/networks.md) | Docker 网络管理 |
 | 数据卷 | [references/docker/volumes.md](references/docker/volumes.md) | Docker 数据卷管理 |
 | 仓库 | [references/docker/registries.md](references/docker/registries.md) | 镜像仓库配置 |
-| Swarm | [references/swarm/info.md](references/swarm/info.md) | 集群、节点、节点运行服务、令牌 |
+| Swarm | [references/swarm/info.md](references/swarm/info.md) | 集群、节点、节点标签管理、节点运行服务、令牌 |
 | Swarm | [references/swarm/services.md](references/swarm/services.md) | 服务部署/扩缩容/更新 |
 | Swarm | [references/swarm/tasks.md](references/swarm/tasks.md) | 任务列表 |
 | Compose | [references/compose.md](references/compose.md) | Docker Compose / Swarm Stack 部署、重部署、部署记录与历史配置 |
@@ -110,6 +110,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 │   └── 创建 Caddy 服务  → references/caddy/servers.md
 │
 ├── 更新/变更
+│   ├── 管理 Swarm 节点标签 → references/swarm/info.md（读取节点版本后整体替换标签）
 │   ├── 更新/接管 Compose 项目 → references/compose.md (project 标签聚合、redeploy + serviceName/image)
 │   ├── 恢复 Compose 历史配置 → references/compose.md（history + revision，确认后重部署）
 │   ├── 更新容器镜像     → references/docker/images.md (拉取) + references/docker/containers.md (重建)

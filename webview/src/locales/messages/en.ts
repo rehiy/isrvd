@@ -9,6 +9,23 @@ import type { LanguageModule } from '../types'
 
 const messages: Record<string, string> = {
 
+    // ─── Swarm 节点标签 ───
+    '节点标签': 'Node labels',
+    '编辑节点标签': 'Edit node labels',
+    '编辑标签': 'Edit labels',
+    '添加标签': 'Add label',
+    '删除标签': 'Delete label',
+    '标签键': 'Label key',
+    '标签值': 'Label value',
+    '节点标签已更新': 'Node labels updated',
+    '标签键不能为空或包含首尾空白': 'Label keys must be nonempty and have no leading or trailing whitespace',
+    '标签键重复，请使用不同的键': 'Duplicate label key. Use a different key',
+    '修改或删除标签可能触发服务重新调度，请确认服务的调度约束。': 'Changing or deleting labels may reschedule services. Check their placement constraints.',
+    '暂无节点标签，添加地域或存储标签供多个服务共用。': 'No node labels. Add region or storage labels for services to share.',
+    '标签值允许为空。删除全部行并保存将清空节点标签。': 'Label values can be empty. Remove all rows and save to clear node labels.',
+    '多个服务可以共用节点标签，例如 region=guangzhou。': 'Services can share node labels, such as region=guangzhou.',
+    '暂无节点标签': 'No node labels',
+
     // ─── Caddy 路由顺序 ───
     '路由顺序已更新': 'Route order updated',
     '路由视图': 'Route view',
