@@ -68,6 +68,21 @@ func ProjectFromSwarmInspect(svc swarm.Service, containerDir string) (*types.Pro
 		}
 		composeSvc.Deploy.Placement.Constraints = spec.TaskTemplate.Placement.Constraints
 	}
+	if spec.TaskTemplate.RestartPolicy != nil || spec.UpdateConfig != nil || spec.RollbackConfig != nil {
+		if composeSvc.Deploy == nil {
+			composeSvc.Deploy = &types.DeployConfig{}
+		}
+		if policy := spec.TaskTemplate.RestartPolicy; policy != nil {
+			composeSvc.Deploy.RestartPolicy = &types.RestartPolicy{
+				Condition:   string(policy.Condition),
+				Delay:       (*types.Duration)(policy.Delay),
+				MaxAttempts: policy.MaxAttempts,
+				Window:      (*types.Duration)(policy.Window),
+			}
+		}
+		composeSvc.Deploy.UpdateConfig = swarmUpdateConfigToCompose(spec.UpdateConfig)
+		composeSvc.Deploy.RollbackConfig = swarmUpdateConfigToCompose(spec.RollbackConfig)
+	}
 
 	if spec.EndpointSpec != nil {
 		for _, p := range spec.EndpointSpec.Ports {
@@ -108,6 +123,21 @@ func ProjectFromSwarmInspect(svc swarm.Service, containerDir string) (*types.Pro
 }
 
 // ─── 辅助函数 ───
+
+func swarmUpdateConfigToCompose(config *swarm.UpdateConfig) *types.UpdateConfig {
+	if config == nil {
+		return nil
+	}
+	parallelism := config.Parallelism
+	return &types.UpdateConfig{
+		Parallelism:     &parallelism,
+		Delay:           types.Duration(config.Delay),
+		FailureAction:   config.FailureAction,
+		Monitor:         types.Duration(config.Monitor),
+		MaxFailureRatio: config.MaxFailureRatio,
+		Order:           config.Order,
+	}
+}
 
 func swarmMountSource(m mount.Mount, containerDir string) string {
 	switch m.Type {

@@ -175,7 +175,7 @@ isrvd_get "/compose/docker/<NAME>?force=true"
 Docker Compose 中的相对 bind path 会基于容器目录 `docker.containerRoot/<PROJECT>` 解析，部署、全量重部署、按服务更新镜像和失败回滚保持一致。后端统一使用 compose-go loader 解析与标准化 YAML，再直接生成 Docker SDK `container.Config` / `container.HostConfig`（Docker）或 `swarm.ServiceSpec`（Swarm）原始结构，不经过 iSrvd 自定义中间 DTO。
 
 - **Docker 支持字段**：`entrypoint`、`command`、`dns`、`dns_opt`、`dns_search`、`extra_hosts`、`tty`、`stdin_open`、`read_only`、`stop_signal`、`sysctls`、`device_cgroup_rules`、`devices`、`security_opt`、`group_add`、`ipc`、`pid`、`uts`、`cgroup`、`runtime`、`shm_size`、`tmpfs`、`ulimits`、`cap_add`、`cap_drop` 等；`deploy.resources` 仅支持 `limits.memory`、`limits.cpus`（`mem_limit` / `cpus` 兜底）与 `reservations.devices`，`reservations.memory` / `reservations.cpus` / `limits.pids` 会被忽略
-- **Swarm 支持字段**：`environment`、`entrypoint` / `command`、`working_dir`、`user`、`hostname`、`extra_hosts`、`tty`、`stdin_open`、`read_only`、`stop_signal`、`sysctls`、`cap_add` / `cap_drop`、`dns` / `dns_opt` / `dns_search`、`deploy.mode` / `replicas`、`networks`、`ports`、`volumes`、`deploy.placement.constraints`、`deploy.resources`（`limits.memory` / `cpus` / `pids`，`reservations.memory` / `cpus`）；`devices`、`security_opt`、`group_add`、`ipc`、`pid`、`uts`、`cgroup`、`runtime`、`shm_size`、`tmpfs`、`ulimits`、`device_cgroup_rules` 不映射
+- **Swarm 支持字段**：`environment`、`entrypoint` / `command`、`working_dir`、`user`、`hostname`、`extra_hosts`、`tty`、`stdin_open`、`read_only`、`stop_signal`、`sysctls`、`cap_add` / `cap_drop`、`dns` / `dns_opt` / `dns_search`、`deploy.mode` / `replicas`、`networks`（含 `aliases`）、`ports`、`volumes`、`deploy.placement.constraints`、`deploy.restart_policy`、`deploy.update_config`、`deploy.rollback_config`、`deploy.resources`（`limits.memory` / `cpus` / `pids`，`reservations.memory` / `cpus`）；`devices`、`security_opt`、`group_add`、`ipc`、`pid`、`uts`、`cgroup`、`runtime`、`shm_size`、`tmpfs`、`ulimits`、`device_cgroup_rules` 不映射
 
 Docker Compose 部署会将服务级 `services.<svc>.gpus` 以及 `deploy.resources.reservations.devices` 映射为 Docker `HostConfig.DeviceRequests`，并保留 `options`；未写 `capabilities` 时默认 `[gpu]`。GPU 场景可使用：
 
@@ -234,6 +234,69 @@ isrvd_put "/compose/docker/<NAME>" '{"serviceName":"<SERVICE_NAME>","image":"<NE
 ```
 
 ## Swarm Compose
+
+### 部署策略与网络别名
+
+以下字段在创建服务时下发到 Docker ServiceSpec，并在运行态反推 Compose 时保留，供再次编辑、保存或重部署：
+
+| Compose 字段 | Docker ServiceSpec 字段 | 空值、零值与默认值 |
+|---|---|---|
+| `services.<svc>.networks.<network>.aliases` | `TaskTemplate.Networks[].Aliases` | 未填写或 `[]` 表示不配置额外别名；网络简写或空网络配置仍可使用 |
+| `deploy.restart_policy.condition` | `TaskTemplate.RestartPolicy.Condition` | 支持 `none`、`on-failure`、`any`；未填写由 Docker 默认使用 `any` |
+| `deploy.restart_policy.delay` | `TaskTemplate.RestartPolicy.Delay` | 未填写保留 Docker 默认延迟；显式 `0s` 表示立即重试，与未填写不同 |
+| `deploy.restart_policy.max_attempts` | `TaskTemplate.RestartPolicy.MaxAttempts` | 未填写或 `0` 表示不限制重试次数；显式零值在回读 YAML 中保留 |
+| `deploy.restart_policy.window` | `TaskTemplate.RestartPolicy.Window` | 按时长传递；显式 `0s` 保留，表示不限制重试计数窗口 |
+| `deploy.update_config.parallelism` / `deploy.rollback_config.parallelism` | `UpdateConfig.Parallelism` / `RollbackConfig.Parallelism` | 策略存在但未填写该字段时使用 `1`；显式 `0` 表示全部并行，回读、保存后仍为 `0` |
+| `deploy.update_config.delay` / `deploy.rollback_config.delay` | `UpdateConfig.Delay` / `RollbackConfig.Delay` | 未填写或 `0s` 表示批次之间不等待 |
+| `deploy.update_config.failure_action` / `deploy.rollback_config.failure_action` | `UpdateConfig.FailureAction` / `RollbackConfig.FailureAction` | 更新支持 `pause` / `continue` / `rollback`；回滚支持 `pause` / `continue`；默认 `pause` |
+| `deploy.update_config.monitor` / `deploy.rollback_config.monitor` | `UpdateConfig.Monitor` / `RollbackConfig.Monitor` | 非零时长原样传递；Docker Engine 对未填写和 `0s` 都使用默认监测窗口（当前为 `5s`），不能用 `0s` 关闭监测 |
+| `deploy.update_config.max_failure_ratio` / `deploy.rollback_config.max_failure_ratio` | `UpdateConfig.MaxFailureRatio` / `RollbackConfig.MaxFailureRatio` | 未填写或 `0` 表示不容忍失败；非零比例原样传递 |
+| `deploy.update_config.order` / `deploy.rollback_config.order` | `UpdateConfig.Order` / `RollbackConfig.Order` | 支持 `stop-first` / `start-first`，默认 `stop-first` |
+
+整段策略未填写时不创建对应 ServiceSpec 对象，交由 Docker 使用默认策略；`{}` 表示使用该策略的默认值。当前 Compose 解析器不接受这三段策略的显式 `null`，需要使用 `{}` 或删除该字段。运行态读取包含 Docker 补齐后的默认值，因此 YAML 文本可能与输入不同；重新保存保留的是生效策略。时长字段支持 `ms`、`s`、`m` 等单位。
+
+例如 `stack.yml`：
+
+```yaml
+name: policy-demo
+services:
+  api:
+    image: nginx:alpine
+    networks:
+      backend:
+        aliases: [api-internal]
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 0s
+        max_attempts: 3
+        window: 30s
+      update_config:
+        parallelism: 1
+        delay: 2s
+        failure_action: rollback
+        monitor: 10s
+        max_failure_ratio: 0.25
+        order: start-first
+      rollback_config:
+        parallelism: 0
+        delay: 0s
+        failure_action: pause
+        monitor: 10s
+        max_failure_ratio: 0
+        order: stop-first
+networks:
+  backend:
+    driver: overlay
+```
+
+```bash
+isrvd_post "/compose/swarm" "$(jq -n --arg content "$(cat stack.yml)" '{content:$content}')"
+# 强制从 Docker 运行态读取单个服务，检查上述策略和别名。
+isrvd_get "/compose/swarm/api?force=true"
+```
+
+注意：当前 Compose 重部署仍采用删除并重建服务的流程，不触发 Docker 原地滚动更新。`update_config` / `rollback_config` 会保存在服务 spec 中，供后续 Docker 服务更新使用；不改变 Compose 重部署的执行方式。
 
 ### 部署
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/docker/docker/api/types/swarm"
@@ -55,6 +56,7 @@ func ServiceToSwarmSpec(project *types.Project, svc types.ServiceConfig) (swarm.
 	}
 
 	applySwarmMode(svc, &spec)
+	applySwarmPolicies(svc, &spec)
 	applySwarmNetworks(project, svc, &spec)
 	applySwarmPorts(svc, &spec)
 	applySwarmVolumes(svc, &spec)
@@ -84,8 +86,28 @@ func applySwarmMode(svc types.ServiceConfig, spec *swarm.ServiceSpec) {
 
 func applySwarmNetworks(project *types.Project, svc types.ServiceConfig, spec *swarm.ServiceSpec) {
 	for _, k := range svc.NetworksByPriority() {
-		spec.TaskTemplate.Networks = append(spec.TaskTemplate.Networks, swarm.NetworkAttachmentConfig{Target: resolveNetworkName(project, k)})
+		network := swarm.NetworkAttachmentConfig{Target: resolveNetworkName(project, k)}
+		if config := svc.Networks[k]; config != nil {
+			network.Aliases = config.Aliases
+		}
+		spec.TaskTemplate.Networks = append(spec.TaskTemplate.Networks, network)
 	}
+}
+
+func applySwarmPolicies(svc types.ServiceConfig, spec *swarm.ServiceSpec) {
+	if svc.Deploy == nil {
+		return
+	}
+	if policy := svc.Deploy.RestartPolicy; policy != nil {
+		spec.TaskTemplate.RestartPolicy = &swarm.RestartPolicy{
+			Condition:   swarm.RestartPolicyCondition(policy.Condition),
+			Delay:       (*time.Duration)(policy.Delay),
+			MaxAttempts: policy.MaxAttempts,
+			Window:      (*time.Duration)(policy.Window),
+		}
+	}
+	spec.UpdateConfig = swarmUpdateConfig(svc.Deploy.UpdateConfig)
+	spec.RollbackConfig = swarmUpdateConfig(svc.Deploy.RollbackConfig)
 }
 
 func applySwarmPorts(svc types.ServiceConfig, spec *swarm.ServiceSpec) {
@@ -153,6 +175,25 @@ func applySwarmResources(svc types.ServiceConfig, spec *swarm.ServiceSpec) {
 }
 
 // ==================== Swarm value converters ====================
+
+func swarmUpdateConfig(config *types.UpdateConfig) *swarm.UpdateConfig {
+	if config == nil {
+		return nil
+	}
+	// Docker 的非指针字段用 0 表示全部并行；仅未填写时使用默认值 1。
+	parallelism := uint64(1)
+	if config.Parallelism != nil {
+		parallelism = *config.Parallelism
+	}
+	return &swarm.UpdateConfig{
+		Parallelism:     parallelism,
+		Delay:           time.Duration(config.Delay),
+		FailureAction:   config.FailureAction,
+		Monitor:         time.Duration(config.Monitor),
+		MaxFailureRatio: config.MaxFailureRatio,
+		Order:           config.Order,
+	}
+}
 
 func swarmHosts(hosts types.HostsList) []string {
 	if len(hosts) == 0 {
