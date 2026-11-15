@@ -14,6 +14,7 @@ const (
 	ComposeServiceLabel         = "com.docker.compose.service"
 	ComposeContainerNumberLabel = "com.docker.compose.container-number"
 	ComposeOneoffLabel          = "com.docker.compose.oneoff"
+	SwarmUpdateTokenLabel       = "io.isrvd.compose.update-token"
 )
 
 // CollectNetworks 收集 project 中所有需要确保存在的网络名（去重）
@@ -67,6 +68,7 @@ func envToSlice(env types.MappingWithEquals) []string {
 		}
 		result = append(result, k+"="+*v)
 	}
+	slices.Sort(result)
 	return result
 }
 

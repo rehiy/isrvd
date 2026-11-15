@@ -3,6 +3,7 @@ package compose
 import (
 	"cmp"
 	"fmt"
+	"maps"
 	"strconv"
 	"strings"
 
@@ -21,26 +22,35 @@ func ProjectFromSwarmInspect(svc swarm.Service, containerDir string) (*types.Pro
 	if cs == nil || cs.Image == "" {
 		return nil, fmt.Errorf("swarm 服务数据不完整")
 	}
+	if len(cs.Secrets) > 0 || len(cs.Configs) > 0 {
+		return nil, fmt.Errorf("无法从运行态安全还原 Swarm configs 或 secrets，请使用原始 Compose 文件")
+	}
 
 	name := cmp.Or(spec.Name, svc.ID)
 	composeSvc := types.ServiceConfig{
 		Name: name,
 
 		// 内嵌 types.ContainerSpec
-		Image:       cs.Image,
-		Environment: sliceToEnv(cs.Env),
-		Entrypoint:  types.ShellCommand(cs.Command),
-		Command:     types.ShellCommand(cs.Args),
-		WorkingDir:  cs.Dir,
-		User:        cs.User,
-		Hostname:    cs.Hostname,
-		ExtraHosts:  swarmExtraHostsToMap(cs.Hosts),
-		ReadOnly:    cs.ReadOnly,
-		StopSignal:  cs.StopSignal,
-		Sysctls:     types.Mapping(cs.Sysctls),
-		CapAdd:      cs.CapabilityAdd,
-		CapDrop:     cs.CapabilityDrop,
-		Labels:      spec.Labels,
+		Image:           cs.Image,
+		Environment:     sliceToEnv(cs.Env),
+		Entrypoint:      types.ShellCommand(cs.Command),
+		Command:         types.ShellCommand(cs.Args),
+		WorkingDir:      cs.Dir,
+		User:            cs.User,
+		Hostname:        cs.Hostname,
+		ExtraHosts:      swarmExtraHostsToMap(cs.Hosts),
+		ReadOnly:        cs.ReadOnly,
+		StopSignal:      cs.StopSignal,
+		Sysctls:         types.Mapping(cs.Sysctls),
+		CapAdd:          cs.CapabilityAdd,
+		CapDrop:         cs.CapabilityDrop,
+		Labels:          cs.Labels,
+		Ulimits:         inspectUlimits(cs.Ulimits),
+		GroupAdd:        cs.Groups,
+		Init:            cs.Init,
+		StopGracePeriod: (*types.Duration)(cs.StopGracePeriod),
+		OomScoreAdj:     cs.OomScoreAdj,
+		Isolation:       string(cs.Isolation),
 
 		// 内嵌 types.WorkloadSpec
 		Tty:       cs.TTY,
@@ -61,6 +71,60 @@ func ProjectFromSwarmInspect(svc swarm.Service, containerDir string) (*types.Pro
 			r = int(*spec.Mode.Replicated.Replicas)
 		}
 		composeSvc.Deploy = &types.DeployConfig{Mode: "replicated", Replicas: &r}
+	}
+	if cs.Healthcheck != nil {
+		h := cs.Healthcheck
+		check := &types.HealthCheckConfig{Test: types.HealthCheckTest(h.Test)}
+		if h.Interval != 0 {
+			value := types.Duration(h.Interval)
+			check.Interval = &value
+		}
+		if h.Timeout != 0 {
+			value := types.Duration(h.Timeout)
+			check.Timeout = &value
+		}
+		if h.StartPeriod != 0 {
+			value := types.Duration(h.StartPeriod)
+			check.StartPeriod = &value
+		}
+		if h.StartInterval != 0 {
+			value := types.Duration(h.StartInterval)
+			check.StartInterval = &value
+		}
+		if h.Retries > 0 {
+			value := uint64(h.Retries)
+			check.Retries = &value
+		}
+		composeSvc.HealthCheck = check
+	}
+	if spec.TaskTemplate.LogDriver != nil {
+		composeSvc.Logging = &types.LoggingConfig{Driver: spec.TaskTemplate.LogDriver.Name, Options: types.Options(spec.TaskTemplate.LogDriver.Options)}
+	}
+	if composeSvc.Deploy == nil && (len(spec.Labels) > 0 || spec.TaskTemplate.Resources != nil || spec.TaskTemplate.Placement != nil || (spec.EndpointSpec != nil && spec.EndpointSpec.Mode != "")) {
+		composeSvc.Deploy = &types.DeployConfig{}
+	}
+	if composeSvc.Deploy != nil {
+		composeSvc.Deploy.Labels = maps.Clone(spec.Labels)
+		delete(composeSvc.Deploy.Labels, SwarmUpdateTokenLabel)
+		if spec.EndpointSpec != nil {
+			composeSvc.Deploy.EndpointMode = string(spec.EndpointSpec.Mode)
+		}
+		if resources := spec.TaskTemplate.Resources; resources != nil {
+			if limits := resources.Limits; limits != nil {
+				composeSvc.Deploy.Resources.Limits = &types.Resource{NanoCPUs: types.NanoCPUs(float64(limits.NanoCPUs) / 1e9), MemoryBytes: types.UnitBytes(limits.MemoryBytes), Pids: limits.Pids}
+			}
+			if reservations := resources.Reservations; reservations != nil {
+				composeSvc.Deploy.Resources.Reservations = &types.Resource{NanoCPUs: types.NanoCPUs(float64(reservations.NanoCPUs) / 1e9), MemoryBytes: types.UnitBytes(reservations.MemoryBytes)}
+			}
+		}
+		if placement := spec.TaskTemplate.Placement; placement != nil {
+			composeSvc.Deploy.Placement.MaxReplicas = placement.MaxReplicas
+			for _, preference := range placement.Preferences {
+				if preference.Spread != nil {
+					composeSvc.Deploy.Placement.Preferences = append(composeSvc.Deploy.Placement.Preferences, types.PlacementPreferences{Spread: preference.Spread.SpreadDescriptor})
+				}
+			}
+		}
 	}
 	if spec.TaskTemplate.Placement != nil && len(spec.TaskTemplate.Placement.Constraints) > 0 {
 		if composeSvc.Deploy == nil {
@@ -95,13 +159,25 @@ func ProjectFromSwarmInspect(svc swarm.Service, containerDir string) (*types.Pro
 		}
 	}
 
+	projectVolumes := types.Volumes{}
 	for _, m := range cs.Mounts {
-		composeSvc.Volumes = append(composeSvc.Volumes, types.ServiceVolumeConfig{
-			Type:     string(m.Type),
-			Source:   swarmMountSource(m, containerDir),
-			Target:   m.Target,
-			ReadOnly: m.ReadOnly,
-		})
+		volume := types.ServiceVolumeConfig{
+			Type:        string(m.Type),
+			Source:      swarmMountSource(m, containerDir),
+			Target:      m.Target,
+			ReadOnly:    m.ReadOnly,
+			Consistency: string(m.Consistency),
+		}
+		if m.BindOptions != nil {
+			volume.Bind = &types.ServiceVolumeBind{Propagation: string(m.BindOptions.Propagation), CreateHostPath: types.OptOut(m.BindOptions.CreateMountpoint)}
+		}
+		if m.VolumeOptions != nil {
+			volume.Volume = &types.ServiceVolumeVolume{NoCopy: m.VolumeOptions.NoCopy, Subpath: m.VolumeOptions.Subpath, Labels: types.Mapping(m.VolumeOptions.Labels)}
+		}
+		if m.Type == mount.TypeVolume && m.Source != "" {
+			projectVolumes[m.Source] = types.VolumeConfig{Name: m.Source, External: true}
+		}
+		composeSvc.Volumes = append(composeSvc.Volumes, volume)
 	}
 
 	var projectNetworks types.Networks
@@ -119,6 +195,7 @@ func ProjectFromSwarmInspect(svc swarm.Service, containerDir string) (*types.Pro
 		Name:     name,
 		Services: types.Services{name: composeSvc},
 		Networks: projectNetworks,
+		Volumes:  projectVolumes,
 	}, nil
 }
 

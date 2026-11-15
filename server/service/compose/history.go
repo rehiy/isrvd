@@ -168,6 +168,8 @@ func (s *Service) historyProjectName(ctx context.Context, target, name string) (
 	}
 	if target == "docker" {
 		name = s.dockerProjectName(ctx, name, s.docker.ContainerRoot())
+	} else {
+		return s.swarmProjectName(ctx, name, s.docker.ContainerRoot())
 	}
 	return name, nil
 }

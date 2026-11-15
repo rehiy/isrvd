@@ -3,6 +3,7 @@ package compose
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -248,6 +249,8 @@ func inspectComposeConfig(installDir, projectName string, forceRuntime bool, run
 		if data, err := os.ReadFile(path); err == nil {
 			content = string(data)
 			source = "file"
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return nil, fmt.Errorf("读取 compose 文件失败: %w", err)
 		}
 	}
 	if source == "runtime" {

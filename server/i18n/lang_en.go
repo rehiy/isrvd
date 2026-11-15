@@ -106,6 +106,7 @@ func init() {
 		"重命名成功":    "renamed successfully",
 		"部署成功":     "deployed successfully",
 		"重建成功":     "rebuilt successfully",
+		"更新请求已提交":  "update request submitted",
 		"配置更新成功":   "configuration updated",
 		"成员添加成功":   "member added",
 		"成员更新成功":   "member updated",
