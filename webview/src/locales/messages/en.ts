@@ -55,6 +55,7 @@ const messages: Record<string, string> = {
     "Caddy SSL 证书": "Caddy SSL Certificates",
     "容器详情": "Container Details",
     "容器监控": "Container Monitoring",
+    "性能": "Performance",
     "Swarm 节点": "Swarm Nodes",
     "Swarm 节点详情": "Swarm Node Details",
     "Swarm 服务详情": "Swarm Service Details",

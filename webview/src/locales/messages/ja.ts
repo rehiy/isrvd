@@ -81,6 +81,7 @@ const messages: Record<string, string> = {
     '容器详情': 'コンテナ詳細',
     // Container Monitoring
     '容器监控': 'コンテナ監視',
+    '性能': 'パフォーマンス',
     // Swarm Nodes
     'Swarm 节点': 'Swarm ノード',
     // Swarm Node Details
