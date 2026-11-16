@@ -12,7 +12,10 @@ import Chart, { makeLineDataset, makeMonitorChartOptions, makeMonitorScale } fro
 import { POLL_INTERVAL } from '@/helper/format'
 import { containerHistoryValues, formatMonitorBytes, semanticColor } from '@/helper/monitor'
 
+import ContainerTabs from '@/views/docker/widget/container-tabs.vue'
+
 @Component({
+    components: { ContainerTabs },
     beforeRouteLeave(this: unknown) {
         (this as InstanceType<typeof ContainerStats>).stopStatsTimer()
     }
@@ -420,7 +423,7 @@ export default toNative(ContainerStats)
     <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="toolbar-desktop">
-        <div class="flex items-center gap-3">
+        <div class="title-group">
           <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
             <i class="fas fa-cube text-white text-sm"></i>
           </div>
@@ -429,9 +432,12 @@ export default toNative(ContainerStats)
             <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
           </div>
         </div>
+        <div class="action-group">
+          <ContainerTabs :container-id="containerId" />
+        </div>
       </div>
       <!-- 移动端 -->
-      <div class="toolbar-mobile">
+      <div class="block md:hidden">
         <div class="title-group">
           <div :class="['page-icon flex-shrink-0', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
             <i class="fas fa-cube text-white text-sm"></i>
@@ -441,6 +447,7 @@ export default toNative(ContainerStats)
             <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
           </div>
         </div>
+        <ContainerTabs :container-id="containerId" class="mt-3" />
       </div>
     </div>
     <!-- 内容区域 -->

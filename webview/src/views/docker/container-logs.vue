@@ -8,7 +8,11 @@ import type { DockerContainerInfo } from '@/service/types'
 
 import { LogStream } from '@/helper/log'
 
-@Component
+import ContainerTabs from '@/views/docker/widget/container-tabs.vue'
+
+@Component({
+    components: { ContainerTabs }
+})
 class ContainerLogs extends Vue {
     portal = usePortal()
 
@@ -18,15 +22,6 @@ class ContainerLogs extends Vue {
 
     get containerId() {
         return this.$route.params.id as string
-    }
-
-    activeTab() {
-        return this.$route.name
-    }
-
-    switchTab(name: string) {
-        this.logs.stop()
-        this.$router.push({ name, params: { id: this.containerId } })
     }
 
     // ─── 方法 ───
@@ -87,24 +82,17 @@ export default toNative(ContainerLogs)
     <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="toolbar-desktop">
-        <div class="flex items-center gap-3">
+        <div class="title-group">
           <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
             <i class="fas fa-file-lines text-white text-sm"></i>
           </div>
-          <div>
-            <h1 class="text-lg font-semibold text-slate-800">{{ $t('容器日志') }}</h1>
+          <div class="min-w-0">
+            <h1 class="title-text">{{ $t('容器日志') }}</h1>
             <p class="text-xs text-slate-500 font-mono truncate max-w-xs">{{ container ? `${container.name || container.id} · ${container.image}` : $t('加载中...') }}</p>
           </div>
         </div>
         <div class="action-group">
-          <div class="tab-group">
-            <button v-if="portal.hasPerm('GET /api/docker/container/:id')" :class="['tab-btn', activeTab() === 'docker-container' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('docker-container')">
-              <i class="fas fa-circle-info"></i><span>{{ $t('详情') }}</span>
-            </button>
-            <button v-if="portal.hasPerm('GET /api/docker/container/:id/logs')" :class="['tab-btn', activeTab() === 'docker-container-logs' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('docker-container-logs')">
-              <i class="fas fa-file-lines"></i><span>{{ $t('日志') }}</span>
-            </button>
-          </div>
+          <ContainerTabs :container-id="containerId" />
           <select v-model="logs.tail" class="w-28 select-sm" @change="handleTailChange">
             <option value="50">{{ $t('显示 50 行') }}</option>
             <option value="100">{{ $t('显示 100 行') }}</option>
@@ -154,14 +142,7 @@ export default toNative(ContainerLogs)
             </button>
           </div>
         </div>
-        <div class="tab-group">
-          <button v-if="portal.hasPerm('GET /api/docker/container/:id')" :class="['tab-btn', activeTab() === 'docker-container' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('docker-container')">
-            <i class="fas fa-circle-info"></i><span>{{ $t('详情') }}</span>
-          </button>
-          <button v-if="portal.hasPerm('GET /api/docker/container/:id/logs')" :class="['tab-btn', activeTab() === 'docker-container-logs' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('docker-container-logs')">
-            <i class="fas fa-file-lines"></i><span>{{ $t('日志') }}</span>
-          </button>
-        </div>
+        <ContainerTabs :container-id="containerId" />
       </div>
     </div>
 
