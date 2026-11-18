@@ -3,9 +3,12 @@ package swarm
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"maps"
 
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/errdefs"
 	"github.com/rehiy/libgo/logman"
 )
 
@@ -62,4 +65,20 @@ func (s *SwarmService) NodeInspect(ctx context.Context, id string) (swarm.Node, 
 		return swarm.Node{}, err
 	}
 	return node, nil
+}
+
+// NodeLabelUpdate 按读取时的版本替换标签，保留节点的其他配置。
+func (s *SwarmService) NodeLabelUpdate(ctx context.Context, id string, version uint64, labels map[string]string) error {
+	node, err := s.NodeInspect(ctx, id)
+	if err != nil {
+		return err
+	}
+	if node.Version.Index != version {
+		return errdefs.Conflict(errors.New("节点已更新，请刷新后重试"))
+	}
+	node.Spec.Labels = maps.Clone(labels)
+	if err := s.client.NodeUpdate(ctx, node.ID, node.Version, node.Spec); err != nil {
+		return err
+	}
+	return nil
 }

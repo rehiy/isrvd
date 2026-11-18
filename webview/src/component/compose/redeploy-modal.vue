@@ -71,6 +71,9 @@ class RedeployModal extends Vue {
     }
 
     get confirmText() {
+        if (this.target === 'swarm') {
+            return this.loadedRevision ? this.$t('使用此配置更新') : this.$t('提交更新')
+        }
         return this.loadedRevision ? this.$t('使用此配置重建') : this.$t('更新并重建')
     }
 

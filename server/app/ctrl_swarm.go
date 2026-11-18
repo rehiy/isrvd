@@ -3,6 +3,7 @@ package app
 import (
 	"net/http"
 
+	"github.com/docker/docker/errdefs"
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/httpd"
 
@@ -17,6 +18,7 @@ func (app *App) defineSwarmRoutes() []Route {
 		// 节点管理
 		{Method: "GET", Path: "/swarm/nodes", Handler: app.swarmNodeList, Module: "swarm", Label: "查询 Swarm 节点列表"},
 		{Method: "GET", Path: "/swarm/node/:id", Handler: app.swarmNodeInspect, Module: "swarm", Label: "获取 Swarm 节点详情"},
+		{Method: "PUT", Path: "/swarm/node/:id/labels", Handler: app.swarmNodeLabelUpdate, Module: "swarm", Label: "更新 Swarm 节点标签"},
 		{Method: "GET", Path: "/swarm/node/:id/services", Handler: app.swarmNodeServiceList, Module: "swarm", Label: "查询 Swarm 节点运行服务"},
 		{Method: "POST", Path: "/swarm/node/:id/action", Handler: app.swarmNodeAction, Module: "swarm", Label: "执行 Swarm 节点操作"},
 		{Method: "GET", Path: "/swarm/token", Handler: app.swarmJoinToken, Module: "swarm", Label: "获取 Swarm 加入令牌"},
@@ -51,6 +53,29 @@ func (app *App) swarmNodeInspect(c *gin.Context) {
 func (app *App) swarmNodeServiceList(c *gin.Context) {
 	result, err := app.swarmSvc.NodeServiceList(c.Request.Context(), c.Param("id"))
 	respondResultMsg(c, "获取节点运行服务成功", result, err)
+}
+
+func (app *App) swarmNodeLabelUpdate(c *gin.Context) {
+	var req swarm.NodeLabelUpdate
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := req.Validate(); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	err := app.swarmSvc.NodeLabelUpdate(c.Request.Context(), c.Param("id"), req)
+	switch {
+	case errdefs.IsConflict(err):
+		respondError(c, http.StatusConflict, "节点已更新，请刷新后重试")
+	case errdefs.IsNotFound(err):
+		respondError(c, http.StatusNotFound, err.Error())
+	case errdefs.IsInvalidParameter(err):
+		respondError(c, http.StatusBadRequest, err.Error())
+	default:
+		respondResultMsg(c, "节点标签已更新", nil, err)
+	}
 }
 
 func (app *App) swarmNodeAction(c *gin.Context) {

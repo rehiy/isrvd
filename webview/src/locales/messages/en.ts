@@ -9,6 +9,23 @@ import type { LanguageModule } from '../types'
 
 const messages: Record<string, string> = {
 
+    // ─── Swarm 节点标签 ───
+    '节点标签': 'Node labels',
+    '编辑节点标签': 'Edit node labels',
+    '编辑标签': 'Edit labels',
+    '添加标签': 'Add label',
+    '删除标签': 'Delete label',
+    '标签键': 'Label key',
+    '标签值': 'Label value',
+    '节点标签已更新': 'Node labels updated',
+    '标签键不能为空或包含首尾空白': 'Label keys must be nonempty and have no leading or trailing whitespace',
+    '标签键重复，请使用不同的键': 'Duplicate label key. Use a different key',
+    '修改或删除标签可能触发服务重新调度，请确认服务的调度约束。': 'Changing or deleting labels may reschedule services. Check their placement constraints.',
+    '暂无节点标签，添加地域或存储标签供多个服务共用。': 'No node labels. Add region or storage labels for services to share.',
+    '标签值允许为空。删除全部行并保存将清空节点标签。': 'Label values can be empty. Remove all rows and save to clear node labels.',
+    '多个服务可以共用节点标签，例如 region=guangzhou。': 'Services can share node labels, such as region=guangzhou.',
+    '暂无节点标签': 'No node labels',
+
     // ─── Caddy 路由顺序 ───
     '路由顺序已更新': 'Route order updated',
     '路由视图': 'Route view',
@@ -1191,7 +1208,9 @@ const messages: Record<string, string> = {
     'URL 与上传文件二选一，仅支持 .zip 格式': 'Use either a URL or an upload, only .zip is supported',
     'Swarm 模式下，附加文件仅落盘到管理节点；如需各节点共享，请将容器数据根目录配置为 NFS 等共享存储': 'In Swarm mode additional files are only written to the manager node; for sharing across nodes configure the container data root as NFS or other shared storage',
     '使用此配置重建': 'Rebuild with This Config',
+    '使用此配置更新': 'Update with This Config',
     '更新并重建': 'Update and Rebuild',
+    '提交更新': 'Submit Update',
     '变更前': 'Before Change',
     '当前为运行态反推结果，建议核对后再提交': 'This is derived from the running state, please review before submitting',
     '文件更新时间：{0}': 'File updated at: {0}',
@@ -1707,8 +1726,11 @@ const messages: Record<string, string> = {
     '目标副本数': 'Target Replicas',
     '当前运行中副本：': 'Currently running replicas: ',
     '更新配置后将会删除旧服务并重新创建，期间服务短暂不可用': 'The old service is deleted and recreated after updating, it is briefly unavailable',
+    '更新将按 Swarm 策略执行，移除的服务会被删除': 'Updates follow the Swarm policy; services removed from the project will be deleted',
     '跳过 compose.yml，按当前服务运行态重新反推 Compose': 'Skips compose.yml, re-derive Compose from the running service state',
+    '跳过 compose.yml，按项目运行态重新反推 Compose': 'Skips compose.yml and reconstructs Compose from the running project',
     'Swarm 服务配置更新成功，已重建服务': 'Swarm service config updated, service rebuilt',
+    'Swarm 更新请求已提交': 'Swarm update request submitted',
     '配置已重载': 'Config reloaded',
     '按分组管理服务器、认证、网关与容器参数': 'Manage server, auth, gateway and container options by group',
     '服务器、认证、网关与容器参数': 'Server, Auth, Gateway and Container',

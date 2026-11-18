@@ -121,7 +121,7 @@ func (app *App) composeSwarmRedeploy(c *gin.Context) {
 		return
 	}
 	result, err := app.composeSvc.SwarmRedeploy(c.Request.Context(), name, req)
-	respondResultMsg(c, "重建成功", result, err)
+	respondResultMsg(c, "更新请求已提交", result, err)
 }
 
 // ─── 辅助函数 ───

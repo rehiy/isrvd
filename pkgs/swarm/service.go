@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -23,6 +25,13 @@ func (s *SwarmService) ServiceList(ctx context.Context) ([]swarm.Service, error)
 		return nil, err
 	}
 	return services, nil
+}
+
+// ServiceListByLabel 按标签查找服务。
+func (s *SwarmService) ServiceListByLabel(ctx context.Context, key, value string) ([]swarm.Service, error) {
+	f := filters.NewArgs()
+	f.Add("label", key+"="+value)
+	return s.client.ServiceList(ctx, swarm.ServiceListOptions{Filters: f})
 }
 
 // ServiceAction 服务操作（scale/remove/force-update）
@@ -78,6 +87,9 @@ func (s *SwarmService) ServiceRemoveAndWait(ctx context.Context, id string, time
 		if client.IsErrNotFound(err) {
 			return nil
 		}
+		if err != nil {
+			return err
+		}
 		if time.Now().After(deadline) {
 			return fmt.Errorf("等待服务 %s 移除超时", id)
 		}
@@ -103,6 +115,44 @@ func (s *SwarmService) ServiceCreate(ctx context.Context, spec swarm.ServiceSpec
 		logman.Warn("ServiceCreate warning", "service", spec.Name, "warning", warning)
 	}
 	return resp.ID, nil
+}
+
+// ServiceUpdate 使用调用方读取的版本更新，防止覆盖并发修改。
+func (s *SwarmService) ServiceUpdate(ctx context.Context, current swarm.Service, spec swarm.ServiceSpec, forcePull bool) error {
+	spec.TaskTemplate.ForceUpdate = current.Spec.TaskTemplate.ForceUpdate
+	if spec.TaskTemplate.ContainerSpec != nil && current.Spec.TaskTemplate.ContainerSpec != nil {
+		newContainer, oldContainer := spec.TaskTemplate.ContainerSpec, current.Spec.TaskTemplate.ContainerSpec
+		if sameUnorderedStrings(newContainer.Env, oldContainer.Env) {
+			newContainer.Env = slices.Clone(oldContainer.Env)
+		}
+		if sameUnorderedStrings(newContainer.Hosts, oldContainer.Hosts) {
+			newContainer.Hosts = slices.Clone(oldContainer.Hosts)
+		}
+	}
+	if !forcePull && spec.TaskTemplate.ContainerSpec != nil && current.Spec.TaskTemplate.ContainerSpec != nil {
+		oldImage := current.Spec.TaskTemplate.ContainerSpec.Image
+		if base, _, ok := strings.Cut(oldImage, "@"); ok && base == spec.TaskTemplate.ContainerSpec.Image {
+			spec.TaskTemplate.ContainerSpec.Image = oldImage
+		}
+	}
+	opts := s.serviceUpdateOptions(spec)
+	if opts.EncodedRegistryAuth != "" {
+		opts.RegistryAuthFrom = swarm.RegistryAuthFromSpec
+	} else {
+		opts.RegistryAuthFrom = swarm.RegistryAuthFromPreviousSpec
+	}
+	resp, err := s.client.ServiceUpdate(ctx, current.ID, current.Version, spec, opts)
+	if err != nil && opts.RegistryAuthFrom == swarm.RegistryAuthFromPreviousSpec && strings.Contains(err.Error(), "service does not have a previous spec") {
+		opts.RegistryAuthFrom = ""
+		resp, err = s.client.ServiceUpdate(ctx, current.ID, current.Version, spec, opts)
+	}
+	if err != nil {
+		return err
+	}
+	for _, warning := range resp.Warnings {
+		logman.Warn("ServiceUpdate warning", "service", spec.Name, "warning", warning)
+	}
+	return nil
 }
 
 // ServiceForceUpdate 强制重新部署服务
@@ -214,6 +264,12 @@ func (s *SwarmService) ServiceInspect(ctx context.Context, id string) (swarm.Ser
 	return svc, nil
 }
 
+// ServiceInspectRaw 获取未插入默认值的服务快照，用于比较并发更新前后的原始 spec。
+func (s *SwarmService) ServiceInspectRaw(ctx context.Context, id string) (swarm.Service, error) {
+	svc, _, err := s.client.ServiceInspectWithRaw(ctx, id, swarm.ServiceInspectOptions{})
+	return svc, err
+}
+
 func (s *SwarmService) serviceUpdateOptions(spec swarm.ServiceSpec) swarm.ServiceUpdateOptions {
 	return swarm.ServiceUpdateOptions{
 		EncodedRegistryAuth: s.serviceRegistryAuth(spec),
@@ -234,6 +290,16 @@ func (s *SwarmService) serviceRegistryAuth(spec swarm.ServiceSpec) string {
 }
 
 // ─── 辅助函数 ───
+
+func sameUnorderedStrings(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	aCopy, bCopy := slices.Clone(a), slices.Clone(b)
+	slices.Sort(aCopy)
+	slices.Sort(bCopy)
+	return slices.Equal(aCopy, bCopy)
+}
 
 func serviceImageRef(spec swarm.ServiceSpec) string {
 	if spec.TaskTemplate.ContainerSpec != nil {

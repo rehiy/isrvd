@@ -27,6 +27,7 @@ export interface SwarmNodeInfo {
 // 节点详情
 export interface SwarmNodeDetail {
     id: string
+    version: number
     hostname: string
     role: string
     availability: string
@@ -41,6 +42,11 @@ export interface SwarmNodeDetail {
     labels: Record<string, string>
     createdAt: string
     updatedAt: string
+}
+
+export interface SwarmNodeLabelUpdate {
+    version: number
+    labels: Record<string, string>
 }
 
 export interface SwarmServicePort {

@@ -92,6 +92,7 @@ import type {
     SwarmInfo,
     SwarmNodeInfo,
     SwarmNodeDetail,
+    SwarmNodeLabelUpdate,
     SwarmServiceInfo,
     SwarmServiceDetail,
     SwarmTask,
@@ -772,6 +773,10 @@ class ApiService {
 
     swarmNodeInspect(id: string) {
         return http.get<SwarmNodeDetail>(`swarm/node/${id}`)
+    }
+
+    swarmNodeLabelUpdate(id: string, data: SwarmNodeLabelUpdate) {
+        return http.put<void>(`swarm/node/${id}/labels`, data)
     }
 
     swarmNodeAction(id: string, action: string) {
