@@ -10,6 +10,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"time"
 
@@ -184,8 +185,10 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 		oldServices[service.Name] = current
 	}
 
+	composePath := filepath.Join(installDir, compose.ComposeFileName)
+	hadComposeFile := currentConfig != nil && currentConfig.Source == "file"
 	rollbackFiles := func() error {
-		return errors.Join(os.WriteFile(filepath.Join(installDir, compose.ComposeFileName), []byte(oldContent), 0644), compose.EnvStateRestore(installDir, oldEnvState))
+		return errors.Join(restoreComposeFile(composePath, oldContent, hadComposeFile), compose.EnvStateRestore(installDir, oldEnvState))
 	}
 	if err := compose.EnvApply(installDir, req.EnvContent); err != nil {
 		return nil, wrapRedeployError(err, formatRedeployRollbackSummary(rollbackFiles(), nil, "服务"))
@@ -194,7 +197,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	if err != nil {
 		return nil, wrapRedeployError(err, formatRedeployRollbackSummary(rollbackFiles(), nil, "服务"))
 	}
-	items, err := s.swarmServicesReconcile(ctx, project, oldServices, req.ForcePull)
+	items, err := s.swarmServicesReconcile(ctx, project, oldProject, oldServices, req.ForcePull)
 	if err != nil {
 		if restoreErr := rollbackFiles(); restoreErr != nil {
 			return nil, fmt.Errorf("%w; 恢复配置失败: %v", err, restoreErr)
@@ -232,6 +235,17 @@ func (s *Service) swarmProjectName(ctx context.Context, name, root string) (stri
 		return project, nil
 	}
 	return name, nil
+}
+
+// restoreComposeFile 保持操作前 compose.yml 的存在状态。
+func restoreComposeFile(path, content string, existed bool) error {
+	if existed {
+		return os.WriteFile(path, []byte(content), 0644)
+	}
+	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	return nil
 }
 
 // ─── 内部方法 ───
@@ -289,9 +303,10 @@ func (s *Service) swarmServiceCreate(ctx context.Context, project *types.Project
 }
 
 // swarmServicesReconcile 原地更新已有服务，按旧项目范围删除移除的服务。
-func (s *Service) swarmServicesReconcile(ctx context.Context, project *types.Project, old map[string]swarm.Service, forcePull bool) ([]string, error) {
+func (s *Service) swarmServicesReconcile(ctx context.Context, project, original *types.Project, old map[string]swarm.Service, forcePull bool) ([]string, error) {
 	names := make([]string, 0, len(project.Services))
 	specs := make(map[string]swarm.ServiceSpec, len(project.Services))
+	unchanged := make(map[string]bool, len(project.Services))
 	for _, service := range project.Services {
 		spec, err := compose.ServiceToSwarmSpec(project, service)
 		if err != nil {
@@ -308,6 +323,7 @@ func (s *Service) swarmServicesReconcile(ctx context.Context, project *types.Pro
 		}
 		names = append(names, spec.Name)
 		specs[spec.Name] = spec
+		unchanged[spec.Name] = swarmServiceSpecUnchanged(original, spec, forcePull)
 	}
 	sort.Strings(names)
 	if err := s.swarmEnsureNetworks(ctx, project); err != nil {
@@ -343,11 +359,15 @@ func (s *Service) swarmServicesReconcile(ctx context.Context, project *types.Pro
 		if rollbackErr := rollback(); rollbackErr != nil {
 			return fmt.Errorf("%w; 已执行服务回滚，但部分回滚失败: %v", cause, rollbackErr)
 		}
-		return fmt.Errorf("%w; 先前服务变更已回滚", cause)
+		return fmt.Errorf("%w; 先前已确认的服务变更已回滚", cause)
 	}
 	var items []string
 	for _, name := range names {
 		spec := specs[name]
+		if previous, ok := old[name]; ok && unchanged[name] {
+			items = append(items, fmt.Sprintf("%s (%s)", name, docker.ShortID(previous.ID)))
+			continue
+		}
 		id := ""
 		if previous, ok := old[name]; ok {
 			id = previous.ID
@@ -374,6 +394,13 @@ func (s *Service) swarmServicesReconcile(ctx context.Context, project *types.Pro
 			}
 			after, err := s.swarm.ServiceInspectRaw(ctx, id)
 			if err != nil {
+				checkCtx, cancel := cleanupContext(ctx)
+				observed, checkErr := s.swarm.ServiceInspectRaw(checkCtx, id)
+				cancel()
+				if checkErr == nil && swarmUpdateConfirmed(previous.Spec, observed, token) {
+					updated = append(updated, serviceUpdate{before: previous, after: observed})
+					return nil, withRollback(fmt.Errorf("服务 %s 更新后首次读取失败: %w", name, err))
+				}
 				return nil, withRollback(fmt.Errorf("服务 %s 更新后读取失败: %w; 此服务状态未知，请检查运行态", name, err))
 			}
 			if !swarmUpdateConfirmed(previous.Spec, after, token) {
@@ -419,6 +446,19 @@ func (s *Service) swarmServicesReconcile(ctx context.Context, project *types.Pro
 		removed = append(removed, previous)
 	}
 	return items, nil
+}
+
+// swarmServiceSpecUnchanged 仅跳过本次配置未改变的服务；强制拉取始终执行更新。
+func swarmServiceSpecUnchanged(original *types.Project, spec swarm.ServiceSpec, forcePull bool) bool {
+	if forcePull || original == nil {
+		return false
+	}
+	previous, ok := original.Services[spec.Name]
+	if !ok {
+		return false
+	}
+	oldSpec, err := compose.ServiceToSwarmSpec(original, previous)
+	return err == nil && reflect.DeepEqual(oldSpec, spec)
 }
 
 func swarmUpdateConfirmed(before swarm.ServiceSpec, after swarm.Service, token string) bool {
