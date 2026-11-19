@@ -35,6 +35,16 @@ export interface ComposeRedeploy {
     image?: string
 }
 
+export interface ComposeRedeployPreview {
+    target: ComposeDeployTarget
+    projectName: string
+    changes: Array<{
+        service: string
+        action: 'create' | 'recreate' | 'update' | 'unchanged' | 'remove'
+        configChanged: boolean
+    }>
+}
+
 export interface ComposeDeployResult {
     target: ComposeDeployTarget
     projectName: string     // 实际使用的项目名
