@@ -175,6 +175,13 @@ func normalizeSnapshot(snapshot *Snapshot) error {
 		}
 		snapshot.Server.JWTSecret = secret
 	}
+	if snapshot.Server.DataSecret == "" {
+		secret, err := generateJWTSecret()
+		if err != nil {
+			return fmt.Errorf("生成数据加密密钥失败: %w", err)
+		}
+		snapshot.Server.DataSecret = secret
+	}
 	snapshot.Password = normalizePassword(snapshot.Password)
 	snapshot.Passkey = normalizePasskey(snapshot.Passkey)
 	snapshot.OIDC = normalizeOIDC(snapshot.OIDC)
