@@ -110,6 +110,9 @@ func validateSnapshot(snapshot *Snapshot) error {
 	if IsAgent() && snapshot.THA.Enabled {
 		return fmt.Errorf("%w：受控模式不能启用代理 Header 登录", ErrInvalidClusterConfig)
 	}
+	if len(strings.TrimSpace(snapshot.Server.DataSecret)) < 32 {
+		return fmt.Errorf("数据加密密钥必须至少 32 个字符")
+	}
 	if len(strings.TrimSpace(snapshot.Server.JWTSecret)) < 32 {
 		return fmt.Errorf("JWT 密钥长度不能少于 32 个字符")
 	}
