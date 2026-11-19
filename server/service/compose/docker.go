@@ -108,11 +108,6 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	if err != nil {
 		return nil, err
 	}
-	if err := s.historyBegin("docker", name, currentConfig); err != nil {
-		return nil, err
-	}
-	defer func() { s.historyFinish(ctx, "docker", name, "redeploy", resultErr == nil) }()
-
 	// 删除旧容器前验证新旧配置均可解析，新配置可生成所有待创建容器的 SDK 参数。
 	// 镜像已由 prepareRedeployContent 预拉取，此处不修改运行态或落盘文件。
 	newProject, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, req.EnvContent)
@@ -133,6 +128,11 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	if _, err := compose.LoadProjectFromContentInDir(ctx, oldContent, installDir, name, &oldEnvState.Content); err != nil {
 		return nil, fmt.Errorf("原配置无法用于回滚，已取消重部署: %w", err)
 	}
+
+	if err := s.historyBegin("docker", name, currentConfig); err != nil {
+		return nil, err
+	}
+	defer func() { s.historyFinish(ctx, "docker", name, "redeploy", resultErr == nil) }()
 
 	if err := s.dockerContainersRemove(ctx, name, oldContent, installDir, oldEnvState.Content); err != nil {
 		cleanupCtx, cleanupCancel := cleanupContext(ctx)
