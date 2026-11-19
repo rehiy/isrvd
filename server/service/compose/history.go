@@ -347,7 +347,7 @@ func historyOpen(target, name string, record HistoryRecord) (*ConfigDetail, erro
 	}
 	plain, err := secure.AEADOpen(aead, raw, []byte(historyKey(target, name)+record.ID))
 	if err != nil {
-		return nil, fmt.Errorf("历史配置解密失败，JWT 密钥可能已变更")
+		return nil, fmt.Errorf("历史配置解密失败，数据加密密钥可能已变更")
 	}
 	var detail ConfigDetail
 	if err := json.Unmarshal(plain, &detail); err != nil {
@@ -361,6 +361,6 @@ func historyKey(target, name string) string {
 }
 
 func historyAEAD() (cipher.AEAD, error) {
-	key := sha256.Sum256([]byte("isrvd-compose:" + config.Current().Server.JWTSecret))
+	key := sha256.Sum256([]byte("isrvd-compose:" + config.Current().Server.DataSecret))
 	return secure.NewAESGCM(key[:])
 }
