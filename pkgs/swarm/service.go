@@ -117,8 +117,8 @@ func (s *SwarmService) ServiceCreate(ctx context.Context, spec swarm.ServiceSpec
 	return resp.ID, nil
 }
 
-// ServiceUpdate 使用调用方读取的版本更新，防止覆盖并发修改。
-func (s *SwarmService) ServiceUpdate(ctx context.Context, current swarm.Service, spec swarm.ServiceSpec, forcePull bool) error {
+// ServiceUpdate 使用调用方读取的版本更新；registryAuthFrom 指定无显式认证时的凭据来源。
+func (s *SwarmService) ServiceUpdate(ctx context.Context, current swarm.Service, spec swarm.ServiceSpec, forcePull bool, registryAuthFrom string) error {
 	spec.TaskTemplate.ForceUpdate = current.Spec.TaskTemplate.ForceUpdate
 	if spec.TaskTemplate.ContainerSpec != nil && current.Spec.TaskTemplate.ContainerSpec != nil {
 		newContainer, oldContainer := spec.TaskTemplate.ContainerSpec, current.Spec.TaskTemplate.ContainerSpec
@@ -128,6 +128,9 @@ func (s *SwarmService) ServiceUpdate(ctx context.Context, current swarm.Service,
 		if sameUnorderedStrings(newContainer.Hosts, oldContainer.Hosts) {
 			newContainer.Hosts = slices.Clone(oldContainer.Hosts)
 		}
+		if sameUnorderedUlimits(newContainer.Ulimits, oldContainer.Ulimits) {
+			newContainer.Ulimits = slices.Clone(oldContainer.Ulimits)
+		}
 	}
 	if !forcePull && spec.TaskTemplate.ContainerSpec != nil && current.Spec.TaskTemplate.ContainerSpec != nil {
 		oldImage := current.Spec.TaskTemplate.ContainerSpec.Image
@@ -136,16 +139,10 @@ func (s *SwarmService) ServiceUpdate(ctx context.Context, current swarm.Service,
 		}
 	}
 	opts := s.serviceUpdateOptions(spec)
-	if opts.EncodedRegistryAuth != "" {
-		opts.RegistryAuthFrom = swarm.RegistryAuthFromSpec
-	} else {
-		opts.RegistryAuthFrom = swarm.RegistryAuthFromPreviousSpec
+	if opts.EncodedRegistryAuth == "" {
+		opts.RegistryAuthFrom = registryAuthFrom
 	}
 	resp, err := s.client.ServiceUpdate(ctx, current.ID, current.Version, spec, opts)
-	if err != nil && opts.RegistryAuthFrom == swarm.RegistryAuthFromPreviousSpec && strings.Contains(err.Error(), "service does not have a previous spec") {
-		opts.RegistryAuthFrom = ""
-		resp, err = s.client.ServiceUpdate(ctx, current.ID, current.Version, spec, opts)
-	}
 	if err != nil {
 		return err
 	}
@@ -273,7 +270,7 @@ func (s *SwarmService) ServiceInspectRaw(ctx context.Context, id string) (swarm.
 func (s *SwarmService) serviceUpdateOptions(spec swarm.ServiceSpec) swarm.ServiceUpdateOptions {
 	return swarm.ServiceUpdateOptions{
 		EncodedRegistryAuth: s.serviceRegistryAuth(spec),
-		RegistryAuthFrom:    swarm.RegistryAuthFromPreviousSpec,
+		RegistryAuthFrom:    swarm.RegistryAuthFromSpec,
 		QueryRegistry:       true,
 	}
 }
@@ -299,6 +296,32 @@ func sameUnorderedStrings(a, b []string) bool {
 	slices.Sort(aCopy)
 	slices.Sort(bCopy)
 	return slices.Equal(aCopy, bCopy)
+}
+
+func sameUnorderedUlimits(a, b []*container.Ulimit) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	counts := make(map[container.Ulimit]int, len(a))
+	nilCount := 0
+	for _, limit := range a {
+		if limit == nil {
+			nilCount++
+		} else {
+			counts[*limit]++
+		}
+	}
+	for _, limit := range b {
+		if limit == nil {
+			nilCount--
+		} else {
+			if counts[*limit] == 0 {
+				return false
+			}
+			counts[*limit]--
+		}
+	}
+	return nilCount == 0
 }
 
 func serviceImageRef(spec swarm.ServiceSpec) string {

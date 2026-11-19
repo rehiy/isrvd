@@ -3,6 +3,7 @@ package compose
 import (
 	"cmp"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -238,6 +239,9 @@ func dockerUlimits(ulimits map[string]*types.UlimitsConfig) []*container.Ulimit 
 		}
 		result = append(result, &units.Ulimit{Name: name, Soft: soft, Hard: hard})
 	}
+	slices.SortFunc(result, func(a, b *container.Ulimit) int {
+		return strings.Compare(a.Name, b.Name)
+	})
 	return result
 }
 

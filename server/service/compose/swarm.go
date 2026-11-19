@@ -349,7 +349,7 @@ func (s *Service) swarmServicesReconcile(ctx context.Context, project, original 
 		}
 		for i := len(updated) - 1; i >= 0; i-- {
 			service := updated[i]
-			if err := s.swarm.ServiceUpdate(cleanupCtx, service.after, service.before.Spec, false); err != nil {
+			if err := s.swarm.ServiceUpdate(cleanupCtx, service.after, service.before.Spec, false, swarm.RegistryAuthFromPreviousSpec); err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -380,7 +380,7 @@ func (s *Service) swarmServicesReconcile(ctx context.Context, project, original 
 				spec.Labels = map[string]string{}
 			}
 			spec.Labels[compose.SwarmUpdateTokenLabel] = token
-			if err := s.swarm.ServiceUpdate(ctx, previous, spec, forcePull); err != nil {
+			if err := s.swarm.ServiceUpdate(ctx, previous, spec, forcePull, swarm.RegistryAuthFromSpec); err != nil {
 				cleanupCtx, cancel := cleanupContext(ctx)
 				observed, inspectErr := s.swarm.ServiceInspectRaw(cleanupCtx, id)
 				cancel()
