@@ -113,6 +113,27 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	}
 	defer func() { s.historyFinish(ctx, "docker", name, "redeploy", resultErr == nil) }()
 
+	// 删除旧容器前验证新旧配置均可解析，新配置可生成所有待创建容器的 SDK 参数。
+	// 镜像已由 prepareRedeployContent 预拉取，此处不修改运行态或落盘文件。
+	newProject, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, req.EnvContent)
+	if err != nil {
+		return nil, fmt.Errorf("重部署预检失败: %w", err)
+	}
+	seenNames := make(map[string]bool, len(newProject.Services))
+	for _, svc := range newProject.Services {
+		spec, err := compose.ServiceToDockerCreateSpec(newProject, svc)
+		if err != nil {
+			return nil, fmt.Errorf("服务 %s 预检失败: %w", svc.Name, err)
+		}
+		if seenNames[spec.Name] {
+			return nil, fmt.Errorf("重部署预检失败: 容器名称 %s 重复", spec.Name)
+		}
+		seenNames[spec.Name] = true
+	}
+	if _, err := compose.LoadProjectFromContentInDir(ctx, oldContent, installDir, name, &oldEnvState.Content); err != nil {
+		return nil, fmt.Errorf("原配置无法用于回滚，已取消重部署: %w", err)
+	}
+
 	if err := s.dockerContainersRemove(ctx, name, oldContent, installDir, oldEnvState.Content); err != nil {
 		cleanupCtx, cleanupCancel := cleanupContext(ctx)
 		cleanupErr := s.dockerContainersRemove(cleanupCtx, name, oldContent, installDir, oldEnvState.Content)
