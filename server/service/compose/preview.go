@@ -7,15 +7,14 @@ import (
 	"reflect"
 	"slices"
 
-	"github.com/compose-spec/compose-go/v2/types"
 
 	"isrvd/pkgs/compose"
 )
 
 // RedeployPreview 只读变更预览；不代表 Docker/Swarm 实际状态或健康结果。
 type RedeployPreview struct {
-	Target      string                 `json:"target"`
-	ProjectName string                 `json:"projectName"`
+	Target      string                  `json:"target"`
+	ProjectName string                  `json:"projectName"`
 	Changes     []RedeployServiceChange `json:"changes"`
 }
 
@@ -132,8 +131,12 @@ func (s *Service) PreviewRedeploy(ctx context.Context, target, name string, req 
 		}
 	}
 	slices.SortFunc(result.Changes, func(a, b RedeployServiceChange) int {
-		if a.Service < b.Service { return -1 }
-		if a.Service > b.Service { return 1 }
+		if a.Service < b.Service {
+			return -1
+		}
+		if a.Service > b.Service {
+			return 1
+		}
 		return 0
 	})
 	return result, nil
