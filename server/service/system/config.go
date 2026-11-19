@@ -121,6 +121,8 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 				req.Server.JWTSecret, req.Server.JWTExpiration = draft.Server.JWTSecret, draft.Server.JWTExpiration
 			}
 			req.Server.JWTSecret = config.SecretKeep(req.Server.JWTSecret, draft.Server.JWTSecret)
+			// 数据密钥不能由 API 轮换，否则历史加密数据可能无法恢复。
+			req.Server.DataSecret = draft.Server.DataSecret
 			req.Server = config.ServerNormalize(req.Server)
 			newRoot = req.Server.RootDirectory
 			if oldRoot != newRoot {
