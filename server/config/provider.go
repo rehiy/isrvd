@@ -146,7 +146,13 @@ func readSnapshot() (*Snapshot, error) {
 		return nil, nil
 	}
 
+	legacyJWT := conf.Server != nil && conf.Server.JWTSecret != "" && conf.Server.JWTSecret != "your-jwt-secret"
 	migrated := migrate(conf, raw)
+	// 旧配置首次升级时沿用旧密钥材料，使已加密的业务数据无需重写。
+	if conf.Server != nil && conf.Server.DataSecret == "" && legacyJWT {
+		conf.Server.DataSecret = conf.Server.JWTSecret
+		migrated = true
+	}
 	snapshot, err := buildSnapshot(conf)
 	if err != nil {
 		return nil, fmt.Errorf("构建配置快照失败: %w", err)
@@ -156,6 +162,10 @@ func readSnapshot() (*Snapshot, error) {
 			conf.Server = &ServerConfig{}
 		}
 		conf.Server.JWTSecret = snapshot.Server.JWTSecret
+		migrated = true
+	}
+	if conf.Server.DataSecret != snapshot.Server.DataSecret {
+		conf.Server.DataSecret = snapshot.Server.DataSecret
 		migrated = true
 	}
 	if migrated {
