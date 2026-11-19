@@ -94,7 +94,7 @@ isrvd_put "/compose/swarm/<NAME>" '{"content":"<HISTORICAL_COMPOSE_YAML>","envCo
 
 存储与安全：
 
-- 快照整体 AES-GCM 加密，密钥由 JWT 密钥派生，修改 JWT 密钥会导致此前的快照无法解密。
+- 快照整体 AES-GCM 加密，密钥由 `server.dataSecret` 派生。旧安装首次升级时沿用原 JWT 密钥的加密材料，无须重写历史快照；之后 JWT 轮换不会影响快照。需随配置备份 `dataSecret`，不得手工更改。
 - 每份快照保存在 `docker.containerRoot/<PROJECT>/compose.<目标>-<记录ID>` 文件（含加密快照与元数据的 YAML，非可运行的 Compose 配置）；`.isrvd-history-docker.yml`、`.isrvd-history-swarm.yml` 仅保存轻量记录索引。即使系统配置使用 etcd，这些文件也写入项目本地目录（Swarm 为管理节点或共享存储），备份时随项目目录一起备份。
 - 项目目录、索引和版本文件不能为符号链接；写入使用原子替换，新文件权限 `0600`。
 - 索引提交成功后清理被淘汰和未被引用的版本文件；索引提交失败则移除本次新建的版本文件。
