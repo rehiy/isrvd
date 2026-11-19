@@ -191,6 +191,11 @@ func (s *Service) projectDeploy(ctx context.Context, req DeployRequest, rollback
 
 // prepareRedeployContent 合并部分更新、校验新配置并预拉取所需镜像。
 func (s *Service) prepareRedeployContent(ctx context.Context, name, installDir, oldContent string, contentErr error, req RedeployRequest) (string, error) {
+	return s.resolveRedeployContent(ctx, name, installDir, oldContent, contentErr, req, true)
+}
+
+// resolveRedeployContent 在预览时跳过镜像拉取，部署时继续执行预拉取。
+func (s *Service) resolveRedeployContent(ctx context.Context, name, installDir, oldContent string, contentErr error, req RedeployRequest, pullImages bool) (string, error) {
 	content := oldContent
 	switch {
 	case req.ServiceName != "":
@@ -217,8 +222,10 @@ func (s *Service) prepareRedeployContent(ctx context.Context, name, installDir, 
 	if len(project.Services) == 0 {
 		return "", fmt.Errorf("compose 文件中没有定义服务")
 	}
-	if err := s.imagesEnsure(ctx, project, req.ForcePull); err != nil {
-		return "", err
+	if pullImages {
+		if err := s.imagesEnsure(ctx, project, req.ForcePull); err != nil {
+			return "", err
+		}
 	}
 	return content, nil
 }
