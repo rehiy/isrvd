@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
@@ -8,12 +8,9 @@ import type { SwarmNodeDetail, SwarmServiceInfo } from '@/service/types'
 
 import { formatFileSize, formatTime } from '@/helper/format'
 
-import NodeLabelModal from './widget/node-label-modal.vue'
-
-@Component({ components: { NodeLabelModal } })
+@Component
 class NodeDetail extends Vue {
     portal = usePortal()
-    @Ref readonly labelModalRef!: InstanceType<typeof NodeLabelModal>
 
     // ─── 数据属性 ───
     nodeData: SwarmNodeDetail | null = null
@@ -60,16 +57,8 @@ class NodeDetail extends Vue {
         }
     }
 
-    handleLabelEdit() {
-        if (this.nodeData) {
-            this.labelModalRef.show(this.nodeData)
-        }
-    }
-
-    handleLabelsUpdated(id: string) {
-        if (id === this.nodeId) {
-            this.loadDetail()
-        }
+    get labelRows() {
+        return Object.entries(this.nodeData?.labels || {}).sort(([a], [b]) => a.localeCompare(b))
     }
 
     // ─── 生命周期 ───
@@ -169,14 +158,10 @@ export default toNative(NodeDetail)
 
       <!-- Labels -->
       <div>
-        <div class="flex items-center justify-between gap-3 mb-3">
-          <h2 class="text-sm font-semibold text-slate-700">{{ $t('节点标签') }}</h2>
-          <button v-if="portal.hasPerm('PUT /api/swarm/node/:id/labels')" type="button" class="btn btn-blue" @click="handleLabelEdit"><i class="fas fa-pen"></i>{{ $t('编辑标签') }}</button>
-        </div>
-        <p class="text-xs text-slate-500 mb-3">{{ $t('多个服务可以共用节点标签，例如 region=guangzhou。') }}</p>
-        <p v-if="!nodeData.labels || Object.keys(nodeData.labels).length === 0" class="empty-note">{{ $t('暂无节点标签') }}</p>
-        <div v-else class="panel-frame">
-          <table class="w-full">
+        <h2 class="section-title" :class="{ 'section-title-table': labelRows.length > 0 }">{{ $t('节点标签') }}</h2>
+        <p v-if="labelRows.length === 0" class="empty-note">{{ $t('暂无节点标签') }}</p>
+        <div v-else class="panel-frame border-t-0 rounded-t-none">
+          <table class="w-full table-fixed">
             <thead>
               <tr class="bg-slate-100 border-b border-slate-200">
                 <th class="th-sm">{{ $t('标签键') }}</th>
@@ -184,9 +169,9 @@ export default toNative(NodeDetail)
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
-              <tr v-for="(val, key) in nodeData.labels" :key="key" class="hover:bg-slate-50 transition-colors">
+              <tr v-for="([key, value]) in labelRows" :key="key" class="hover:bg-slate-50 transition-colors">
                 <td class="px-3 py-2 font-mono text-xs text-blue-600 break-all">{{ key }}</td>
-                <td class="px-3 py-2 font-mono text-xs text-slate-600 break-all">{{ val }}</td>
+                <td class="px-3 py-2 font-mono text-xs text-slate-600 break-all" :class="{ 'text-slate-400': !value }">{{ value || '—' }}</td>
               </tr>
             </tbody>
           </table>
@@ -292,6 +277,5 @@ export default toNative(NodeDetail)
         <p class="text-slate-600 font-medium">{{ $t('未找到节点详情') }}</p>
       </div>
     </div>
-    <NodeLabelModal ref="labelModalRef" @success="handleLabelsUpdated" />
   </div>
 </template>

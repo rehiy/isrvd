@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Component, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
@@ -11,9 +11,12 @@ import { copyToClipboard } from '@/helper/dom'
 import BaseModal from '@/component/modal.vue'
 import PageSearch from '@/component/page-search.vue'
 
-@Component({ components: { BaseModal, PageSearch } })
+import NodeLabelModal from './widget/node-label-modal.vue'
+
+@Component({ components: { BaseModal, NodeLabelModal, PageSearch } })
 class Nodes extends Vue {
     portal = usePortal()
+    @Ref readonly labelModalRef!: InstanceType<typeof NodeLabelModal>
 
     // ─── 数据属性 ───
     nodes: SwarmNodeInfo[] = []
@@ -25,6 +28,10 @@ class Nodes extends Vue {
     joinTokenRole: 'worker' | 'manager' = 'worker'
     joinAddr = ''
     copied = false
+
+    get canEditLabels() {
+        return this.portal.hasPerm('GET /api/swarm/node/:id') && this.portal.hasPerm('PUT /api/swarm/node/:id/labels')
+    }
 
     get filteredNodes() {
         const keyword = this.searchText.trim().toLowerCase()
@@ -52,6 +59,12 @@ class Nodes extends Vue {
             this.nodes = list.sort((a: SwarmNodeInfo, b: SwarmNodeInfo) => (b.leader ? 1 : 0) - (a.leader ? 1 : 0))
         } finally {
             this.loading = false
+        }
+    }
+
+    handleLabelEdit(node: SwarmNodeInfo) {
+        if (this.canEditLabels) {
+            this.labelModalRef.show(node.id)
         }
     }
 
@@ -188,7 +201,7 @@ export default toNative(Nodes)
                 <th class="w-28 th">{{ $t('可用性') }}</th>
                 <th class="th">{{ $t('IP 地址') }}</th>
                 <th class="w-28 th">{{ $t('引擎版本') }}</th>
-                <th class="w-44 th-right">{{ $t('操作') }}</th>
+                <th class="w-60 th-right">{{ $t('操作') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -219,6 +232,7 @@ export default toNative(Nodes)
                 <td class="px-4 py-3">
                   <div class="table-actions">
                     <button v-if="portal.hasPerm('GET /api/swarm/node/:id')" class="btn-icon btn-icon-slate" :title="$t('查看详情')" @click="$router.push(`/swarm/node/${n.id}`)"><i class="fas fa-circle-info text-xs"></i></button>
+                    <button v-if="canEditLabels" type="button" class="btn-icon btn-icon-blue" :title="$t('编辑标签')" :aria-label="$t('编辑标签')" @click="handleLabelEdit(n)"><i class="fas fa-pen text-xs"></i></button>
                     <button v-if="n.availability !== 'active' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon btn-icon-emerald" :title="$t('激活')" @click="handleNodeAction(n, 'active')"><i class="fas fa-play text-xs"></i></button>
                     <button v-if="n.availability !== 'drain' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon btn-icon-amber" :title="$t('排空')" @click="handleNodeAction(n, 'drain')"><i class="fas fa-arrow-down text-xs"></i></button>
                     <button v-if="n.availability !== 'pause' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon btn-icon-slate" :title="$t('暂停')" @click="handleNodeAction(n, 'pause')"><i class="fas fa-pause text-xs"></i></button>
@@ -274,6 +288,9 @@ export default toNative(Nodes)
               <button v-if="portal.hasPerm('GET /api/swarm/node/:id')" class="btn-icon btn-icon-slate" :title="$t('查看详情')" @click="$router.push(`/swarm/node/${n.id}`)">
                 <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">{{ $t('详情') }}</span>
               </button>
+              <button v-if="canEditLabels" type="button" class="btn-icon btn-icon-blue" :title="$t('编辑标签')" :aria-label="$t('编辑标签')" @click="handleLabelEdit(n)">
+                <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">{{ $t('编辑标签') }}</span>
+              </button>
               <button v-if="n.availability !== 'active' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon btn-icon-emerald" :title="$t('激活')" @click="handleNodeAction(n, 'active')">
                 <i class="fas fa-play text-xs"></i><span class="text-xs ml-1">{{ $t('激活') }}</span>
               </button>
@@ -301,6 +318,8 @@ export default toNative(Nodes)
       </div>
     </div>
   </div>
+
+  <NodeLabelModal ref="labelModalRef" @success="loadNodes" />
 
   <!-- 加入集群弹窗 -->
   <BaseModal v-model="showJoinModal" :title="$t('加入集群')" :loading="joinTokensLoading" allow-close-while-loading :show-confirm="false">

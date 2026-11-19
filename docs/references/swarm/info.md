@@ -54,7 +54,7 @@ isrvd_get "/swarm/node/NODE_ID"
 
 ## 管理节点标签
 
-在连接 Swarm manager 的 Web 界面，进入「Swarm → 节点 → 节点详情 → 节点标签 → 编辑标签」，添加、修改或删除键值行后保存。没有标签时也显示编辑入口；只有读取权限的用户可以查看标签，编辑需要 `PUT /api/swarm/node/:id/labels` 权限。写操作按默认审计规则记录。
+在连接 Swarm manager 的 Web 界面，进入「Swarm → 节点」，点击节点列表操作栏中的「编辑标签」（桌面表格与移动卡片均支持），添加、修改或删除键值行后保存。弹窗打开时读取最新节点标签与版本；没有标签时也可编辑。编辑需要 `GET /api/swarm/node/:id` 和 `PUT /api/swarm/node/:id/labels` 权限，节点详情页仅展示标签。写操作按默认审计规则记录。
 
 标签用于表达节点属性，可被多个服务共用。例如两台广州节点都设置 `region=guangzhou`，服务使用 `node.labels.region == guangzhou` 约束。标签修改或删除可能触发服务重新调度。
 

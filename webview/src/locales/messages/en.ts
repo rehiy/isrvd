@@ -35,6 +35,8 @@ const messages: Record<string, string> = {
     '标签键': 'Label key',
     '标签值': 'Label value',
     '节点标签已更新': 'Node labels updated',
+    '节点已更新，当前修改尚未保存。重新加载将丢弃这些修改。': 'The node has changed and your edits have not been saved. Reloading will discard these edits.',
+    '放弃修改并重新加载': 'Discard changes and reload',
     '标签键不能为空或包含首尾空白': 'Label keys must be nonempty and have no leading or trailing whitespace',
     '标签键重复，请使用不同的键': 'Duplicate label key. Use a different key',
     '修改或删除标签可能触发服务重新调度，请确认服务的调度约束。': 'Changing or deleting labels may reschedule services. Check their placement constraints.',
