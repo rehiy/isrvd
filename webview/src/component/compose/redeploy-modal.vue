@@ -254,7 +254,11 @@ class RedeployModal extends Vue {
         try {
             if (needsPreview) {
                 const response = await api.composeRedeployPreview(this.target, this.resolvedName, data)
-                if (generation === this.loadGeneration) {
+                const currentSignature = JSON.stringify({
+                    content: this.composeContent,
+                    envContent: this.envTouched ? this.envContent : undefined
+                })
+                if (generation === this.loadGeneration && this.isOpen && currentSignature === signature) {
                     this.preview = response.payload || null
                     this.previewSignature = signature
                 }
