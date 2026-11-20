@@ -71,7 +71,7 @@ func (s *Service) PreviewRedeploy(ctx context.Context, target, name string, req 
 	if err != nil {
 		return nil, err
 	}
-	content, err := s.resolveRedeployContent(ctx, name, installDir, current.Content, nil, req, false)
+	content, after, err := s.resolveRedeployContent(ctx, name, installDir, current.Content, nil, req)
 	if err != nil {
 		return nil, err
 	}
@@ -79,14 +79,6 @@ func (s *Service) PreviewRedeploy(ctx context.Context, target, name string, req 
 	if err != nil {
 		return nil, fmt.Errorf("读取原配置失败: %w", err)
 	}
-	after, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, req.EnvContent)
-	if err != nil {
-		return nil, err
-	}
-	if len(after.Services) == 0 {
-		return nil, fmt.Errorf("compose 文件中没有定义服务")
-	}
-
 	result := &RedeployPreview{Target: target, ProjectName: name, Changes: []RedeployServiceChange{}}
 	for serviceName, newService := range after.Services {
 		oldService, existed := before.Services[serviceName]
