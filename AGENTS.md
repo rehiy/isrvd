@@ -321,7 +321,7 @@ docs/
 - Caddy：`/caddy/servers`、`/caddy/routes`、`/caddy/certs`、`/caddy/global`、`/caddy/basic-auth`、`/caddy/raw`
 - Docker：`/docker/containers`、`/docker/images`、`/docker/networks`、`/docker/volumes`、`/docker/registries` 及对应详情页
 - Swarm：`/swarm/nodes`、`/swarm/services`、`/swarm/tasks` 及对应详情/日志页
-- 集中管控（仅 `center` 模式；全局概览可独立授权，其余节点管理入口依赖节点列表路由权限）：侧边栏二级菜单，`/node/overview`（全局概览，独立 `GET /api/node/overview` 权限，经现有隧道读取只读指标）、`/node/access`（节点管理）单个列表页展示全部节点，通过 pending/active/revoked 状态区分待接入、已激活和已吊销；`/node/portmaps`（端口转发）展示全部节点的转发规则；`/node` 重定向到 `/node/access`；节点视角为页面路径 `/n/<节点ID>/`
+- 集中管控（仅 `center` 模式；节点管理入口依赖节点列表路由权限）：侧边栏二级菜单，`/node/access`（节点管理）单个列表页展示全部节点，通过 pending/active/revoked 状态区分待接入、已激活和已吊销；`/node/portmaps`（端口转发）展示全部节点的转发规则；`/node` 重定向到 `/node/access`；节点视角为页面路径 `/n/<节点ID>/`
 - 系统模块：`/system/config`（父布局 + 5 个分组子路由 `/system/config/{service,auth,gateway,alert,integrations}`，默认跳转 `service`；侧边栏「系统配置」为折叠子菜单，项名与顺序来自 `webview/src/stores/config.ts` 的 `configGroups`，该常量同时定义分组与后端配置分区的映射）、`/system/audit/logs`；用户管理：`/account/members`；账户设置：`/account/password`、`/account/passkeys`、`/account/apikey`
 - 计划任务：`/cron/jobs`；Compose：`/compose/marketplace`、`/compose/deploy`
 - 折叠子菜单展开状态跟随当前路由（`@Watch` immediate）

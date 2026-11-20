@@ -63,9 +63,8 @@ class NavigationBar extends Vue {
         return this.portal.hasPerm(NODE_LIST_PERM)
     }
 
-    // 全局概览可独立授权，节点管理与转发仍依赖节点列表权限。
     get nodeVisible() {
-        return !this.portal.currentNodeId && (this.canListNodes || this.portal.hasPerm('GET /api/node/overview'))
+        return !this.portal.currentNodeId && this.canListNodes
     }
 
     get isConfigActive() {
@@ -652,10 +651,6 @@ export default toNative(NavigationBar)
             <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': nodeExpanded }"></i>
           </button>
           <div v-show="nodeExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
-            <router-link v-if="portal.hasPerm('GET /api/node/overview')" to="/node/overview" class="nav-link" :class="{ 'nav-link-active': isActive('/node/overview') }">
-              <i class="fas fa-chart-line"></i>
-              <span>{{ $t('全局概览') }}</span>
-            </router-link>
             <router-link v-if="canListNodes" to="/node/access" class="nav-link" :class="{ 'nav-link-active': isActive('/node/access') }">
               <i class="fas fa-server"></i>
               <span>{{ $t('节点管理') }}</span>

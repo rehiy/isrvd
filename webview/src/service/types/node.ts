@@ -33,36 +33,6 @@ export interface NodeInfo {
     features?: string[] // 节点声明的可选能力，如 portmap；negotiated 为 false 时无从判断
 }
 
-// 中控全局概览：只读快照，不包含节点 token、端口映射等配置。
-export interface NodeOverviewItem {
-    id: string
-    name: string
-    hostname: string
-    status: NodeInfo['status']
-    os: string
-    arch: string
-    agentVersion?: string
-    online: boolean
-    latency: number
-    system?: {
-        collectedAt: number
-        cpuPercent?: number
-        memoryUsed: number
-        memoryTotal: number
-        diskUsed: number
-        diskTotal: number
-    }
-    docker?: { containersRunning: number; containersStopped: number; containersPaused: number }
-    swarm?: { services: number; nodes: number }
-    monitorError?: boolean
-}
-
-export interface NodeOverviewInfo {
-    collectedAt: number
-    online: number
-    nodes: NodeOverviewItem[]
-}
-
 // 节点更新请求
 export interface NodeUpdate {
     name: string

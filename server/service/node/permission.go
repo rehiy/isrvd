@@ -12,7 +12,6 @@ type PermissionRoute struct {
 func PermissionRoutes() []PermissionRoute {
 	return []PermissionRoute{
 		{"GET", "/api/node/nodes", "查询节点列表"},
-		{"GET", "/api/node/overview", "查询多节点全局概览"},
 		{"POST", "/api/node", "创建节点"},
 		{"PUT", "/api/node/:id", "更新节点"},
 		{"POST", "/api/node/:id/revoke", "吊销节点"},

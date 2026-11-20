@@ -127,7 +127,6 @@ import type {
     SFTPWrite,
     // Node
     NodeInfo,
-    NodeOverviewInfo,
     NodeUpdate,
     NodePortMapUpdate,
     NodeCreate,
@@ -957,10 +956,6 @@ class ApiService {
 
     nodeList() {
         return http.get<NodeInfo[]>('node/nodes')
-    }
-
-    nodeOverviewStats() {
-        return http.get<NodeOverviewInfo>('node/overview')
     }
 
     nodeCreate(data: NodeCreate) {

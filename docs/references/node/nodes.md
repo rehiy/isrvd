@@ -41,29 +41,6 @@ isrvd_get "/node/nodes"
 
 中控可在[监控告警配置](../system/config.md#应用故障告警)中启用 `notify.events.nodeEnabled`：对已激活节点持续离线约 90–120 秒发送告警，恢复在线后发送一次恢复通知。节点列表接口保持只读，不增加告警记录字段。
 
-### 查询多节点全局概览
-
-```bash
-isrvd_get "/node/overview"
-```
-
-仅中控模式提供，需单独授予 `GET /api/node/overview` 权限。此权限可读取全部受管节点的主机资源使用情况、Docker 容器数和 Swarm 集群服务数，不需要单独开放这些模块的完整管理接口；不返回节点令牌、端口映射及其他敏感配置。节点列表及切换入口仍需 `GET /api/node/nodes`。
-
-返回 `{"collectedAt": 0, "online": 0, "nodes": []}`。`collectedAt` 为整体采集结束的 Unix 秒时间戳，`online` 为采样时在线节点数。每个 `nodes[]` 包含：
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `id`、`name`、`hostname`、`status`、`os`、`arch` | string | 节点基本信息，均只读 |
-| `agentVersion` | string | 在线时的受管机版本，可缺省 |
-| `online` | bool | 采样开始时节点是否在线 |
-| `latency` | number | 隧道往返延迟（毫秒） |
-| `system` | object | 主机指标，成功时才返回：`collectedAt`（Unix 秒）、`cpuPercent`（各 CPU 平均使用率，可缺省）、`memoryUsed`、`memoryTotal`、`diskUsed`、`diskTotal`（容量单位均为字节） |
-| `docker` | object | Docker 可用时返回 `containersRunning`、`containersStopped`、`containersPaused` |
-| `swarm` | object | Swarm 可用时返回 `services` 和 `nodes`；同一 Swarm 集群可能被多个受管机访问，不能跨节点直接累计 |
-| `monitorError` | bool | 在线节点主机指标读取失败时为 true，其他情况不返回 |
-
-中控通过现有隧道复用节点的只读 `/overview/monitor?since=0&type=host`、`/docker/info`、`/swarm/info` 接口；不在服务器保存聚合快照。单节点采集最长 12 秒、全局最多 6 个节点同时采集，单次全局查询总预算为 15 秒；节点较多或部分节点超时时优先返回已采集的数据，未完成的在线节点标为指标采集失败，某个节点失败不阻断其他节点；Docker/Swarm 模块不可用时对应字段缺省。页面每 30 秒刷新一次，但不是后台监控或告警服务，指标采样成功也不代表应用健康。
-
 ### 创建节点并生成 token
 
 ```bash
