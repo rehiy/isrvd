@@ -86,13 +86,13 @@ func LoadProject(ctx context.Context, opts LoadOptions) (*types.Project, error) 
 
 // LoadProjectFromContentInDir 从 yaml 文本加载 compose 项目，并以 workingDir 作为项目目录解析相对路径。
 // workingDir 为空时回退到进程当前目录（与上游行为一致）。
-// envContent 为 nil 时仅读 workingDir/.env；非 nil 时在磁盘 .env 之上叠加。
+// envContent 为 nil 时读取 workingDir/.env；非 nil 时替代该文件，空字符串表示清空。
 func LoadProjectFromContentInDir(ctx context.Context, content, workingDir, projectName string, envContent *string) (*types.Project, error) {
 	return loadProjectContent(ctx, content, workingDir, projectName, true, envContent, false)
 }
 
 // loadProjectContent 从 yaml 文本加载 compose 项目，并合并指定的 .env 内容到插值环境。
-// envContent 为 nil 时仅读 workingDir/.env；非 nil 时在磁盘 .env 之上叠加。
+// envContent 为 nil 时读取 workingDir/.env；非 nil 时替代该文件，空字符串表示清空。
 // skipServiceEnvironmentResolution 为 true 时不合并 services.environment/env_file。
 func loadProjectContent(ctx context.Context, content, workingDir, projectName string, resolvePaths bool, envContent *string, skipServiceEnvironmentResolution bool) (*types.Project, error) {
 	if content == "" {
@@ -205,7 +205,8 @@ func projectEnvironment(extra map[string]string) map[string]string {
 func projectEnvironmentWithEnvFile(ctx context.Context, extra map[string]string, envContent *string, workingDir string) (map[string]string, error) {
 	env := make(map[string]string)
 
-	if workingDir != "" {
+	// 提交了 envContent 时，它就是本次部署的完整 .env，不能继承旧文件的变量。
+	if workingDir != "" && envContent == nil {
 		envFilePath := filepath.Join(workingDir, EnvFileName)
 		if data, err := os.ReadFile(envFilePath); err == nil {
 			fileEnv, perr := parseEnvContent(string(data))

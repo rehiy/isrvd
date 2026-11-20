@@ -223,6 +223,8 @@ isrvd_put "/compose/docker/<NAME>" "$(jq -n --arg envContent "$(cat .env)" '{env
 
 清空 `.env`（提交空字符串）：
 
+空字符串在解析和预检阶段也会忽略磁盘旧 `.env` 中的变量，确保变更预览、预检和实际部署使用一致的插值环境。
+
 ```bash
 isrvd_put "/compose/docker/<NAME>" "$(jq -n --arg content "$(cat docker-compose.yml)" '{content:$content,envContent:""}')"
 ```
