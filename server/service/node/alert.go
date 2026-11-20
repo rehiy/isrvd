@@ -3,7 +3,6 @@ package node
 import (
 	"context"
 	"time"
-
 )
 
 // AlertWatch 只观察中控已激活节点的隧道在线状态；告警启用判定和通知发送均由调用方注入。
