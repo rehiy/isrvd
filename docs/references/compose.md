@@ -205,6 +205,8 @@ services:
 
 执行前先加载新配置、验证所有容器的创建参数和名称唯一性，并确认旧配置可以用于回滚；预检失败时不会删除旧容器。预检不保证 Docker 运行时资源可用或应用最终健康。
 
+点击重部署窗口的「预览」后，先读取服务级变更清单，再次确认才真正更新。预览接口为 `POST /api/compose/docker/<NAME>/preview`，使用与重部署相同的 JSON 请求体，仅解析配置，不写文件或拉取镜像。Docker 对已有服务显示 `recreate`（仍将重建），并用 `configChanged` 标出配置是否发生变化；`create` 和 `remove` 分别代表新增与移除。预览基于当前配置，不保证运行态无漂移、端口可用或应用健康。预览权限与对应的 `PUT /api/compose/docker/:name` 一致。
+
 ```bash
 isrvd_put "/compose/docker/<NAME>" "$(jq -n --arg content "$(cat docker-compose.yml)" '{content:$content}')"
 ```
@@ -238,6 +240,8 @@ isrvd_put "/compose/docker/<NAME>" '{"serviceName":"<SERVICE_NAME>","image":"<NE
 ```
 
 ## Swarm Compose
+
+Swarm 重部署窗口也会先使用 `POST /api/compose/swarm/<NAME>/preview` 只读预览，按服务显示 `create`、`update`、`unchanged`、`remove`。该清单只比较 Compose 规范生成的服务配置，不代表当前 Swarm 任务实际健康；未变化的配置也可能与运行态发生漂移。预览权限与对应重部署 PUT 接口一致。
 
 ### 部署策略与网络别名
 

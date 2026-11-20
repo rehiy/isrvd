@@ -20,11 +20,13 @@ func (app *App) defineComposeRoutes() []Route {
 		{Method: "GET", Path: "/compose/docker/:name/history", Handler: app.composeDockerHistoryList, Module: "compose", Label: "读取 Docker Compose 部署记录"},
 		{Method: "POST", Path: "/compose/docker", Handler: app.composeDockerDeploy, Module: "compose", Label: "部署 Docker Compose 应用"},
 		{Method: "PUT", Path: "/compose/docker/:name", Handler: app.composeDockerRedeploy, Module: "compose", Label: "重新部署 Docker Compose 应用"},
+		{Method: "POST", Path: "/compose/docker/:name/preview", Handler: app.composeDockerPreview, Module: "compose", Label: "预览 Docker Compose 变更", Access: AccessAuth, Audit: AuditIgnore},
 		// Swarm Compose
 		{Method: "GET", Path: "/compose/swarm/:name", Handler: app.composeSwarmInspect, Module: "compose", Label: "读取 Swarm Stack 配置"},
 		{Method: "GET", Path: "/compose/swarm/:name/history", Handler: app.composeSwarmHistoryList, Module: "compose", Label: "读取 Swarm Stack 部署记录"},
 		{Method: "POST", Path: "/compose/swarm", Handler: app.composeSwarmDeploy, Module: "compose", Label: "部署 Swarm Stack 应用"},
 		{Method: "PUT", Path: "/compose/swarm/:name", Handler: app.composeSwarmRedeploy, Module: "compose", Label: "重新部署 Swarm Stack 应用"},
+		{Method: "POST", Path: "/compose/swarm/:name/preview", Handler: app.composeSwarmPreview, Module: "compose", Label: "预览 Swarm Compose 变更", Access: AccessAuth, Audit: AuditIgnore},
 	}
 }
 
@@ -125,6 +127,34 @@ func (app *App) composeSwarmRedeploy(c *gin.Context) {
 }
 
 // ─── 辅助函数 ───
+
+// 预览是只读操作，但会返回敏感部署结构，仅允许拥有同目标重部署权限的用户访问。
+func (app *App) composeDockerPreview(c *gin.Context) {
+	app.composeRedeployPreview(c, "docker")
+}
+
+func (app *App) composeSwarmPreview(c *gin.Context) {
+	app.composeRedeployPreview(c, "swarm")
+}
+
+func (app *App) composeRedeployPreview(c *gin.Context, target string) {
+	name, ok := composeNameParam(c)
+	if !ok {
+		return
+	}
+	permissionPath := "/api/compose/" + target + "/:name"
+	if err := app.accountSvc.PermCheck(c.GetString("username"), "重新部署 Compose 应用", http.MethodPut, permissionPath); err != nil {
+		respondError(c, http.StatusForbidden, err.Error())
+		return
+	}
+	var req compose.RedeployRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	result, err := app.composeSvc.PreviewRedeploy(c.Request.Context(), target, name, req)
+	respondResultMsg(c, "变更预览已生成", result, err)
+}
 
 func composeNameParam(c *gin.Context) (string, bool) {
 	name := c.Param("name")

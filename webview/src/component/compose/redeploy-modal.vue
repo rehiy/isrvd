@@ -4,7 +4,7 @@ import { Component, Prop, Vue, Watch, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { ComposeDeployTarget, ComposeHistoryInfo } from '@/service/types'
+import type { ComposeDeployTarget, ComposeHistoryInfo, ComposeRedeployPreview } from '@/service/types'
 
 import ComposeEditor from '@/component/compose/compose-editor.vue'
 import BaseModal from '@/component/modal.vue'
@@ -38,11 +38,22 @@ class RedeployModal extends Vue {
     historyLoading = false
     loadError = false
     submitting = false
+    preview: ComposeRedeployPreview | null = null
+    previewSignature = ''
     loadedContent = ''
     loadedEnv = ''
     pendingSwitch: { force: boolean, revision: string } | null = null
     lastLoad = { force: false, revision: '' }
     loadGeneration = 0
+
+    @Watch('composeContent')
+    @Watch('envContent')
+    @Watch('target')
+    @Watch('resolvedName')
+    onPreviewInputsChanged() {
+        this.preview = null
+        this.previewSignature = ''
+    }
 
     @Watch('isOpen')
     onOpenChange(open: boolean) {
@@ -51,6 +62,8 @@ class RedeployModal extends Vue {
             this.modalLoading = false
             this.historyLoading = false
             this.submitting = false
+            this.preview = null
+            this.previewSignature = ''
         }
     }
 
@@ -71,10 +84,23 @@ class RedeployModal extends Vue {
     }
 
     get confirmText() {
+        if (!this.preview) {
+            return this.$t('预览')
+        }
         if (this.target === 'swarm') {
             return this.loadedRevision ? this.$t('使用此配置更新') : this.$t('提交更新')
         }
         return this.loadedRevision ? this.$t('使用此配置重建') : this.$t('更新并重建')
+    }
+
+    previewActionLabel(action: ComposeRedeployPreview['changes'][number]['action']) {
+        switch (action) {
+            case 'create': return this.$t('创建')
+            case 'remove': return this.$t('删除服务')
+            case 'recreate': return this.$t('更新并重建')
+            case 'update': return this.$t('提交更新')
+            default: return this.$t('当前配置')
+        }
     }
 
     historyLabel(record: ComposeHistoryInfo) {
@@ -219,12 +245,28 @@ class RedeployModal extends Vue {
             return
         }
         const generation = this.loadGeneration
+        const data = {
+            content: this.composeContent,
+            envContent: this.envTouched ? this.envContent : undefined
+        }
+        const signature = JSON.stringify({ target: this.target, name: this.resolvedName, ...data })
+        const needsPreview = !this.preview || this.previewSignature !== signature
         this.modalLoading = true
-        this.submitting = true
+        this.submitting = !needsPreview
         try {
-            const data = {
-                content: this.composeContent,
-                envContent: this.envTouched ? this.envContent : undefined
+            if (needsPreview) {
+                const response = await api.composeRedeployPreview(this.target, this.resolvedName, data)
+                const currentSignature = JSON.stringify({
+                    target: this.target,
+                    name: this.resolvedName,
+                    content: this.composeContent,
+                    envContent: this.envTouched ? this.envContent : undefined
+                })
+                if (generation === this.loadGeneration && this.isOpen && currentSignature === signature) {
+                    this.preview = response.payload || null
+                    this.previewSignature = signature
+                }
+                return
             }
             if (this.target === 'docker') {
                 await api.composeDockerRedeploy(this.resolvedName, data)
@@ -294,6 +336,16 @@ export default toNative(RedeployModal)
       </div>
       <div class="min-w-0">
         <ComposeEditor filename=".env" :model-value="envContent" :disabled="modalLoading" height="min(42vh, 360px)" @update:model-value="onEnvContentChange" />
+      </div>
+      <div v-if="preview" class="rounded-lg border border-slate-200 bg-slate-50 p-3 sm:col-span-2">
+        <p class="form-label mb-2">{{ $t('预览') }} · {{ preview.projectName }}</p>
+        <ul class="flex flex-wrap gap-2">
+          <li v-for="change in preview.changes" :key="change.service" class="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs">
+            <span class="font-medium">{{ change.service }}</span>
+            <span class="ml-2 text-slate-500">{{ previewActionLabel(change.action) }}</span>
+            <span v-if="change.action === 'recreate' && !change.configChanged" class="ml-1 text-slate-400">{{ $t('配置无变化') }}</span>
+          </li>
+        </ul>
       </div>
       <div v-if="composeWarning" class="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:col-span-2">
         <p class="text-sm text-amber-700">
