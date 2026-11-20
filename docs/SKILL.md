@@ -87,7 +87,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 | 系统 | [references/system/cron.md](references/system/cron.md) | 计划任务 |
 | SSH | [references/ssh/hosts.md](references/ssh/hosts.md) | SSH 主机/凭据管理、SSH 终端 |
 | SSH | [references/ssh/sftp.md](references/ssh/sftp.md) | SFTP 远程文件管理 |
-| 节点 | [references/node/nodes.md](references/node/nodes.md) | 集中管理：创建节点与 token、接入/吊销/删除、端口转发（中控监听 TCP/UDP 端口并转发到节点）、以节点视角访问（仅 center 模式，按路由权限授权） |
+| 节点 | [references/node/nodes.md](references/node/nodes.md) | 多节点全局概览、集中管理：创建节点与 token、接入/吊销/删除、端口转发（中控监听 TCP/UDP 端口并转发到节点）、以节点视角访问（仅 center 模式，按路由权限授权） |
 | 本机进程 | [references/local.md](references/local.md) | 进程列表、终止进程 |
 | 终端 | [references/shell.md](references/shell.md) | Web Shell（本地终端） |
 | Copilot | [references/copilot.md](references/copilot.md) | 接口目录与 AG-UI 对话 |
@@ -136,7 +136,8 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 │   ├── 日志             → references/docker/containers.md 或 references/swarm/services.md
 │   ├── 文件管理         → references/system/filer.md
 │   ├── 主机进程         → references/local.md
-│   └── 受管节点状态     → references/node/nodes.md (GET /node/nodes，仅 center 模式)
+│   ├── 受管节点状态     → references/node/nodes.md (GET /node/nodes，仅 center 模式)
+│   └── 多节点全局概览   → references/node/nodes.md (GET /node/overview，仅 center 模式)
 │
 ├── 删除/清理
 │   ├── 容器/镜像/网络/卷 → references/docker/ 下对应文件（action=remove）

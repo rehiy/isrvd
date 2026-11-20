@@ -72,6 +72,12 @@ const routes: RouteRecordRaw[] = [
     redirect: '/node/access'
   },
   {
+    path: '/node/overview',
+    name: 'node-overview',
+    component: () => import('@/views/node/overview.vue'),
+    meta: { title: '全局概览', permissions: ['GET /api/node/overview'] }
+  },
+  {
     path: '/node/access',
     name: 'node-access',
     component: () => import('@/views/node/nodes.vue'),
