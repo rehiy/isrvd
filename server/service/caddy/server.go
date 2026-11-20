@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"net/netip"
 	"slices"
 	"strings"
 	"unicode/utf8"
@@ -31,6 +32,12 @@ type ServerAutomaticHTTPSForm struct {
 	DisableRedirects bool `json:"disable_redirects"` // 禁用 HTTP 到 HTTPS 自动跳转
 }
 
+// ServerTrustedProxiesForm 是内置 static 模块的受信任代理配置。
+type ServerTrustedProxiesForm struct {
+	Source string   `json:"source"` // 仅支持 static
+	Ranges []string `json:"ranges"` // IP 地址或 CIDR 网段
+}
+
 // ServerForm 是服务接口允许编辑的 Caddy HTTP server 字段。
 //
 // 更新接口采用 PUT 语义：这些字段组成一个完整的可编辑视图；省略、null 或空值会
@@ -44,7 +51,9 @@ type ServerForm struct {
 	IdleTimeout    string                    `json:"idle_timeout,omitempty"`                        // 空闲连接超时（Go duration 字符串）
 	ReadTimeout    string                    `json:"read_timeout,omitempty"`                        // 读取请求超时（Go duration 字符串）
 	WriteTimeout   string                    `json:"write_timeout,omitempty"`                       // 写入响应超时（Go duration 字符串）
-	MaxHeaderBytes int                       `json:"max_header_bytes,omitempty"`                    // 请求头最大字节数
+	MaxHeaderBytes     int                       `json:"max_header_bytes,omitempty"`      // 请求头最大字节数
+	TrustedProxies     *ServerTrustedProxiesForm `json:"trusted_proxies,omitempty"`     // 受信任代理，当前仅管理 static 模块
+	TrustedProxiesStrict int                    `json:"trusted_proxies_strict,omitempty"` // 从右往左解析 X-Forwarded-For
 }
 
 // ServerView 是不会暴露路由等子资源的服务视图。
@@ -52,7 +61,8 @@ type ServerView struct {
 	ID   string `json:"id"`   // 服务不透明标识：`~` + base64url(name)，用于详情、更新、删除
 	Name string `json:"name"` // Caddy server 名称
 	ServerForm
-	RouteCount int `json:"routeCount"` // 该服务下的路由数量
+	RouteCount          int  `json:"routeCount"`          // 该服务下的路由数量
+	TrustedProxiesCustom bool `json:"trustedProxiesCustom,omitempty"` // 非 static 或带扩展字段的代理来源由原始配置管理
 }
 
 // ServerCreateRequest 创建服务的请求。
@@ -114,7 +124,9 @@ func (s *Service) ServerCreate(ctx context.Context, req ServerCreateRequest) err
 			return ErrServerExists
 		}
 		srv := &caddy.HTTPServer{}
-		applyServerForm(srv, form)
+		if err := applyServerForm(srv, form); err != nil {
+			return err
+		}
 		setServer(cfg, name, srv)
 		return nil
 	})
@@ -136,8 +148,7 @@ func (s *Service) ServerUpdate(ctx context.Context, ref string, req ServerForm) 
 		if srv == nil {
 			return ErrServerNotFound
 		}
-		applyServerForm(srv, form)
-		return nil
+		return applyServerForm(srv, form)
 	})
 }
 
@@ -180,6 +191,10 @@ func serverView(name string, srv *caddy.HTTPServer) ServerView {
 		WriteTimeout:   srv.WriteTimeout.String(),
 		MaxHeaderBytes: srv.MaxHeaderBytes,
 	}
+	view.TrustedProxies, view.TrustedProxiesCustom = serverTrustedProxies(srv.TrustedProxies)
+	if !view.TrustedProxiesCustom {
+		view.TrustedProxiesStrict = srv.TrustedProxiesStrict
+	}
 	if srv.AutomaticHTTPS != nil {
 		view.AutomaticHTTPS = &ServerAutomaticHTTPSForm{
 			Disable:          srv.AutomaticHTTPS.Disable,
@@ -189,7 +204,25 @@ func serverView(name string, srv *caddy.HTTPServer) ServerView {
 	return view
 }
 
-func applyServerForm(srv *caddy.HTTPServer, form ServerForm) {
+func applyServerForm(srv *caddy.HTTPServer, form ServerForm) error {
+	// 其他模块或带扩展字段的代理源不在表单管理范围；保存其他服务参数时保留其原始配置。
+	_, custom := serverTrustedProxies(srv.TrustedProxies)
+	if custom && (form.TrustedProxies != nil || form.TrustedProxiesStrict != 0) {
+		return fmt.Errorf("%w: 自定义可信代理来源请使用原始配置编辑", ErrServerConfigInvalid)
+	}
+	if !custom {
+		if form.TrustedProxies == nil {
+			srv.TrustedProxies = nil
+			srv.TrustedProxiesStrict = 0
+		} else {
+			raw, err := json.Marshal(form.TrustedProxies)
+			if err != nil {
+				return fmt.Errorf("%w: 编码可信代理配置失败: %v", ErrServerConfigInvalid, err)
+			}
+			srv.TrustedProxies = raw
+			srv.TrustedProxiesStrict = form.TrustedProxiesStrict
+		}
+	}
 	// Config 的无损解码会在 Extras 中记住 omitempty 无法表达的显式空集合。
 	// 这些字段属于本表单的完整 PUT 视图，更新时不能让旧的存在性标记覆盖新值。
 	for _, key := range []string{"listen", "protocols", "automatic_https"} {
@@ -220,6 +253,31 @@ func applyServerForm(srv *caddy.HTTPServer, form ServerForm) {
 			DisableRedirects: disableRedirects,
 		}
 	}
+	return nil
+}
+
+// serverTrustedProxies 提取可由表单安全编辑的 static 来源；其他模块保持原始 JSON。
+func serverTrustedProxies(raw json.RawMessage) (*ServerTrustedProxiesForm, bool) {
+	if len(raw) == 0 || string(raw) == "null" {
+		return nil, false
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return nil, true
+	}
+	if len(fields) == 0 {
+		return nil, true
+	}
+	for key := range fields {
+		if key != "source" && key != "ranges" {
+			return nil, true
+		}
+	}
+	var form ServerTrustedProxiesForm
+	if err := json.Unmarshal(raw, &form); err != nil || form.Source != "static" {
+		return nil, true
+	}
+	return &form, false
 }
 
 func hasUnmanagedAutomaticHTTPS(config *caddy.AutomaticHTTPS) bool {
@@ -285,6 +343,47 @@ func normalizeServerForm(form ServerForm) (ServerForm, error) {
 
 	if form.MaxHeaderBytes < 0 {
 		return ServerForm{}, fmt.Errorf("%w: max_header_bytes 不能为负数", ErrServerConfigInvalid)
+	}
+	if form.TrustedProxiesStrict != 0 && form.TrustedProxiesStrict != 1 {
+		return ServerForm{}, fmt.Errorf("%w: trusted_proxies_strict 只能为 0 或 1", ErrServerConfigInvalid)
+	}
+	if form.TrustedProxies == nil {
+		if form.TrustedProxiesStrict != 0 {
+			return ServerForm{}, fmt.Errorf("%w: 必须先配置可信代理地址", ErrServerConfigInvalid)
+		}
+		return form, nil
+	}
+	if form.TrustedProxies.Source != "static" {
+		return ServerForm{}, fmt.Errorf("%w: 仅支持 static 可信代理来源", ErrServerConfigInvalid)
+	}
+	if len(form.TrustedProxies.Ranges) > 256 {
+		return ServerForm{}, fmt.Errorf("%w: 可信代理地址不能超过 256 项", ErrServerConfigInvalid)
+	}
+	seen := make(map[string]bool, len(form.TrustedProxies.Ranges))
+	for i, value := range form.TrustedProxies.Ranges {
+		value = strings.TrimSpace(value)
+		prefix, err := netip.ParsePrefix(value)
+		if err != nil {
+			addr, parseErr := netip.ParseAddr(value)
+			if parseErr != nil || addr.Zone() != "" {
+				return ServerForm{}, fmt.Errorf("%w: 无效的可信代理 IP 或网段 %q", ErrServerConfigInvalid, value)
+			}
+			prefix = netip.PrefixFrom(addr, addr.BitLen())
+		}
+		prefix = prefix.Masked()
+		if prefix.Bits() == 0 {
+			return ServerForm{}, fmt.Errorf("%w: 不允许信任全部 IP 地址", ErrServerConfigInvalid)
+		}
+		value = prefix.String()
+		if seen[value] {
+			return ServerForm{}, fmt.Errorf("%w: 可信代理地址 %q 重复", ErrServerConfigInvalid, value)
+		}
+		seen[value] = true
+		form.TrustedProxies.Ranges[i] = value
+	}
+	if len(form.TrustedProxies.Ranges) == 0 {
+		form.TrustedProxies = nil
+		form.TrustedProxiesStrict = 0
 	}
 	return form, nil
 }

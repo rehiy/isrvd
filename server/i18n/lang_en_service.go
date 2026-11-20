@@ -51,6 +51,16 @@ func init() {
 		"标签键不能为空或包含首尾空白": "Label keys must be nonempty and have no leading or trailing whitespace",
 		"标签必须是有效的 UTF-8": "Labels must be valid UTF-8",
 		"更新节点标签失败":       "Failed to update node labels",
+		// ─── Caddy 可信代理校验 ───
+		"trusted_proxies_strict 只能为 0 或 1": "trusted_proxies_strict must be 0 or 1",
+		"必须先配置可信代理地址": "Trusted proxy addresses are required",
+		"仅支持 static 可信代理来源": "Only the static trusted proxy source is supported",
+		"可信代理地址不能超过 256 项": "Trusted proxy ranges may not exceed 256 entries",
+		"无效的可信代理 IP 或网段 %q": "Invalid trusted proxy IP or CIDR %q",
+		"不允许信任全部 IP 地址": "Trusting all IP addresses is not allowed",
+		"可信代理地址 %q 重复": "Duplicate trusted proxy address %q",
+		"自定义可信代理来源请使用原始配置编辑": "Edit custom trusted proxy sources using raw configuration",
+		"编码可信代理配置失败: %v": "Failed to encode trusted proxy configuration: %v",
 		// ─── Caddy 路由顺序 ───
 		"请至少保留一个账号；解除认证请使用账号删除操作": "Keep at least one account. Use account deletion to remove authentication",
 		"路由位置超出范围":          "Route position is out of range",

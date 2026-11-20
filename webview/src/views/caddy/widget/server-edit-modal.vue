@@ -27,6 +27,9 @@ const defaultFormData = () => ({
     readTimeout: '',
     writeTimeout: '',
     maxHeaderBytes: 0,
+    trustedProxyRanges: '',
+    trustedProxiesStrict: true,
+    trustedProxiesCustom: false,
     strictSNIHost: 'auto' as StrictSNIHostMode,
     autoHTTPSDisabled: false,
     redirectsDisabled: false
@@ -64,6 +67,9 @@ class ServerEditModal extends Vue {
             this.formData.readTimeout = server.read_timeout || ''
             this.formData.writeTimeout = server.write_timeout || ''
             this.formData.maxHeaderBytes = server.max_header_bytes || 0
+            this.formData.trustedProxyRanges = (server.trusted_proxies?.ranges || []).join('\n')
+            this.formData.trustedProxiesStrict = server.trusted_proxies ? server.trusted_proxies_strict === 1 : true
+            this.formData.trustedProxiesCustom = Boolean(server.trustedProxiesCustom)
             this.formData.strictSNIHost = server.strict_sni_host === undefined
                 ? 'auto'
                 : (server.strict_sni_host ? 'enabled' : 'disabled')
@@ -74,7 +80,7 @@ class ServerEditModal extends Vue {
     }
 
     serverConfig(server: CaddyServerDetail): CaddyServerUpdate {
-        return Object.fromEntries(Object.entries(server).filter(([key]) => !['id', 'name', 'routeCount'].includes(key))) as CaddyServerUpdate
+        return Object.fromEntries(Object.entries(server).filter(([key]) => !['id', 'name', 'routeCount', 'trustedProxiesCustom'].includes(key))) as CaddyServerUpdate
     }
 
     buildPayload(): CaddyServerUpdate | null {
@@ -110,6 +116,19 @@ class ServerEditModal extends Vue {
             write_timeout: this.formData.writeTimeout.trim() || undefined,
             max_header_bytes: this.formData.maxHeaderBytes || undefined,
             automatic_https: automaticHTTPS
+        }
+        if (this.formData.trustedProxiesCustom) {
+            delete payload.trusted_proxies
+            delete payload.trusted_proxies_strict
+        } else {
+            const ranges = this.formData.trustedProxyRanges.split(/[\s,]+/).filter(Boolean)
+            if (ranges.length) {
+                payload.trusted_proxies = { source: 'static', ranges }
+                payload.trusted_proxies_strict = this.formData.trustedProxiesStrict ? 1 : 0
+            } else {
+                delete payload.trusted_proxies
+                delete payload.trusted_proxies_strict
+            }
         }
         if (this.formData.strictSNIHost === 'auto') {
             delete payload.strict_sni_host
@@ -176,6 +195,21 @@ export default toNative(ServerEditModal)
           :empty-text="$t('未找到匹配协议')"
         />
         <p class="text-xs text-slate-400 mt-1">{{ $t('支持多选；未选择时使用 Caddy 默认协议。H2 与 H2C 依赖 H1。') }}</p>
+      </div>
+
+      <div class="border-t border-slate-200 pt-6 space-y-4">
+        <div>
+          <label class="form-label">{{ $t('可信代理 IP / CIDR') }}</label>
+          <textarea v-model="formData.trustedProxyRanges" rows="3" class="input font-mono text-sm" :disabled="formData.trustedProxiesCustom" placeholder="192.0.2.10&#10;10.0.0.0/8&#10;2001:db8::/32"></textarea>
+          <p class="text-xs text-slate-400 mt-1">{{ $t('仅填写实际反向代理的 IP 或网段，每行一个；留空表示不信任代理转发的客户端 IP。') }}</p>
+        </div>
+        <ToggleCard
+          v-model="formData.trustedProxiesStrict"
+          :disabled="formData.trustedProxiesCustom || !formData.trustedProxyRanges.trim()"
+          :label="$t('严格解析代理请求头')"
+          :desc="$t('从右向左解析 X-Forwarded-For，推荐与可信代理列表一起启用，防止伪造客户端 IP。')"
+        />
+        <p v-if="formData.trustedProxiesCustom" class="text-xs text-amber-600">{{ $t('此服务使用自定义可信代理来源，请在原始配置中维护；保存其他选项不会覆盖它。') }}</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

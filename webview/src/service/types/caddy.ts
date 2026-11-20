@@ -127,12 +127,15 @@ export interface CaddyServerUpdate {
     read_timeout?: string
     write_timeout?: string
     max_header_bytes?: number
+    trusted_proxies?: { source: 'static'; ranges: string[] }
+    trusted_proxies_strict?: number
 }
 
 export interface CaddyServerInfo extends CaddyServerUpdate {
     id: string
     name: string
     routeCount: number
+    trustedProxiesCustom?: boolean
 }
 
 export interface CaddyServerCreate extends CaddyServerUpdate {
