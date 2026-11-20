@@ -131,10 +131,12 @@ type ServiceSpec struct {
 // ServiceDetail 服务详情（完整视图）。
 type ServiceDetail struct {
 	ServiceSpec
-	ID           string `json:"id"`           // 服务 ID
-	RunningTasks int    `json:"runningTasks"` // 运行中的任务数
-	CreatedAt    string `json:"createdAt"`    // 创建时间
-	UpdatedAt    string `json:"updatedAt"`    // 更新时间
+	ID            string `json:"id"`                      // 服务 ID
+	RunningTasks  int    `json:"runningTasks"`            // 运行中的任务数
+	CreatedAt     string `json:"createdAt"`               // 创建时间
+	UpdatedAt     string `json:"updatedAt"`               // 更新时间
+	UpdateState   string `json:"updateState,omitempty"`   // Docker Engine 更新状态
+	UpdateMessage string `json:"updateMessage,omitempty"` // Docker Engine 更新描述
 }
 
 // ServiceInspect 获取服务详情
@@ -241,6 +243,10 @@ func serviceDetailFromRaw(svc swarm.Service, runningTasks int) *ServiceDetail {
 		Image:    info.Image,
 		Mode:     info.Mode,
 		Replicas: info.Replicas,
+	}
+	if svc.UpdateStatus != nil {
+		detail.UpdateState = string(svc.UpdateStatus.State)
+		detail.UpdateMessage = svc.UpdateStatus.Message
 	}
 	if svc.Spec.TaskTemplate.ContainerSpec != nil {
 		detail.Env = svc.Spec.TaskTemplate.ContainerSpec.Env

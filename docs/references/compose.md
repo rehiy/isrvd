@@ -241,6 +241,8 @@ isrvd_put "/compose/docker/<NAME>" '{"serviceName":"<SERVICE_NAME>","image":"<NE
 
 ## Swarm Compose
 
+Swarm 服务详情中的「更新状态」直接展示 Docker Engine 返回的更新状态与说明，使用页面已有的「刷新」获取最新结果。服务运行任务数与应用健康状态不能等同，更新请求成功只代表 Docker Engine 接收了操作。
+
 Swarm 重部署窗口也会先使用 `POST /api/compose/swarm/<NAME>/preview` 只读预览，按服务显示 `create`、`update`、`unchanged`、`remove`。该清单只比较 Compose 规范生成的服务配置，不代表当前 Swarm 任务实际健康；未变化的配置也可能与运行态发生漂移。预览权限与对应重部署 PUT 接口一致。
 
 ### 部署策略与网络别名

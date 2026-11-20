@@ -182,6 +182,11 @@ export default toNative(ServiceInfo)
               <label class="form-label">{{ $t('更新时间') }}</label>
               <div class="detail-value">{{ formatTime(serviceData.updatedAt) }}</div>
             </div>
+            <div v-if="serviceData.updateState" class="col-span-2">
+              <label class="form-label">{{ $t('更新状态') }}</label>
+              <div class="detail-value">{{ serviceData.updateState }}</div>
+              <p v-if="serviceData.updateMessage" class="text-xs text-slate-500">{{ serviceData.updateMessage }}</p>
+            </div>
           </div>
         </div>
       </div>
