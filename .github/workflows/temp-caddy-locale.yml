@@ -21,3 +21,7 @@ jobs:
           node scripts/gen-zh-hant.mjs
           git diff -- server/i18n/lang_zh_hant_messages.go webview/src/locales/messages/zh-Hant.ts
           node scripts/gen-zh-hant.mjs --check
+      - name: Check changed Go formatting
+        run: |
+          gofmt -d server/service/caddy/server.go server/i18n/lang_en_service.go server/i18n/lang_zh_hant_messages.go
+          test -z "$(gofmt -l server/service/caddy/server.go server/i18n/lang_en_service.go server/i18n/lang_zh_hant_messages.go)"
