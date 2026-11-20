@@ -379,6 +379,13 @@ func (w *FaultWatcher) checkCertificates(provider string, certs []certificateExp
 	}
 }
 
+// NodeAlertsEnabled 检查告警开关及至少一个实际可发送的 Webhook 通道。
+// 与发送逻辑共用 snapshotWebhooks，避免空 URL 通道导致观察器将未送达事件标记为已告警。
+func NodeAlertsEnabled() bool {
+	cfg := config.Current().Notify
+	return cfg != nil && cfg.Events != nil && cfg.Events.NodeEnabled && len(snapshotWebhooks(cfg)) > 0
+}
+
 // NodeStatusNotify 复用已配置 Webhook 通道发送中控节点离线与恢复事件。
 // 节点观察与去重在 node 服务中完成，通知层不依赖节点模块。
 func NodeStatusNotify(id, name string, recovered bool, offline time.Duration) {
