@@ -21,9 +21,22 @@ class OptionMultiSelect extends Vue {
     @Prop({ type: String, default: '暂无可选项' }) readonly emptyText!: string
     @Prop({ type: String, default: '多选' }) readonly ariaLabel!: string
     @Prop({ type: Boolean, default: false }) readonly disabled!: boolean
+    @Prop({ type: String, default: 'primary' }) readonly tone!: 'primary' | 'rose'
 
     get tagClass() {
-        return () => 'bg-primary-50 text-primary-700 border border-primary-200'
+        return () => this.tone === 'rose'
+            ? 'bg-rose-50 text-rose-700 border border-rose-200'
+            : 'bg-primary-50 text-primary-700 border border-primary-200'
+    }
+
+    get selectedOptionClass() {
+        return this.tone === 'rose' ? 'bg-rose-50 border-rose-200' : 'bg-primary-50 border-primary-200'
+    }
+
+    get checkboxClass() {
+        return this.tone === 'rose'
+            ? 'text-rose-500 focus:ring-rose-500'
+            : 'text-primary-500 focus:ring-primary-500'
     }
 
     labelFor(value: string) {
@@ -91,7 +104,7 @@ export default toNative(OptionMultiSelect)
           :class="[
             'check-label w-full px-2.5 py-2 rounded-lg border transition-colors',
             isSelected(option.value)
-              ? 'bg-primary-50 border-primary-200'
+              ? selectedOptionClass
               : (disabled || option.disabled ? 'bg-white border-transparent' : 'bg-white border-transparent hover:bg-slate-50'),
             disabled || option.disabled ? 'opacity-50 cursor-not-allowed' : ''
           ]"
@@ -99,7 +112,8 @@ export default toNative(OptionMultiSelect)
         >
           <input
             type="checkbox"
-            class="rounded border-slate-300 text-primary-500 focus:ring-primary-500"
+            class="rounded border-slate-300"
+            :class="checkboxClass"
             :checked="isSelected(option.value)"
             :disabled="disabled || option.disabled"
             @change="toggleOption(option.value)"

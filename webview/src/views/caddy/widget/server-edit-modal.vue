@@ -120,6 +120,9 @@ class ServerEditModal extends Vue {
     }
 
     async handleConfirm() {
+        if (this.loading) {
+            return
+        }
         const config = this.buildPayload()
         if (!config) {
             return
@@ -151,8 +154,8 @@ export default toNative(ServerEditModal)
     <div class="space-y-4">
       <div>
         <label class="form-label">{{ $t('服务名称') }} <span class="text-red-500">*</span></label>
-        <input v-model="formData.name" class="input font-mono" :disabled="isEditMode" :placeholder="$t('例如 srv0')" />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('名称创建后不可修改，并会原样保留。') }}</p>
+        <input v-model="formData.name" class="input font-mono" :disabled="isEditMode" :placeholder="$t('请输入服务名称')" />
+        <p class="text-xs text-slate-400 mt-1">{{ $t('例如 srv0；名称创建后不可修改，并会原样保留。') }}</p>
       </div>
 
       <div>
@@ -166,6 +169,7 @@ export default toNative(ServerEditModal)
         <OptionMultiSelect
           v-model="formData.protocols"
           :options="protocolOptions"
+          tone="rose"
           :aria-label="$t('服务协议')"
           :placeholder="$t('请选择服务协议')"
           :search-placeholder="$t('搜索协议')"
@@ -175,14 +179,27 @@ export default toNative(ServerEditModal)
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div><label class="form-label">{{ $t('空闲超时') }}</label><input v-model="formData.idleTimeout" class="input" :placeholder="$t('例如 5m')" /></div>
-        <div><label class="form-label">{{ $t('读取超时') }}</label><input v-model="formData.readTimeout" class="input" :placeholder="$t('例如 30s')" /></div>
-        <div><label class="form-label">{{ $t('写入超时') }}</label><input v-model="formData.writeTimeout" class="input" :placeholder="$t('例如 30s')" /></div>
+        <div>
+          <label class="form-label">{{ $t('空闲超时') }}</label>
+          <input v-model="formData.idleTimeout" class="input" />
+          <p class="text-xs text-slate-400 mt-1">{{ $t('时间格式，例如 {0}；留空使用 Caddy 默认值。', '5m') }}</p>
+        </div>
+        <div>
+          <label class="form-label">{{ $t('读取超时') }}</label>
+          <input v-model="formData.readTimeout" class="input" />
+          <p class="text-xs text-slate-400 mt-1">{{ $t('时间格式，例如 {0}；留空使用 Caddy 默认值。', '30s') }}</p>
+        </div>
+        <div>
+          <label class="form-label">{{ $t('写入超时') }}</label>
+          <input v-model="formData.writeTimeout" class="input" />
+          <p class="text-xs text-slate-400 mt-1">{{ $t('时间格式，例如 {0}；留空使用 Caddy 默认值。', '30s') }}</p>
+        </div>
       </div>
 
       <div>
         <label class="form-label">{{ $t('最大请求头字节数') }}</label>
-        <input v-model.number="formData.maxHeaderBytes" type="number" min="0" class="input" :placeholder="$t('0 表示使用默认值')" />
+        <input v-model.number="formData.maxHeaderBytes" type="number" min="0" class="input" />
+        <p class="text-xs text-slate-400 mt-1">{{ $t('0 表示使用默认值') }}</p>
       </div>
 
       <div class="border-t border-slate-200 pt-6 space-y-4">

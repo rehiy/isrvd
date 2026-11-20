@@ -38,7 +38,7 @@ class ContainerSelect extends Vue {
         const list = query
             ? this.containers.filter(c => c.name.toLowerCase().includes(query))
             : this.containers
-        const groups: Record<string, HostGroup> = {}
+        const groups: Record<string, HostGroup> = Object.create(null)
         for (const c of list) {
             const nets = c.networks?.length ? c.networks : [this.$t('默认')]
             for (const net of nets) {

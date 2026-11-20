@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Component, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
@@ -13,23 +13,13 @@ interface CaddyCertSourceCard {
     title: string
     desc: string
     icon: string
-    tone: 'indigo' | 'emerald' | 'amber' | 'cyan'
 }
 
 const SOURCE_CARDS: CaddyCertSourceCard[] = [
-    { value: 'file', title: '磁盘文件', desc: '从本地磁盘路径加载证书和私钥文件', icon: 'fa-file-shield', tone: 'indigo' },
-    { value: 'pem', title: '内联 PEM', desc: '直接将证书和私钥的 PEM 内容写入配置', icon: 'fa-key', tone: 'emerald' },
-    { value: 'automate', title: '自动签发', desc: '由 Caddy 通过 ACME 协议自动申请和续签证书', icon: 'fa-bolt', tone: 'amber' }
+    { value: 'file', title: '磁盘文件', desc: '从本地磁盘路径加载证书和私钥文件', icon: 'fa-file-shield' },
+    { value: 'pem', title: '内联 PEM', desc: '直接将证书和私钥的 PEM 内容写入配置', icon: 'fa-key' },
+    { value: 'automate', title: '自动签发', desc: '由 Caddy 通过 ACME 协议自动申请和续签证书', icon: 'fa-bolt' }
 ]
-
-const TONE_CARD_ACTIVE: Record<string, string> = {
-    indigo: 'border-indigo-300 bg-indigo-50 text-indigo-700',
-    emerald: 'border-emerald-300 bg-emerald-50 text-emerald-700',
-    amber: 'border-amber-300 bg-amber-50 text-amber-700'
-}
-const TONE_ICON_ACTIVE: Record<string, string> = {
-    indigo: 'bg-indigo-100', emerald: 'bg-emerald-100', amber: 'bg-amber-100'
-}
 
 const defaultFormData = () => ({
     source: 'file' as CaddyCertSource,
@@ -52,10 +42,19 @@ class CertEditModal extends Vue {
     modalLoading = false
     isEditMode = false
     editingKey = ''
+    keyVisible = false
 
     formData = defaultFormData()
 
     readonly sourceCards = SOURCE_CARDS
+
+    @Watch('isOpen')
+    onOpenChange(open: boolean) {
+        if (!open) {
+            this.formData.keyContent = ''
+            this.keyVisible = false
+        }
+    }
 
     sourceCardClass(item: CaddyCertSourceCard) {
         const active = this.formData.source === item.value
@@ -63,12 +62,12 @@ class CertEditModal extends Vue {
         if (this.isEditMode && !active) {
             return 'option-card option-card-disabled'
         }
-        return `option-card ${active ? TONE_CARD_ACTIVE[item.tone] : 'option-card-inactive'}`
+        return `option-card ${active ? 'border-cyan-300 bg-cyan-50 text-cyan-700' : 'option-card-inactive'}`
     }
 
     sourceCardIconClass(item: CaddyCertSourceCard) {
         const active = this.formData.source === item.value
-        return `option-card-icon ${active ? TONE_ICON_ACTIVE[item.tone] : 'bg-slate-100'}`
+        return `option-card-icon ${active ? 'bg-cyan-100' : 'bg-slate-100'}`
     }
 
     setSource(source: CaddyCertSource) {
@@ -76,16 +75,17 @@ class CertEditModal extends Vue {
             return
         }
         this.formData.source = source
+        this.keyVisible = false
     }
 
     show(cert: CaddyCert | null) {
         Object.assign(this.formData, defaultFormData())
+        this.keyVisible = false
         if (cert) {
             this.isEditMode = true
             this.editingKey = cert.key || ''
             this.formData.source = cert.source
             this.formData.certificate = cert.certificate || ''
-            this.formData.keyContent = cert.keyContent || ''
             this.formData.tags = (cert.tags || []).join(', ')
             this.formData.format = cert.format || ''
             this.formData.subject = cert.subject || ''
@@ -151,6 +151,9 @@ class CertEditModal extends Vue {
     }
 
     async handleConfirm() {
+        if (this.modalLoading) {
+            return
+        }
         const payload = this.buildPayload()
         if (!payload) {
             return
@@ -191,11 +194,11 @@ export default toNative(CertEditModal)
             <div class="text-xs opacity-80 leading-5">{{ $t(item.desc) }}</div>
           </button>
         </div>
-        <p v-if="isEditMode" class="text-xs text-slate-400 mt-2"><i class="fas fa-circle-info mr-1"></i>{{ $t('编辑时不允许切换证书来源类型') }}</p>
+        <p v-if="isEditMode" class="text-xs text-slate-400 mt-1"><i class="fas fa-circle-info mr-1"></i>{{ $t('编辑时不允许切换证书来源类型') }}</p>
       </div>
 
       <!-- file -->
-      <div v-if="formData.source === 'file'" class="space-y-3">
+      <div v-if="formData.source === 'file'" class="space-y-4">
         <div>
           <label class="form-label">{{ $t('证书路径') }} <span class="text-red-500">*</span></label>
           <input v-model="formData.certificate" type="text" class="input font-mono text-sm" :placeholder="$t('请输入证书路径')" />
@@ -205,8 +208,8 @@ export default toNative(CertEditModal)
           <label class="form-label">
             {{ $t('私钥路径') }} <span v-if="!isEditMode" class="text-red-500">*</span>
           </label>
-          <input v-model="formData.keyContent" type="text" class="input font-mono text-sm" :placeholder="isEditMode ? $t('留空则保持不变') : $t('请输入私钥路径')" />
-          <p v-if="!isEditMode" class="text-xs text-slate-400 mt-1">{{ $t('私钥文件绝对路径，例如：/etc/caddy/key.pem') }}</p>
+          <input v-model="formData.keyContent" type="text" autocomplete="new-password" class="input font-mono text-sm" :placeholder="isEditMode ? $t('留空则保持不变') : $t('请输入私钥路径')" />
+          <p class="text-xs text-slate-400 mt-1">{{ isEditMode ? $t('响应不返回私钥；编辑时留空表示保持原值') : $t('私钥文件绝对路径，例如：/etc/caddy/key.pem') }}</p>
         </div>
         <div>
           <label class="form-label">{{ $t('格式') }}</label>
@@ -221,18 +224,23 @@ export default toNative(CertEditModal)
       </div>
 
       <!-- pem -->
-      <div v-else-if="formData.source === 'pem'" class="space-y-3">
+      <div v-else-if="formData.source === 'pem'" class="space-y-4">
         <div>
           <label class="form-label">{{ $t('证书 PEM') }} <span class="text-red-500">*</span></label>
           <textarea v-model="formData.certificate" rows="6" class="input font-mono text-xs leading-5" :placeholder="$t('请输入证书 PEM 内容')"></textarea>
           <p class="text-xs text-slate-400 mt-1">{{ $t('格式：-----BEGIN CERTIFICATE----- ... -----END CERTIFICATE-----') }}</p>
         </div>
         <div>
-          <label class="form-label">
-            {{ $t('私钥 PEM') }} <span v-if="!isEditMode" class="text-red-500">*</span>
-          </label>
-          <textarea v-model="formData.keyContent" rows="6" class="input font-mono text-xs leading-5" :placeholder="isEditMode ? $t('留空则保持不变') : $t('请输入私钥 PEM 内容')"></textarea>
-          <p v-if="!isEditMode" class="text-xs text-slate-400 mt-1">{{ $t('格式：-----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----') }}</p>
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <label class="form-label !mb-0">
+              {{ $t('私钥 PEM') }} <span v-if="!isEditMode" class="text-red-500">*</span>
+            </label>
+            <button type="button" class="btn-icon btn-icon-slate" :title="keyVisible ? $t('隐藏私钥') : $t('显示私钥')" :aria-label="keyVisible ? $t('隐藏私钥') : $t('显示私钥')" :aria-pressed="keyVisible" @click="keyVisible = !keyVisible">
+              <i class="fas" :class="keyVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
+            </button>
+          </div>
+          <textarea v-model="formData.keyContent" rows="6" class="input font-mono text-xs leading-5" :class="{ 'caddy-cert-key-masked': !keyVisible }" autocomplete="new-password" autocapitalize="off" :spellcheck="false" :aria-label="$t('私钥 PEM')" :placeholder="isEditMode ? $t('留空则保持不变') : $t('请输入私钥 PEM 内容')"></textarea>
+          <p class="text-xs text-slate-400 mt-1">{{ isEditMode ? $t('响应不返回私钥；编辑时留空表示保持原值') : $t('格式：-----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----') }}</p>
         </div>
         <div>
           <label class="form-label">{{ $t('标签') }}</label>
@@ -242,7 +250,7 @@ export default toNative(CertEditModal)
       </div>
 
       <!-- automate -->
-      <div v-else-if="formData.source === 'automate'" class="space-y-3">
+      <div v-else-if="formData.source === 'automate'" class="space-y-4">
         <div>
           <label class="form-label">{{ $t('主机名') }} <span class="text-red-500">*</span></label>
           <input v-model="formData.subject" type="text" class="input font-mono text-sm" :placeholder="$t('请输入主机名')" />

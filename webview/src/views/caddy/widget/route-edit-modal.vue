@@ -6,8 +6,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { CaddyHandler, CaddyHandlerFileServer, CaddyHandlerHeaders, CaddyHandlerReverseProxy, CaddyHandlerRewrite, CaddyHandlerStaticResponse, CaddyRoute, CaddyRouteSnapshot, CaddyRouteUpsert, DockerContainerInfo } from '@/service/types'
 
-import { caddyRouteInsertionIndex } from '@/helper/caddy'
-import { parseHostPort } from '@/helper/format'
+import { caddyNativeRoute, caddyRouteFormMatches, caddyRouteInsertionIndex, caddyRouteJSONError, caddyRouteSupportsForm } from '@/helper/caddy'
+import { formatHostPort, parseHostPort } from '@/helper/format'
 
 import CodeEditor from '@/component/code-editor.vue'
 import ContainerPortSelect from '@/component/docker/container-port-select.vue'
@@ -120,11 +120,8 @@ class RouteEditModal extends Vue {
         if (!this.routeSnapshot || this.formData.kind === 'raw') {
             return undefined
         }
-        const raw = this.buildRawFromCurrent()
-        if (!raw) {
-            return undefined
-        }
-        return caddyRouteInsertionIndex({ match: this.formMatch, handle: JSON.parse(raw) }, this.routeSnapshot.routes)
+        const route = this.buildStructuredRoute()
+        return route ? caddyRouteInsertionIndex(route, this.routeSnapshot.routes) : undefined
     }
 
     get selectedPosition() {
@@ -183,6 +180,9 @@ class RouteEditModal extends Vue {
     // ─── 模式卡片样式 ───
     modeCardClass(item: CaddyHandlerKindCard) {
         const active = this.formData.kind === item.value
+        if (this.formData.kind === 'raw' && this.rawDirty && item.value !== 'raw') {
+            return 'option-card option-card-disabled'
+        }
         return `option-card ${active ? TONE_CARD_ACTIVE[item.tone] : 'option-card-inactive'}`
     }
 
@@ -192,49 +192,24 @@ class RouteEditModal extends Vue {
     }
 
     setKind(kind: CaddyHandlerKind) {
-        if (kind === 'raw') {
-            // 切换到自定义 JSON 时，将当前表单生成的完整路由 JSON 填入。
-            // 仅在 raw 内容未被手动编辑/加载时自动生成，否则保留原内容，避免覆盖导致配置丢失。
-            const prevKind = this.formData.kind
-            if (prevKind !== 'raw' && !this.rawDirty) {
-                try {
-                    const rawStr = this.buildRawFromCurrent()
-                    const handle = rawStr ? JSON.parse(rawStr) : []
-                    const splitLines = (s: string) => s.split('\n').map(t => t.trim()).filter(Boolean)
-                    const splitSpaces = (s: string) => s.split(/\s+/).map(t => t.trim()).filter(Boolean)
-                    const hosts = splitLines(this.formData.hosts)
-                    const paths = splitLines(this.formData.paths)
-                    const methods = splitSpaces(this.formData.methods).map(s => s.toUpperCase())
-                    const headers = this.listToHeaders(this.matchHeaderList)
-                    const protocol = this.formData.protocol || undefined
-                    const matchSet: Record<string, unknown> = {}
-                    if (hosts.length) {
-                        matchSet.host = hosts
-                    }
-                    if (paths.length) {
-                        matchSet.path = paths
-                    }
-                    if (methods.length) {
-                        matchSet.method = methods
-                    }
-                    if (headers) {
-                        matchSet.header = headers
-                    }
-                    if (protocol) {
-                        matchSet.protocol = protocol
-                    }
-                    const match = Object.keys(matchSet).length ? [matchSet] : undefined
-                    const payload: Record<string, unknown> = { handle }
-                    if (match) {
-                        payload.match = match
-                    }
-                    this.rawJson = JSON.stringify(payload, null, 2)
-                } catch {
-                    this.rawJson = '{\n  "handle": []\n}'
-                }
-            }
+        if (this.modalLoading || (this.formData.kind === 'raw' && this.rawDirty && kind !== 'raw')) {
+            return
+        }
+        if (kind === 'raw' && this.formData.kind !== 'raw') {
+            const route = this.buildStructuredRoute() || { match: this.formMatch, handle: [] }
+            this.rawJson = JSON.stringify(route, null, 2)
         }
         this.formData.kind = kind
+    }
+
+    buildStructuredRoute(): CaddyRouteUpsert | null {
+        const raw = this.buildRawFromCurrent()
+        if (!raw) {
+            return null
+        }
+        const handle: CaddyHandler[] = JSON.parse(raw)
+        const match = this.formMatch
+        return match ? { match, handle } : { handle }
     }
 
     buildRawFromCurrent(): string {
@@ -315,14 +290,16 @@ class RouteEditModal extends Vue {
             return ''
         }
         const buildOps = (ops: CaddyHeaderOp[]) => {
-            const set: Record<string, string[]> = {}
-            const add: Record<string, string[]> = {}
+            const set: Record<string, string[]> = Object.create(null)
+            const add: Record<string, string[]> = Object.create(null)
             const del: string[] = []
             ops.forEach(op => {
                 if (op.op === 'set') {
                     set[op.field] = [op.value]
                 } else if (op.op === 'add') {
-                    add[op.field] = add[op.field] || []
+                    if (!Object.prototype.hasOwnProperty.call(add, op.field)) {
+                        add[op.field] = []
+                    }
                     add[op.field].push(op.value)
                 } else if (op.op === 'delete') {
                     del.push(op.field)
@@ -404,13 +381,13 @@ class RouteEditModal extends Vue {
     }
 
     listToHeaders(list: { key: string; value: string }[]): Record<string, string[]> | undefined {
-        const headers: Record<string, string[]> = {}
+        const headers: Record<string, string[]> = Object.create(null)
         for (const row of list) {
             const k = row.key.trim()
             if (!k) {
                 continue
             }
-            if (!headers[k]) {
+            if (!Object.prototype.hasOwnProperty.call(headers, k)) {
                 headers[k] = []
             }
             if (row.value.trim()) {
@@ -457,7 +434,7 @@ class RouteEditModal extends Vue {
             return
         }
         const lines = this.formData.upstreams.split('\n').map(t => t.trim()).filter(Boolean)
-        const upstream = port ? `${host}:${port}` : host
+        const upstream = formatHostPort(host, port)
         this.formData.upstreams = [upstream, ...lines.slice(1)].join('\n')
     }
 
@@ -507,7 +484,15 @@ class RouteEditModal extends Vue {
         if (route) {
             this.isEditMode = true
             this.editingIndex = route.index
-            // 解析 match：取第一个 MatchSet
+            const nativeRoute = caddyNativeRoute(route)
+            this.rawJson = JSON.stringify(nativeRoute, null, 2)
+            if (!caddyRouteSupportsForm(nativeRoute)) {
+                this.formData.kind = 'raw'
+                this.rawDirty = true
+                this.isOpen = true
+                return
+            }
+            // 仅完整建模的单一 MatchSet 可进入表单模式。
             const matchSet = route.match?.[0]
             if (matchSet) {
                 this.formData.hosts = (matchSet.host || []).join('\n')
@@ -517,35 +502,9 @@ class RouteEditModal extends Vue {
                 this.matchHeaderList = this.headersToList(matchSet.header)
                 this.enableMatchHeaders = this.matchHeaderList.length > 0
             }
-            // 解析 handle
-            const handles = route.handle || []
-            if (handles.length === 0) {
-                this.isEditMode = false
-                this.editingIndex = -1
-                void this.loadRoutePositions()
-                this.isOpen = true
-                return
-            }
-            // 识别 [headers, <终止handler>] 组合
-            let headersHandler: CaddyHandler | null = null
-            let workHandles = handles
-            if (handles.length === 2 && handles[0].handler === 'headers') {
-                headersHandler = handles[0]
-                workHandles = handles.slice(1)
-            }
-            if (workHandles.length > 1) {
-                // 复杂路由无法解析，降级到 raw 模式
-                this.formData.kind = 'raw'
-                try {
-                    this.rawJson = JSON.stringify({ match: route.match, handle: handles }, null, 2)
-                } catch {
-                    this.rawJson = ''
-                }
-                this.rawDirty = true
-                this.isOpen = true
-                return
-            }
-            const h = workHandles[0]
+            const handles = nativeRoute.handle || []
+            const headersHandler = handles.length === 2 ? handles[0] as CaddyHandlerHeaders : null
+            const h = handles[handles.length - 1]
             switch (h.handler) {
                 case 'reverse_proxy': {
                     this.formData.kind = 'reverse_proxy'
@@ -602,29 +561,19 @@ class RouteEditModal extends Vue {
                     }
                     break
                 }
-                default: {
-                    // 未知 handler 类型，降级到 raw 模式
-                    this.formData.kind = 'raw'
-                    try {
-                        this.rawJson = JSON.stringify({ match: route.match, handle: handles }, null, 2)
-                    } catch {
-                        this.rawJson = ''
-                    }
-                    this.rawDirty = true
-                    this.isOpen = true
-                    return
-                }
             }
-            // 解析 headers 中间件
             if (headersHandler) {
-                const hh = headersHandler as CaddyHandlerHeaders
-                if (hh.request) {
-                    this.formData.requestHeaders = this.parseHeadersOps(hh.request)
+                if (headersHandler.request) {
+                    this.formData.requestHeaders = this.parseHeadersOps(headersHandler.request)
                 }
-                if (hh.response) {
-                    this.formData.responseHeaders = this.parseHeadersOps(hh.response)
+                if (headersHandler.response) {
+                    this.formData.responseHeaders = this.parseHeadersOps(headersHandler.response)
                 }
                 this.formData.enableHeaders = true
+            }
+            if (!caddyRouteFormMatches(nativeRoute, this.buildStructuredRoute())) {
+                this.formData.kind = 'raw'
+                this.rawDirty = true
             }
         } else {
             this.isEditMode = false
@@ -692,44 +641,26 @@ class RouteEditModal extends Vue {
                 this.portal.showNotification('error', this.$t('请输入路由 JSON'))
                 return null
             }
-            let parsed: Record<string, unknown>
+            let parsed: unknown
             try {
                 parsed = JSON.parse(this.rawJson)
             } catch {
                 this.portal.showNotification('error', this.$t('JSON 格式错误'))
                 return null
             }
-            const handle = parsed.handle as CaddyHandler[] | undefined
-            if (!Array.isArray(handle) || !handle.length) {
-                this.portal.showNotification('error', this.$t('handle 字段不能为空'))
+            const error = caddyRouteJSONError(parsed)
+            if (error) {
+                this.portal.showNotification('error', this.$t(error))
                 return null
             }
-            return {
-                match: parsed.match as CaddyRouteUpsert['match'],
-                handle
-            }
+            return parsed as CaddyRouteUpsert
         }
 
-        // 表单模式：从 buildRawFromCurrent 生成 handle
-        const match = this.formMatch
-
-        const rawStr = this.buildRawFromCurrent()
-        if (!rawStr) {
+        const route = this.buildStructuredRoute()
+        if (!route) {
             this.portal.showNotification('error', this.$t('请完善处理器配置'))
-            return null
         }
-        let handle: unknown[]
-        try {
-            handle = JSON.parse(rawStr)
-        } catch {
-            this.portal.showNotification('error', this.$t('JSON 解析失败'))
-            return null
-        }
-        if (!Array.isArray(handle) || !handle.length) {
-            this.portal.showNotification('error', this.$t('处理器不能为空'))
-            return null
-        }
-        return { match, handle: handle as CaddyHandler[] }
+        return route
     }
 
     async handleConfirm() {
@@ -766,44 +697,46 @@ export default toNative(RouteEditModal)
 
 <template>
   <BaseModal v-model="isOpen" :title="isEditMode ? $t('编辑路由') : $t('新建路由')" :loading="modalLoading" :confirm-disabled="!isEditMode && (positionsLoading || !routeSnapshot?.revision)" confirm-class="btn-indigo" @confirm="handleConfirm">
-    <div class="space-y-5 p-1">
-      <div>
-        <label class="form-label">{{ $t('服务') }} <span class="text-red-500">*</span></label>
-        <select v-model="targetServer" class="input font-mono" :disabled="isEditMode || modalLoading" @change="loadRoutePositions">
-          <option v-for="item in servers" :key="item.id" :value="item.name">{{ item.name }}</option>
-        </select>
-        <p class="text-xs text-slate-400 mt-1">{{ isEditMode ? $t('路由所属服务不可修改') : $t('选择新路由所属的服务') }}</p>
-      </div>
-
-      <div v-if="!isEditMode">
-        <label class="form-label">{{ $t('插入位置') }}</label>
-        <div class="flex items-center gap-2">
-          <select v-model="insertPosition" class="input" :disabled="positionsLoading || !routeSnapshot || modalLoading">
-            <option value="recommended">{{ recommendedPosition === undefined ? $t('末尾（默认）') : $t('推荐：在第 {0} 条路由前插入', recommendedPosition + 1) }}</option>
-            <option v-if="recommendedPosition !== undefined" value="append">{{ $t('末尾') }}</option>
-            <option v-for="route in routeSnapshot?.routes || []" :key="route.index" :value="route.index">{{ positionLabel(route) }}</option>
+    <div class="space-y-6 p-1">
+      <div class="space-y-4">
+        <div>
+          <label class="form-label">{{ $t('服务') }} <span class="text-red-500">*</span></label>
+          <select v-model="targetServer" class="input font-mono" :disabled="isEditMode || modalLoading" @change="loadRoutePositions">
+            <option v-for="item in servers" :key="item.id" :value="item.name">{{ item.name }}</option>
           </select>
-          <button type="button" class="btn btn-secondary" :disabled="positionsLoading || modalLoading" :title="$t('刷新路由位置')" @click="loadRoutePositions"><i class="fas fa-rotate"></i></button>
+          <p class="text-xs text-slate-400 mt-1">{{ isEditMode ? $t('路由所属服务不可修改') : $t('选择新路由所属的服务') }}</p>
         </div>
-        <p v-if="positionsLoading" class="text-xs text-slate-400 mt-1">{{ $t('加载中...') }}</p>
-        <p v-else-if="!routeSnapshot" class="text-xs text-amber-600 mt-1">{{ $t('请刷新路由位置后重试') }}</p>
-        <p v-else-if="recommendedPosition !== undefined" class="text-xs mt-1" :class="selectedPosition > recommendedPosition ? 'text-amber-600' : 'text-slate-500'">{{ $t('第 {0} 条路由包含覆盖此域名的通配符或兜底规则，建议插入到它之前。', recommendedPosition + 1) }}</p>
-        <p v-else class="text-xs text-slate-400 mt-1">{{ $t('路由按顺序执行；涉及鉴权、重写或复杂匹配时，请手动选择合适的位置。') }}</p>
+
+        <div v-if="!isEditMode">
+          <label class="form-label">{{ $t('插入位置') }}</label>
+          <div class="flex items-center gap-2">
+            <select v-model="insertPosition" class="input" :disabled="positionsLoading || !routeSnapshot || modalLoading">
+              <option value="recommended">{{ recommendedPosition === undefined ? $t('末尾（默认）') : $t('推荐：在第 {0} 条路由前插入', recommendedPosition + 1) }}</option>
+              <option v-if="recommendedPosition !== undefined" value="append">{{ $t('末尾') }}</option>
+              <option v-for="route in routeSnapshot?.routes || []" :key="route.index" :value="route.index">{{ positionLabel(route) }}</option>
+            </select>
+            <button type="button" class="btn btn-secondary" :disabled="positionsLoading || modalLoading" :title="$t('刷新路由位置')" @click="loadRoutePositions"><i class="fas fa-rotate"></i></button>
+          </div>
+          <p v-if="positionsLoading" class="text-xs text-slate-400 mt-1">{{ $t('加载中...') }}</p>
+          <p v-else-if="!routeSnapshot" class="text-xs text-amber-600 mt-1">{{ $t('请刷新路由位置后重试') }}</p>
+          <p v-else-if="recommendedPosition !== undefined" class="text-xs mt-1" :class="selectedPosition > recommendedPosition ? 'text-amber-600' : 'text-slate-500'">{{ $t('第 {0} 条路由包含覆盖此域名的通配符或兜底规则，建议插入到它之前。', recommendedPosition + 1) }}</p>
+          <p v-else class="text-xs text-slate-400 mt-1">{{ $t('路由按顺序执行；涉及鉴权、重写或复杂匹配时，请手动选择合适的位置。') }}</p>
+        </div>
       </div>
 
       <!-- ── 匹配条件 ── -->
-      <div class="space-y-4">
+      <div v-if="formData.kind !== 'raw'" class="space-y-4">
         <p class="section-title">{{ $t('匹配条件') }}</p>
 
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="form-label">Host</label>
-            <textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" :placeholder="$t('请输入 Host（可选）')"></textarea>
+            <textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm"></textarea>
             <p class="text-xs text-slate-400 mt-1">{{ $t('每行一个，留空匹配所有，例如：example.com 或 *.example.com') }}</p>
           </div>
           <div>
             <label class="form-label">Path</label>
-            <textarea v-model="formData.paths" rows="2" class="input font-mono text-sm" :placeholder="$t('请输入 Path（可选）')"></textarea>
+            <textarea v-model="formData.paths" rows="2" class="input font-mono text-sm"></textarea>
             <p class="text-xs text-slate-400 mt-1">{{ $t('每行一个，支持 * 通配符，例如：/api/* 或 /static/*') }}</p>
           </div>
         </div>
@@ -811,7 +744,7 @@ export default toNative(RouteEditModal)
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="form-label">Method</label>
-            <input v-model="formData.methods" type="text" class="input font-mono text-sm" :placeholder="$t('请输入 Method（可选）')" />
+            <input v-model="formData.methods" type="text" class="input font-mono text-sm" />
             <p class="text-xs text-slate-400 mt-1">{{ $t('空格分隔，留空匹配所有，例如：GET POST') }}</p>
           </div>
           <div>
@@ -840,22 +773,23 @@ export default toNative(RouteEditModal)
           <div class="space-y-2">
             <div v-for="(entry, idx) in matchHeaderList" :key="idx" class="flex gap-2 items-center">
               <input v-model="entry.key" type="text" class="input font-mono text-sm flex-1" :placeholder="$t('请求头名称')" />
-              <input v-model="entry.value" type="text" class="input font-mono text-sm flex-1" :placeholder="$t('值（留空表示存在即匹配）')" />
-              <button type="button" class="text-slate-400 hover:text-red-500 shrink-0" @click="removeMatchHeaderRow(idx)"><i class="fas fa-trash text-sm"></i></button>
+              <input v-model="entry.value" type="text" class="input font-mono text-sm flex-1" :placeholder="$t('值')" />
+              <button type="button" class="btn-icon btn-icon-red shrink-0" :title="$t('删除')" :aria-label="$t('删除')" @click="removeMatchHeaderRow(idx)"><i class="fas fa-trash text-sm"></i></button>
             </div>
             <button type="button" class="btn-add-row" @click="addMatchHeaderRow">
               <i class="fas fa-plus text-xs"></i>{{ $t('添加匹配请求头') }}
             </button>
           </div>
+          <p class="text-xs text-slate-400 mt-1">{{ $t('请求头值留空表示存在即匹配') }}</p>
         </ToggleCard>
       </div>
 
       <!-- ── 处理器 ── -->
-      <div class="border-t border-slate-100 pt-4 space-y-4">
+      <div class="border-t border-slate-200 pt-6 space-y-4">
         <p class="section-title">{{ $t('处理器') }}</p>
 
         <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <button v-for="item in handlerKindCards" :key="item.value" type="button" :class="[modeCardClass(item), 'flex flex-col']" @click="setKind(item.value)">
+          <button v-for="item in handlerKindCards" :key="item.value" type="button" :class="[modeCardClass(item), 'flex flex-col']" :disabled="modalLoading || (formData.kind === 'raw' && rawDirty && item.value !== 'raw')" @click="setKind(item.value)">
             <div class="flex items-center gap-2 mb-1.5">
               <div :class="modeCardIconClass(item)"><i class="fas text-sm" :class="item.icon"></i></div>
               <span class="text-sm font-semibold leading-tight">{{ $t(item.title) }}</span>
@@ -865,39 +799,40 @@ export default toNative(RouteEditModal)
         </div>
 
         <!-- reverse_proxy -->
-        <div v-if="formData.kind === 'reverse_proxy'" class="space-y-3">
+        <div v-if="formData.kind === 'reverse_proxy'" class="space-y-4">
           <div v-if="canLoadDockerContainers">
             <label class="form-label">{{ $t('选择容器与端口') }}</label>
             <div class="grid grid-cols-[2fr_1fr] gap-2">
-              <ContainerSelect :model-value="formData.upstreamHost" :containers="containers" :placeholder="$t('请输入容器名（可选）')" @update:model-value="setUpstreamHost" />
-              <ContainerPortSelect :model-value="formData.upstreamPort" :ports="getPortsByHost(formData.upstreamHost)" :placeholder="$t('请输入端口（可选）')" @update:model-value="setUpstreamPort" />
+              <ContainerSelect :model-value="formData.upstreamHost" :containers="containers" :placeholder="$t('请输入容器名')" @update:model-value="setUpstreamHost" />
+              <ContainerPortSelect :model-value="formData.upstreamPort" :ports="getPortsByHost(formData.upstreamHost)" :placeholder="$t('请输入端口')" @update:model-value="setUpstreamPort" />
             </div>
             <p class="text-xs text-slate-400 mt-1">{{ $t('可输入容器名或 IP 地址，选择后自动填充下方第一个上游，也可手动输入') }}</p>
           </div>
           <div>
             <label class="form-label">{{ $t('上游地址') }} <span class="text-red-500">*</span></label>
-            <textarea v-model="formData.upstreams" rows="3" class="input font-mono text-sm" :placeholder="$t('请输入上游地址（每行一个）')" @input="syncSelectedFromText"></textarea>
+            <textarea v-model="formData.upstreams" rows="3" class="input font-mono text-sm" :placeholder="$t('请输入上游地址')" @input="syncSelectedFromText"></textarea>
             <p class="text-xs text-slate-400 mt-1">{{ $t('每行一个 host:port，多个上游自动轮询，例如：backend1:8080') }}</p>
           </div>
           <div v-if="!formData.fastcgi">
             <div class="grid grid-cols-3 gap-3">
               <div>
                 <label class="form-label">{{ $t('连接超时') }}</label>
-                <input v-model="formData.dialTimeout" type="text" class="input font-mono text-sm" :placeholder="$t('如 10s、5m')" />
+                <input v-model="formData.dialTimeout" type="text" class="input font-mono text-sm" />
               </div>
               <div>
                 <label class="form-label">{{ $t('响应头超时') }}</label>
-                <input v-model="formData.readTimeout" type="text" class="input font-mono text-sm" :placeholder="$t('如 10s、5m')" />
+                <input v-model="formData.readTimeout" type="text" class="input font-mono text-sm" />
               </div>
               <div>
                 <label class="form-label">{{ $t('写入超时') }}</label>
-                <input v-model="formData.writeTimeout" type="text" class="input font-mono text-sm" :placeholder="$t('如 10s、5m')" />
+                <input v-model="formData.writeTimeout" type="text" class="input font-mono text-sm" />
               </div>
             </div>
+            <p class="text-xs text-slate-400 mt-1">{{ $t('如 10s、5m') }}{{ $t('，留空使用默认值') }}</p>
           </div>
           <ToggleCard v-model="formData.fastcgi" :label="$t('FastCGI 协议')" :desc="$t('适用于 PHP-FPM 等 FastCGI 进程')">
             <label class="form-label">{{ $t('FastCGI 文档根目录') }}</label>
-            <input v-model="formData.fastcgiRoot" type="text" class="input font-mono text-sm" :placeholder="$t('请输入 FastCGI 根目录（可选）')" />
+            <input v-model="formData.fastcgiRoot" type="text" class="input font-mono text-sm" />
             <p class="text-xs text-slate-400 mt-1">{{ $t('设置') }} <code class="px-1 bg-slate-100 rounded">DOCUMENT_ROOT</code>{{ $t('，留空不传 root，例如：/var/www/html') }}</p>
           </ToggleCard>
           <ToggleCard v-model="formData.proxyRewriteEnabled" :label="$t('代理前 URI 重写')">
@@ -906,14 +841,14 @@ export default toNative(RouteEditModal)
               <!-- 覆盖请求方法 -->
               <div>
                 <label class="form-label">{{ $t('覆盖请求方法') }}</label>
-                <input v-model="formData.proxyRewriteMethod" type="text" class="input font-mono text-sm" :placeholder="$t('如 GET、POST，留空不修改')" />
-                <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}</p>
+                <input v-model="formData.proxyRewriteMethod" type="text" class="input font-mono text-sm" />
+                <p class="text-xs text-slate-400 mt-1">{{ $t('如 GET、POST，留空不修改') }}</p>
               </div>
               <!-- URI 整体替换 -->
               <div>
                 <label class="form-label">{{ $t('URI 整体替换') }}</label>
-                <input v-model="formData.proxyRewriteUri" type="text" class="input font-mono text-sm" :placeholder="$t('如 /backend/{http.request.uri.path.1}')" />
-                <p class="text-xs text-slate-400 mt-1">{{ $t('可选，完整替换转发给上游的 URI，留空不修改') }}</p>
+                <input v-model="formData.proxyRewriteUri" type="text" class="input font-mono text-sm" />
+                <p class="text-xs text-slate-400 mt-1">{{ $t('可选，完整替换转发给上游的 URI，留空不修改') }}{{ $t('例如：') }}<code class="px-1 bg-slate-100 rounded">/backend/{http.request.uri.path.1}</code></p>
               </div>
               <!-- 路径前后缀裁剪 -->
               <div>
@@ -921,14 +856,14 @@ export default toNative(RouteEditModal)
                 <div class="grid grid-cols-2 gap-3 mt-1">
                   <div>
                     <label class="form-label">{{ $t('去掉前缀') }}</label>
-                    <input v-model="formData.proxyStripPathPrefix" type="text" class="input font-mono text-sm" :placeholder="$t('如 /api')" />
+                    <input v-model="formData.proxyStripPathPrefix" type="text" class="input font-mono text-sm" />
                   </div>
                   <div>
                     <label class="form-label">{{ $t('去掉后缀') }}</label>
-                    <input v-model="formData.proxyStripPathSuffix" type="text" class="input font-mono text-sm" :placeholder="$t('如 .php')" />
+                    <input v-model="formData.proxyStripPathSuffix" type="text" class="input font-mono text-sm" />
                   </div>
                 </div>
-                <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}</p>
+                <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}{{ $t('例如：') }}<code class="px-1 bg-slate-100 rounded">/api</code> / <code class="px-1 bg-slate-100 rounded">.php</code></p>
               </div>
               <!-- 子串查找替换 -->
               <div>
@@ -936,21 +871,21 @@ export default toNative(RouteEditModal)
                 <div class="grid grid-cols-2 gap-3 mt-1">
                   <div>
                     <label class="form-label">{{ $t('查找') }}</label>
-                    <input v-model="formData.proxyUriSubstringFind" type="text" class="input font-mono text-sm" :placeholder="$t('如 /old')" />
+                    <input v-model="formData.proxyUriSubstringFind" type="text" class="input font-mono text-sm" />
                   </div>
                   <div>
                     <label class="form-label">{{ $t('替换为') }}</label>
-                    <input v-model="formData.proxyUriSubstringReplace" type="text" class="input font-mono text-sm" :placeholder="$t('如 /new')" />
+                    <input v-model="formData.proxyUriSubstringReplace" type="text" class="input font-mono text-sm" />
                   </div>
                 </div>
-                <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}</p>
+                <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}{{ $t('例如：') }}<code class="px-1 bg-slate-100 rounded">/old</code> → <code class="px-1 bg-slate-100 rounded">/new</code></p>
               </div>
             </div>
           </ToggleCard>
         </div>
 
         <!-- file_server -->
-        <div v-else-if="formData.kind === 'file_server'" class="space-y-3">
+        <div v-else-if="formData.kind === 'file_server'" class="space-y-4">
           <div>
             <label class="form-label">{{ $t('根目录') }} <span class="text-red-500">*</span></label>
             <input v-model="formData.root" type="text" class="input font-mono text-sm" :placeholder="$t('请输入根目录')" />
@@ -960,7 +895,7 @@ export default toNative(RouteEditModal)
         </div>
 
         <!-- static_response -->
-        <div v-else-if="formData.kind === 'static_response'" class="space-y-3">
+        <div v-else-if="formData.kind === 'static_response'" class="space-y-4">
           <div>
             <label class="form-label">{{ $t('状态码') }}</label>
             <input v-model.number="formData.statusCode" type="number" min="100" max="599" class="input" :placeholder="$t('请输入状态码')" />
@@ -974,7 +909,7 @@ export default toNative(RouteEditModal)
         </div>
 
         <!-- rewrite -->
-        <div v-else-if="formData.kind === 'rewrite'" class="space-y-3">
+        <div v-else-if="formData.kind === 'rewrite'" class="space-y-4">
           <div>
             <label class="form-label">{{ $t('URI 替换') }}</label>
             <input v-model="formData.rewriteUri" type="text" class="input font-mono text-sm" :placeholder="$t('请输入 URI 替换规则')" />
@@ -1010,7 +945,8 @@ export default toNative(RouteEditModal)
         <div v-else-if="formData.kind === 'raw'" class="space-y-2">
           <label class="form-label">{{ $t('路由 JSON') }} <span class="text-red-500">*</span></label>
           <CodeEditor v-model="rawJson" language="json" :label="$t('路由 JSON')" :disabled="modalLoading" placeholder='{ "match": [...], "handle": [...] }' @update:model-value="rawDirty = true" />
-          <p class="text-xs text-slate-400">{{ $t('直接编辑完整的 Caddy 路由 JSON，match 字段可选') }}</p>
+          <p class="text-xs text-slate-400 mt-1">{{ $t('直接编辑完整的 Caddy 路由 JSON，match 和 handle 字段可选') }}</p>
+          <p v-if="rawDirty" class="text-xs text-slate-400 mt-1">{{ $t('为避免丢失配置，已加载或修改的 JSON 仅支持在此模式编辑。') }}</p>
         </div>
       </div>
 
@@ -1026,12 +962,12 @@ export default toNative(RouteEditModal)
                 <select v-model="op.op" class="input text-sm w-24 shrink-0">
                   <option value="set">{{ $t('覆盖') }}</option>
                   <option value="add">{{ $t('追加') }}</option>
-                  <option value="delete">Delete</option>
+                  <option value="delete">{{ $t('删除') }}</option>
                 </select>
                 <input v-model="op.field" type="text" class="input font-mono text-sm flex-1" :placeholder="$t('请输入请求头名称')" />
-                <input v-if="op.op !== 'delete'" v-model="op.value" type="text" class="input font-mono text-sm flex-1" :placeholder="$t('请输入请求头值（支持占位符）')" />
+                <input v-if="op.op !== 'delete'" v-model="op.value" type="text" class="input font-mono text-sm flex-1" :placeholder="$t('请输入请求头值')" />
                 <div v-else class="flex-1"></div>
-                <button type="button" class="text-slate-400 hover:text-red-500 shrink-0" @click="removeHeaderOp('request', idx)"><i class="fas fa-trash text-sm"></i></button>
+                <button type="button" class="btn-icon btn-icon-red shrink-0" :title="$t('删除')" :aria-label="$t('删除')" @click="removeHeaderOp('request', idx)"><i class="fas fa-trash text-sm"></i></button>
               </div>
             </div>
             <button type="button" class="btn-add-row" @click="addHeaderOp('request')">
@@ -1052,7 +988,7 @@ export default toNative(RouteEditModal)
                 <input v-model="op.field" type="text" class="input font-mono text-sm flex-1" :placeholder="$t('请输入响应头名称')" />
                 <input v-if="op.op !== 'delete'" v-model="op.value" type="text" class="input font-mono text-sm flex-1" :placeholder="$t('请输入响应头值')" />
                 <div v-else class="flex-1"></div>
-                <button type="button" class="text-slate-400 hover:text-red-500 shrink-0" @click="removeHeaderOp('response', idx)"><i class="fas fa-trash text-sm"></i></button>
+                <button type="button" class="btn-icon btn-icon-red shrink-0" :title="$t('删除')" :aria-label="$t('删除')" @click="removeHeaderOp('response', idx)"><i class="fas fa-trash text-sm"></i></button>
               </div>
             </div>
             <button type="button" class="btn-add-row" @click="addHeaderOp('response')">

@@ -25,7 +25,7 @@ const defaultForm = () => ({
 @Component({
     expose: ['showSetup', 'showEdit', 'showAddUser'],
     components: { BaseModal, Combobox, ToggleCard },
-    emits: ['success']
+    emits: ['success', 'refresh']
 })
 class BasicAuthEditModal extends Vue {
     portal = usePortal()
@@ -39,6 +39,32 @@ class BasicAuthEditModal extends Vue {
     routes: CaddyRoute[] = []
     authRoutes: CaddyBasicAuthRoute[] = []
     form = defaultForm()
+    revision = ''
+
+    get canCreate() {
+        return this.portal.hasPerm('POST /api/caddy/basic-auth/:index/users')
+    }
+
+    get canUpdate() {
+        return this.portal.hasPerm('PUT /api/caddy/basic-auth/:index/config')
+    }
+
+    get canDelete() {
+        return this.portal.hasPerm('DELETE /api/caddy/basic-auth/:index/users/:username')
+    }
+
+    get confirmDisabled() {
+        return !this.revision || (this.mode === 'edit' ? !this.canUpdate : !this.canCreate)
+    }
+
+    invalidateDraft() {
+        this.resetForm()
+        this.authRoutes = []
+        this.routes = []
+        this.revision = ''
+        this.open = false
+        this.$emit('refresh')
+    }
 
     get title() {
         if (this.mode === 'edit') {
@@ -82,21 +108,45 @@ class BasicAuthEditModal extends Vue {
     }
 
     async showSetup() {
+        if (this.loading || !this.canCreate) {
+            return
+        }
         this.targetServer = this.server
         this.resetForm()
+        this.authRoutes = []
+        this.routes = []
+        this.revision = ''
         this.mode = 'setup'
         this.open = true
         this.loading = true
         try {
-            const [authRes, routeRes] = await Promise.all([api.caddyBasicAuthList(this.targetServer), api.caddyRouteList(this.targetServer)])
-            this.authRoutes = authRes.payload || []
-            this.routes = routeRes.payload || []
+            const [authRes, routeRes] = await Promise.all([
+                api.caddyBasicAuthSnapshot(this.targetServer),
+                api.caddyRouteSnapshot(this.targetServer),
+            ])
+            const authSnapshot = authRes.payload
+            const routeSnapshot = routeRes.payload
+            if (!authSnapshot?.revision || authSnapshot.revision !== routeSnapshot?.revision) {
+                this.portal.showNotification('error', this.$t('路由列表已变化，请刷新后重试'))
+                this.invalidateDraft()
+                return
+            }
+            this.authRoutes = authSnapshot.routes || []
+            this.routes = routeSnapshot.routes || []
+            this.revision = authSnapshot.revision
+        } catch (error) {
+            this.invalidateDraft()
+            throw error
         } finally {
             this.loading = false
         }
     }
 
     showEdit(route: CaddyBasicAuthRoute) {
+        if (this.loading || !this.canUpdate) {
+            return
+        }
+        this.revision = route.revision
         this.targetServer = this.server
         this.resetForm()
         this.mode = 'edit'
@@ -113,6 +163,10 @@ class BasicAuthEditModal extends Vue {
 
     // 为已配置认证的路由追加账号：沿用其 realm 与透传头，仅录入用户名/密码
     showAddUser(route: CaddyBasicAuthRoute) {
+        if (this.loading || !this.canCreate) {
+            return
+        }
+        this.revision = route.revision
         this.targetServer = this.server
         this.resetForm()
         this.mode = 'addUser'
@@ -139,7 +193,11 @@ class BasicAuthEditModal extends Vue {
     }
 
     userTagClass() {
-        return 'bg-cyan-50 text-cyan-800 border border-cyan-200'
+        return 'bg-cyan-50 text-cyan-700 border border-cyan-200'
+    }
+
+    userTagDisabled() {
+        return !this.canDelete || this.form.users.length <= 1
     }
 
     filteredEditingUsers(query: string) {
@@ -151,14 +209,22 @@ class BasicAuthEditModal extends Vue {
 
     updateEditingUsers(value: string | string[]) {
         const route = this.editingRoute
-        if (!route || !Array.isArray(value)) {
+        if (!route || !Array.isArray(value) || this.loading || !this.canDelete) {
             return
         }
         const allowed = new Set(route.users.map(user => user.username))
-        this.form.users = value.filter(username => allowed.has(username))
+        const users = [...new Set(value.filter(username => allowed.has(username)))]
+        if (users.length === 0) {
+            this.portal.showNotification('error', this.$t('请至少保留一个账号；解除认证请使用账号删除操作'))
+            return
+        }
+        this.form.users = users
     }
 
     async handleConfirm() {
+        if (this.loading || this.confirmDisabled || !this.open) {
+            return
+        }
         if (this.mode === 'setup') {
             return this.handleSetup()
         }
@@ -185,12 +251,16 @@ class BasicAuthEditModal extends Vue {
             await api.caddyBasicAuthUserCreate(routeIndex, {
                 username: username.trim(),
                 password,
+                revision: this.revision,
                 realm: realm || undefined,
                 forwardHeader: this.forwardHeaderValue,
             }, this.targetServer)
             this.portal.showNotification('success', this.$t('认证配置成功'))
             this.open = false
             this.$emit('success')
+        } catch (error) {
+            this.invalidateDraft()
+            throw error
         } finally {
             this.loading = false
         }
@@ -210,12 +280,16 @@ class BasicAuthEditModal extends Vue {
             await api.caddyBasicAuthUserCreate(routeIndex, {
                 username: username.trim(),
                 password,
+                revision: this.revision,
                 realm: realm || undefined,
                 forwardHeader: this.forwardHeaderValue,
             }, this.targetServer)
             this.portal.showNotification('success', this.$t('账号 "{0}" 添加成功', username.trim()))
             this.open = false
             this.$emit('success')
+        } catch (error) {
+            this.invalidateDraft()
+            throw error
         } finally {
             this.loading = false
         }
@@ -228,19 +302,27 @@ class BasicAuthEditModal extends Vue {
         }
         const { routeIndex, realm, users } = this.form
         const removedUsers = route.users.map(user => user.username).filter(name => !users.includes(name))
+        if (removedUsers.length > 0 && !this.canDelete) {
+            return this.portal.showNotification('error', this.$t('没有删除账号的权限'))
+        }
+        if (users.length === 0) {
+            return this.portal.showNotification('error', this.$t('请至少保留一个账号；解除认证请使用账号删除操作'))
+        }
 
         this.loading = true
         try {
             await api.caddyBasicAuthConfigUpdate(routeIndex, {
                 realm,
                 forwardHeader: this.forwardHeaderValue,
+                revision: this.revision,
+                removeUsers: removedUsers,
             }, this.targetServer)
-            for (const name of removedUsers) {
-                await api.caddyBasicAuthUserDelete(routeIndex, name, this.targetServer)
-            }
             this.portal.showNotification('success', this.$t('配置更新成功'))
             this.open = false
             this.$emit('success')
+        } catch (error) {
+            this.invalidateDraft()
+            throw error
         } finally {
             this.loading = false
         }
@@ -251,7 +333,7 @@ export default toNative(BasicAuthEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="open" :title="title" :loading="loading" confirm-class="btn-cyan" @confirm="handleConfirm">
+  <BaseModal v-model="open" :title="title" :loading="loading" :confirm-disabled="confirmDisabled" :confirm-class="mode === 'addUser' ? 'btn-emerald' : 'btn-cyan'" @confirm="handleConfirm">
     <div class="space-y-4 p-1">
       <div v-if="mode === 'setup'">
         <label class="form-label">{{ $t('目标路由') }} <span class="text-red-500">*</span></label>
@@ -296,6 +378,9 @@ export default toNative(BasicAuthEditModal)
           :search-placeholder="$t('搜索账号')"
           max-height="240px"
           :tag-class="userTagClass"
+          :tag-disabled="userTagDisabled"
+          :disabled="loading || !canDelete"
+          :allow-custom="false"
           @update:model-value="updateEditingUsers"
         >
           <template #hint-extra="{ query }">
@@ -323,7 +408,9 @@ export default toNative(BasicAuthEditModal)
             <div class="py-8 text-center text-sm text-slate-400">{{ $t('已选择全部账号') }}</div>
           </template>
         </Combobox>
-        <p class="text-xs text-slate-400 mt-1">{{ $t('点击账号标签上的 × 标记移除，保存后生效') }}</p>
+        <p v-if="canDelete" class="text-xs text-slate-400 mt-1">{{ $t('点击账号标签上的 × 标记移除，保存后生效') }}</p>
+        <p v-else class="text-xs text-slate-400 mt-1">{{ $t('没有删除账号的权限') }}</p>
+        <p class="text-xs text-amber-600 mt-1">{{ $t('最后一个账号不能在编辑配置中移除，请在列表中删除并确认解除认证') }}</p>
       </div>
 
       <!-- 账号录入：setup 创建首个账号 / addUser 追加账号 -->

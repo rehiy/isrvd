@@ -6,12 +6,13 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { CaddyBasicAuthRoute, CaddyServerInfo } from '@/service/types'
 
+import BaseModal from '@/component/modal.vue'
 import PageSearch from '@/component/page-search.vue'
 
 import BasicAuthEditModal from './widget/basic-auth-edit-modal.vue'
 
 @Component({
-    components: { BasicAuthEditModal, PageSearch }
+    components: { BaseModal, BasicAuthEditModal, PageSearch }
 })
 class CaddyBasicAuth extends Vue {
     portal = usePortal()
@@ -24,6 +25,27 @@ class CaddyBasicAuth extends Vue {
     loading = false
     searchText = ''
     loadRequestID = 0
+    deleteOpen = false
+    deleteLoading = false
+    deleteStage: 1 | 2 = 1
+    deleteAcknowledged = false
+    pendingDelete: { route: CaddyBasicAuthRoute; username: string; server: string } | null = null
+
+    get canDelete() {
+        return this.portal.hasPerm('DELETE /api/caddy/basic-auth/:index/users/:username')
+    }
+
+    get deleteTitle() {
+        return this.deleteStage === 2 ? this.$t('解除路由认证') : this.$t('删除认证账号')
+    }
+
+    get deleteConfirmText() {
+        return this.deleteStage === 2 ? this.$t('删除账号并解除认证') : this.$t('删除')
+    }
+
+    get deleteDisabled() {
+        return !this.canDelete || !this.pendingDelete?.route.revision || (this.deleteStage === 2 && !this.deleteAcknowledged)
+    }
 
     get canListServers() {
         return this.portal.hasPerm('GET /api/caddy/servers')
@@ -120,15 +142,60 @@ class CaddyBasicAuth extends Vue {
     }
 
     openAddModal() {
+        if (this.loading || this.deleteOpen || this.deleteLoading) {
+            return
+        }
         this.editModalRef?.showSetup()
     }
 
     openEditModal(route: CaddyBasicAuthRoute) {
+        if (this.loading || this.deleteOpen || this.deleteLoading) {
+            return
+        }
         this.editModalRef?.showEdit(route)
     }
 
     openAddUserModal(route: CaddyBasicAuthRoute) {
+        if (this.loading || this.deleteOpen || this.deleteLoading) {
+            return
+        }
         this.editModalRef?.showAddUser(route)
+    }
+
+    openDeleteUser(route: CaddyBasicAuthRoute, username: string) {
+        if (this.loading || this.deleteOpen || this.deleteLoading || !this.canDelete || !route.revision) {
+            return
+        }
+        this.pendingDelete = { route, username, server: this.selectedServerName }
+        this.deleteStage = 1
+        this.deleteAcknowledged = false
+        this.deleteOpen = true
+    }
+
+    async confirmDeleteUser() {
+        const pending = this.pendingDelete
+        if (!pending || !this.deleteOpen || this.deleteLoading || this.deleteDisabled) {
+            return
+        }
+        if (this.deleteStage === 1 && pending.route.users.length === 1) {
+            this.deleteStage = 2
+            this.deleteAcknowledged = false
+            return
+        }
+        this.deleteLoading = true
+        try {
+            await api.caddyBasicAuthUserDelete(pending.route.index, pending.username, pending.server, pending.route.revision)
+            this.portal.showNotification('success', this.$t('账号删除成功'))
+        } finally {
+            this.deleteOpen = false
+            this.pendingDelete = null
+            this.deleteAcknowledged = false
+            try {
+                await this.load()
+            } finally {
+                this.deleteLoading = false
+            }
+        }
     }
 
     mounted() {
@@ -145,13 +212,13 @@ export default toNative(CaddyBasicAuth)
     <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="toolbar-desktop">
-        <div class="flex items-center gap-3">
+        <div class="title-group">
           <div class="page-icon bg-cyan-500">
             <i class="fas fa-lock text-white text-sm"></i>
           </div>
-          <div>
+          <div class="min-w-0">
             <h1 class="title-text">{{ $t('基础认证') }}</h1>
-            <p class="text-xs text-slate-500">{{ $t('基于用户名 + 密码的路由 HTTP Basic 认证') }}</p>
+            <p class="text-xs text-slate-500 truncate">{{ $t('基于用户名 + 密码的路由 HTTP Basic 认证') }}</p>
           </div>
         </div>
         <div class="action-group">
@@ -159,10 +226,10 @@ export default toNative(CaddyBasicAuth)
             <option v-for="server in servers" :key="serverID(server)" :value="serverID(server)">{{ server.name }}</option>
           </select>
           <PageSearch v-model="searchText" search-key="caddy-basic-auth" :placeholder="$t('搜索路由或用户名...')" focus-color="cyan" type-to-search />
-          <button class="btn btn-secondary" @click="load()">
-            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
+          <button class="btn btn-secondary" :disabled="loading || deleteLoading" :aria-busy="loading" @click="load()">
+            <i :class="loading ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"></i>{{ $t('刷新') }}
           </button>
-          <button v-if="portal.hasPerm('POST /api/caddy/basic-auth/:index/users')" class="btn btn-cyan" @click="openAddModal()">
+          <button v-if="portal.hasPerm('POST /api/caddy/basic-auth/:index/users')" class="btn btn-cyan" :disabled="loading || deleteLoading" @click="openAddModal()">
             <i class="fas fa-plus"></i>{{ $t('配置认证') }}
           </button>
         </div>
@@ -182,10 +249,10 @@ export default toNative(CaddyBasicAuth)
           <select v-if="showServerSelect" v-model="selectedServer" class="select-sm max-w-28" :title="$t('服务')" :aria-label="$t('服务')">
             <option v-for="server in servers" :key="serverID(server)" :value="serverID(server)">{{ server.name }}</option>
           </select>
-          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="load()">
-            <i class="fas fa-rotate text-sm"></i>
+          <button class="btn btn-secondary btn-square" :disabled="loading || deleteLoading" :aria-busy="loading" :title="$t('刷新')" @click="load()">
+            <i :class="loading ? 'fas fa-spinner fa-spin text-sm' : 'fas fa-rotate text-sm'"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/caddy/basic-auth/:index/users')" class="btn btn-cyan btn-square" :title="$t('配置认证')" @click="openAddModal()">
+          <button v-if="portal.hasPerm('POST /api/caddy/basic-auth/:index/users')" class="btn btn-cyan btn-square" :disabled="loading || deleteLoading" :title="$t('配置认证')" @click="openAddModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -256,10 +323,21 @@ export default toNative(CaddyBasicAuth)
                   <span
                     v-for="user in route.users"
                     :key="user.username"
-                    class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-cyan-50 text-cyan-800 rounded-lg text-xs group"
+                    class="badge-sm gap-1.5 bg-cyan-50 text-cyan-700"
                   >
                     <i class="fas fa-user text-cyan-500 text-[10px]"></i>
                     <span>{{ user.username }}</span>
+                    <button
+                      v-if="canDelete"
+                      type="button"
+                      class="btn-tag-remove"
+                      :disabled="deleteLoading"
+                      :title="$t('删除账号「{0}」', user.username)"
+                      :aria-label="$t('删除账号「{0}」', user.username)"
+                      @click="openDeleteUser(route, user.username)"
+                    >
+                      <i class="fas fa-xmark text-[10px]"></i>
+                    </button>
                   </span>
                 </div>
               </td>
@@ -276,7 +354,7 @@ export default toNative(CaddyBasicAuth)
                   </button>
                   <button
                     v-if="portal.hasPerm('POST /api/caddy/basic-auth/:index/users')"
-                    class="btn-icon btn-icon-cyan"
+                    class="btn-icon btn-icon-emerald"
                     :title="$t('添加账号')"
                     @click="openAddUserModal(route)"
                   >
@@ -313,10 +391,21 @@ export default toNative(CaddyBasicAuth)
               <span
                 v-for="user in route.users"
                 :key="user.username"
-                class="badge bg-cyan-50 text-cyan-800 gap-1.5"
+                class="badge bg-cyan-50 text-cyan-700 gap-1.5"
               >
                 <i class="fas fa-user text-cyan-500 text-[10px]"></i>
                 <span>{{ user.username }}</span>
+                <button
+                  v-if="canDelete"
+                  type="button"
+                  class="btn-tag-remove"
+                  :disabled="deleteLoading"
+                  :title="$t('删除账号「{0}」', user.username)"
+                  :aria-label="$t('删除账号「{0}」', user.username)"
+                  @click="openDeleteUser(route, user.username)"
+                >
+                  <i class="fas fa-xmark text-[10px]"></i>
+                </button>
               </span>
             </div>
           </div>
@@ -333,7 +422,7 @@ export default toNative(CaddyBasicAuth)
             </button>
             <button
               v-if="portal.hasPerm('POST /api/caddy/basic-auth/:index/users')"
-              class="btn-icon btn-icon-cyan"
+              class="btn-icon btn-icon-emerald"
               :title="$t('添加账号')"
               @click="openAddUserModal(route)"
             >
@@ -346,5 +435,26 @@ export default toNative(CaddyBasicAuth)
     </template>
   </div>
 
-  <BasicAuthEditModal ref="editModalRef" :server="selectedServerName" @success="load" />
+  <BasicAuthEditModal ref="editModalRef" :server="selectedServerName" @success="load" @refresh="load" />
+  <BaseModal
+    v-model="deleteOpen"
+    :title="deleteTitle"
+    :loading="deleteLoading"
+    :confirm-disabled="deleteDisabled"
+    confirm-class="btn-danger"
+    @confirm="confirmDeleteUser"
+  >
+    <div v-if="pendingDelete" class="space-y-4">
+      <p class="text-sm text-slate-600">{{ getRouteName(pendingDelete.route) }}</p>
+      <p v-if="deleteStage === 1" class="text-sm text-slate-700">{{ $t('确定删除账号「{0}」吗？', pendingDelete.username) }}</p>
+      <template v-else>
+        <p class="text-sm text-red-500">{{ $t('删除最后一个账号将解除此路由的 HTTP Basic 认证，任何人都可能访问受保护的资源。确定继续吗？') }}</p>
+        <label class="check-label">
+          <input v-model="deleteAcknowledged" type="checkbox" class="rounded border-slate-300 text-red-500 focus:ring-red-500" />
+          <span class="text-sm text-slate-600">{{ $t('我了解这会解除路由认证') }}</span>
+        </label>
+      </template>
+    </div>
+    <template #confirm-text>{{ deleteConfirmText }}</template>
+  </BaseModal>
 </template>

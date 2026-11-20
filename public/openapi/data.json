@@ -1992,6 +1992,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "snapshot",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -2005,10 +2013,18 @@
                       "type": "string"
                     },
                     "payload": {
-                      "items": {
-                        "$ref": "#/components/schemas/caddy.BasicAuthRouteView"
-                      },
-                      "type": "array"
+                      "oneOf": [
+                        {
+                          "items": {
+                            "$ref": "#/components/schemas/caddy.BasicAuthRouteView"
+                          },
+                          "nullable": true,
+                          "type": "array"
+                        },
+                        {
+                          "$ref": "#/components/schemas/caddy.BasicAuthSnapshot"
+                        }
+                      ]
                     },
                     "success": {
                       "description": "请求是否成功",
@@ -2069,6 +2085,36 @@
               }
             },
             "description": "成功"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "移除账号时缺少 DELETE 权限，不加载配置"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "服务路由快照已变化，不加载配置"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "缺少路由快照 revision，不加载配置"
           }
         },
         "summary": "更新 Caddy Basic Auth 配置",
@@ -2118,6 +2164,26 @@
               }
             },
             "description": "成功"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "服务路由快照已变化，不加载配置"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "缺少路由快照 revision，不加载配置"
           }
         },
         "summary": "添加 Caddy Basic Auth 账号",
@@ -2153,6 +2219,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "revision",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2165,6 +2239,26 @@
               }
             },
             "description": "成功"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "服务路由快照已变化，不加载配置"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "缺少路由快照 revision，不加载配置"
           }
         },
         "summary": "删除 Caddy Basic Auth 账号",
@@ -2515,6 +2609,22 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "index",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "revision",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -2575,6 +2685,14 @@
           {
             "in": "query",
             "name": "server",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "revision",
             "required": false,
             "schema": {
               "type": "string"
@@ -2666,6 +2784,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "revision",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -2696,6 +2822,55 @@
         ]
       }
     },
+    "/caddy/route/{index}/position": {
+      "put": {
+        "operationId": "put_caddy_route_index_position",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "index",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "server",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/caddy.RouteMoveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "调整 Caddy 路由顺序",
+        "tags": [
+          "caddy"
+        ]
+      }
+    },
     "/caddy/routes": {
       "get": {
         "operationId": "get_caddy_routes",
@@ -2706,6 +2881,14 @@
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "snapshot",
+            "required": false,
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -3116,6 +3299,27 @@
         ]
       }
     },
+    "/compose/docker/{name}/preview": {
+      "post": {
+        "operationId": "post_compose_docker_name_preview",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "预览 Docker Compose 变更",
+        "tags": [
+          "compose"
+        ]
+      }
+    },
     "/compose/swarm": {
       "post": {
         "operationId": "post_compose_swarm",
@@ -3334,6 +3538,27 @@
           }
         },
         "summary": "读取 Swarm Stack 部署记录",
+        "tags": [
+          "compose"
+        ]
+      }
+    },
+    "/compose/swarm/{name}/preview": {
+      "post": {
+        "operationId": "post_compose_swarm_name_preview",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "预览 Swarm Compose 变更",
         "tags": [
           "compose"
         ]
@@ -6128,15 +6353,6 @@
         "operationId": "get_overview_monitor",
         "parameters": [
           {
-            "description": "可选：按名称查询同节点容器重建前后的历史，须与当前 id 对应；不影响 since=0 实时查询",
-            "in": "query",
-            "name": "name",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "in": "query",
             "name": "since",
             "required": false,
@@ -6155,6 +6371,14 @@
           {
             "in": "query",
             "name": "id",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "name",
             "required": false,
             "schema": {
               "type": "string"
@@ -7388,6 +7612,47 @@
         ]
       }
     },
+    "/swarm/node/{id}/labels": {
+      "put": {
+        "operationId": "put_swarm_node_id_labels",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/swarm.NodeLabelUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "更新 Swarm 节点标签",
+        "tags": [
+          "swarm"
+        ]
+      }
+    },
     "/swarm/node/{id}/services": {
       "get": {
         "operationId": "get_swarm_node_id_services",
@@ -8337,6 +8602,10 @@
             "description": "路由优先级（数值越大优先级越高）",
             "type": "integer"
           },
+          "service_id": {
+            "description": "引用的 Service ID",
+            "type": "string"
+          },
           "status": {
             "description": "路由状态：1=启用，0=禁用",
             "type": "integer"
@@ -8367,6 +8636,19 @@
               "type": "string"
             },
             "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "apisix.RouteAuthInfo": {
+        "properties": {
+          "ACLInherited": {
+            "description": "consumer-restriction 来自 PluginConfig 或 Service，路由自身没有",
+            "type": "boolean"
+          },
+          "ManagedElsewhere": {
+            "description": "所需的认证方式也无法确定，不校验 Consumer 是否配置 key-auth。",
+            "type": "boolean"
           }
         },
         "type": "object"
@@ -8689,6 +8971,22 @@
         },
         "type": "object"
       },
+      "caddy.BasicAuthConfigOptions": {
+        "properties": {
+          "removeUsers": {
+            "description": "removeUsers",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "revision": {
+            "description": "revision",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "caddy.BasicAuthRouteView": {
         "properties": {
           "forwardHeader": {
@@ -8703,7 +9001,7 @@
             "type": "array"
           },
           "index": {
-            "description": "路由下标（主键）",
+            "description": "路由在 revision 快照中的下标",
             "type": "integer"
           },
           "name": {
@@ -8714,11 +9012,34 @@
             "description": "HTTP Basic realm",
             "type": "string"
           },
+          "revision": {
+            "description": "所属服务全部路由的快照版本",
+            "readOnly": true,
+            "type": "string"
+          },
           "users": {
             "description": "账号列表（不含密码 hash）",
             "items": {
               "type": "object"
             },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.BasicAuthSnapshot": {
+        "properties": {
+          "revision": {
+            "description": "revision",
+            "readOnly": true,
+            "type": "string"
+          },
+          "routes": {
+            "description": "routes",
+            "items": {
+              "$ref": "#/components/schemas/caddy.BasicAuthRouteView"
+            },
+            "nullable": true,
             "type": "array"
           }
         },
@@ -8748,7 +9069,7 @@
             "type": "string"
           },
           "key": {
-            "description": "复合主键 <source>-<index>，cached 为 cached-<相对路径>；仅响应使用，请求中被忽略",
+            "description": "复合主键 \u003csource\u003e-\u003cindex\u003e，cached 为 cached-\u003c相对路径\u003e；仅响应使用，请求中被忽略",
             "type": "string"
           },
           "keyContent": {
@@ -9145,6 +9466,38 @@
         },
         "type": "object"
       },
+      "caddy.RouteMoveRequest": {
+        "properties": {
+          "index": {
+            "description": "index",
+            "type": "integer"
+          },
+          "revision": {
+            "description": "revision",
+            "type": "string"
+          }
+        },
+        "required": [
+          "index"
+        ],
+        "type": "object"
+      },
+      "caddy.RouteSnapshot": {
+        "properties": {
+          "revision": {
+            "description": "revision",
+            "type": "string"
+          },
+          "routes": {
+            "description": "routes",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
       "caddy.RouteView": {
         "properties": {
           "index": {
@@ -9452,6 +9805,33 @@
           "realm": {
             "description": "HTTP Basic realm；留空使用 Caddy 默认值",
             "type": "string"
+          },
+          "removeUsers": {
+            "description": "原子移除账号；另需 DELETE 权限，至少保留一个账号",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "revision": {
+            "description": "必填：所属服务路由快照版本；缺失返回 428",
+            "type": "string"
+          }
+        },
+        "required": [
+          "revision"
+        ],
+        "type": "object"
+      },
+      "caddy.caddyBasicAuthList": {
+        "properties": {
+          "server": {
+            "description": "server",
+            "type": "string"
+          },
+          "snapshot": {
+            "description": "snapshot",
+            "type": "boolean"
           }
         },
         "type": "object"
@@ -9470,6 +9850,10 @@
             "description": "HTTP Basic realm；留空：已有 handler 沿用原 realm，新建使用 Caddy 默认值",
             "type": "string"
           },
+          "revision": {
+            "description": "必填：所属服务路由列表的快照版本；缺失返回 428",
+            "type": "string"
+          },
           "username": {
             "description": "basic_auth 登录用户名",
             "type": "string"
@@ -9477,7 +9861,8 @@
         },
         "required": [
           "username",
-          "password"
+          "password",
+          "revision"
         ],
         "type": "object"
       },
@@ -9503,6 +9888,36 @@
         "required": [
           "enabled"
         ],
+        "type": "object"
+      },
+      "caddy.caddyRouteCreate": {
+        "properties": {
+          "index": {
+            "description": "index",
+            "type": "integer"
+          },
+          "revision": {
+            "description": "revision",
+            "type": "string"
+          },
+          "server": {
+            "description": "server",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.caddyRouteList": {
+        "properties": {
+          "server": {
+            "description": "server",
+            "type": "string"
+          },
+          "snapshot": {
+            "description": "snapshot",
+            "type": "boolean"
+          }
+        },
         "type": "object"
       },
       "compose.ConfigDetail": {
@@ -9670,6 +10085,26 @@
         },
         "type": "object"
       },
+      "compose.RedeployPreview": {
+        "properties": {
+          "changes": {
+            "description": "changes",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "projectName": {
+            "description": "projectName",
+            "type": "string"
+          },
+          "target": {
+            "description": "target",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "compose.RedeployRequest": {
         "properties": {
           "content": {
@@ -9690,6 +10125,23 @@
           },
           "serviceName": {
             "description": "目标服务名（与 image 配合，仅更新该服务镜像后重建）",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "compose.RedeployServiceChange": {
+        "properties": {
+          "action": {
+            "description": "create / recreate / update / unchanged / remove",
+            "type": "string"
+          },
+          "configChanged": {
+            "description": "configChanged",
+            "type": "boolean"
+          },
+          "service": {
+            "description": "service",
             "type": "string"
           }
         },
@@ -9941,6 +10393,10 @@
           },
           "cronEnabled": {
             "description": "计划任务执行失败",
+            "type": "boolean"
+          },
+          "nodeEnabled": {
+            "description": "中控受管节点离线与恢复",
             "type": "boolean"
           },
           "restartThreshold": {
@@ -10645,7 +11101,7 @@
       "cronJobLogsReq": {
         "properties": {
           "limit": {
-            "description": "返回记录数上限（默认 50；<=0 或 >100 按 50）",
+            "description": "返回记录数上限（默认 50；\u003c=0 或 \u003e100 按 50）",
             "type": "integer"
           }
         },
@@ -12981,6 +13437,10 @@
           "updatedAt": {
             "description": "更新时间",
             "type": "string"
+          },
+          "version": {
+            "description": "节点版本，更新标签时用于并发校验",
+            "type": "integer"
           }
         },
         "type": "object"
@@ -13022,6 +13482,23 @@
         },
         "type": "object"
       },
+      "swarm.NodeLabelUpdate": {
+        "properties": {
+          "labels": {
+            "description": "完整标签集合，允许空值",
+            "type": "object"
+          },
+          "version": {
+            "description": "读取节点详情时的版本",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "labels"
+        ],
+        "type": "object"
+      },
       "swarm.ServiceDetail": {
         "properties": {
           "createdAt": {
@@ -13035,6 +13512,14 @@
           "runningTasks": {
             "description": "运行中的任务数",
             "type": "integer"
+          },
+          "updateMessage": {
+            "description": "Docker Engine 更新描述",
+            "type": "string"
+          },
+          "updateState": {
+            "description": "Docker Engine 更新状态",
+            "type": "string"
           },
           "updatedAt": {
             "description": "更新时间",

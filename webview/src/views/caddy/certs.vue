@@ -23,6 +23,7 @@ class CaddyCerts extends Vue {
     certs: CaddyCert[] = []
     loading = false
     searchText = ''
+    loadRequestID = 0
 
     get filteredCerts() {
         const keyword = this.searchText.trim().toLowerCase()
@@ -38,11 +39,17 @@ class CaddyCerts extends Vue {
     }
 
     async loadCerts() {
+        const requestID = ++this.loadRequestID
         this.loading = true
         try {
-            this.certs = (await api.caddyCertList()).payload || []
+            const certs = (await api.caddyCertList()).payload || []
+            if (requestID === this.loadRequestID) {
+                this.certs = certs
+            }
         } finally {
-            this.loading = false
+            if (requestID === this.loadRequestID) {
+                this.loading = false
+            }
         }
     }
 
@@ -65,9 +72,9 @@ class CaddyCerts extends Vue {
 
     sourceTagClass(source: string) {
         const map: Record<string, string> = {
-            file: 'bg-indigo-50 text-indigo-700',
-            pem: 'bg-emerald-50 text-emerald-700',
-            automate: 'bg-amber-50 text-amber-700',
+            file: 'bg-cyan-50 text-cyan-700',
+            pem: 'bg-cyan-50 text-cyan-700',
+            automate: 'bg-cyan-50 text-cyan-700',
             cached: 'bg-cyan-50 text-cyan-700',
         }
         return map[source] || 'bg-slate-100 text-slate-500'
@@ -142,13 +149,13 @@ export default toNative(CaddyCerts)
     <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="toolbar-desktop">
-        <div class="flex items-center gap-3">
+        <div class="title-group-static">
           <div class="page-icon bg-cyan-500"><i class="fas fa-certificate text-white"></i></div>
           <div class="min-w-0"><h1 class="title-text">{{ $t('SSL 证书') }}</h1><p class="text-xs text-slate-500 truncate">{{ $t('管理 Caddy 证书来源：文件、PEM、自动签发；已签发证书只读') }}</p></div>
         </div>
         <div class="action-group">
           <PageSearch v-model="searchText" search-key="caddy-certs" :placeholder="$t('请输入搜索关键词...')" focus-color="cyan" type-to-search />
-          <button class="btn btn-secondary" @click="loadCerts()"><i class="fas fa-rotate"></i>{{ $t('刷新') }}</button>
+          <button class="btn btn-secondary" :disabled="loading" @click="loadCerts()"><i class="fas fa-rotate"></i>{{ $t('刷新') }}</button>
           <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="btn btn-cyan" @click="openCreateModal()"><i class="fas fa-plus"></i>{{ $t('新建证书') }}</button>
         </div>
       </div>
@@ -162,7 +169,7 @@ export default toNative(CaddyCerts)
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadCerts()">
+          <button class="btn btn-secondary btn-square" :disabled="loading" :title="$t('刷新')" @click="loadCerts()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
           <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="btn btn-cyan btn-square" :title="$t('新建证书')" @click="openCreateModal()">
@@ -191,8 +198,8 @@ export default toNative(CaddyCerts)
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
-              <th class="th">{{ $t('来源') }}</th>
               <th class="th">{{ $t('主体') }}</th>
+              <th class="th">{{ $t('来源') }}</th>
               <th class="th">{{ $t('签发机构') }}</th>
               <th class="th">{{ $t('有效期') }}</th>
               <th class="th">{{ $t('标签') }}</th>
@@ -201,16 +208,16 @@ export default toNative(CaddyCerts)
           </thead>
           <tbody class="divide-y divide-slate-100">
             <tr v-for="cert in filteredCerts" :key="cert.key || cert.subject" class="hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3 max-w-[160px]">
+              <td class="px-4 py-3 max-w-[280px]">
                 <div class="inline-info">
                   <div class="row-icon bg-cyan-400">
                     <i class="fas fa-certificate text-white text-sm"></i>
                   </div>
-                  <span :class="sourceTagClass(cert.source)" class="inline-block text-xs px-2 py-0.5 rounded-lg font-medium whitespace-nowrap">{{ sourceLabel(cert.source) }}</span>
+                  <span class="item-title font-mono" :title="certSummary(cert)">{{ certSummary(cert) }}</span>
                 </div>
               </td>
-              <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ certSummary(cert) }}</code></td>
-              <td class="px-4 py-3"><span class="text-sm text-slate-600">{{ cert.issuer || '-' }}</span></td>
+              <td class="px-4 py-3"><span :class="sourceTagClass(cert.source)" class="badge-sm">{{ sourceLabel(cert.source) }}</span></td>
+              <td class="td-text">{{ cert.issuer || '-' }}</td>
               <td class="px-4 py-3">
                 <span v-if="cert.notAfter" :class="certExpireClass(cert.notAfter)" class="text-xs">{{ certExpireLabel(cert.notAfter) }}</span>
                 <span v-else class="text-xs text-slate-400">-</span>

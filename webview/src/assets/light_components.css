@@ -365,6 +365,21 @@
     @apply hover:border-slate-300;
   }
 
+  .input.caddy-cert-key-masked {
+    -webkit-text-security: disc;
+  }
+
+  @supports not (-webkit-text-security: disc) {
+    .input.caddy-cert-key-masked {
+      color: transparent;
+      caret-color: var(--color-slate-700);
+    }
+
+    .input.caddy-cert-key-masked::selection {
+      color: transparent;
+    }
+  }
+
   /* input 后紧跟的按钮与输入框等高 */
   .input + .btn {
     height: 46px;

@@ -10,12 +10,13 @@ import PageSearch from '@/component/page-search.vue'
 
 import RouteEditModal from './widget/route-edit-modal.vue'
 
-const handlerLabels: Record<string, string> = {
-    reverse_proxy: '反向代理',
-    file_server: '文件服务',
-    static_response: '静态响应',
-    raw: '原始 JSON'
-}
+const handlerLabels = new Map([
+    ['reverse_proxy', '反向代理'],
+    ['file_server', '文件服务'],
+    ['static_response', '静态响应'],
+    ['rewrite', 'URI 重写'],
+    ['raw', '原始 JSON']
+])
 
 const escapeHTML = (value: string) => value.replace(/[&<>"']/g, char => ({
     '&': '&amp;',
@@ -219,7 +220,8 @@ class CaddyRoutes extends Vue {
     }
 
     getHandlerKindLabel(kind?: string) {
-        return handlerLabels[kind || ''] || kind || '-'
+        const label = handlerLabels.get(kind || '')
+        return label ? this.$t(label) : kind || '-'
     }
 
     getTerminalHandler(r: CaddyRoute): CaddyHandler | undefined {
@@ -250,11 +252,8 @@ class CaddyRoutes extends Vue {
         if (kind === 'reverse_proxy') {
             return 'bg-indigo-50 text-indigo-700'
         }
-        if (kind === 'file_server') {
-            return 'bg-emerald-50 text-emerald-700'
-        }
-        if (kind === 'static_response') {
-            return 'bg-amber-50 text-amber-700'
+        if (kind === 'file_server' || kind === 'static_response') {
+            return 'bg-indigo-50 text-indigo-700'
         }
         return 'bg-slate-100 text-slate-500'
     }
@@ -289,19 +288,23 @@ export default toNative(CaddyRoutes)
   <div class="page">
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="toolbar-desktop">
-        <div class="flex items-center gap-3">
+      <div class="toolbar-desktop flex-wrap gap-3">
+        <div class="title-group-static">
           <div class="page-icon bg-indigo-500"><i class="fas fa-route text-white"></i></div>
           <div class="min-w-0"><h1 class="title-text">{{ $t('路由') }}</h1><p class="text-xs text-slate-500 truncate">{{ $t('配置请求匹配规则与处理器，支持多种转发方式') }}</p></div>
         </div>
         <div class="action-group">
           <PageSearch v-model="searchText" search-key="caddy-routes" :placeholder="$t('请输入搜索关键词...')" focus-color="indigo" type-to-search />
+          <select v-model="viewMode" class="select-sm" :aria-label="$t('路由视图')" :disabled="moving">
+            <option value="order">{{ $t('执行顺序') }}</option>
+            <option value="host">{{ $t('按域名分组') }}</option>
+          </select>
           <button class="btn btn-secondary" :disabled="loading || moving" @click="loadRoutes()"><i class="fas fa-rotate"></i>{{ $t('刷新') }}</button>
           <button v-if="portal.hasPerm('POST /api/caddy/route')" class="btn btn-indigo" :disabled="loading || moving" @click="openCreateModal()"><i class="fas fa-plus"></i>{{ $t('新建路由') }}</button>
         </div>
       </div>
       <!-- 移动端 -->
-      <div class="toolbar-mobile">
+      <div class="toolbar-mobile mb-3">
         <div class="title-group">
           <div class="page-icon bg-indigo-500"><i class="fas fa-route text-white"></i></div>
           <div class="min-w-0">
@@ -318,17 +321,13 @@ export default toNative(CaddyRoutes)
           </button>
         </div>
       </div>
-    </div>
-    <!-- 移动端搜索栏 -->
-    <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="caddy-routes" :placeholder="$t('请输入搜索关键词...')" width-class="w-full" focus-color="indigo" />
-    </div>
-    <div class="px-4 py-3 flex flex-wrap items-center gap-3">
-      <select v-model="viewMode" class="select-sm" :aria-label="$t('路由视图')" :disabled="moving">
-        <option value="order">{{ $t('执行顺序') }}</option>
-        <option value="host">{{ $t('按域名分组') }}</option>
-      </select>
-      <p class="text-xs text-slate-500">{{ viewMode === 'order' ? $t('同一服务内按序号执行；搜索时不能调整顺序。') : $t('分组仅用于浏览，序号表示实际执行顺序。') }}</p>
+      <div class="mobile-search inline-info -mx-4 -mb-3 border-b-0">
+        <PageSearch v-model="searchText" class="min-w-0 flex-1" search-key="caddy-routes" :placeholder="$t('请输入搜索关键词...')" width-class="w-full" focus-color="indigo" />
+        <select v-model="viewMode" class="select-sm" :aria-label="$t('路由视图')" :disabled="moving">
+          <option value="order">{{ $t('执行顺序') }}</option>
+          <option value="host">{{ $t('按域名分组') }}</option>
+        </select>
+      </div>
     </div>
     <div v-if="loading" class="card-body">
       <div class="empty-state"><div class="spinner-lg"></div><p class="text-slate-500">{{ $t('加载中...') }}</p></div>
@@ -370,12 +369,12 @@ export default toNative(CaddyRoutes)
                 </td>
               </tr>
               <tr v-else v-show="!row.grouped || !collapsedHosts.includes(row.host)" class="hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3">
+                <td class="px-4 py-3 max-w-[280px]">
                   <div class="inline-info">
                     <div class="row-icon bg-indigo-400 flex-shrink-0">
                       <i class="fas fa-route text-white text-sm"></i>
                     </div>
-                    <span :class="getRouteHosts(row.route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm break-all">{{ getRouteHosts(row.route) }}</span>
+                    <span :class="getRouteHosts(row.route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="item-title" :title="getRouteHosts(row.route)">{{ getRouteHosts(row.route) }}</span>
                   </div>
                 </td>
                 <td class="td-text"><span class="font-mono">{{ row.route.index + 1 }}</span></td>
@@ -390,7 +389,7 @@ export default toNative(CaddyRoutes)
                       <button class="btn-icon" :class="canMove(row.route, -1) ? 'btn-icon-indigo' : 'text-slate-300 cursor-not-allowed'" :disabled="!canMove(row.route, -1)" :title="$t('上移')" @click="moveRoute(row.route, -1)"><i class="fas fa-arrow-up text-xs"></i></button>
                       <button class="btn-icon" :class="canMove(row.route, 1) ? 'btn-icon-indigo' : 'text-slate-300 cursor-not-allowed'" :disabled="!canMove(row.route, 1)" :title="$t('下移')" @click="moveRoute(row.route, 1)"><i class="fas fa-arrow-down text-xs"></i></button>
                     </template>
-                    <button v-if="portal.hasPerm('PUT /api/caddy/route/:index')" class="btn-icon btn-icon-blue" :disabled="moving" :title="$t('编辑')" @click="openEditModal(row.route)"><i class="fas fa-pen text-xs"></i></button>
+                    <button v-if="portal.hasPerm('PUT /api/caddy/route/:index')" class="btn-icon btn-icon-indigo" :disabled="moving" :title="$t('编辑')" @click="openEditModal(row.route)"><i class="fas fa-pen text-xs"></i></button>
                     <button v-if="portal.hasPerm('DELETE /api/caddy/route/:index')" class="btn-icon btn-icon-red" :disabled="moving" :title="$t('删除')" @click="deleteRoute(row.route)"><i class="fas fa-trash text-xs"></i></button>
                   </div>
                 </td>
@@ -447,7 +446,7 @@ export default toNative(CaddyRoutes)
                 <button class="btn-icon" :class="canMove(row.route, -1) ? 'btn-icon-indigo' : 'text-slate-300 cursor-not-allowed'" :disabled="!canMove(row.route, -1)" :title="$t('上移')" @click="moveRoute(row.route, -1)"><i class="fas fa-arrow-up text-xs"></i><span class="text-xs ml-1">{{ $t('上移') }}</span></button>
                 <button class="btn-icon" :class="canMove(row.route, 1) ? 'btn-icon-indigo' : 'text-slate-300 cursor-not-allowed'" :disabled="!canMove(row.route, 1)" :title="$t('下移')" @click="moveRoute(row.route, 1)"><i class="fas fa-arrow-down text-xs"></i><span class="text-xs ml-1">{{ $t('下移') }}</span></button>
               </template>
-              <button v-if="portal.hasPerm('PUT /api/caddy/route/:index')" class="btn-icon btn-icon-blue" :disabled="moving" :title="$t('编辑')" @click="openEditModal(row.route)">
+              <button v-if="portal.hasPerm('PUT /api/caddy/route/:index')" class="btn-icon btn-icon-indigo" :disabled="moving" :title="$t('编辑')" @click="openEditModal(row.route)">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">{{ $t('编辑') }}</span>
               </button>
               <button v-if="portal.hasPerm('DELETE /api/caddy/route/:index')" class="btn-icon btn-icon-red" :disabled="moving" :title="$t('删除')" @click="deleteRoute(row.route)">

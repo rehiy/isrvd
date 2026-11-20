@@ -14,6 +14,8 @@ class CaddyGlobalConfig extends Vue {
 
     loading = false
     saving  = false
+    loaded = false
+    loadedDraft = ''
 
     // ─── 表单字段 ───
     logLevel      = ''
@@ -30,29 +32,8 @@ class CaddyGlobalConfig extends Vue {
         this.load()
     }
 
-    // ─── 方法 ───
-    async load() {
-        this.loading = true
-        try {
-            const data: CaddyGlobal = (await api.caddyGlobalInspect()).payload || {}
-            this.logLevel      = data.logLevel      ?? ''
-            this.logFormat     = data.logFormat     ?? ''
-            this.email         = data.email         ?? ''
-            this.acmeCA        = data.acmeCA        ?? ''
-            this.localCerts    = data.localCerts    ?? false
-            this.onDemandTLS   = data.onDemandTLS   ?? false
-            this.onDemandAsk   = data.onDemandAsk   ?? ''
-            this.gracePeriod   = data.gracePeriod   ?? ''
-        } finally {
-            this.loading = false
-        }
-    }
-
-    async save() {
-        if (this.saving || this.loading) {
-            return
-        }
-        const payload: CaddyGlobal = {
+    get draft(): CaddyGlobal {
+        return {
             logLevel:      this.logLevel      || undefined,
             logFormat:     this.logFormat     || undefined,
             email:         this.email         || undefined,
@@ -62,11 +43,71 @@ class CaddyGlobalConfig extends Vue {
             onDemandAsk:   this.onDemandAsk   || undefined,
             gracePeriod:   this.gracePeriod   || undefined,
         }
+    }
+
+    get canSave() {
+        return this.loaded && !this.loading && !this.saving &&
+            this.portal.hasPerm('GET /api/caddy/global') &&
+            this.portal.hasPerm('PUT /api/caddy/global')
+    }
+
+    async load() {
+        if (this.loading || this.saving) {
+            return
+        }
+        if (this.loadedDraft && JSON.stringify(this.draft) !== this.loadedDraft) {
+            this.portal.showConfirm({
+                title: this.$t('放弃修改并重新加载'),
+                message: this.$t('当前修改尚未保存，重新加载将丢弃这些修改。'),
+                icon: 'fa-rotate',
+                iconColor: 'amber',
+                confirmText: this.$t('放弃修改并重新加载'),
+                danger: true,
+                onConfirm: () => this.fetchConfig()
+            })
+            return
+        }
+        await this.fetchConfig()
+    }
+
+    async fetchConfig() {
+        if (this.loading || !this.portal.hasPerm('GET /api/caddy/global')) {
+            return
+        }
+        this.loading = true
+        this.loaded = false
+        try {
+            const data = (await api.caddyGlobalInspect()).payload
+            if (!data) {
+                this.portal.showNotification('error', this.$t('加载失败，请刷新重试'))
+                return
+            }
+            this.logLevel      = data.logLevel      ?? ''
+            this.logFormat     = data.logFormat     ?? ''
+            this.email         = data.email         ?? ''
+            this.acmeCA        = data.acmeCA        ?? ''
+            this.localCerts    = data.localCerts    ?? false
+            this.onDemandTLS   = data.onDemandTLS   ?? false
+            this.onDemandAsk   = data.onDemandAsk   ?? ''
+            this.gracePeriod   = data.gracePeriod   ?? ''
+            this.loadedDraft = JSON.stringify(this.draft)
+            this.loaded = true
+        } finally {
+            this.loading = false
+        }
+    }
+
+    async save() {
+        if (!this.canSave) {
+            return
+        }
+        const payload = this.draft
         this.saving = true
         try {
             await api.caddyGlobalUpdate(payload)
+            this.loadedDraft = JSON.stringify(payload)
             this.portal.showNotification('success', this.$t('全局选项已保存'))
-            this.load()
+            await this.fetchConfig()
         } finally {
             this.saving = false
         }
@@ -82,7 +123,7 @@ export default toNative(CaddyGlobalConfig)
     <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="toolbar-desktop">
-        <div class="flex items-center gap-3">
+        <div class="title-group-static">
           <div class="page-icon bg-violet-500">
             <i class="fas fa-sliders text-white"></i>
           </div>
@@ -92,10 +133,10 @@ export default toNative(CaddyGlobalConfig)
           </div>
         </div>
         <div class="action-group">
-          <button class="btn btn-secondary" @click="load()">
+          <button class="btn btn-secondary" :disabled="loading || saving || !portal.hasPerm('GET /api/caddy/global')" @click="load()">
             <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
-          <button v-if="portal.hasPerm('PUT /api/caddy/global')" :disabled="saving || loading" class="btn btn-violet" @click="save()">
+          <button v-if="portal.hasPerm('PUT /api/caddy/global')" :disabled="!canSave" :aria-busy="saving" class="btn btn-violet" @click="save()">
             <i v-if="saving" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-floppy-disk"></i>
             {{ $t('保存') }}
@@ -114,10 +155,10 @@ export default toNative(CaddyGlobalConfig)
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="load()">
+          <button class="btn btn-secondary btn-square" :disabled="loading || saving || !portal.hasPerm('GET /api/caddy/global')" :title="$t('刷新')" @click="load()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('PUT /api/caddy/global')" :disabled="saving || loading" class="btn btn-violet btn-square" :title="$t('保存')" @click="save()">
+          <button v-if="portal.hasPerm('PUT /api/caddy/global')" :disabled="!canSave" :aria-busy="saving" class="btn btn-violet btn-square" :title="$t('保存')" @click="save()">
             <i :class="saving ? 'fas fa-spinner fa-spin text-sm' : 'fas fa-floppy-disk text-sm'"></i>
           </button>
         </div>
@@ -132,11 +173,12 @@ export default toNative(CaddyGlobalConfig)
       </div>
     </div>
 
-    <div v-else class="card-body space-y-4">
-      <p class="text-xs text-slate-400 flex items-start gap-1.5">
-        <i class="fas fa-circle-info mt-0.5 flex-shrink-0"></i>
-        <span>{{ $t('保存后通过') }} <code class="px-1 bg-slate-100 rounded">POST /load</code> {{ $t('整体原子替换 Caddy 运行配置，立即生效。') }}</span>
-      </p>
+    <div v-else-if="!loaded" class="card-body">
+      <div class="empty-state">
+        <p class="text-slate-500">{{ portal.hasPerm('GET /api/caddy/global') ? $t('加载失败，请刷新重试') : $t('没有权限') }}</p>
+      </div>
+    </div>
+    <fieldset v-else class="card-body max-w-4xl space-y-4" :disabled="saving || !portal.hasPerm('PUT /api/caddy/global')">
       <div class="divide-y divide-slate-100">
         <!-- 证书签发 -->
         <div class="pb-6">
@@ -156,7 +198,7 @@ export default toNative(CaddyGlobalConfig)
               <p class="text-xs text-slate-400 mt-1">{{ $t("自定义 CA 目录，如 ZeroSSL 或私有 ACME CA，留空则使用 Let's Encrypt") }}</p>
             </div>
           </div>
-          <div class="space-y-3">
+          <div class="space-y-4">
             <ToggleCard v-model="localCerts" :violet="true" :label="$t('使用本地自签证书（internal issuer）')" :desc="$t('不走 ACME，由 Caddy 自动签发本地信任证书；启用后 ACME 邮箱和目录设置将被忽略')" />
             <ToggleCard v-model="onDemandTLS" :violet="true" :label="$t('启用 On-Demand TLS')">
               <template #desc>{{ $t('连接时动态申请证书，适合域名数量不固定的多租户场景；生产环境需配合') }} <code class="px-1 bg-slate-100 rounded">ask</code> {{ $t('端点防滥用') }}</template>
@@ -204,6 +246,6 @@ export default toNative(CaddyGlobalConfig)
           </div>
         </div>
       </div>
-    </div>
+    </fieldset>
   </div>
 </template>

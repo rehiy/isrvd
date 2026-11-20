@@ -40,6 +40,16 @@ export function parseHostPort(value: string): { host: string; port: string } {
     return { host: s.slice(0, idx), port: s.slice(idx + 1) }
 }
 
+export function formatHostPort(host: string, port = ''): string {
+    const value = host.trim()
+    const service = port.trim()
+    if (!service || !value) {
+        return value
+    }
+    const literal = value.startsWith('[') && value.endsWith(']') ? value.slice(1, -1) : value
+    return `${literal.includes(':') ? `[${literal}]` : literal}:${service}`
+}
+
 export const formatFileSize = (bytes: number): string => {
     if (bytes === 0) {
         return '0 B'

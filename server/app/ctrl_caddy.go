@@ -307,13 +307,24 @@ func (app *App) caddyRouteMove(c *gin.Context) {
 // ─── Basic Auth 账号管理 ───
 
 func (app *App) caddyBasicAuthList(c *gin.Context) {
-	server := c.Query("server")
-	result, err := app.caddySvc.BasicAuthList(c.Request.Context(), server)
+	var query struct {
+		Server   string `form:"server"`
+		Snapshot bool   `form:"snapshot"`
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	result, err := app.caddySvc.BasicAuthSnapshot(c.Request.Context(), query.Server)
 	if err != nil {
 		respondCaddyError(c, err)
 		return
 	}
-	respondSuccess(c, "", result)
+	if query.Snapshot {
+		respondSuccess(c, "", result)
+		return
+	}
+	respondSuccess(c, "", result.Routes)
 }
 
 func (app *App) caddyBasicAuthUserCreate(c *gin.Context) {
@@ -328,12 +339,17 @@ func (app *App) caddyBasicAuthUserCreate(c *gin.Context) {
 		Password      string `json:"password"      binding:"required"` // 明文密码，由后端转换为 bcrypt hash
 		Realm         string `json:"realm"`                            // HTTP Basic realm；留空：已有 handler 沿用原 realm，新建使用 Caddy 默认值
 		ForwardHeader string `json:"forwardHeader"`                    // 认证成功后传递用户名的请求头；留空不转发
+		Revision      string `json:"revision"`                         // 必填：所属服务路由列表的快照版本；缺失返回 428
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.caddySvc.BasicAuthUserCreate(c.Request.Context(), server, idx, req.Username, req.Password, req.Realm, req.ForwardHeader); err != nil {
+	if req.Revision == "" {
+		respondCaddyError(c, caddy.ErrRouteRevisionRequired)
+		return
+	}
+	if err := app.caddySvc.BasicAuthUserCreate(c.Request.Context(), server, idx, req.Username, req.Password, req.Realm, req.ForwardHeader, req.Revision); err != nil {
 		respondCaddyError(c, err, http.StatusBadRequest)
 		return
 	}
@@ -347,7 +363,12 @@ func (app *App) caddyBasicAuthUserDelete(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "index 必须为整数")
 		return
 	}
-	if err := app.caddySvc.BasicAuthUserDelete(c.Request.Context(), server, idx, c.Param("username")); err != nil {
+	revision := c.Query("revision")
+	if revision == "" {
+		respondCaddyError(c, caddy.ErrRouteRevisionRequired)
+		return
+	}
+	if err := app.caddySvc.BasicAuthUserDelete(c.Request.Context(), server, idx, c.Param("username"), revision); err != nil {
 		respondCaddyError(c, err, http.StatusBadRequest)
 		return
 	}
@@ -362,14 +383,27 @@ func (app *App) caddyBasicAuthConfigUpdate(c *gin.Context) {
 		return
 	}
 	var req struct {
-		Realm         string `json:"realm"`         // HTTP Basic realm；留空使用 Caddy 默认值
-		ForwardHeader string `json:"forwardHeader"` // 认证成功后传递用户名的请求头；留空不转发
+		Realm         string   `json:"realm"`         // HTTP Basic realm；留空使用 Caddy 默认值
+		ForwardHeader string   `json:"forwardHeader"` // 认证成功后传递用户名的请求头；留空不转发
+		Revision      string   `json:"revision"`      // 必填：所属服务路由快照版本；缺失返回 428
+		RemoveUsers   []string `json:"removeUsers"`   // 原子移除账号；另需 DELETE 权限，至少保留一个账号
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.caddySvc.BasicAuthConfigUpdate(c.Request.Context(), server, idx, req.Realm, req.ForwardHeader); err != nil {
+	if req.Revision == "" {
+		respondCaddyError(c, caddy.ErrRouteRevisionRequired)
+		return
+	}
+	if len(req.RemoveUsers) > 0 {
+		if err := app.accountSvc.PermCheck(c.GetString("username"), "删除 Caddy Basic Auth 账号", http.MethodDelete, "/api/caddy/basic-auth/:index/users/:username"); err != nil {
+			respondError(c, http.StatusForbidden, err.Error())
+			return
+		}
+	}
+	options := caddy.BasicAuthConfigOptions{Revision: req.Revision, RemoveUsers: req.RemoveUsers}
+	if err := app.caddySvc.BasicAuthConfigUpdate(c.Request.Context(), server, idx, req.Realm, req.ForwardHeader, options); err != nil {
 		respondCaddyError(c, err, http.StatusBadRequest)
 		return
 	}

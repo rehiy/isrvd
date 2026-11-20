@@ -177,8 +177,9 @@ class Combobox extends Vue {
     focusInput() {
         if (this.disabled) {
             return
-            
-        }(this.$refs.inputRef as HTMLInputElement)?.focus()
+        }
+        const input = this.$refs.inputRef as HTMLInputElement
+        input?.focus()
         this.dropdownOpen = true
     }
 }
@@ -207,7 +208,7 @@ export default toNative(Combobox)
               class="btn-tag-remove"
               :class="disabled || tagDisabled(tag) ? 'cursor-not-allowed opacity-50' : ''"
               :disabled="disabled || tagDisabled(tag)"
-              :aria-label="$t(`移除 ${tag}`)"
+              :aria-label="$t('移除 {0}', tag)"
               @click.stop="removeTag(tag)"
             >
               <i class="fas fa-times text-[8px]"></i>

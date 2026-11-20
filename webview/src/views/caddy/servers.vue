@@ -22,6 +22,7 @@ class CaddyServers extends Vue {
     loading = false
     searchText = ''
     editingServer = ''
+    loadRequestID = 0
 
     get filteredServers() {
         const keyword = this.searchText.trim().toLowerCase()
@@ -34,11 +35,17 @@ class CaddyServers extends Vue {
     }
 
     async loadServers() {
+        const requestID = ++this.loadRequestID
         this.loading = true
         try {
-            this.servers = (await api.caddyServerList()).payload || []
+            const servers = (await api.caddyServerList()).payload || []
+            if (requestID === this.loadRequestID) {
+                this.servers = servers
+            }
         } finally {
-            this.loading = false
+            if (requestID === this.loadRequestID) {
+                this.loading = false
+            }
         }
     }
 
@@ -144,7 +151,7 @@ export default toNative(CaddyServers)
         </div>
         <div class="action-group">
           <PageSearch v-model="searchText" search-key="caddy-servers" :placeholder="$t('搜索名称、监听或协议...')" focus-color="rose" type-to-search />
-          <button class="btn btn-secondary" @click="loadServers()"><i class="fas fa-rotate"></i>{{ $t('刷新') }}</button>
+          <button class="btn btn-secondary" :disabled="loading" @click="loadServers()"><i class="fas fa-rotate"></i>{{ $t('刷新') }}</button>
           <button v-if="portal.hasPerm('POST /api/caddy/server')" class="btn btn-rose" @click="openCreateModal()"><i class="fas fa-plus"></i>{{ $t('新建服务') }}</button>
         </div>
       </div>
@@ -158,7 +165,7 @@ export default toNative(CaddyServers)
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadServers()"><i class="fas fa-rotate text-sm"></i></button>
+          <button class="btn btn-secondary btn-square" :disabled="loading" :title="$t('刷新')" @click="loadServers()"><i class="fas fa-rotate text-sm"></i></button>
           <button v-if="portal.hasPerm('POST /api/caddy/server')" class="btn btn-rose btn-square" :title="$t('新建服务')" @click="openCreateModal()"><i class="fas fa-plus text-sm"></i></button>
         </div>
       </div>

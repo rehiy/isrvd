@@ -20,7 +20,8 @@ type BasicAuthUser struct {
 
 // BasicAuthRouteView 带账号列表的路由视图
 type BasicAuthRouteView struct {
-	Index         int             `json:"index"`         // 路由下标（主键）
+	Index         int             `json:"index"`         // 路由在 revision 快照中的下标
+	Revision      string          `json:"revision"`      // 所属服务全部路由的快照版本
 	Name          string          `json:"name"`          // 路由名（仅展示）
 	Realm         string          `json:"realm"`         // HTTP Basic realm
 	ForwardHeader string          `json:"forwardHeader"` // 传递用户名的请求头；空表示未开启
@@ -28,8 +29,29 @@ type BasicAuthRouteView struct {
 	Handlers      []caddy.Handler `json:"handlers"`      // 其余 handler 链（只读展示）
 }
 
-// BasicAuthList 列出所有含 basic_auth 的路由
+// BasicAuthSnapshot 包含认证路由与所属服务全部路由的同快照版本。
+type BasicAuthSnapshot struct {
+	Routes   []BasicAuthRouteView `json:"routes"`
+	Revision string               `json:"revision"`
+}
+
+// BasicAuthConfigOptions 原子更新认证配置时的并发校验与账号移除选项。
+type BasicAuthConfigOptions struct {
+	Revision    string   `json:"revision"`
+	RemoveUsers []string `json:"removeUsers"`
+}
+
+// BasicAuthList 保留默认列表响应。
 func (s *Service) BasicAuthList(ctx context.Context, server string) ([]BasicAuthRouteView, error) {
+	snapshot, err := s.BasicAuthSnapshot(ctx, server)
+	if err != nil {
+		return nil, err
+	}
+	return snapshot.Routes, nil
+}
+
+// BasicAuthSnapshot 从一次配置读取生成认证列表及全部路由的版本。
+func (s *Service) BasicAuthSnapshot(ctx context.Context, server string) (*BasicAuthSnapshot, error) {
 	server, err := normalizeServer(server)
 	if err != nil {
 		return nil, err
@@ -41,6 +63,10 @@ func (s *Service) BasicAuthList(ctx context.Context, server string) ([]BasicAuth
 	srv := getServer(cfg, server)
 	if srv == nil {
 		return nil, ErrServerNotFound
+	}
+	revision, err := routeRevision(srv.Routes)
+	if err != nil {
+		return nil, err
 	}
 	var out []BasicAuthRouteView
 	for i, route := range srv.Routes {
@@ -61,6 +87,7 @@ func (s *Service) BasicAuthList(ctx context.Context, server string) ([]BasicAuth
 			}
 			out = append(out, BasicAuthRouteView{
 				Index:         i,
+				Revision:      revision,
 				Name:          route.ID.String(),
 				Realm:         realm,
 				ForwardHeader: extractForwardHeader(route.Handle),
@@ -70,14 +97,14 @@ func (s *Service) BasicAuthList(ctx context.Context, server string) ([]BasicAuth
 			break
 		}
 	}
-	return out, nil
+	return &BasicAuthSnapshot{Routes: out, Revision: revision}, nil
 }
 
 // BasicAuthUserCreate 向指定路由添加一个 basic_auth 账号
 //
 // forwardHeader 非空时，在 handle 链中维护一个 headers handler，将
 // {http.auth.user.id} 注入到指定请求头中传给后端；空字符串表示移除该注入。
-func (s *Service) BasicAuthUserCreate(ctx context.Context, server string, routeIndex int, username, password, realm, forwardHeader string) error {
+func (s *Service) BasicAuthUserCreate(ctx context.Context, server string, routeIndex int, username, password, realm, forwardHeader string, revision ...string) error {
 	if username == "" || password == "" {
 		return fmt.Errorf("用户名和密码不能为空")
 	}
@@ -94,6 +121,11 @@ func (s *Service) BasicAuthUserCreate(ctx context.Context, server string, routeI
 		srv := getServer(cfg, server)
 		if srv == nil {
 			return ErrServerNotFound
+		}
+		if len(revision) > 0 && revision[0] != "" {
+			if err := checkRouteRevision(srv.Routes, revision[0]); err != nil {
+				return err
+			}
 		}
 		route, err := getRoute(srv, routeIndex)
 		if err != nil {
@@ -131,7 +163,7 @@ func (s *Service) BasicAuthUserCreate(ctx context.Context, server string, routeI
 // BasicAuthUserDelete 从指定路由移除一个账号
 //
 // 若移除后账号列表为空，则同时删除 authentication handler 和 forward-user headers handler。
-func (s *Service) BasicAuthUserDelete(ctx context.Context, server string, routeIndex int, username string) error {
+func (s *Service) BasicAuthUserDelete(ctx context.Context, server string, routeIndex int, username string, revision ...string) error {
 	if username == "" {
 		return fmt.Errorf("用户名不能为空")
 	}
@@ -143,6 +175,11 @@ func (s *Service) BasicAuthUserDelete(ctx context.Context, server string, routeI
 		srv := getServer(cfg, server)
 		if srv == nil {
 			return ErrServerNotFound
+		}
+		if len(revision) > 0 && revision[0] != "" {
+			if err := checkRouteRevision(srv.Routes, revision[0]); err != nil {
+				return err
+			}
 		}
 		route, err := getRoute(srv, routeIndex)
 		if err != nil {
@@ -172,16 +209,25 @@ func (s *Service) BasicAuthUserDelete(ctx context.Context, server string, routeI
 	})
 }
 
-// BasicAuthConfigUpdate 更新已有认证路由的 realm 和 forwardHeader，不修改账号列表
-func (s *Service) BasicAuthConfigUpdate(ctx context.Context, server string, routeIndex int, realm, forwardHeader string) error {
+// BasicAuthConfigUpdate 原子更新认证配置和指定账号的移除，不允许清空最后账号。
+func (s *Service) BasicAuthConfigUpdate(ctx context.Context, server string, routeIndex int, realm, forwardHeader string, options ...BasicAuthConfigOptions) error {
 	server, err := normalizeServer(server)
 	if err != nil {
 		return err
+	}
+	var option BasicAuthConfigOptions
+	if len(options) > 0 {
+		option = options[0]
 	}
 	return s.client.ConfigMutate(ctx, func(cfg *caddy.Config) error {
 		srv := getServer(cfg, server)
 		if srv == nil {
 			return ErrServerNotFound
+		}
+		if option.Revision != "" || len(option.RemoveUsers) > 0 {
+			if err := checkRouteRevision(srv.Routes, option.Revision); err != nil {
+				return err
+			}
 		}
 		route, err := getRoute(srv, routeIndex)
 		if err != nil {
@@ -194,6 +240,19 @@ func (s *Service) BasicAuthConfigUpdate(ctx context.Context, server string, rout
 		}
 
 		_, accounts, _ := caddy.BasicAuthFromHandler(route.Handle[authIdx])
+		for _, username := range option.RemoveUsers {
+			if !slices.ContainsFunc(accounts, func(account caddy.BasicAuthAccount) bool {
+				return account.Username == username
+			}) {
+				return fmt.Errorf("用户 %q 不存在", username)
+			}
+		}
+		accounts = slices.DeleteFunc(accounts, func(account caddy.BasicAuthAccount) bool {
+			return slices.Contains(option.RemoveUsers, account.Username)
+		})
+		if len(accounts) == 0 {
+			return fmt.Errorf("请至少保留一个账号；解除认证请使用账号删除操作")
+		}
 		route.Handle[authIdx] = caddy.HandlerBasicAuth(realm, accounts)
 		applyForwardHeader(route, forwardHeader)
 		return nil

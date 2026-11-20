@@ -23,16 +23,6 @@ class CertDetailModal extends Vue {
         return source ? map[source] || source : '-'
     }
 
-    sourceTagClass(source?: string) {
-        const map: Record<string, string> = {
-            file: 'bg-indigo-50 text-indigo-700',
-            pem: 'bg-emerald-50 text-emerald-700',
-            automate: 'bg-amber-50 text-amber-700',
-            cached: 'bg-cyan-50 text-cyan-700',
-        }
-        return source ? map[source] || 'bg-slate-100 text-slate-500' : 'bg-slate-100 text-slate-500'
-    }
-
     certSummary(cert: CaddyCert) {
         if (cert.subject) {
             return cert.subject
@@ -128,7 +118,7 @@ export default toNative(CertDetailModal)
           <div>
             <label class="form-label">{{ $t('来源') }}</label>
             <div class="detail-value">
-              <span :class="sourceTagClass(cert.source)" class="badge-sm">{{ sourceLabel(cert.source) }}</span>
+              <span class="badge-sm bg-cyan-50 text-cyan-700">{{ sourceLabel(cert.source) }}</span>
             </div>
           </div>
           <div>
@@ -172,7 +162,7 @@ export default toNative(CertDetailModal)
 
       <section>
         <h2 class="section-title">{{ $t('证书解析') }}</h2>
-        <div class="space-y-3">
+        <div class="space-y-4">
           <div>
             <label class="form-label">{{ $t('签发机构') }}</label>
             <div class="detail-value">{{ cert.issuer || '-' }}</div>
@@ -180,7 +170,7 @@ export default toNative(CertDetailModal)
           <div>
             <label class="form-label">{{ $t('SAN 域名') }}</label>
             <div v-if="cert.sans && cert.sans.length" class="flex flex-wrap gap-1.5">
-              <span v-for="san in cert.sans" :key="san" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-mono bg-cyan-50 text-cyan-700">{{ san }}</span>
+              <span v-for="san in cert.sans" :key="san" class="badge-sm font-mono bg-cyan-50 text-cyan-700">{{ san }}</span>
             </div>
             <div v-else class="detail-value text-slate-400">-</div>
           </div>
@@ -189,7 +179,7 @@ export default toNative(CertDetailModal)
 
       <section>
         <h2 class="section-title">{{ $t('来源配置') }}</h2>
-        <div class="space-y-3">
+        <div class="space-y-4">
           <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
             {{ sourceDescription(cert) }}
           </div>

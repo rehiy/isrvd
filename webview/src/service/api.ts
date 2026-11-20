@@ -64,6 +64,7 @@ import type {
     CaddyRouteUpsert,
     CaddyCert,
     CaddyBasicAuthRoute,
+    CaddyBasicAuthSnapshot,
     CaddyBasicAuthUserCreate,
     CaddyBasicAuthConfigUpdate,
     // Docker
@@ -551,8 +552,16 @@ class ApiService {
         return http.post<void>(`caddy/basic-auth/${routeIndex}/users`, data, { params: server ? { server } : {} })
     }
 
-    caddyBasicAuthUserDelete(routeIndex: number, username: string, server?: string) {
-        return http.delete<void>(`caddy/basic-auth/${routeIndex}/users/${encodeURIComponent(username)}`, { params: server ? { server } : {} })
+    caddyBasicAuthSnapshot(server?: string) {
+        return http.get<CaddyBasicAuthSnapshot>('caddy/basic-auth', {
+            params: { server, snapshot: true }
+        })
+    }
+
+    caddyBasicAuthUserDelete(routeIndex: number, username: string, server: string, revision: string) {
+        return http.delete<void>(`caddy/basic-auth/${routeIndex}/users/${encodeURIComponent(username)}`, {
+            params: { server, revision }
+        })
     }
 
     caddyBasicAuthConfigUpdate(routeIndex: number, data: CaddyBasicAuthConfigUpdate, server?: string) {

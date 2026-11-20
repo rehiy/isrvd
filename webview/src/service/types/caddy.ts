@@ -80,6 +80,7 @@ export interface CaddyRoute {
     handle?: CaddyHandler[]
     terminal?: boolean
     '@id'?: string | number
+    [key: string]: unknown   // 保留其他 Caddy 原生路由扩展字段
 }
 
 // CaddyRouteUpsert 创建/更新请求体（直接提交 Caddy 原生 JSON，不含 index）
@@ -89,6 +90,7 @@ export interface CaddyRouteUpsert {
     handle?: CaddyHandler[]
     terminal?: boolean
     '@id'?: string | number
+    [key: string]: unknown   // 保留其他 Caddy 原生路由扩展字段
 }
 
 // 同一次读取返回的路由数组与版本，用于按下标修改时的并发校验。
@@ -146,7 +148,8 @@ export interface CaddyBasicAuthUser {
 }
 
 export interface CaddyBasicAuthRoute {
-    index: number             // 路由下标（主键）
+    index: number             // 路由在 revision 快照中的下标
+    revision: string          // 所属服务全部路由的版本
     name: string              // 路由 @id（展示用）
     realm: string             // HTTP Basic realm
     forwardHeader: string     // 传递用户名的请求头；空表示未开启
@@ -154,9 +157,15 @@ export interface CaddyBasicAuthRoute {
     handlers: CaddyHandler[]  // 其余 handler（只读展示）
 }
 
+export interface CaddyBasicAuthSnapshot {
+    routes: CaddyBasicAuthRoute[] | null
+    revision: string
+}
+
 export interface CaddyBasicAuthUserCreate {
     username: string
     password: string
+    revision: string
     realm?: string
     forwardHeader?: string    // 非空时注入 X-Remote-User 等 header
 }
@@ -164,6 +173,8 @@ export interface CaddyBasicAuthUserCreate {
 export interface CaddyBasicAuthConfigUpdate {
     realm: string
     forwardHeader: string
+    revision: string
+    removeUsers?: string[]     // 与配置更新原子提交；另需账号 DELETE 权限
 }
 
 // ─── 全局选项 ───
