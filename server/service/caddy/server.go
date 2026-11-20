@@ -143,11 +143,7 @@ func (s *Service) ServerUpdate(ctx context.Context, ref string, req ServerForm) 
 		return err
 	}
 
-	return s.client.ConfigMutate(ctx, func(cfg *caddy.Config) error {
-		srv := getServer(cfg, name)
-		if srv == nil {
-			return ErrServerNotFound
-		}
+	return s.serverMutate(ctx, name, func(srv *caddy.HTTPServer) error {
 		return applyServerForm(srv, form)
 	})
 }
