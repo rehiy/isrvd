@@ -8,6 +8,13 @@ import type { LanguageModule } from '../types'
  */
 
 const messages: Record<string, string> = {
+
+    // ─── Caddy 可信代理 ───
+    '可信代理 IP / CIDR': 'Trusted Proxy IPs / CIDRs',
+    '仅填写实际反向代理的 IP 或网段，每行一个；留空表示不信任代理转发的客户端 IP。': 'Enter only real upstream proxy IPs or ranges, one per line. Leave blank to distrust forwarded client IPs.',
+    '严格解析代理请求头': 'Strict Proxy Header Parsing',
+    '从右向左解析 X-Forwarded-For，推荐与可信代理列表一起启用，防止伪造客户端 IP。': 'Parse X-Forwarded-For from right to left. Recommended with trusted proxies to prevent spoofing.',
+    '此服务使用自定义可信代理来源，请在原始配置中维护；保存其他选项不会覆盖它。': 'This server uses a custom trusted proxy source. Manage it in Raw Config; other edits will preserve it.',
     // ─── Caddy 配置与表单 ───
     '例如 srv0；名称创建后不可修改，并会原样保留。': 'For example, srv0. The name cannot be changed after creation and is preserved as entered.',
     '时间格式，例如 {0}；留空使用 Caddy 默认值。': 'Duration format, e.g. {0}. Leave empty to use the Caddy default.',
