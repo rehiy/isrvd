@@ -153,7 +153,7 @@ isrvd_put "/system/config" '<CURRENT_CONFIG_WITH_CHANGES>'
 
 配置说明：
 
-- `server.dataSecret` 是 SSH 凭据和 Compose 历史的持久加密密钥，仅存于 YAML/etcd 配置，API 不返回且不能修改。首次升级已有有效 `jwtSecret` 的旧配置时沿用其值保证历史密文兼容；首次全新安装生成独立随机密钥。之后修改 `jwtSecret` 不影响历史数据。必须备份 `dataSecret`，首次升级**前**已因 JWT 密钥变更而无法解密的数据不能自动修复。
+- `server.dataSecret` 是 SSH 凭据和 Compose 历史的持久加密密钥，仅存于 YAML/etcd 配置，API 不返回且不能修改。首次升级已有有效 `jwtSecret` 的旧配置时沿用其值保证历史密文兼容；首次全新安装生成独立随机密钥。之后修改 `jwtSecret` 不影响历史数据，但旧安装的 `dataSecret` 仍与原 JWT 密钥相同；如果原 JWT 密钥已经泄露，仅轮换 JWT 不能保护旧密文，还需另行完成数据重新加密。必须备份 `dataSecret`，首次升级**前**已因 JWT 密钥变更而无法解密的数据不能自动修复。
 - `clientSecret`、`jwtSecret`、`apiKey`、`adminKey`、`docker.registries[].password` 等敏感字段不会通过 GET 返回；PUT 时为空（含纯空白）表示保留原值，非空值会去除首尾空白后保存；`docker.registries[].password` 按 `url` + `username` 匹配旧仓库后保留原值。启动加载配置时，如果 `server.jwtSecret` 为空或仍为示例值 `your-jwt-secret`，系统会使用密码学安全随机源生成 256 位密钥并写回配置；手动配置的密钥不能少于 32 个字符。
 - `apisix.metricsUrl` 的脱敏占位符 `******` 回传时保留完整原地址及凭据；提交新地址替换原值，提交空字符串恢复默认抓取地址，不将旧凭据迁移到新目标。审计请求体中的该字段始终脱敏。
 - 默认值：`server.listenAddr` `:8080`，`server.rootDirectory` `.`（相对路径转为绝对路径），`server.maxUploadSize` 104857600（0 取默认），`server.jwtExpiration` 86400 秒，`passkey.timeout` 60000 毫秒（0 取默认），`oidc.scopes` 空时为 `[openid profile email]` 且始终包含 `openid`。`docker.containerRoot`、`members[].homeDirectory` 相对 `rootDirectory` 解析，落盘时还原为 `./` 相对路径。
