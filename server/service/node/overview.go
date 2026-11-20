@@ -55,6 +55,9 @@ type OverviewSwarmInfo struct {
 // OverviewStats 并发获取在线节点的现有只读指标，最多同时访问 6 个受管节点。
 // 不持久化快照，不等待离线节点；每个节点的采集总预算为 12 秒。
 func (s *Service) OverviewStats(ctx context.Context) *OverviewInfo {
+	// 多节点超时不能累加成无上限的页面等待，超时后保留已获得的数据。
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
 	nodes := s.NodeList()
 	result := &OverviewInfo{Nodes: make([]*OverviewNodeInfo, len(nodes))}
 	limit := make(chan struct{}, 6)
@@ -77,6 +80,7 @@ func (s *Service) OverviewStats(ctx context.Context) *OverviewInfo {
 			case limit <- struct{}{}:
 				defer func() { <-limit }()
 			case <-ctx.Done():
+				item.MonitorError = true
 				return
 			}
 			s.overviewNodeStats(ctx, item)
