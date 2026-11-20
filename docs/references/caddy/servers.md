@@ -41,7 +41,7 @@ isrvd_get "/caddy/server/<ID>"
 | `write_timeout` | string | 写入超时 |
 | `max_header_bytes` | integer | 最大请求头字节数；`0` 表示使用默认值，负数返回 400 |
 | `trusted_proxies` | object | 支持 `{"source":"static","ranges":["192.0.2.10/32"]}`；IP 或 CIDR 数组，最多 256 个，不允许重复及全网段 `/0` |
-| `trusted_proxies_strict` | integer | `1` 启用从右向左解析 `X-Forwarded-For`，`0` 关闭；仅在配置可信代理时有效 |
+| `trusted_proxies_strict` | integer | `0` 关闭；正整数开启从右向左解析 `X-Forwarded-For`，已有大于 `1` 的解析层数设置在编辑服务时保留（具体支持取决于 Caddy 版本）；仅在配置可信代理时有效 |
 | `trustedProxiesCustom` | boolean | 只读；true 表示当前使用非 static 或带扩展字段的可信代理模块，需通过原始配置维护 |
 | `routeCount` | integer | 服务下的路由数量；只读 |
 
@@ -84,7 +84,7 @@ isrvd_put "/caddy/server/~aW50ZXJuYWw" '{
 
 ## 可信代理 IP
 
-在「Caddy → 服务管理 → 编辑服务」设置可信代理地址，适用于 Caddy 前面有 CDN、负载均衡器或其他反向代理的场景。**仅将实际受信任的直连代理 IP 加入列表**，不要添加任意客户端地址。默认情况下 Caddy 不信任代理头，且仅从 `X-Forwarded-For` 提取客户端 IP；代理逐级追加该请求头时建议开启严格解析。
+在「Caddy → 服务管理 → 编辑服务」设置可信代理地址，适用于 Caddy 前面有 CDN、负载均衡器或其他反向代理的场景。**仅将实际受信任的直连代理 IP 加入列表**，不要添加任意客户端地址。默认情况下 Caddy 不信任代理头，且仅从 `X-Forwarded-For` 提取客户端 IP；代理逐级追加该请求头时建议开启严格解析。界面以开关控制常规严格模式，已有的高级层数设置不会被无关编辑重置。
 
 ```bash
 SERVER=$(isrvd_get "/caddy/server/<ID>")
