@@ -60,7 +60,7 @@ func init() {
 		"不允许信任全部 IP 地址": "Trusting all IP addresses is not allowed",
 		"可信代理地址 %q 重复": "Duplicate trusted proxy address %q",
 		"自定义可信代理来源请使用原始配置编辑": "Edit custom trusted proxy sources using raw configuration",
-		"编码可信代理配置失败: %v": "Failed to encode trusted proxy configuration: %v",
+		"编码可信代理配置失败: %w": "Failed to encode trusted proxy configuration: %w",
 		// ─── Caddy 路由顺序 ───
 		"请至少保留一个账号；解除认证请使用账号删除操作": "Keep at least one account. Use account deletion to remove authentication",
 		"路由位置超出范围":          "Route position is out of range",
