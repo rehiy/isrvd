@@ -44,7 +44,7 @@ etcd 配置监听在首次连接、重连后重新读取最新状态，读取失
 | 配置段 | 说明 |
 | -------- | ------ |
 | `schema` | 配置结构版本，用于格式转换 |
-| `server` | 浏览器标签页标题、监听地址、数据根目录、上传限制、CORS、JWT 密钥/有效期、OpenAPI 开关和调试模式 |
+| `server` | 浏览器标签页标题、监听地址、数据根目录、上传限制、CORS、JWT 密钥/有效期、持久化数据加密密钥、OpenAPI 开关和调试模式 |
 | `password` | 密码登录开关与最小密码长度 |
 | `tha` | 代理认证头登录（enabled / headerName / trustedCIDRs；trustedCIDRs 为空时默认填充本机回环地址） |
 | `oidc` | OIDC 认证（enabled / issuerUrl / clientId / clientSecret / redirectUrl / usernameClaim / scopes / loginLabel） |
