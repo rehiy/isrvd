@@ -105,6 +105,7 @@ import type {
     ComposeDeployResult,
     ComposeDeploy,
     ComposeRedeploy,
+    ComposeRedeployPreview,
     // Metrics
     MetricsGatewayName,
     MetricsSourceStatus,
@@ -839,6 +840,10 @@ class ApiService {
             form.append('initURL', data.initURL)
         }
         return form
+    }
+
+    composeRedeployPreview(target: ComposeDeployTarget, name: string, data: ComposeRedeploy) {
+        return http.post<ComposeRedeployPreview>(`compose/${target}/${name}/preview`, data)
     }
 
     composeDockerRedeploy(name: string, data: ComposeRedeploy) {

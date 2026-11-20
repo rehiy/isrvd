@@ -1,0 +1,61 @@
+name: iSrvd Quality Gate
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: Go compile and vet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Compile all packages
+        run: go test ./...
+      - name: Static analysis
+        run: go vet ./...
+
+  webview:
+    name: Webview lint and build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: webview
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: webview/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: python3 scripts/review-style.py
+      - run: npm run build
+
+  scripts:
+    name: Shell and whitespace
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - run: sh -n build.sh
+      - run: git diff --check HEAD^ HEAD
+        if: github.event_name == 'push'
+      - run: git diff --check origin/${{ github.base_ref }}...HEAD
+        if: github.event_name == 'pull_request'

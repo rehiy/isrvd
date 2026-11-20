@@ -191,7 +191,6 @@ export default toNative(WhitelistEditModal)
       <div class="space-y-3">
         <div>
           <label class="form-label">{{ $t('key-auth 插件配置') }}</label>
-          <p class="text-xs text-slate-400 mt-1">{{ $t('若路由的认证已由其他认证插件管理，key-auth 配置会被忽略') }}</p>
         </div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
@@ -206,6 +205,7 @@ export default toNative(WhitelistEditModal)
           </div>
         </div>
         <ToggleCard v-model="formData.hideCredentials" :label="$t('隐藏认证凭据')" :desc="$t('开启后转发到上游前移除请求中的认证凭据')" />
+        <p class="text-xs text-slate-400 mt-1">{{ $t('若路由的认证已由其他认证插件管理，key-auth 配置会被忽略') }}</p>
       </div>
 
       <div class="space-y-3">

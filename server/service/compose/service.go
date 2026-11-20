@@ -189,38 +189,46 @@ func (s *Service) projectDeploy(ctx context.Context, req DeployRequest, rollback
 	return &DeployResult{ProjectName: projectName, Items: items, InstallDir: installDir}, nil
 }
 
-// prepareRedeployContent 合并部分更新、校验新配置并预拉取所需镜像。
+// prepareRedeployContent 校验新配置并预拉取所需镜像。
 func (s *Service) prepareRedeployContent(ctx context.Context, name, installDir, oldContent string, contentErr error, req RedeployRequest) (string, error) {
-	content := oldContent
-	switch {
-	case req.ServiceName != "":
-		if contentErr != nil {
-			return "", contentErr
-		}
-		var err error
-		content, err = compose.ServiceImageUpdate(ctx, name, oldContent, req.ServiceName, req.Image, installDir)
-		if err != nil {
-			return "", err
-		}
-		content = withGeneratedHeader(content)
-	case req.Content != nil:
-		content = *req.Content
-	case contentErr != nil:
-		// 仅更新 .env 时必须能读取现有 compose 内容。
-		return "", contentErr
-	}
-
-	project, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, req.EnvContent)
+	content, project, err := s.resolveRedeployContent(ctx, name, installDir, oldContent, contentErr, req)
 	if err != nil {
 		return "", err
-	}
-	if len(project.Services) == 0 {
-		return "", fmt.Errorf("compose 文件中没有定义服务")
 	}
 	if err := s.imagesEnsure(ctx, project, req.ForcePull); err != nil {
 		return "", err
 	}
 	return content, nil
+}
+
+// resolveRedeployContent 解析待部署内容并返回项目，供预览与实际部署共用。
+func (s *Service) resolveRedeployContent(ctx context.Context, name, installDir, oldContent string, contentErr error, req RedeployRequest) (string, *types.Project, error) {
+	content := oldContent
+	switch {
+	case req.ServiceName != "":
+		if contentErr != nil {
+			return "", nil, contentErr
+		}
+		var err error
+		content, err = compose.ServiceImageUpdate(ctx, name, oldContent, req.ServiceName, req.Image, installDir)
+		if err != nil {
+			return "", nil, err
+		}
+		content = withGeneratedHeader(content)
+	case req.Content != nil:
+		content = *req.Content
+	case contentErr != nil:
+		return "", nil, contentErr
+	}
+
+	project, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, req.EnvContent)
+	if err != nil {
+		return "", nil, err
+	}
+	if len(project.Services) == 0 {
+		return "", nil, fmt.Errorf("compose 文件中没有定义服务")
+	}
+	return content, project, nil
 }
 
 // ─── 辅助函数 ───
