@@ -146,7 +146,7 @@ func readSnapshot() (*Snapshot, error) {
 		return nil, nil
 	}
 
-	legacyJWT := conf.Server != nil && conf.Server.JWTSecret != "" && conf.Server.JWTSecret != "your-jwt-secret"
+	legacyJWT := conf.Server != nil && len(strings.TrimSpace(conf.Server.JWTSecret)) >= 32
 	migrated := migrate(conf, raw)
 	// 旧配置首次升级时沿用旧密钥材料，使已加密的业务数据无需重写。
 	if conf.Server != nil && conf.Server.DataSecret == "" && legacyJWT {
