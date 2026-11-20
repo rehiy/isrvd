@@ -44,16 +44,16 @@ type ServerTrustedProxiesForm struct {
 // 恢复相应的 Caddy 默认值。未出现在本结构体中的 routes、logs、errors、TLS 策略及
 // 扩展字段始终由后端从现有配置合并保留。
 type ServerForm struct {
-	Listen         []string                  `json:"listen" binding:"required,min=1,dive,required"` // 监听地址列表，如 [":80"]
-	Protocols      []string                  `json:"protocols,omitempty"`                           // 允许的协议（如 h1、h2、h3）；省略使用 Caddy 默认值
-	AutomaticHTTPS *ServerAutomaticHTTPSForm `json:"automatic_https,omitempty"`                     // 自动 HTTPS 设置；省略使用 Caddy 默认值
-	StrictSNIHost  *bool                     `json:"strict_sni_host,omitempty"`                     // 是否严格校验 SNI 主机名
-	IdleTimeout    string                    `json:"idle_timeout,omitempty"`                        // 空闲连接超时（Go duration 字符串）
-	ReadTimeout    string                    `json:"read_timeout,omitempty"`                        // 读取请求超时（Go duration 字符串）
-	WriteTimeout   string                    `json:"write_timeout,omitempty"`                       // 写入响应超时（Go duration 字符串）
-	MaxHeaderBytes       int                       `json:"max_header_bytes,omitempty"`       // 请求头最大字节数
-	TrustedProxies       *ServerTrustedProxiesForm `json:"trusted_proxies,omitempty"`      // 受信任代理，当前仅管理 static 模块
-	TrustedProxiesStrict int                       `json:"trusted_proxies_strict,omitempty"` // 从右往左解析 X-Forwarded-For
+	Listen               []string                  `json:"listen" binding:"required,min=1,dive,required"` // 监听地址列表，如 [":80"]
+	Protocols            []string                  `json:"protocols,omitempty"`                           // 允许的协议（如 h1、h2、h3）；省略使用 Caddy 默认值
+	AutomaticHTTPS       *ServerAutomaticHTTPSForm `json:"automatic_https,omitempty"`                     // 自动 HTTPS 设置；省略使用 Caddy 默认值
+	StrictSNIHost        *bool                     `json:"strict_sni_host,omitempty"`                     // 是否严格校验 SNI 主机名
+	IdleTimeout          string                    `json:"idle_timeout,omitempty"`                        // 空闲连接超时（Go duration 字符串）
+	ReadTimeout          string                    `json:"read_timeout,omitempty"`                        // 读取请求超时（Go duration 字符串）
+	WriteTimeout         string                    `json:"write_timeout,omitempty"`                       // 写入响应超时（Go duration 字符串）
+	MaxHeaderBytes       int                       `json:"max_header_bytes,omitempty"`                    // 请求头最大字节数
+	TrustedProxies       *ServerTrustedProxiesForm `json:"trusted_proxies,omitempty"`                     // 受信任代理，当前仅管理 static 模块
+	TrustedProxiesStrict int                       `json:"trusted_proxies_strict,omitempty"`              // 从右往左解析 X-Forwarded-For
 }
 
 // ServerView 是不会暴露路由等子资源的服务视图。
@@ -61,7 +61,7 @@ type ServerView struct {
 	ID   string `json:"id"`   // 服务不透明标识：`~` + base64url(name)，用于详情、更新、删除
 	Name string `json:"name"` // Caddy server 名称
 	ServerForm
-	RouteCount           int  `json:"routeCount"`                      // 该服务下的路由数量
+	RouteCount           int  `json:"routeCount"`                     // 该服务下的路由数量
 	TrustedProxiesCustom bool `json:"trustedProxiesCustom,omitempty"` // 非 static 或带扩展字段的代理来源由原始配置管理
 }
 
