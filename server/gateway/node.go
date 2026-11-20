@@ -18,6 +18,10 @@ func (g *gateway) nodeList(w http.ResponseWriter, r *http.Request) {
 	success(w, r, "", g.Nodes.NodeList())
 }
 
+func (g *gateway) nodeOverviewStats(w http.ResponseWriter, r *http.Request) {
+	success(w, r, "", g.Nodes.OverviewStats(r.Context()))
+}
+
 func (g *gateway) nodeCreate(w http.ResponseWriter, r *http.Request) {
 	var req node.NodeRequest
 	if decode(w, r, &req) {

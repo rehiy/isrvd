@@ -22,7 +22,7 @@
 - 浏览器访问 `/n/<节点ID>/`，页面仍由中控提供；Docker、Swarm、Compose、文件、本机进程、Shell 终端、计划任务、APISIX、Caddy、系统概览与系统配置、SSH 与 SFTP 接口经隧道转发到该节点，包括流式日志、终端和文件上传下载。节点视角下的 SSH 主机与凭据保存在该节点上，连接从该节点的网络发起。
 - 新建节点通过 `libgo` 的 `strutil.Rand(10)` 生成 10 位字母数字随机 ID（`0-9A-Za-z`，区分大小写，如 `aB3dE6gH9j`），保存时检查重复，碰撞最多重试 16 次，耗尽则创建失败；网关接受 10 位以上由字母、数字或横线组成的节点 ID，因此 UUID 形式的旧 ID 仍可使用，8 位短 ID 不再被识别。节点 ID 不是认证凭据，接入仍使用独立的 token。
 - 账号（含成员与权限）、节点管理和 AI 助手始终由中控自己处理，即使在 `/n/<节点ID>/` 下访问也一样。
-- 节点切换与节点管理**按需启用**：只有 `center` 模式（`/api/overview/bootstrap` 的 `probe.node` 为 `true`）且当前用户有 `GET /api/node/nodes` 权限时，才出现头部节点切换器；侧边栏「集中管控」（位于「用户管理」下方）仅在中控视角显示，包含「节点管理」（`#/node/access`）与「端口转发」（`#/node/portmaps`）。其他情况看不到任何节点界面，直接访问 `#/node` 会回到概览。
+- 节点切换与节点管理**按需启用**：只有 `center` 模式（`/api/overview/bootstrap` 的 `probe.node` 为 `true`）且当前用户有 `GET /api/node/nodes` 权限时，才出现头部节点切换器；侧边栏「集中管控」（位于「用户管理」下方）仅在中控视角显示，包含「全局概览」（`#/node/overview`，需额外 `GET /api/node/overview` 权限）、「节点管理」（`#/node/access`）与「端口转发」（`#/node/portmaps`）。其他情况看不到任何节点界面，直接访问 `#/node` 会回到概览。
 - 切换节点是整页跳转到 `/n/<节点ID>/`，停留在当前功能页（带资源参数的详情页、从中控管理页切换时回到概览）。子节点视角下，「节点管理」「集中管控」「用户管理」只属于中控，隐藏且直接访问会回到概览；个人账户设置仍作用于中控，可继续使用；SSH、系统配置与操作审计作用于该节点自己的数据，其中「登录认证」分组、JWT 密钥与有效期、AI 助手、API 文档开关在节点上不生效，节点视角下隐藏，直接访问登录认证页会回到概览。
 - 认证与权限复用中控的账户服务：网关在进程内验证凭据并检查路由权限。权限、密码或 JWT 密钥变更对新请求立即生效，已建立的长连接不逐条重新认证。应用未就绪或正在重载时，节点管理与转发返回 `502`，避免前端误判为登录过期；中控上游不可达时节点视角的启动数据同样返回 `502`。
 - 请求带 `Upgrade: websocket` 或命中声明 `QueryToken` 的 `GET` 路由时可从 `?token=` 读取令牌；普通请求不要把令牌放进 URL。无论凭据来自哪里，仍须通过中控认证与路由权限校验。
@@ -116,6 +116,7 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 
 ## 权限与边界
 
+- **全局概览**只在中控提供：单独授权 `GET /api/node/overview`，即可读取所有受管节点的简要状态和资源指标，不包含端口映射、令牌及管理操作。复用受管机已有监控、Docker、Swarm 只读接口，最多并发 6 个节点、单节点采集预算 12 秒。某节点离线或指标获取失败时其余节点仍正常返回。全局概览中的 Swarm 服务总数为各节点可见集群的统计，访问同一个集群的节点会重复，不应跨节点求和；本页不包含中控自身主机指标，后者仍在「概览」。
 - **节点管理和业务操作按路由权限授权，创始人默认拥有全部权限。** 节点管理权限在 `GET /account/routes` 中以 `node` 模块列出。转发请求先按中控成员的业务权限检查（去掉 `/n/<节点ID>` 前缀，如 `GET /api/docker/containers`），再以受管机本地服务令牌执行；未授权返回 `403`。业务权限对所有节点生效，不按节点单独授权；节点列表权限只允许发现与切换节点。
 - 受管机用**用户名排序后的第一个创始人**签发访问令牌，文件管理与终端使用其家目录。受管机不能启用代理 Header 登录（`tha.enabled`），否则启动失败、保存配置返回 `400`。受管机没有创始人时节点仍可上线，但因无法签发本机令牌，所有转发请求返回 `401`。
 - 中控允许代理 Header 登录（`center + tha.enabled`）：网关按连接对端 IP 和 `tha.trustedCIDRs` 校验身份头，不采信转发头，可信代理必须覆盖客户端传入的身份头；中控的私有回环服务只接收网关写入的内部身份，外部同名头会先被删除。普通成员仍不能管理节点，用户身份不下发给受管机。
@@ -135,6 +136,7 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 | 方法与路径 | 认证 | 说明 |
 |------------|------|------|
 | `GET /api/node/nodes` | 路由权限 | 节点列表 |
+| `GET /api/node/overview` | 路由权限 | 多节点全局概览：在线状态、主机资源、Docker 容器数、Swarm 集群服务数；无需分别授权模块详情接口 |
 | `POST /api/node` | 路由权限 | 创建待接入节点，body `{"name":"…"}`；仅本次响应包含 `token` |
 | `PUT /api/node/{id}` | 路由权限 | 重命名，body `{"name":"…"}`（1–64 个字符） |
 | `POST /api/node/{id}/revoke` | 路由权限 | 吊销：令牌立即失效并断开连接，需删除后用新令牌重新接入 |
@@ -154,6 +156,7 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 | `store.go` | `node-list.yml` 的读取、并发修改、提交和数据目录切换 |
 | `auth.go` | 握手认证与限流、token 哈希比较、握手预占释放；认证、吊销、删除共用服务锁 |
 | `session.go` | 会话登记/释放、在线状态投影、隧道传输、延迟采样与协议协商 |
+| `overview.go` | 全局概览的有限并发只读采集、采样结果模型与失败隔离 |
 | `agent.go` | 两端共用的能力协商（`AgentInfo`、能力标识）与受管机常连客户端；隧道流按首字节分流为 HTTP 与端口转发 |
 | `portmap.go` | 端口转发规则模型与校验 |
 | `portmap_wire.go` | 转发线路头部、UDP 分帧与双向中继工具（两端共用），以及受管机侧处理转发流的入口 |
@@ -165,4 +168,4 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 - `server/config/cluster.go` 读取、校验部署环境变量（运行模式常量 `ModeServer/ModeCenter/ModeAgent` 的唯一来源）；`server/config/portmap.go` 是 `portmap` 配置的方法与校验。
 - `server/app/gateway.go` 提供网关授权（`GatewayAuthorize`）、转发路由清单（`GatewayRoutes`、`centerModules`），并在 center 模式把节点权限并入路由索引；`server/service/account/gateway.go` 集中账户侧的身份头逻辑（`TrustGatewayIdentity`、`GatewayCredentialHeaders`、中控回环身份）；`server/cmd/server/launch.go` 按三种模式装配。
 - `server/gateway/`：`gateway.go` 装配与路由，`node.go` 节点管理与 WebSocket 接入，`proxy.go` 节点视角的请求分流与转发（转发前剥离用户凭据），`bootstrap.go` 节点视角的启动数据聚合，`middleware.go` 复用认证/权限/审计，并通过 `Options` 注入的 `TrustIdentity`、`CredentialHeaders` 清理与重建身份头、剥离凭据头，`response.go` 统一 JSON 输出。
-- 前端（`webview/src/`）：`views/node/nodes.vue`（节点管理）、`views/node/portmaps.vue`（端口转发）、`views/node/widget/`（`node-actions`、`node-create-modal`、`node-edit-modal`、`portmap-actions`、`node-portmap-modal`）、`helper/node.ts`、`helper/portmap.ts`、`component/node-switcher.vue`、`stores/node.ts`（节点列表的唯一来源，含并发合并的 `load` 与共享轮询 `poll`，切换器、节点管理与端口转发页共用）。后端按节点整体替换规则，`portmapPatch` 在每次增删改前先读取最新规则列表，避免覆盖他人修改。
+- 前端（`webview/src/`）：`views/node/overview.vue`（全局概览）、`views/node/nodes.vue`（节点管理）、`views/node/portmaps.vue`（端口转发）、`views/node/widget/`（`node-actions`、`node-create-modal`、`node-edit-modal`、`portmap-actions`、`node-portmap-modal`）、`helper/node.ts`、`helper/portmap.ts`、`component/node-switcher.vue`、`stores/node.ts`（节点列表的唯一来源，含并发合并的 `load` 与共享轮询 `poll`，切换器、节点管理与端口转发页共用）。后端按节点整体替换规则，`portmapPatch` 在每次增删改前先读取最新规则列表，避免覆盖他人修改。

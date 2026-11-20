@@ -26,6 +26,7 @@
 | 模块 | 路由权限点示例 | 说明 |
 | ------ | --------------- | ------ |
 | `node` | `GET /api/node/nodes` | 节点列表与切换入口 |
+| `node` | `GET /api/node/overview` | 全局概览（独立授权；可读取全部受管节点的主机资源及 Docker/Swarm 汇总，不包含凭据和配置明细） |
 | `node` | `POST /api/node` | 创建节点并生成 token（仅创建时返回） |
 | `node` | `PUT /api/node/:id` | 重命名节点 |
 | `node` | `POST /api/node/:id/revoke` | 吊销节点 |

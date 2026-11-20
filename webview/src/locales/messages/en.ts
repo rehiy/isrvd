@@ -9,6 +9,23 @@ import type { LanguageModule } from '../types'
 
 const messages: Record<string, string> = {
 
+    // ─── 多节点全局概览 ───
+    '全局概览': 'Global Overview',
+    '集中查看受管节点状态与资源使用情况': 'View managed nodes and resource usage in one place',
+    '受管节点状态与资源概况': 'Managed node status and resources',
+    '节点总数': 'Total nodes',
+    '在线节点': 'Online nodes',
+    '离线节点': 'Offline nodes',
+    '指标采集失败': 'Metrics unavailable',
+    '磁盘': 'Disk',
+    '容器运行/停止': 'Containers running / stopped',
+    'Swarm 服务数': 'Swarm services',
+    '查看节点': 'View node',
+    '仅统计受管节点；数据按需采集，每 30 秒刷新。Docker 为当前节点容器数；Swarm 服务数为集群口径，多个节点可能重复。': 'Managed nodes only. Refreshed every 30 seconds. Docker counts are per-node; Swarm cluster service counts may repeat across nodes.',
+    '加载失败，请刷新重试': 'Failed to load. Refresh to retry.',
+    '刷新失败，当前展示上次采集结果': 'Refresh failed. Showing the previous snapshot.',
+
+
     // ─── Swarm 节点标签 ───
     '节点标签': 'Node labels',
     '编辑节点标签': 'Edit node labels',

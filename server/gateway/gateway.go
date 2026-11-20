@@ -100,6 +100,7 @@ func newUpstreamProxy(upstream *url.URL, userHeader string) *httputil.ReversePro
 func (g *gateway) nodeHandlers() map[string]http.HandlerFunc {
 	return map[string]http.HandlerFunc{
 		"GET /api/node/nodes":       g.nodeList,
+		"GET /api/node/overview":    g.nodeOverviewStats,
 		"POST /api/node":            g.nodeCreate,
 		"PUT /api/node/:id":         g.nodeUpdate,
 		"POST /api/node/:id/revoke": g.nodeRevoke,
