@@ -60,7 +60,7 @@ isrvd_get "/node/overview"
 | `swarm` | object | Swarm 可用时返回 `services` 和 `nodes`；同一 Swarm 集群可能被多个受管机访问，不能跨节点直接累计 |
 | `monitorError` | bool | 在线节点主机指标读取失败时为 true，其他情况不返回 |
 
-中控通过现有隧道复用节点的只读 `/overview/monitor?since=0&type=host`、`/docker/info`、`/swarm/info` 接口；不在服务器保存聚合快照。单节点采集最长 12 秒、全局最多 6 个节点同时采集，某个节点离线或超时不阻断其他节点；Docker/Swarm 模块不可用时对应字段缺省。页面每 30 秒刷新一次，但不是后台监控或告警服务，指标采样成功也不代表应用健康。
+中控通过现有隧道复用节点的只读 `/overview/monitor?since=0&type=host`、`/docker/info`、`/swarm/info` 接口；不在服务器保存聚合快照。单节点采集最长 12 秒、全局最多 6 个节点同时采集，单次全局查询总预算为 15 秒；节点较多或部分节点超时时优先返回已采集的数据，未完成的在线节点标为指标采集失败，某个节点失败不阻断其他节点；Docker/Swarm 模块不可用时对应字段缺省。页面每 30 秒刷新一次，但不是后台监控或告警服务，指标采样成功也不代表应用健康。
 
 ### 创建节点并生成 token
 
