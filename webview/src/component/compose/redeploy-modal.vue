@@ -48,6 +48,8 @@ class RedeployModal extends Vue {
 
     @Watch('composeContent')
     @Watch('envContent')
+    @Watch('target')
+    @Watch('resolvedName')
     onPreviewInputsChanged() {
         this.preview = null
         this.previewSignature = ''
@@ -247,7 +249,7 @@ class RedeployModal extends Vue {
             content: this.composeContent,
             envContent: this.envTouched ? this.envContent : undefined
         }
-        const signature = JSON.stringify(data)
+        const signature = JSON.stringify({ target: this.target, name: this.resolvedName, ...data })
         const needsPreview = !this.preview || this.previewSignature !== signature
         this.modalLoading = true
         this.submitting = !needsPreview
@@ -255,6 +257,8 @@ class RedeployModal extends Vue {
             if (needsPreview) {
                 const response = await api.composeRedeployPreview(this.target, this.resolvedName, data)
                 const currentSignature = JSON.stringify({
+                    target: this.target,
+                    name: this.resolvedName,
                     content: this.composeContent,
                     envContent: this.envTouched ? this.envContent : undefined
                 })
