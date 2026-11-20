@@ -235,7 +235,7 @@ isrvd_put "/compose/docker/<NAME>" '{"serviceName":"<SERVICE_NAME>","image":"<NE
 
 ## Swarm Compose
 
-更新请求成功只表示 Docker Engine 接收了更新，并不保证副本已就绪。可轮询 `GET /api/compose/swarm/<NAME>/status` 获取 Stack 的服务状态（权限等同读取 Compose 配置）：每项包含 `updateState`（Docker Engine 原始更新状态，可为空）、`updateMessage`、`runningTasks`、`desiredTasks` 和 `mode`。副本数仅表示任务运行状态，不代表应用健康检查成功；global 模式 `desiredTasks` 来自当前任务列表，不代表所有合格节点总数。
+更新请求成功只表示 Docker Engine 接收了更新，并不保证副本已就绪。可轮询 `GET /api/compose/swarm/<NAME>/status` 获取 Stack 的服务状态（权限等同读取 Compose 配置）：每项包含 `updateState`（Docker Engine 原始更新状态，可为空）、`updateMessage`、`runningTasks`、`desiredTasks` 和 `mode`。副本数仅表示任务运行状态，不代表应用健康检查成功；global 模式 `desiredTasks` 来自当前任务列表，不代表所有合格节点总数。 在 Swarm 服务详情页可通过「更新状态」区域按需刷新当前服务的状态，不会自动持续轮询。
 
 
 ### 部署策略与网络别名
