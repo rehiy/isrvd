@@ -47,33 +47,30 @@ func (s *Service) SwarmStatus(ctx context.Context, name string) (*SwarmStackStat
 	if err != nil {
 		return nil, err
 	}
-	tasks, err := s.swarm.TaskList(ctx, "")
-	if err != nil {
-		return nil, err
-	}
-	type count struct{ running, desired int }
-	counts := map[string]count{}
-	for _, task := range tasks {
-		if task.DesiredState != swarm.TaskStateRunning {
-			continue
-		}
-		n := counts[task.ServiceID]
-		n.desired++
-		if task.Status.State == swarm.TaskStateRunning {
-			n.running++
-		}
-		counts[task.ServiceID] = n
-	}
 	result := &SwarmStackStatus{ProjectName: projectName, Services: []SwarmServiceStatus{}}
 	for _, item := range services {
 		current, err := s.swarm.ServiceInspectRaw(ctx, item.ID)
 		if err != nil {
 			return nil, fmt.Errorf("读取服务 %s 状态失败: %w", item.Spec.Name, err)
 		}
-		n := counts[item.ID]
+		// 按服务过滤，避免每次状态刷新扫描集群中所有项目的任务。
+		tasks, err := s.swarm.TaskList(ctx, item.ID)
+		if err != nil {
+			return nil, fmt.Errorf("读取服务 %s 任务失败: %w", item.Spec.Name, err)
+		}
+		var running, desired int
+		for _, task := range tasks {
+			if task.DesiredState != swarm.TaskStateRunning {
+				continue
+			}
+			desired++
+			if task.Status.State == swarm.TaskStateRunning {
+				running++
+			}
+		}
 		detail := SwarmServiceStatus{
 			ID: item.ID, Name: current.Spec.Name,
-			RunningTasks: n.running, DesiredTasks: n.desired, Mode: "global",
+			RunningTasks: running, DesiredTasks: desired, Mode: "global",
 		}
 		if replicated := current.Spec.Mode.Replicated; replicated != nil {
 			detail.Mode = "replicated"
