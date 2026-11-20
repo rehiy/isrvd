@@ -38,7 +38,7 @@ func (app *App) systemConfigUpdate(c *gin.Context) {
 		respondError(c, status, err.Error())
 		return
 	}
-	respondSuccess(c, "全部配置已保存，部分项需重启生效", nil)
+	respondSuccess(c, "配置已保存，部分设置需重启生效", nil)
 }
 
 // systemAuditLogList 获取操作审计日志
