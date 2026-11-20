@@ -1,0 +1,33 @@
+name: Temporary Caddy Locale Generation
+on:
+  pull_request:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: webview/package-lock.json
+      - run: npm ci
+        working-directory: webview
+      - name: Regenerate locales and report Go formatting
+        run: |
+          node scripts/gen-zh-hant.mjs
+          echo 'GOFMT_BEGIN'
+          gofmt -d server/service/caddy/server.go
+          echo 'GOFMT_END'
+          echo 'GEN_FRONT_BEGIN'
+          base64 -w0 webview/src/locales/messages/zh-Hant.ts | fold -w 4000 | sed 's/^/GEN_FRONT_PART:/'
+          echo
+          echo 'GEN_FRONT_END'
+          echo 'GEN_BACK_BEGIN'
+          base64 -w0 server/i18n/lang_zh_hant_messages.go | fold -w 4000 | sed 's/^/GEN_BACK_PART:/'
+          echo
+          echo 'GEN_BACK_END'
+          git status --short
