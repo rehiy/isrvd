@@ -52,7 +52,7 @@ func init() {
 		"标签必须是有效的 UTF-8": "Labels must be valid UTF-8",
 		"更新节点标签失败":       "Failed to update node labels",
 		// ─── Caddy 可信代理校验 ───
-		"trusted_proxies_strict 只能为 0 或 1": "trusted_proxies_strict must be 0 or 1",
+		"trusted_proxies_strict 不能为负数": "trusted_proxies_strict must not be negative",
 		"必须先配置可信代理地址": "Trusted proxy addresses are required",
 		"仅支持 static 可信代理来源": "Only the static trusted proxy source is supported",
 		"可信代理地址不能超过 256 项": "Trusted proxy ranges may not exceed 256 entries",
