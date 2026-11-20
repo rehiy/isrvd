@@ -19,40 +19,26 @@ type ProbeResponse struct {
 	Node    bool `json:"node"`    // 多节点管理是否启用（仅中控模式）
 }
 
-// probeTask 定义一项探活任务
-type probeTask struct {
-	name string
-	fn   func(context.Context) bool
-}
-
 // Probe 服务探活（并发检查，整体 5 秒超时）
 // probes 由调用方注入各模块的可用性检查函数（key 为模块名，nil 表示无需探活）
 func (s *Service) Probe(ctx context.Context, probes map[string]func(context.Context) bool) *ProbeResponse {
 	probeCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	tasks := make([]probeTask, 0, len(probes))
-	for name, fn := range probes {
-		if fn != nil {
-			tasks = append(tasks, probeTask{name: name, fn: fn})
-		}
-	}
-
 	copilot := config.Current().Copilot
 	resp := &ProbeResponse{
 		Copilot: copilot.BaseURL != "" && copilot.APIKey != "",
 	}
 
-	var (
-		wg sync.WaitGroup
-		mu sync.Mutex
-	)
-
-	for _, t := range tasks {
+	var wg sync.WaitGroup
+	for name, fn := range probes {
+		if fn == nil {
+			continue
+		}
+		// 模块名在 map 中唯一，每个任务只写自己的字段，Wait 后统一读取。
 		wg.Go(func() {
-			ok := t.fn(probeCtx)
-			mu.Lock()
-			switch t.name {
+			ok := fn(probeCtx)
+			switch name {
 			case "apisix":
 				resp.Apisix = ok
 			case "caddy":
@@ -66,7 +52,6 @@ func (s *Service) Probe(ctx context.Context, probes map[string]func(context.Cont
 			case "node":
 				resp.Node = ok
 			}
-			mu.Unlock()
 		})
 	}
 	wg.Wait()

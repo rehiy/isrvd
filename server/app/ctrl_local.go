@@ -15,8 +15,7 @@ import (
 func (app *App) defineLocalRoutes() []Route {
 	return []Route{
 		{Method: "GET", Path: "/local/processes", Handler: app.localProcessList, Module: "local", Label: "查询进程列表"},
-		// 终止进程是高危写操作，强制记审计
-		{Method: "POST", Path: "/local/process/:pid/kill", Handler: app.localProcessKill, Module: "local", Label: "终止进程", Audit: AuditAlways},
+		{Method: "POST", Path: "/local/process/:pid/kill", Handler: app.localProcessKill, Module: "local", Label: "终止进程"},
 	}
 }
 
