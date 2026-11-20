@@ -23,6 +23,7 @@ import (
 	"isrvd/server/gateway"
 	"isrvd/server/service/account"
 	"isrvd/server/service/node"
+	"isrvd/server/service/notify"
 )
 
 // run 按环境变量指定的模式运行，阻塞到收到退出信号。
@@ -82,8 +83,17 @@ func runCenter() error {
 		}
 	}()
 
+	// 中控节点离线观察仅依赖运行时节点状态；通知经已有 Webhook 实现。
+	alertCtx, stopAlerts := context.WithCancel(context.Background())
+	alertsDone := make(chan struct{})
+	go func() {
+		defer close(alertsDone)
+		nodes.WatchAlerts(alertCtx, notify.NodeStatusNotify)
+	}()
 	app.StartApp(private) // 阻塞到收到退出信号
 
+	stopAlerts()
+	<-alertsDone
 	// 隧道是被劫持的长连接，Shutdown 不会等待它们，需先主动断开
 	nodes.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

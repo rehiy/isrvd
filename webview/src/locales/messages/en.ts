@@ -9,6 +9,10 @@ import type { LanguageModule } from '../types'
 
 const messages: Record<string, string> = {
 
+    // ─── 受管节点告警 ───
+    '受管节点离线告警': 'Managed Node Offline Alerts',
+    '仅中控模式生效；节点持续离线约 90 秒后告警，恢复上线后发送恢复通知': 'Center mode only. Alert after a node remains offline for about 90 seconds, and notify on recovery.',
+
     // ─── 多节点全局概览 ───
     '全局概览': 'Global Overview',
     '集中查看受管节点状态与资源使用情况': 'View managed nodes and resource usage in one place',

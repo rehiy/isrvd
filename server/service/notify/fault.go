@@ -379,6 +379,27 @@ func (w *FaultWatcher) checkCertificates(provider string, certs []certificateExp
 	}
 }
 
+// NodeStatusNotify 复用已配置 Webhook 通道发送中控节点离线与恢复事件。
+// 节点观察与去重在 node 服务中完成，通知层不依赖节点模块。
+func NodeStatusNotify(id, name string, recovered bool, offline time.Duration) {
+	cfg := config.Current().Notify
+	if cfg == nil || cfg.Events == nil || !cfg.Events.NodeEnabled {
+		return
+	}
+	event, level := "node.alert", "warning"
+	title := fmt.Sprintf("节点 %s 已离线", name)
+	message := fmt.Sprintf("受管节点 %s 已持续离线约 %d 秒", name, int64(offline.Seconds()))
+	if recovered {
+		event, level = "node.recover", "info"
+		title = fmt.Sprintf("节点 %s 已恢复上线", name)
+		message = fmt.Sprintf("受管节点 %s 已重新上线，离线约 %d 秒", name, int64(offline.Seconds()))
+	}
+	sendTo(snapshotWebhooks(cfg), &Event{
+		Event: event, Level: level, Title: title, Message: message,
+		Data: map[string]any{"nodeId": id, "nodeName": name, "offlineSeconds": int64(offline.Seconds())},
+	})
+}
+
 // JobFailureNotifier 为当前调度器捕获配置快照，每次失败执行仅发送一次通知。
 // 不发送脚本正文、输出或错误详情，避免通过通知渠道泄露凭据。
 func JobFailureNotifier(cfg *config.NotifyConfig) func(string, string, string, int64) {
