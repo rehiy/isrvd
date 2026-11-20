@@ -51,9 +51,9 @@ type ServerForm struct {
 	IdleTimeout    string                    `json:"idle_timeout,omitempty"`                        // 空闲连接超时（Go duration 字符串）
 	ReadTimeout    string                    `json:"read_timeout,omitempty"`                        // 读取请求超时（Go duration 字符串）
 	WriteTimeout   string                    `json:"write_timeout,omitempty"`                       // 写入响应超时（Go duration 字符串）
-	MaxHeaderBytes     int                       `json:"max_header_bytes,omitempty"`      // 请求头最大字节数
-	TrustedProxies     *ServerTrustedProxiesForm `json:"trusted_proxies,omitempty"`     // 受信任代理，当前仅管理 static 模块
-	TrustedProxiesStrict int                    `json:"trusted_proxies_strict,omitempty"` // 从右往左解析 X-Forwarded-For
+	MaxHeaderBytes       int                       `json:"max_header_bytes,omitempty"`       // 请求头最大字节数
+	TrustedProxies       *ServerTrustedProxiesForm `json:"trusted_proxies,omitempty"`      // 受信任代理，当前仅管理 static 模块
+	TrustedProxiesStrict int                       `json:"trusted_proxies_strict,omitempty"` // 从右往左解析 X-Forwarded-For
 }
 
 // ServerView 是不会暴露路由等子资源的服务视图。
@@ -61,7 +61,7 @@ type ServerView struct {
 	ID   string `json:"id"`   // 服务不透明标识：`~` + base64url(name)，用于详情、更新、删除
 	Name string `json:"name"` // Caddy server 名称
 	ServerForm
-	RouteCount          int  `json:"routeCount"`          // 该服务下的路由数量
+	RouteCount           int  `json:"routeCount"`                      // 该服务下的路由数量
 	TrustedProxiesCustom bool `json:"trustedProxiesCustom,omitempty"` // 非 static 或带扩展字段的代理来源由原始配置管理
 }
 
@@ -217,7 +217,7 @@ func applyServerForm(srv *caddy.HTTPServer, form ServerForm) error {
 		} else {
 			raw, err := json.Marshal(form.TrustedProxies)
 			if err != nil {
-				return fmt.Errorf("%w: 编码可信代理配置失败: %v", ErrServerConfigInvalid, err)
+				return fmt.Errorf("%w: 编码可信代理配置失败: %w", ErrServerConfigInvalid, err)
 			}
 			srv.TrustedProxies = raw
 			srv.TrustedProxiesStrict = form.TrustedProxiesStrict
