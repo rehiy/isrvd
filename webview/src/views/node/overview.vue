@@ -51,6 +51,15 @@ class NodeOverview extends Vue {
         return this.snapshot?.nodes.filter(node => node.online && node.monitorError).length ?? 0
     }
 
+    get statCards() {
+        return [
+            { label: '节点总数', value: this.snapshot?.nodes.length ?? 0, icon: 'fa-server', color: 'bg-blue-500' },
+            { label: '在线节点', value: this.snapshot?.online ?? 0, icon: 'fa-circle-check', color: 'bg-emerald-500' },
+            { label: '离线节点', value: this.offlineCount, icon: 'fa-link-slash', color: 'bg-red-500' },
+            { label: '指标采集失败', value: this.monitorErrorCount, icon: 'fa-triangle-exclamation', color: 'bg-amber-500' }
+        ]
+    }
+
     @Watch('ready', { immediate: true })
     onReadyChange(ready: boolean) {
         if (!ready || this.pollTimer) {
@@ -97,7 +106,7 @@ class NodeOverview extends Vue {
     }
 
     cpuText(node: NodeOverviewItem) {
-        return node.system?.cpuPercent == null ? '-' : node.system.cpuPercent.toFixed(0) + '%'
+        return node.system?.cpuPercent === undefined ? '-' : node.system.cpuPercent.toFixed(0) + '%'
     }
 
     memoryText(node: NodeOverviewItem) {
@@ -189,12 +198,7 @@ export default toNative(NodeOverview)
       <div v-if="loadFailed" class="mx-4 mt-3 text-sm text-amber-600" role="status">{{ $t('刷新失败，当前展示上次采集结果') }}</div>
       <div class="p-4 space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          <div v-for="card in [
-            { label: '节点总数', value: snapshot.nodes.length, icon: 'fa-server', color: 'bg-blue-500' },
-            { label: '在线节点', value: snapshot.online, icon: 'fa-circle-check', color: 'bg-emerald-500' },
-            { label: '离线节点', value: offlineCount, icon: 'fa-link-slash', color: 'bg-red-500' },
-            { label: '指标采集失败', value: monitorErrorCount, icon: 'fa-triangle-exclamation', color: 'bg-amber-500' }
-          ]" :key="card.label" class="stat-card items-center">
+          <div v-for="card in statCards" :key="card.label" class="stat-card items-center">
             <div :class="['page-icon', card.color]">
               <i :class="['fas', card.icon, 'text-white']"></i>
             </div>
@@ -245,11 +249,13 @@ export default toNative(NodeOverview)
                     <div class="min-w-0">
                       <span class="item-title">{{ node.name }}</span>
                       <span class="item-subtitle">{{ node.hostname || node.id }}</span>
+                      <span class="text-xs text-slate-400">{{ node.os || '-' }} / {{ node.arch || '-' }} · {{ node.agentVersion || '-' }}</span>
                     </div>
                   </div>
                 </td>
                 <td class="td-text">
                   <span :class="statusClass(node)">{{ statusText(node) }}</span>
+                  <span v-if="node.online && node.latency" class="block text-xs text-slate-400">{{ node.latency }} ms</span>
                   <span v-if="node.online && node.monitorError" class="block text-xs text-amber-600">{{ $t('指标采集失败') }}</span>
                 </td>
                 <td class="td-text">{{ cpuText(node) }}</td>
