@@ -203,6 +203,8 @@ services:
 
 ### 重部署
 
+执行前先加载新配置、验证所有容器的创建参数和名称唯一性，并确认旧配置可以用于回滚；预检失败时不会删除旧容器。预检不保证 Docker 运行时资源可用或应用最终健康。
+
 ```bash
 isrvd_put "/compose/docker/<NAME>" "$(jq -n --arg content "$(cat docker-compose.yml)" '{content:$content}')"
 ```
