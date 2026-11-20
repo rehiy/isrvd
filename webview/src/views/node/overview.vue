@@ -65,7 +65,7 @@ class NodeOverview extends Vue {
         if (!ready || this.pollTimer) {
             return
         }
-        if (!this.portal.hasPerm(NODE_LIST_PERM) || !this.portal.hasPerm('GET /api/node/overview')) {
+        if (!this.portal.hasPerm('GET /api/node/overview')) {
             this.$router.replace('/overview')
             return
         }
@@ -130,7 +130,7 @@ class NodeOverview extends Vue {
     }
 
     openNode(node: NodeOverviewItem) {
-        if (node.online) {
+        if (node.online && this.portal.hasPerm(NODE_LIST_PERM)) {
             switchNode(node.id, '#/overview')
         }
     }
@@ -264,7 +264,7 @@ export default toNative(NodeOverview)
                 <td class="td-text">{{ dockerText(node) }}</td>
                 <td class="td-text">{{ swarmText(node) }}</td>
                 <td class="px-4 py-3 text-right">
-                  <button v-if="node.online" class="btn-icon btn-icon-blue" :title="$t('查看节点')" @click="openNode(node)">
+                  <button v-if="node.online && portal.hasPerm(NODE_LIST_PERM)" class="btn-icon btn-icon-blue" :title="$t('查看节点')" @click="openNode(node)">
                     <i class="fas fa-arrow-up-right-from-square"></i>
                   </button>
                 </td>
@@ -293,7 +293,7 @@ export default toNative(NodeOverview)
             <div class="card-prop-row"><span class="text-xs text-slate-400">{{ $t('磁盘') }}</span><span class="text-xs text-slate-600">{{ diskText(node) }}</span></div>
             <div class="card-prop-row"><span class="text-xs text-slate-400">{{ $t('容器运行/停止') }}</span><span class="text-xs text-slate-600">{{ dockerText(node) }}</span></div>
             <div class="card-prop-row"><span class="text-xs text-slate-400">{{ $t('Swarm 服务数') }}</span><span class="text-xs text-slate-600">{{ swarmText(node) }}</span></div>
-            <button v-if="node.online" class="btn btn-secondary w-full" @click="openNode(node)">{{ $t('查看节点') }}</button>
+            <button v-if="node.online && portal.hasPerm(NODE_LIST_PERM)" class="btn btn-secondary w-full" @click="openNode(node)">{{ $t('查看节点') }}</button>
           </div>
         </div>
       </template>
