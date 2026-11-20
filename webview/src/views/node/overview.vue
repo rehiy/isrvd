@@ -227,8 +227,8 @@ export default toNative(NodeOverview)
         </div>
       </div>
       <template v-else>
-        <div class="card-table hidden md:block">
-          <table class="w-full border-collapse">
+        <div class="card-table hidden md:block overflow-x-auto">
+          <table class="w-full min-w-[900px] border-collapse">
             <thead>
               <tr class="bg-slate-100 border-b border-slate-200">
                 <th class="th">{{ $t('节点') }}</th>
@@ -279,11 +279,13 @@ export default toNative(NodeOverview)
               <div class="min-w-0">
                 <span class="item-title-sm">{{ node.name }}</span>
                 <span class="item-subtitle">{{ node.hostname || node.id }}</span>
+                <span class="text-xs text-slate-400">{{ node.os || '-' }} / {{ node.arch || '-' }} · {{ node.agentVersion || '-' }}</span>
               </div>
             </div>
             <div class="card-prop-row">
               <span class="text-xs text-slate-400">{{ $t('状态') }}</span>
               <span :class="statusClass(node)">{{ statusText(node) }}</span>
+              <span v-if="node.online && node.latency" class="text-xs text-slate-400">{{ node.latency }} ms</span>
             </div>
             <div v-if="node.online && node.monitorError" class="text-xs text-amber-600">{{ $t('指标采集失败') }}</div>
             <div class="card-prop-row"><span class="text-xs text-slate-400">CPU</span><span class="text-xs text-slate-600">{{ cpuText(node) }}</span></div>
