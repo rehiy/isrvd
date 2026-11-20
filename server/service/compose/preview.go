@@ -71,7 +71,7 @@ func (s *Service) PreviewRedeploy(ctx context.Context, target, name string, req 
 	if err != nil {
 		return nil, err
 	}
-	content, after, err := s.resolveRedeployContent(ctx, name, installDir, current.Content, nil, req)
+	_, after, err := s.resolveRedeployContent(ctx, name, installDir, current.Content, nil, req)
 	if err != nil {
 		return nil, err
 	}
