@@ -61,16 +61,14 @@ class NodeOverview extends Vue {
             return
         }
         this.load()
-        this.pollTimer = setInterval(() => this.load(true), POLL_INTERVAL * 6)
+        this.pollTimer = setInterval(() => this.load(), POLL_INTERVAL * 6)
     }
 
-    async load(silent = false) {
+    async load() {
         if (this.loading) {
             return
         }
-        if (!silent || !this.snapshot) {
-            this.loading = true
-        }
+        this.loading = true
         try {
             const response = await api.nodeOverviewStats()
             if (response.payload) {
