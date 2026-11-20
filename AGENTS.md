@@ -318,7 +318,7 @@ docs/
 - `/overview` 概览；本机能力为 `/local/monitor`、`/local/process`、`/local/explorer`、`/local/shell`
 - SSH：`/ssh/hosts`、`/ssh/credentials`、`/ssh/host/:id`
 - APISIX：`/apisix/routes`、`/apisix/upstreams`、`/apisix/plugin-configs`、`/apisix/ssls`、`/apisix/consumers`、`/apisix/whitelist`
-- Caddy：`/caddy/servers`、`/caddy/routes`、`/caddy/certs`、`/caddy/global`、`/caddy/basic-auth`、`/caddy/raw`
+- Caddy：`/caddy/routes`、`/caddy/servers`、`/caddy/certs`、`/caddy/global`、`/caddy/basic-auth`、`/caddy/raw`
 - Docker：`/docker/containers`、`/docker/images`、`/docker/networks`、`/docker/volumes`、`/docker/registries` 及对应详情页
 - Swarm：`/swarm/nodes`、`/swarm/services`、`/swarm/tasks` 及对应详情/日志页
 - 集中管控（仅 `center` 模式；节点管理入口依赖节点列表路由权限）：侧边栏二级菜单，`/node/access`（节点管理）单个列表页展示全部节点，通过 pending/active/revoked 状态区分待接入、已激活和已吊销；`/node/portmaps`（端口转发）展示全部节点的转发规则；`/node` 重定向到 `/node/access`；节点视角为页面路径 `/n/<节点ID>/`

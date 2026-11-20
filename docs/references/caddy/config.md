@@ -8,8 +8,8 @@ isrvd_get "/caddy/info"
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| servers | number | server 总数 |
 | routes | number | 所有 server 路由总数 |
+| servers | number | server 总数 |
 | certs | number | SSL 证书总数，包含配置证书与 Caddy 运行时已签发缓存证书 |
 | hasTls | boolean | 是否配置了 TLS app |
 | available | boolean | Admin API 是否可达 |
@@ -71,7 +71,7 @@ isrvd_get "/caddy/config"
 
 > **`caddy` 镜像说明**：默认配置模板位于 `build/docker-caddy/caddy.json`，首次启动会复制并持久化到 `/data/caddy/caddy.json`；Caddy 运行数据（自动签发证书、autosave 等）持久化在 `/data/caddy/`。
 > 默认模板监听 `:80` 与 `:443`，并设置 `automatic_https.disable=true`、`disable_redirects=true`，避免首次启动时自动签发证书或跳转 HTTPS。
-> 结构化接口（全局选项、服务、路由、证书）只改动自己管理的字段，其余配置原样保留。
+> 结构化接口（全局选项、路由、服务、证书）只改动自己管理的字段，其余配置原样保留。
 
 ## 整体替换配置
 

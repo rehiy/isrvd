@@ -130,16 +130,16 @@ const routes: RouteRecordRaw[] = [
     redirect: '/caddy/routes'
   },
   {
-    path: '/caddy/servers',
-    name: 'caddy-servers',
-    component: () => import('@/views/caddy/servers.vue'),
-    meta: { title: 'Caddy 服务' }
-  },
-  {
     path: '/caddy/routes',
     name: 'caddy-routes',
     component: () => import('@/views/caddy/routes.vue'),
     meta: { title: 'Caddy 路由' }
+  },
+  {
+    path: '/caddy/servers',
+    name: 'caddy-servers',
+    component: () => import('@/views/caddy/servers.vue'),
+    meta: { title: 'Caddy 服务' }
   },
   {
     path: '/caddy/certs',

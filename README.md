@@ -33,7 +33,7 @@ A lightweight operations panel built with Go + Vue 3. It integrates file managem
 | AI Assistant | Built-in Copilot based on CopilotKit + AG-UI, calling backend APIs through the built-in OpenAPI catalog, with page context, tool cards and write-operation approval; works with any OpenAI-compatible LLM |
 | Scheduled Tasks | Cron scheduling; Shell or BAT/PowerShell scripts and executables depending on the platform, plus ephemeral or existing container execution when Docker is available |
 | APISIX | Routes, consumers, upstreams, SSL certificates, plugin configs (PluginConfig), plugin list, access authorization |
-| Caddy | HTTP services, routes, Basic Auth, SSL certificates, global options, with raw config editing |
+| Caddy | Routes, HTTP services, Basic Auth, SSL certificates, global options, with raw config editing |
 | Docker | Containers, images, networks, volumes, registry management; container files, live logs, resource stats, terminal access; image build/push/pull |
 | Swarm | Cluster info, nodes, services, tasks; service logs, forced update, join token management |
 | Compose | File editing, Docker Compose / Swarm Stack deploy and redeploy, up to 10 deployment records with encrypted config snapshots, redeploy from historical config |

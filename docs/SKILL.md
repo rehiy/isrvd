@@ -129,7 +129,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 │   ├── 集群/服务/任务    → references/swarm/ 下对应文件
 │   ├── 节点运行服务     → references/swarm/info.md（/swarm/node/NODE_ID/services）
 │   ├── 路由/上游/插件    → references/apisix/ 下对应文件
-│   ├── Caddy 服务/路由/配置 → references/caddy/ 下对应文件
+│   ├── Caddy 路由/服务/配置 → references/caddy/ 下对应文件
 │   ├── 系统状态          → references/overview.md
 │   ├── 监控历史数据      → references/overview.md (since=3600|21600|43200|86400)
 │   ├── 容器/任务/证书故障告警 → references/system/config.md §应用故障告警

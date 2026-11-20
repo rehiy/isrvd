@@ -33,7 +33,7 @@
 | AI 助手 | 内置 Copilot，基于 CopilotKit + AG-UI 协议，通过内置 OpenAPI 目录调用后端接口，支持页面上下文、工具卡片与写操作审批，兼容 OpenAI API 的 LLM 接入 |
 | 计划任务 | 定时任务调度；按运行平台提供 Shell 或 BAT/PowerShell 脚本及可执行文件任务，Docker 可用时还支持临时容器或已有容器执行 |
 | APISIX | 路由、Consumer、上游(Upstream)、SSL 证书、插件配置(PluginConfig)、插件列表、访问授权管理 |
-| Caddy | HTTP 服务、路由、Basic Auth、SSL 证书、全局选项管理，支持原始配置编辑 |
+| Caddy | 路由、HTTP 服务、Basic Auth、SSL 证书、全局选项管理，支持原始配置编辑 |
 | Docker | 容器、镜像、网络、卷、镜像仓库管理，容器文件、实时日志、资源统计、终端接入、镜像构建/推送/拉取 |
 | Swarm | 集群信息、节点、服务、任务管理，服务日志、强制更新、加入令牌管理 |
 | Compose | 文件编辑、Docker Compose / Swarm Stack 部署与重部署，最多 10 条部署记录与加密配置快照，支持加载历史配置重新部署 |

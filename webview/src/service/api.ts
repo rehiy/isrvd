@@ -472,26 +472,6 @@ class ApiService {
         return http.post<void>('caddy/config', { config })
     }
 
-    caddyServerList() {
-        return http.get<CaddyServerInfo[]>('caddy/servers')
-    }
-
-    caddyServerInspect(id: string) {
-        return http.get<CaddyServerDetail>(`caddy/server/${encodeURIComponent(id)}`)
-    }
-
-    caddyServerCreate(data: CaddyServerCreate) {
-        return http.post<void>('caddy/server', data)
-    }
-
-    caddyServerUpdate(id: string, data: CaddyServerUpdate) {
-        return http.put<void>(`caddy/server/${encodeURIComponent(id)}`, data)
-    }
-
-    caddyServerDelete(id: string) {
-        return http.delete<void>(`caddy/server/${encodeURIComponent(id)}`)
-    }
-
     caddyRouteList(server?: string) {
         return http.get<CaddyRoute[]>('caddy/routes', { params: server ? { server } : {} })
     }
@@ -524,6 +504,26 @@ class ApiService {
         return http.put<void>(`caddy/route/${index}/position`, placement, {
             params: { server }
         })
+    }
+
+    caddyServerList() {
+        return http.get<CaddyServerInfo[]>('caddy/servers')
+    }
+
+    caddyServerInspect(id: string) {
+        return http.get<CaddyServerDetail>(`caddy/server/${encodeURIComponent(id)}`)
+    }
+
+    caddyServerCreate(data: CaddyServerCreate) {
+        return http.post<void>('caddy/server', data)
+    }
+
+    caddyServerUpdate(id: string, data: CaddyServerUpdate) {
+        return http.put<void>(`caddy/server/${encodeURIComponent(id)}`, data)
+    }
+
+    caddyServerDelete(id: string) {
+        return http.delete<void>(`caddy/server/${encodeURIComponent(id)}`)
     }
 
     caddyCertList() {

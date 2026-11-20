@@ -26,12 +26,6 @@ func (app *App) defineCaddyRoutes() []Route {
 		// 全局选项
 		{Method: "GET", Path: "/caddy/global", Handler: app.caddyGlobalInspect, Module: "caddy", Label: "查询 Caddy 全局选项"},
 		{Method: "PUT", Path: "/caddy/global", Handler: app.caddyGlobalUpdate, Module: "caddy", Label: "更新 Caddy 全局选项"},
-		// HTTP server CRUD
-		{Method: "GET", Path: "/caddy/servers", Handler: app.caddyServerList, Module: "caddy", Label: "查询 Caddy 服务列表"},
-		{Method: "GET", Path: "/caddy/server/:name", Handler: app.caddyServerInspect, Module: "caddy", Label: "获取 Caddy 服务详情"},
-		{Method: "POST", Path: "/caddy/server", Handler: app.caddyServerCreate, Module: "caddy", Label: "创建 Caddy 服务"},
-		{Method: "PUT", Path: "/caddy/server/:name", Handler: app.caddyServerUpdate, Module: "caddy", Label: "更新 Caddy 服务"},
-		{Method: "DELETE", Path: "/caddy/server/:name", Handler: app.caddyServerDelete, Module: "caddy", Label: "删除 Caddy 服务"},
 		// 路由 CRUD（默认 server=srv0，可通过 query 指定）
 		{Method: "GET", Path: "/caddy/routes", Handler: app.caddyRouteList, Module: "caddy", Label: "查询 Caddy 路由列表"},
 		{Method: "GET", Path: "/caddy/route/:index", Handler: app.caddyRouteInspect, Module: "caddy", Label: "获取 Caddy 路由详情"},
@@ -39,6 +33,12 @@ func (app *App) defineCaddyRoutes() []Route {
 		{Method: "PUT", Path: "/caddy/route/:index", Handler: app.caddyRouteUpdate, Module: "caddy", Label: "更新 Caddy 路由"},
 		{Method: "PUT", Path: "/caddy/route/:index/position", Handler: app.caddyRouteMove, Module: "caddy", Label: "调整 Caddy 路由顺序"},
 		{Method: "DELETE", Path: "/caddy/route/:index", Handler: app.caddyRouteDelete, Module: "caddy", Label: "删除 Caddy 路由"},
+		// HTTP server CRUD
+		{Method: "GET", Path: "/caddy/servers", Handler: app.caddyServerList, Module: "caddy", Label: "查询 Caddy 服务列表"},
+		{Method: "GET", Path: "/caddy/server/:name", Handler: app.caddyServerInspect, Module: "caddy", Label: "获取 Caddy 服务详情"},
+		{Method: "POST", Path: "/caddy/server", Handler: app.caddyServerCreate, Module: "caddy", Label: "创建 Caddy 服务"},
+		{Method: "PUT", Path: "/caddy/server/:name", Handler: app.caddyServerUpdate, Module: "caddy", Label: "更新 Caddy 服务"},
+		{Method: "DELETE", Path: "/caddy/server/:name", Handler: app.caddyServerDelete, Module: "caddy", Label: "删除 Caddy 服务"},
 		// Basic Auth 账号管理
 		{Method: "GET", Path: "/caddy/basic-auth", Handler: app.caddyBasicAuthList, Module: "caddy", Label: "查询 Caddy Basic Auth 路由列表"},
 		{Method: "POST", Path: "/caddy/basic-auth/:index/users", Handler: app.caddyBasicAuthUserCreate, Module: "caddy", Label: "添加 Caddy Basic Auth 账号"},
