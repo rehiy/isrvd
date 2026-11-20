@@ -68,7 +68,7 @@ class ServerEditModal extends Vue {
             this.formData.writeTimeout = server.write_timeout || ''
             this.formData.maxHeaderBytes = server.max_header_bytes || 0
             this.formData.trustedProxyRanges = (server.trusted_proxies?.ranges || []).join('\n')
-            this.formData.trustedProxiesStrict = server.trusted_proxies ? server.trusted_proxies_strict === 1 : true
+            this.formData.trustedProxiesStrict = server.trusted_proxies ? (server.trusted_proxies_strict || 0) > 0 : true
             this.formData.trustedProxiesCustom = Boolean(server.trustedProxiesCustom)
             this.formData.strictSNIHost = server.strict_sni_host === undefined
                 ? 'auto'
@@ -124,7 +124,7 @@ class ServerEditModal extends Vue {
             const ranges = this.formData.trustedProxyRanges.split(/[\s,]+/).filter(Boolean)
             if (ranges.length) {
                 payload.trusted_proxies = { source: 'static', ranges }
-                payload.trusted_proxies_strict = this.formData.trustedProxiesStrict ? 1 : 0
+                payload.trusted_proxies_strict = this.formData.trustedProxiesStrict ? Math.max(this.originalConfig.trusted_proxies_strict || 0, 1) : 0
             } else {
                 delete payload.trusted_proxies
                 delete payload.trusted_proxies_strict
