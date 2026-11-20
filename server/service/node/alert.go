@@ -4,13 +4,12 @@ import (
 	"context"
 	"time"
 
-	"isrvd/server/config"
 )
 
-// AlertWatch 只观察中控已激活节点的隧道在线状态，通知发送由调用方注入。
+// AlertWatch 只观察中控已激活节点的隧道在线状态；告警启用判定和通知发送均由调用方注入。
 // 进程重启或告警关闭会重建观察基线；节点吊销、删除不会触发虚假的恢复通知。
-func (s *Service) AlertWatch(ctx context.Context, emit func(id, name string, recovered bool, offline time.Duration)) {
-	if emit == nil {
+func (s *Service) AlertWatch(ctx context.Context, enabled func() bool, emit func(id, name string, recovered bool, offline time.Duration)) {
+	if enabled == nil || emit == nil {
 		return
 	}
 	const interval = 30 * time.Second
@@ -27,8 +26,7 @@ func (s *Service) AlertWatch(ctx context.Context, emit func(id, name string, rec
 		if ctx.Err() != nil {
 			return
 		}
-		cfg := config.Current().Notify
-		if cfg == nil || cfg.Events == nil || !cfg.Events.NodeEnabled || len(cfg.Webhooks) == 0 {
+		if !enabled() {
 			clear(states)
 		} else {
 			now := time.Now()
