@@ -1,0 +1,25 @@
+name: Temporary Traditional Chinese Regeneration
+on:
+  pull_request:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: webview/package-lock.json
+      - run: npm ci
+        working-directory: webview
+      - name: Regenerate locale and print encoded result
+        run: |
+          node scripts/gen-zh-hant.mjs
+          echo 'GEN_ZH_HANT_BEGIN'
+          base64 -w0 webview/src/locales/messages/zh-Hant.ts | fold -w 4000 | sed 's/^/GEN_ZH_HANT_PART:/'
+          echo 'GEN_ZH_HANT_END'
+          git status --short
