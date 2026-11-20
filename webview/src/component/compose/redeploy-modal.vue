@@ -343,6 +343,7 @@ export default toNative(RedeployModal)
           <li v-for="change in preview.changes" :key="change.service" class="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs">
             <span class="font-medium">{{ change.service }}</span>
             <span class="ml-2 text-slate-500">{{ previewActionLabel(change.action) }}</span>
+            <span v-if="change.action === 'recreate' && !change.configChanged" class="ml-1 text-slate-400">{{ $t('配置无变化') }}</span>
           </li>
         </ul>
       </div>
