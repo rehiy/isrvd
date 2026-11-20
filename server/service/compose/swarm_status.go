@@ -3,7 +3,6 @@ package compose
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"slices"
 
 	"github.com/docker/docker/api/types/swarm"
@@ -18,13 +17,13 @@ type SwarmStackStatus struct {
 }
 
 type SwarmServiceStatus struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	UpdateState  string `json:"updateState,omitempty"` // updating/paused/completed/rollback_*
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	UpdateState   string `json:"updateState,omitempty"` // updating/paused/completed/rollback_*
 	UpdateMessage string `json:"updateMessage,omitempty"`
-	RunningTasks int    `json:"runningTasks"`
-	DesiredTasks int    `json:"desiredTasks"`
-	Mode         string `json:"mode"` // replicated/global
+	RunningTasks  int    `json:"runningTasks"`
+	DesiredTasks  int    `json:"desiredTasks"`
+	Mode          string `json:"mode"` // replicated/global
 }
 
 // SwarmStatus 查询当前 Swarm 更新和副本状态，不将 API 调用成功等同于任务健康。
@@ -89,8 +88,12 @@ func (s *Service) SwarmStatus(ctx context.Context, name string) (*SwarmStackStat
 		result.Services = append(result.Services, detail)
 	}
 	slices.SortFunc(result.Services, func(a, b SwarmServiceStatus) int {
-		if a.Name < b.Name { return -1 }
-		if a.Name > b.Name { return 1 }
+		if a.Name < b.Name {
+			return -1
+		}
+		if a.Name > b.Name {
+			return 1
+		}
 		return 0
 	})
 	return result, nil
