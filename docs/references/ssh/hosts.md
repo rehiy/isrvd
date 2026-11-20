@@ -2,7 +2,7 @@
 
 > WebSSH 模块支持通过浏览器直接连接远程 SSH 主机，提供可复用认证凭据管理、主机配置管理（支持凭据复用、密码和私钥认证）和 WebSocket 终端会话。
 > 主机配置独立存储于 `{rootDirectory}/webssh-host.yml`，认证凭据独立存储于 `{rootDirectory}/webssh-cred.yml`，均不写入主配置文件；配置位于 etcd 时使用 `<配置 key>/<文件名>`，key 缺失时自动导入本地同名文件。
-> `password`、`privateKey` 加密落盘（密钥由 `server.jwtSecret` 派生）。⚠️ 修改 `jwtSecret` 后已加密的认证信息无法解密，WebSSH 服务初始化失败，`/ssh/*`、`/sftp/*` 整体返回 `503`，无法通过 API 重新填写；需恢复原 `jwtSecret`，或手工清除 `webssh-host.yml` / `webssh-cred.yml` 中的 `password` / `privateKey` 后再重新填写。
+> `password`、`privateKey` 加密落盘，密钥由 `server.dataSecret` 派生。既有安装首次升级时会以原 JWT 密钥初始化 `dataSecret`，以兼容历史密文；之后修改 `jwtSecret` 不再影响 SSH 凭据。务必备份配置中的 `dataSecret`，不要手动删除或重置，否则已有密文无法解密，WebSSH 服务可能无法初始化。
 >
 > 权限按路由 `METHOD /api/path` 逐条授予（创始人不受限）。
 
