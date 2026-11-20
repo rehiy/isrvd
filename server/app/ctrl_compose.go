@@ -23,6 +23,7 @@ func (app *App) defineComposeRoutes() []Route {
 		// Swarm Compose
 		{Method: "GET", Path: "/compose/swarm/:name", Handler: app.composeSwarmInspect, Module: "compose", Label: "读取 Swarm Stack 配置"},
 		{Method: "GET", Path: "/compose/swarm/:name/history", Handler: app.composeSwarmHistoryList, Module: "compose", Label: "读取 Swarm Stack 部署记录"},
+		{Method: "GET", Path: "/compose/swarm/:name/status", Handler: app.composeSwarmStatus, Module: "compose", Label: "读取 Swarm Stack 更新状态", Access: AccessAuth},
 		{Method: "POST", Path: "/compose/swarm", Handler: app.composeSwarmDeploy, Module: "compose", Label: "部署 Swarm Stack 应用"},
 		{Method: "PUT", Path: "/compose/swarm/:name", Handler: app.composeSwarmRedeploy, Module: "compose", Label: "重新部署 Swarm Stack 应用"},
 	}
@@ -67,6 +68,20 @@ func (app *App) composeDockerHistoryList(c *gin.Context) {
 	}
 	records, err := app.composeSvc.HistoryList(c.Request.Context(), "docker", name)
 	respondResult(c, records, err)
+}
+
+// 状态详情与 Swarm Compose 配置读取使用同一权限，避免额外授权影响已有用户。
+func (app *App) composeSwarmStatus(c *gin.Context) {
+	name, ok := composeNameParam(c)
+	if !ok {
+		return
+	}
+	if err := app.accountSvc.PermCheck(c.GetString("username"), "读取 Swarm Stack 配置", http.MethodGet, "/api/compose/swarm/:name"); err != nil {
+		respondError(c, http.StatusForbidden, err.Error())
+		return
+	}
+	status, err := app.composeSvc.SwarmStatus(c.Request.Context(), name)
+	respondResult(c, status, err)
 }
 
 func (app *App) composeSwarmHistoryList(c *gin.Context) {
