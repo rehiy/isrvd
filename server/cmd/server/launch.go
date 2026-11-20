@@ -88,7 +88,7 @@ func runCenter() error {
 	alertsDone := make(chan struct{})
 	go func() {
 		defer close(alertsDone)
-		nodes.WatchAlerts(alertCtx, notify.NodeStatusNotify)
+		nodes.AlertWatch(alertCtx, notify.NodeStatusNotify)
 	}()
 	app.StartApp(private) // 阻塞到收到退出信号
 
