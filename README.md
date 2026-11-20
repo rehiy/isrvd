@@ -29,7 +29,7 @@ A lightweight operations panel built with Go + Vue 3. It integrates file managem
 | Web Terminal | Shell terminal based on xterm.js, with container terminal access |
 | Local Processes | View the host process list (CPU, memory, command line) and kill a process (audited, forced) |
 | SSH Remote Management | Manage hosts and reusable credentials, with password/private key auth, browser terminal and SFTP file management |
-| Centralized Management | The same binary runs as standalone, center or managed node via `ISRVD_MODE`; one console manages many servers, see [Centralized Management](#centralized-management) |
+| Centralized Management | The same binary runs as standalone, center or managed node via `ISRVD_MODE`; one console provides a multi-node overview and manages many servers, see [Centralized Management](#centralized-management) |
 | AI Assistant | Built-in Copilot based on CopilotKit + AG-UI, calling backend APIs through the built-in OpenAPI catalog, with page context, tool cards and write-operation approval; works with any OpenAI-compatible LLM |
 | Scheduled Tasks | Cron scheduling; Shell or BAT/PowerShell scripts and executables depending on the platform, plus ephemeral or existing container execution when Docker is available |
 | APISIX | Routes, consumers, upstreams, SSL certificates, plugin configs (PluginConfig), plugin list, access authorization |
