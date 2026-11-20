@@ -344,8 +344,8 @@ func normalizeServerForm(form ServerForm) (ServerForm, error) {
 	if form.MaxHeaderBytes < 0 {
 		return ServerForm{}, fmt.Errorf("%w: max_header_bytes 不能为负数", ErrServerConfigInvalid)
 	}
-	if form.TrustedProxiesStrict != 0 && form.TrustedProxiesStrict != 1 {
-		return ServerForm{}, fmt.Errorf("%w: trusted_proxies_strict 只能为 0 或 1", ErrServerConfigInvalid)
+	if form.TrustedProxiesStrict < 0 {
+		return ServerForm{}, fmt.Errorf("%w: trusted_proxies_strict 不能为负数", ErrServerConfigInvalid)
 	}
 	if form.TrustedProxies == nil {
 		if form.TrustedProxiesStrict != 0 {
