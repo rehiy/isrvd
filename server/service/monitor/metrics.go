@@ -174,11 +174,7 @@ func (c *Collector) containersMetricsText(ctx context.Context, stale int64) ([]b
 		l := []string{"name", name, "id", record.ContainerID}
 		info = append(info, textRow{l, 1})
 		ts = append(ts, textRow{l, float64(record.Ts)})
-		cache, cgroupV1 := v.MemoryStats.Stats["total_inactive_file"]
-		if !cgroupV1 {
-			cache = v.MemoryStats.Stats["inactive_file"]
-		}
-		memUsed = append(memUsed, textRow{l, float64(v.MemoryStats.Usage - min(cache, v.MemoryStats.Usage))})
+		memUsed = append(memUsed, textRow{l, float64(docker.ContainerMemoryUsage(v.MemoryStats))})
 		memLimit = append(memLimit, textRow{l, float64(v.MemoryStats.Limit)})
 		var rxBytes, txBytes, readBytes, writeBytes uint64
 		for _, net := range v.Networks {
