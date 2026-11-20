@@ -59,9 +59,13 @@ class NavigationBar extends Vue {
         return this.isActive('/node')
     }
 
+    get canListNodes() {
+        return this.portal.hasPerm(NODE_LIST_PERM)
+    }
+
     // 全局概览可独立授权，节点管理与转发仍依赖节点列表权限。
     get nodeVisible() {
-        return !this.portal.currentNodeId && (this.portal.hasPerm(NODE_LIST_PERM) || this.portal.hasPerm('GET /api/node/overview'))
+        return !this.portal.currentNodeId && (this.canListNodes || this.portal.hasPerm('GET /api/node/overview'))
     }
 
     get isConfigActive() {
@@ -652,11 +656,11 @@ export default toNative(NavigationBar)
               <i class="fas fa-chart-line"></i>
               <span>{{ $t('全局概览') }}</span>
             </router-link>
-            <router-link v-if="portal.hasPerm(NODE_LIST_PERM)" to="/node/access" class="nav-link" :class="{ 'nav-link-active': isActive('/node/access') }">
+            <router-link v-if="canListNodes" to="/node/access" class="nav-link" :class="{ 'nav-link-active': isActive('/node/access') }">
               <i class="fas fa-server"></i>
               <span>{{ $t('节点管理') }}</span>
             </router-link>
-            <router-link v-if="portal.hasPerm(NODE_LIST_PERM)" to="/node/portmaps" class="nav-link" :class="{ 'nav-link-active': isActive('/node/portmaps') }">
+            <router-link v-if="canListNodes" to="/node/portmaps" class="nav-link" :class="{ 'nav-link-active': isActive('/node/portmaps') }">
               <i class="fas fa-right-left"></i>
               <span>{{ $t('端口转发') }}</span>
             </router-link>
