@@ -35,6 +35,19 @@ export interface ComposeRedeploy {
     image?: string
 }
 
+export interface ComposeSwarmStackStatus {
+    projectName: string
+    services: Array<{
+        id: string
+        name: string
+        updateState?: string
+        updateMessage?: string
+        runningTasks: number
+        desiredTasks: number
+        mode: 'replicated' | 'global'
+    }>
+}
+
 export interface ComposeDeployResult {
     target: ComposeDeployTarget
     projectName: string     // 实际使用的项目名
