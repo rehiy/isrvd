@@ -84,6 +84,8 @@ export interface SwarmServiceDetail extends SwarmServiceSpec {
     runningTasks: number
     createdAt: string
     updatedAt: string
+    updateState?: string
+    updateMessage?: string
 }
 
 // SwarmServiceInfo 服务列表信息

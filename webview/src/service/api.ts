@@ -105,7 +105,6 @@ import type {
     ComposeDeployResult,
     ComposeDeploy,
     ComposeRedeploy,
-    ComposeSwarmStackStatus,
     // Metrics
     MetricsGatewayName,
     MetricsSourceStatus,
@@ -848,10 +847,6 @@ class ApiService {
 
     composeSwarmRedeploy(name: string, data: ComposeRedeploy) {
         return http.put<ComposeDeployResult>(`compose/swarm/${name}`, data)
-    }
-
-    composeSwarmStatus(name: string) {
-        return http.get<ComposeSwarmStackStatus>(`compose/swarm/${name}/status`)
     }
 
     // ==================== Local 本机管理 ====================

@@ -4,7 +4,7 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { ComposeSwarmStackStatus, SwarmServiceDetail, SwarmTask } from '@/service/types'
+import type { SwarmServiceDetail, SwarmTask } from '@/service/types'
 
 import { formatTime } from '@/helper/format'
 
@@ -17,13 +17,6 @@ class ServiceInfo extends Vue {
     formatTime = formatTime
     tasks: SwarmTask[] = []
     loading = false
-    stackStatus: ComposeSwarmStackStatus | null = null
-    statusLoading = false
-    statusError = false
-
-    get serviceUpdateState() {
-        return this.stackStatus?.services.find(service => service.id === this.serviceId)
-    }
 
     get serviceId() {
         return this.$route.params.id as string
@@ -57,24 +50,7 @@ class ServiceInfo extends Vue {
         return [...map.values()].sort((a, b) => b.running - a.running)
     }
 
-    async loadStackStatus() {
-        if (!this.serviceData || this.statusLoading) {
-            return
-        }
-        this.statusLoading = true
-        this.statusError = false
-        try {
-            const response = await api.composeSwarmStatus(this.serviceData.name)
-            this.stackStatus = response.payload || null
-        } catch {
-            this.statusError = true
-        } finally {
-            this.statusLoading = false
-        }
-    }
-
     async loadDetail() {
-        this.stackStatus = null
         this.loading = true
         try {
             const [detailRes, tasksRes] = await Promise.all([
@@ -206,29 +182,13 @@ export default toNative(ServiceInfo)
               <label class="form-label">{{ $t('更新时间') }}</label>
               <div class="detail-value">{{ formatTime(serviceData.updatedAt) }}</div>
             </div>
+            <div v-if="serviceData.updateState" class="col-span-2">
+              <label class="form-label">{{ $t('更新状态') }}</label>
+              <div class="detail-value">{{ serviceData.updateState }}</div>
+              <p v-if="serviceData.updateMessage" class="text-xs text-slate-500">{{ serviceData.updateMessage }}</p>
+            </div>
           </div>
         </div>
-      </div>
-
-      <!-- Stack 更新状态需要单独查询，避免默认详情查询增加 Swarm API 负载 -->
-      <div v-if="portal.hasPerm('GET /api/compose/swarm/:name')" class="rounded-lg border border-slate-200 p-3">
-        <div class="flex items-center justify-between gap-2 mb-2">
-          <h2 class="section-title mb-0">{{ $t('更新状态') }}</h2>
-          <button type="button" class="btn btn-secondary" :disabled="statusLoading" @click="loadStackStatus">
-            <i :class="statusLoading ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"></i>
-            {{ $t('刷新') }}
-          </button>
-        </div>
-        <p v-if="statusError" class="text-sm text-red-600" role="alert">{{ $t('读取更新状态失败') }}</p>
-        <div v-else-if="serviceUpdateState" class="space-y-2">
-          <div class="flex flex-wrap gap-4 text-sm">
-            <span>{{ $t('更新状态') }}：{{ serviceUpdateState.updateState || $t('暂无更新记录') }}</span>
-            <span>{{ $t('运行中') }}：{{ serviceUpdateState.runningTasks }} / {{ serviceUpdateState.desiredTasks }}</span>
-          </div>
-          <p v-if="serviceUpdateState.updateMessage" class="text-xs text-slate-500">{{ serviceUpdateState.updateMessage }}</p>
-          <p class="text-xs text-slate-500">{{ $t('副本运行数不代表应用健康') }}</p>
-        </div>
-        <p v-else class="text-xs text-slate-500">{{ stackStatus ? $t('当前服务不属于已管理的 Stack') : $t('点击刷新查询 Stack 更新状态') }}</p>
       </div>
 
       <!-- 网络 -->
