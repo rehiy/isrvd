@@ -152,6 +152,7 @@ type FaultAlertConfig struct {
 	ContainerEnabled   bool `yaml:"containerEnabled" json:"containerEnabled"`     // 容器异常、健康检查失败和频繁重启
 	CronEnabled        bool `yaml:"cronEnabled" json:"cronEnabled"`               // 计划任务执行失败
 	CertificateEnabled bool `yaml:"certificateEnabled" json:"certificateEnabled"` // 网关证书到期
+	NodeEnabled        bool `yaml:"nodeEnabled" json:"nodeEnabled"`               // 中控受管节点离线与恢复
 	RestartThreshold   int  `yaml:"restartThreshold" json:"restartThreshold"`     // 窗口内重启次数，默认 3
 	RestartWindow      int  `yaml:"restartWindow" json:"restartWindow"`           // 重启统计窗口（秒），默认 300
 	CertificateDays    int  `yaml:"certificateDays" json:"certificateDays"`       // 证书提前告警天数，默认 14

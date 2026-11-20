@@ -39,6 +39,8 @@ isrvd_get "/node/nodes"
 
 > 节点令牌仅保存哈希；令牌只在创建节点时返回一次，列表接口不返回。`online`、`latency`、`agentVersion`、`negotiated`、`features` 是运行时状态，不持久化。
 
+中控可在[监控告警配置](../system/config.md#应用故障告警)中启用 `notify.events.nodeEnabled`：对已激活节点持续离线约 90–120 秒发送告警，恢复在线后发送一次恢复通知。节点列表接口保持只读，不增加告警记录字段。
+
 ### 查询多节点全局概览
 
 ```bash

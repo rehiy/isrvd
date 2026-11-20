@@ -215,6 +215,7 @@ export default toNative(ConfigAlert)
         </div>
         <p class="mt-3 text-xs text-slate-400">{{ $t('每 30 秒检测一次，同一故障不重复发送；正常退出及常见停止信号不告警。为容器添加 isrvd.notify.ignore=true 标签可排除检测。') }}</p>
       </ToggleCard>
+      <ToggleCard v-model="config.draft.notify.events.nodeEnabled" :label="$t('受管节点离线告警')" :desc="$t('仅中控模式生效；节点持续离线约 90 秒后告警，恢复上线后发送恢复通知')" />
       <ToggleCard v-model="config.draft.notify.events.cronEnabled" :label="$t('计划任务失败')" :desc="$t('每次失败执行发送一次通知，包括超时；详细原因在执行历史中查看，通知不含脚本或输出')" />
       <ToggleCard v-model="config.draft.notify.events.certificateEnabled" :label="$t('证书到期')" :desc="$t('检查 APISIX 与 Caddy 的可读取证书，到期前提醒，续期恢复后通知')">
         <div>

@@ -65,7 +65,7 @@ function defaultConfig(): AllConfig {
         notify: {
             webhooks: [],
             rules: [],
-            events: { containerEnabled: false, cronEnabled: false, certificateEnabled: false, restartThreshold: 3, restartWindow: 300, certificateDays: 14 },
+            events: { containerEnabled: false, cronEnabled: false, certificateEnabled: false, nodeEnabled: false, restartThreshold: 3, restartWindow: 300, certificateDays: 14 },
         },
         apisix: { adminUrl: '', adminKey: '' },
         caddy: { adminUrl: '' },

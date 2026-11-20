@@ -55,7 +55,7 @@ etcd 配置监听在首次连接、重连后重新读取最新状态，读取失
 | `docker` | Docker 守护进程地址（支持 `tcp://` + TLS 证书连接远程 Docker / Swarm）、容器数据目录、镜像仓库账号 |
 | `monitor` | 系统与容器监控的采集间隔（5/15/30/60 秒；未配置或其他值禁用自动采集） |
 | `metrics` | 本机与容器 Prometheus 出口开关（`hostEnabled` / `containersEnabled`；缺省 true，false 关闭出口，不影响其他监控或告警） |
-| `notify` | Webhook 通道、CPU/内存/磁盘规则，以及容器异常、任务失败和网关证书到期告警；默认关闭应用故障告警 |
+| `notify` | Webhook 通道、CPU/内存/磁盘规则，以及容器异常、任务失败、网关证书到期和受管节点离线告警；默认关闭应用故障告警 |
 | `marketplace` | 应用市场地址 |
 | `portmap` | 中控端口转发（`range` 监听端口范围 / `bind` 监听地址；仅 center 模式使用，修改后重启生效；与 Docker 容器端口映射无关） |
 | `links` | 自定义快捷链接（名称、URL、图标） |
@@ -182,7 +182,7 @@ isrvd_put "/system/config" "$server_config"
 
 ## 应用故障告警
 
-在「系统配置 → 监控告警」中配置通知通道，并开启所需故障类型。旧配置没有 `events` 时三类告警均默认关闭。
+在「系统配置 → 监控告警」中配置通知通道，并开启所需故障类型。旧配置没有 `events` 时，各类应用故障及节点告警均默认关闭。
 
 下面的例子保留当前通知通道和资源规则，只修改应用故障配置（需要 jq）：
 
@@ -191,6 +191,7 @@ notify_config=$(isrvd_get "/system/config" | jq -c '.notify | .events = {
   containerEnabled: true,
   cronEnabled: true,
   certificateEnabled: true,
+  nodeEnabled: true,
   restartThreshold: 3,
   restartWindow: 300,
   certificateDays: 14
@@ -205,6 +206,7 @@ isrvd_put "/system/config" "$notify_config"
 | containerEnabled | boolean | false | 容器异常退出、OOM、dead、restarting、unhealthy 及频繁重启 |
 | cronEnabled | boolean | false | 计划任务每次执行失败时通知，包括超时 |
 | certificateEnabled | boolean | false | APISIX 和 Caddy 可读取证书的到期检测 |
+| nodeEnabled | boolean | false | 仅中控模式：受管节点持续离线告警及恢复通知 |
 | restartThreshold | integer | 3 | 窗口内 Docker 自动重启次数阈值；1–10000 |
 | restartWindow | integer | 300 | 重启统计窗口（秒）；30–86400 |
 | certificateDays | integer | 14 | 证书到期前提醒天数；1–3650 |
@@ -219,7 +221,8 @@ isrvd_put "/system/config" "$notify_config"
 - 计划任务每次失败执行发送一次 `cron.failed`，只包含任务名称、ID、执行 ID 和耗时；通知不含脚本、输出或原始错误，具体失败原因在执行历史查看。
 - 证书每小时检测一次，同一证书每天最多提醒一次；检测到过期时升级为 `critical`，不受每日提醒间隔限制。续期至提前提醒窗口之外发送恢复通知。APISIX 禁用证书不检测；Caddy 自动签发策略没有有效期，实际文件、PEM 或缓存证书可读取时才检测。仍在返回列表中但读取或解析失败的证书保留原告警状态，不视为删除或恢复。
 - Caddy 文件及缓存证书按文件路径关联告警；PEM 证书按证书内容中的真实主题、SAN 集合和公钥算法关联，同身份的多张 PEM 证书按最早到期的一张判断。存在无法解析的 Caddy PEM 时暂缓所有 Caddy PEM 恢复通知，待均可解析或移除后再判断；文件、缓存及 APISIX 证书的恢复不受此限制。删除或调整列表顺序不视为证书恢复；通知中的 `certificateId` 使用当前 API 列表的 Key。
-- 无通知通道时不启动容器和证书探测；关闭监控历史采集不影响这些故障告警。
+- 中控受管节点告警独立于监控历史采集：启用 `nodeEnabled` 且配置了 Webhook 后，每 30 秒读取一次节点隧道状态；已激活节点连续离线约 90–120 秒时发送 `node.alert`，恢复在线时发送一次 `node.recover`。待接入、已吊销、已删除节点不产生告警或恢复。重启中控、关闭告警或移除全部通道后重新建立观察基线；重启时原本离线的已激活节点会重新计时。此功能仅观察连接在线，不代表业务服务健康。
+- 无通知通道时不启动容器和证书探测，受管节点也不发送告警；关闭监控历史采集不影响这些故障告警。
 - SIGTERM/SIGINT 退出时分段等待：HTTP 请求最多 5 秒；进行中的配置重载与计划任务（含重载前旧实例）最多 5 秒，超时后取消任务并额外等待 1 秒清理；已发出的 Webhook 最后最多 1 秒。超过期限的执行日志与通知不保证完成。
 
 所有通知沿用标准事件字段：
@@ -238,6 +241,7 @@ isrvd_put "/system/config" "$notify_config"
 |-------|-----------|------|
 | container.alert / container.recover | containerId、containerName、reason、exitCode、restartCount、restartWindow | reason 为 restarting/dead/oom/exit/unhealthy/restarts；恢复为空，restartCount 为窗口内检测到的增量 |
 | cron.failed | jobId、jobName、runId、duration | duration 为毫秒 |
+| node.alert / node.recover | nodeId、nodeName、offlineSeconds | 中控受管节点离线及恢复；离线秒数为本轮检测的估算值，恢复时为 info |
 | certificate.alert / certificate.recover | provider、certificateId、subject、notAfter、daysRemaining | provider 为 caddy/apisix，notAfter 为 UTC RFC3339；证书过期时为 critical，恢复为 info |
 | resource.alert / resource.recover | metric、value、threshold、unit | metric 为 cpu/memory/disk，unit 固定为 `%`；当前值 ≥90 为 critical，否则 warning，恢复为 info |
 

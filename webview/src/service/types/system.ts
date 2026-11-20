@@ -82,6 +82,7 @@ export interface FaultAlertConfig {
     containerEnabled: boolean
     cronEnabled: boolean
     certificateEnabled: boolean
+    nodeEnabled: boolean
     restartThreshold: number
     restartWindow: number
     certificateDays: number
