@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"isrvd/server/config"
@@ -41,6 +42,7 @@ type Service struct {
 }
 
 const fetchTimeout = 5 * time.Second
+const statusTimeout = 5 * time.Second
 
 // NewService 创建指标服务；网关通过 AddGateway 登记。
 func NewService(containersAvailable bool) *Service {
@@ -54,7 +56,7 @@ func NewService(containersAvailable bool) *Service {
 	}
 }
 
-// AddGateway 登记一个已配置抓取地址的网关。enabled 为 nil 表示网关管理服务不可用，状态中仅报告抓取结果。
+// AddGateway 登记一个已配置抓取地址的网关。enabled 必须响应 context 取消，为 nil 时仅报告抓取结果。
 func (s *Service) AddGateway(name, url string, enabled func(ctx context.Context) (bool, error)) {
 	s.sources = append(s.sources, source{name: name, url: url, enabled: enabled})
 }
@@ -82,11 +84,18 @@ type SourceStatus struct {
 
 // Status 固定按 host、containers、caddy、apisix 返回四类来源的指标状态；未配置的网关 Configured 为 false。
 func (s *Service) Status(ctx context.Context) []SourceStatus {
+	ctx, cancel := context.WithTimeout(ctx, statusTimeout)
+	defer cancel()
+	var caddyStatus, apisixStatus SourceStatus
+	var wg sync.WaitGroup
+	wg.Go(func() { caddyStatus = s.gatewayStatus(ctx, GatewayCaddy) })
+	wg.Go(func() { apisixStatus = s.gatewayStatus(ctx, GatewayApisix) })
+	wg.Wait()
 	return []SourceStatus{
 		s.localStatus(SourceHost, true),
 		s.localStatus(SourceContainers, s.containersAvailable),
-		s.gatewayStatus(ctx, GatewayCaddy),
-		s.gatewayStatus(ctx, GatewayApisix),
+		caddyStatus,
+		apisixStatus,
 	}
 }
 
@@ -106,17 +115,21 @@ func (s *Service) gatewayStatus(ctx context.Context, name string) SourceStatus {
 	}
 	st.Configured = true
 	st.Available = src.enabled != nil
+	var wg sync.WaitGroup
 	if src.enabled != nil {
-		enabled, err := src.enabled(ctx)
-		st.Enabled = enabled
-		if err != nil {
-			st.EnabledUnknown = true
-			st.Error = i18n.TC(ctx, "查询网关指标开关失败")
-		}
+		wg.Go(func() {
+			enabled, err := src.enabled(ctx)
+			st.Enabled = enabled
+			if err != nil {
+				st.EnabledUnknown = true
+				st.Error = i18n.TC(ctx, "查询网关指标开关失败")
+			}
+		})
 	}
-	if _, err := s.fetch(ctx, src.url); err == nil {
-		st.Scrapable = true
-	} else if st.Error == "" {
+	_, err := s.fetch(ctx, src.url)
+	wg.Wait()
+	st.Scrapable = err == nil
+	if err != nil && st.Error == "" {
 		st.Error = i18n.TC(ctx, err.Error())
 	}
 	return st
