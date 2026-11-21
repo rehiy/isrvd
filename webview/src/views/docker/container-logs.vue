@@ -26,7 +26,7 @@ class ContainerLogs extends Vue {
 
     // ─── 方法 ───
     async loadContainer() {
-        const res = await api.dockerContainerList(true)
+        const res = await api.dockerContainerList(true, { id: [this.containerId] })
         this.container = (res.payload || []).find((c: DockerContainerInfo) => c.id === this.containerId) ?? null
         if (!this.container) {
             this.portal.showNotification('error', this.$t('容器不存在'))

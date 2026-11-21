@@ -576,8 +576,10 @@ class ApiService {
     }
 
     // 容器管理
-    dockerContainerList(all = false) {
-        return http.get<DockerContainerInfo[]>('docker/containers', { params: { all } })
+    dockerContainerList(all = false, filters?: { id?: string[]; name?: string[] }) {
+        return http.get<DockerContainerInfo[]>('docker/containers', {
+            params: { all, filters: filters && JSON.stringify(filters) }
+        })
     }
 
     dockerContainerInspect(id: string) {
