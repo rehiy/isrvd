@@ -9568,6 +9568,14 @@
             "description": "是否严格校验 SNI 主机名",
             "type": "boolean"
           },
+          "trusted_proxies": {
+            "description": "受信任代理，当前仅管理 static 模块",
+            "type": "object"
+          },
+          "trusted_proxies_strict": {
+            "description": "从右往左解析 X-Forwarded-For",
+            "type": "integer"
+          },
           "write_timeout": {
             "description": "写入响应超时（Go duration 字符串）",
             "type": "string"
@@ -9610,6 +9618,22 @@
         },
         "type": "object"
       },
+      "caddy.ServerTrustedProxiesForm": {
+        "properties": {
+          "ranges": {
+            "description": "IP 地址或 CIDR 网段",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "source": {
+            "description": "仅支持 static",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "caddy.ServerView": {
         "properties": {
           "id": {
@@ -9623,6 +9647,10 @@
           "routeCount": {
             "description": "该服务下的路由数量",
             "type": "integer"
+          },
+          "trustedProxiesCustom": {
+            "description": "非 static 或带扩展字段的代理来源由原始配置管理",
+            "type": "boolean"
           }
         },
         "type": "object"
