@@ -30,9 +30,8 @@ export default toNative(ToggleCard)
 </script>
 
 <template>
-  <!-- 有 body：toggle-expand-card 样式（收缩时普通 toggle-row，展开时变 card） -->
-  <div v-if="hasBody" class="toggle-expand-card" :class="{ 'toggle-expand-card-open': modelValue || alwaysExpanded }">
-    <div class="toggle-row">
+  <div :class="hasBody ? ['toggle-expand-card', { 'toggle-expand-card-open': modelValue || alwaysExpanded }] : 'toggle-row'">
+    <div :class="hasBody ? 'toggle-row' : 'contents'">
       <div class="min-w-0 flex-1">
         <slot name="label">
           <span class="text-sm text-slate-600">{{ label }}</span>
@@ -58,36 +57,8 @@ export default toNative(ToggleCard)
         </button>
       </slot>
     </div>
-    <div v-if="modelValue || alwaysExpanded" class="toggle-expand-body">
+    <div v-if="hasBody && (modelValue || alwaysExpanded)" class="toggle-expand-body">
       <slot />
     </div>
-  </div>
-
-  <!-- 无 body：普通 toggle-row -->
-  <div v-else class="toggle-row">
-    <div class="min-w-0 flex-1">
-      <slot name="label">
-        <span class="text-sm text-slate-600">{{ label }}</span>
-      </slot>
-      <p v-if="hasDesc" class="text-xs text-slate-400 mt-0.5">
-        <slot name="desc">
-          {{ desc }}
-        </slot>
-      </p>
-    </div>
-    <slot name="control">
-      <button
-        type="button"
-        class="toggle"
-        :class="{ 'toggle-on': modelValue, 'toggle-violet': violet, 'opacity-50 cursor-not-allowed': disabled }"
-        :disabled="disabled"
-        role="switch"
-        :aria-label="label"
-        :aria-checked="modelValue"
-        @click="toggle"
-      >
-        <span class="toggle-thumb" />
-      </button>
-    </slot>
   </div>
 </template>
