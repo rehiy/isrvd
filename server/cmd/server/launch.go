@@ -34,7 +34,7 @@ func run() error {
 	case config.IsAgent():
 		return runAgent()
 	default:
-		app.StartApp(nil)
+		app.StartApp(nil, nil)
 		return nil
 	}
 }
@@ -90,7 +90,7 @@ func runCenter() error {
 		defer close(alertsDone)
 		nodes.AlertWatch(alertCtx, notify.NodeAlertsEnabled, notify.NodeStatusNotify)
 	}()
-	app.StartApp(private) // 阻塞到收到退出信号
+	app.StartApp(private, nodes.RefreshNodes) // 阻塞到收到退出信号
 
 	stopAlerts()
 	<-alertsDone
@@ -124,7 +124,7 @@ func runAgent() error {
 		agent.Run(ctx)
 	}()
 
-	app.StartApp(private) // 阻塞到收到退出信号
+	app.StartApp(private, nil) // 阻塞到收到退出信号
 
 	cancel()
 	<-done

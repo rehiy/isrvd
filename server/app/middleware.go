@@ -100,7 +100,7 @@ func (app *App) auditMiddleware(routeIndex map[string]Route) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		route, _ := lookupRoute(routeIndex, c)
 		isWS := helper.IsWebSocket(c.Request)
-		if route.Audit < AuditByMethod || (route.Audit == AuditByMethod && !isWS && c.Request.Method == http.MethodGet) {
+		if !route.Audit.allows(c.Request, isWS) {
 			c.Next()
 			return
 		}
@@ -114,6 +114,10 @@ func (app *App) auditMiddleware(routeIndex map[string]Route) gin.HandlerFunc {
 		c.Next()
 		app.auditSvc.AuditRecord(c.Request, c.GetString("username"), c.ClientIP(), c.Writer.Status(), startTime, body)
 	}
+}
+
+func (a AuditLevel) allows(r *http.Request, isWS bool) bool {
+	return a > AuditByMethod || a == AuditByMethod && (isWS || r.Method != http.MethodGet)
 }
 
 // ─── 辅助函数 ───

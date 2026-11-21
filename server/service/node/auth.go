@@ -32,6 +32,7 @@ func (s *Service) Authenticate(r *http.Request, ip string) (*Node, error) {
 		return nil, ErrUnauthorized
 	}
 	tokenHash := hashToken(token)
+	s.RefreshNodes()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.closed {

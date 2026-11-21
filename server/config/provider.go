@@ -2,14 +2,12 @@ package config
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"os"
 	"reflect"
 	"slices"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/goccy/go-yaml"
 	"github.com/rehiy/libgo/logman"
@@ -26,9 +24,6 @@ var (
 	document    *cstore.Document
 	watchCancel context.CancelFunc
 	watchWG     sync.WaitGroup
-	watchMu     sync.Mutex
-	watching    bool
-	localWrites = map[[sha256.Size]byte]int{}
 )
 
 func Init() error {
@@ -50,11 +45,9 @@ func Init() error {
 	document = cstore.NewDocument(store, storeKey)
 
 	logman.Info("load config")
-	snapshot, err := ReadStored()
-	if err != nil {
+	if _, err := PublishStored(true); err != nil {
 		return err
 	}
-	Publish(snapshot)
 
 	watchCtx, cancel := context.WithCancel(context.Background())
 	watchCancel = cancel
@@ -68,10 +61,6 @@ func Close() error {
 		watchCancel()
 		watchWG.Wait()
 	}
-	watchMu.Lock()
-	watching = false
-	clear(localWrites)
-	watchMu.Unlock()
 	if store != nil {
 		return store.Close()
 	}
@@ -80,18 +69,41 @@ func Close() error {
 
 // OpenData 按当前数据目录派生业务数据存储，后端选择与迁移由 cstore 负责。
 func OpenData[T any](file string) (*cstore.TypedStore[T], error) {
-	dataStore, err := cstore.OpenData(store, Current().Server.RootDirectory)
+	return OpenDataAt[T](file, Current().Server.RootDirectory)
+}
+
+// OpenDataAt 使用调用方已选定的数据目录。
+func OpenDataAt[T any](file, root string) (*cstore.TypedStore[T], error) {
+	dataStore, err := cstore.OpenData(store, root)
 	if err != nil {
 		return nil, err
 	}
 	return cstore.NewTypedWith[T](dataStore, file), nil
 }
 
-// ReadStored 读取并验证持久化配置，但不发布运行时快照。
-func ReadStored() (*Snapshot, error) {
+// HasStoredChanges 检查持久化配置是否需要重新发布。
+func HasStoredChanges() (bool, error) {
 	updateMu.Lock()
 	defer updateMu.Unlock()
-	return readSnapshot()
+	snapshot, err := readStoredCandidate(false)
+	return snapshot != nil, err
+}
+
+// PublishStored 读取并发布同一个持久化快照，避免覆盖并发 Update 的结果。
+func PublishStored(force bool) (*Snapshot, error) {
+	updateMu.Lock()
+	defer updateMu.Unlock()
+	snapshot, err := readStoredCandidate(force)
+	Publish(snapshot)
+	return snapshot, err
+}
+
+func readStoredCandidate(force bool) (*Snapshot, error) {
+	snapshot, err := readSnapshot()
+	if err != nil || snapshot == nil || !force && reflect.DeepEqual(snapshot, Current()) {
+		return nil, err
+	}
+	return snapshot, nil
 }
 
 // Publish 发布已经完整校验的配置快照。
@@ -173,7 +185,7 @@ func readSnapshot() (*Snapshot, error) {
 		if marshalErr != nil {
 			return nil, fmt.Errorf("配置迁移序列化失败: %w", marshalErr)
 		}
-		if err := setConfigBytes(data); err != nil {
+		if err := document.Set(data); err != nil {
 			return nil, fmt.Errorf("配置迁移保存失败: %w", err)
 		}
 		logman.Info("配置已自动更新（配置迁移）")
@@ -264,43 +276,10 @@ func persistSnapshot(snapshot *Snapshot) error {
 	if err != nil {
 		return err
 	}
-	if err := setConfigBytes(data); err != nil {
+	if err := document.Set(data); err != nil {
 		return fmt.Errorf("保存配置失败: %w", err)
 	}
 	return nil
-}
-
-func setConfigBytes(data []byte) error {
-	fingerprint := sha256.Sum256(data)
-	watchMu.Lock()
-	tracked := watching
-	if tracked {
-		localWrites[fingerprint]++
-	}
-	watchMu.Unlock()
-	if err := document.Set(data); err != nil {
-		forgetLocalWrite(fingerprint)
-		return err
-	}
-	if tracked {
-		time.AfterFunc(30*time.Second, func() { forgetLocalWrite(fingerprint) })
-	}
-	return nil
-}
-
-func forgetLocalWrite(fingerprint [sha256.Size]byte) bool {
-	watchMu.Lock()
-	defer watchMu.Unlock()
-	count := localWrites[fingerprint]
-	if count == 0 {
-		return false
-	}
-	if count == 1 {
-		delete(localWrites, fingerprint)
-	} else {
-		localWrites[fingerprint] = count - 1
-	}
-	return true
 }
 
 func watchConfigChanges(ctx context.Context) {
@@ -308,25 +287,15 @@ func watchConfigChanges(ctx context.Context) {
 	if ch == nil {
 		return
 	}
-	watchMu.Lock()
-	watching = true
-	watchMu.Unlock()
 	watchWG.Go(func() {
 		for ev := range ch {
 			switch ev.Type {
 			case cstore.EventPut:
-				if forgetLocalWrite(sha256.Sum256(ev.Value)) {
-					continue
-				}
-				logman.Info("Config changed, triggering reload", "key", ev.Key)
 				select {
 				case ReloadCh <- struct{}{}:
 				default:
 				}
 			case cstore.EventDelete:
-				watchMu.Lock()
-				clear(localWrites)
-				watchMu.Unlock()
 				logman.Warn("Config deleted", "key", ev.Key)
 			}
 		}

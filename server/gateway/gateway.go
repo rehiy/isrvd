@@ -31,9 +31,9 @@ type Options struct {
 	// CredentialHeaders 返回携带用户凭据、不得下发给受管机的请求头（含内部身份头）。
 	CredentialHeaders func() []string
 
-	// Authorize 复用应用当前账户服务认证调用者并校验路由权限，返回用户名；
+	// Authorize 复用应用当前账户服务认证调用者并校验路由权限，返回用户名和审计决策；
 	// 失败时返回应写出的 HTTP 状态码及错误。
-	Authorize func(r *http.Request, allowQueryToken bool) (string, int, error)
+	Authorize func(r *http.Request, allowQueryToken bool) (string, bool, int, error)
 }
 
 type gateway struct {

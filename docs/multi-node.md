@@ -121,10 +121,10 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 - 中控允许代理 Header 登录（`center + tha.enabled`）：网关按连接对端 IP 和 `tha.trustedCIDRs` 校验身份头，不采信转发头，可信代理必须覆盖客户端传入的身份头；中控的私有回环服务只接收网关写入的内部身份，外部同名头会先被删除。普通成员仍不能管理节点，用户身份不下发给受管机。
 - 受管机转发 WebSocket 时没有 `Origin`，`agent` 模式放行空 `Origin`；跨站来源已由中控网关按 `allowedOrigins` 校验（未配置时仅允许同源）。
 - 网关转发前剥离 `Authorization`、`Cookie`、`token` 查询参数、THA 身份头与内部网关身份头；受管机侧再换成本机令牌。
-- 节点管理操作、节点上的写操作与 WebSocket 都记入中控审计页面：规则同 isrvd（非 GET 与全部 WebSocket 记录，WebSocket 在会话结束时记录），操作人是中控登录用户，URI 带 `/n/<节点ID>/` 前缀，请求体脱敏。受管机本机审计中同一操作记录为其本地创始人。
+- 节点管理操作、节点上的写操作与 WebSocket 都记入中控审计页面：复用对应业务路由的审计声明（默认审计写操作和 WebSocket，Compose 预览显式跳过，WebSocket 在会话结束时记录），操作人是中控登录用户，URI 带 `/n/<节点ID>/` 前缀，请求体脱敏。受管机本机审计中同一操作记录为其本地创始人。
 - 审计与 token 认证失败限流统一使用连接对端 IP，不采信 `X-Forwarded-For` 或 `X-Real-IP`；转发到中控内部服务时重新生成来源 IP 头。因此中控上游与受管机本机审计只记录回环或隧道来源，真实客户端 IP 以网关审计为准；部署在反向代理后，审计记录代理 IP，同一代理后的客户端共享限流额度。
 - AI 助手在节点页面下仍作用于中控本机。
-- 配置重载后，`allowedOrigins` 与 `rootDirectory` 的变化对中控即时生效（节点表随 `rootDirectory` 切换）；部署环境变量、`listenAddr` 与 `portmap` 需重启。
+- 配置重载后，`allowedOrigins` 与 `rootDirectory` 的变化对中控即时生效（新节点表加载成功后关闭在新表中缺失、失效或令牌变更的会话，并按新表恢复监听。加载失败时保留旧状态，并在后续配置发布时重试）；部署环境变量、`listenAddr` 与 `portmap` 需重启。
 - **节点离线告警**：在中控「系统配置 → 监控告警」开启 `notify.events.nodeEnabled` 并配置 Webhook 后，每 30 秒检查已激活节点的隧道在线状态，持续离线约 90–120 秒时告警，重连后发一次恢复通知。待接入、吊销与删除节点不触发；中控重启会重建告警观察基线，不保留历史故障状态。节点告警使用现有 Webhook 模板，不新开端口或增加 Agent 协议字段。
 - 中控为单实例设计；重启时节点短暂断开，受管机自动重连：指数退避每次翻倍，上限 60 秒，等待取 [d/2, d] 的随机值，连接稳定超过 30 秒后重置；被拒绝（401/403）时每 60 秒重试。
 - 兼容性以能力协商为准，**不要求版本号一致**。中控连接后读取受管机隧道内的 `GET /agent/info`（返回 `mode`、`version`、`hostname`、`os`、`arch`、`features`）：基础 HTTP 转发始终放行，旧版受管机没有该接口或协商失败时同样放行。可选功能（如端口转发）按 `features` 逐项判断，缺失时仅该功能不可用，节点列表以图标标出「部分功能不可用」。

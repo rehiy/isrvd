@@ -20,9 +20,13 @@ type Auditor interface {
 // authorized 统一执行节点管理与业务转发的认证、路由权限校验和审计。
 func (g *gateway) authorized(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user, status, err := g.Authorize(r, g.allowQueryToken(r))
+		user, audit, status, err := g.Authorize(r, g.allowQueryToken(r))
 		if err != nil {
 			fail(w, r, status, err.Error())
+			return
+		}
+		if !audit || g.Audit == nil {
+			h(w, r)
 			return
 		}
 		g.audited(w, r, user, h)
@@ -33,11 +37,6 @@ func (g *gateway) authorized(h http.HandlerFunc) http.HandlerFunc {
 // 与 app 的审计中间件一致：认证失败的请求不记录，WebSocket 在会话结束时记录。
 func (g *gateway) audited(w http.ResponseWriter, r *http.Request, user string, h http.HandlerFunc) {
 	ws := helper.IsWebSocket(r)
-	if g.Audit == nil || (r.Method == http.MethodGet && !ws) {
-		h(w, r)
-		return
-	}
-
 	start := time.Now()
 	body := ""
 	if !ws {

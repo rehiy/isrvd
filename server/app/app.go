@@ -58,6 +58,7 @@ type App struct {
 	lifecycleCancel    context.CancelFunc
 	servicesCtx        context.Context
 	servicesCancel     context.CancelFunc
+	afterConfigReload  func()
 	requestsCtx        context.Context
 	requestsCancel     context.CancelFunc
 	wsConfig           *websocket.ServerConfig
@@ -107,18 +108,20 @@ type Route struct {
 //
 // listener 为 nil 时按配置的 listenAddr 监听；非 nil 时直接在它上面提供服务，
 // 用于中控与受管机模式：isrvd 只在回环端口上服务，对外入口由网关或隧道承担。
+// afterConfigReload 用于同步由调用方管理的运行态，回调在新配置发布后执行。
 //
 // 运行模式取自 config.Cluster()。受管机的请求只会经中控隧道到达，来源已由中控校验并去掉了
 // Origin，因此放行空 Origin；带 Origin 的请求（浏览器直接访问回环端口）仍按 allowedOrigins 校验。
-func StartApp(listener net.Listener) {
+func StartApp(listener net.Listener, afterConfigReload func()) {
 	lifecycleCtx, lifecycleCancel := context.WithCancel(context.Background())
 	servicesCtx, servicesCancel := context.WithCancel(lifecycleCtx)
 	app := &App{
-		Engine:          httpd.Engine(config.Current().Server.Debug),
-		lifecycleCtx:    lifecycleCtx,
-		lifecycleCancel: lifecycleCancel,
-		servicesCtx:     servicesCtx,
-		servicesCancel:  servicesCancel,
+		Engine:            httpd.Engine(config.Current().Server.Debug),
+		lifecycleCtx:      lifecycleCtx,
+		lifecycleCancel:   lifecycleCancel,
+		servicesCtx:       servicesCtx,
+		servicesCancel:    servicesCancel,
+		afterConfigReload: afterConfigReload,
 		wsConfig: &websocket.ServerConfig{
 			AllowedOrigins:   config.Current().Server.AllowedOrigins,
 			AllowEmptyOrigin: config.IsAgent(),
@@ -144,6 +147,10 @@ func StartApp(listener net.Listener) {
 		Handler:           app.Engine,
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       120 * time.Second,
+		BaseContext: func(net.Listener) context.Context {
+			overview.ConfirmSelfUpgrade()
+			return context.Background()
+		},
 	}
 	app.watchReload(server, listener)
 }
