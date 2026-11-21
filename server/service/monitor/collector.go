@@ -1,11 +1,14 @@
 package monitor
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
 	"path/filepath"
+	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/rehiy/libgo/jsonl"
@@ -193,9 +196,26 @@ func (c *Collector) collect(ctx context.Context) {
 		logman.Warn("monitor: list containers failed", "error", err)
 		return
 	}
-	for _, ct := range containers {
-		if record := c.CollectContainerStatNow(ctx, ct.ID); record != nil {
-			record.ContainerID = ct.ID
+	const containerBatchSize = 4
+	for batch := range slices.Chunk(containers, containerBatchSize) {
+		if ctx.Err() != nil {
+			return
+		}
+		var wg sync.WaitGroup
+		records := make([]*Record, len(batch))
+		for i, ct := range batch {
+			wg.Go(func() {
+				if record := c.CollectContainerStatNow(ctx, ct.ID); record != nil {
+					record.ContainerID = ct.ID
+					records[i] = record
+				}
+			})
+		}
+		wg.Wait()
+		// JSONL 游标按时间读取，每批按样本时间顺序写入。
+		records = slices.DeleteFunc(records, func(record *Record) bool { return record == nil })
+		slices.SortStableFunc(records, func(a, b *Record) int { return cmp.Compare(a.Ts, b.Ts) })
+		for _, record := range records {
 			appendRecord(c.ctr, record)
 		}
 	}
