@@ -35,14 +35,7 @@ func (s *Service) RouteMove(ctx context.Context, server string, index int, req R
 	if err != nil {
 		return err
 	}
-	return s.serverMutate(ctx, server, func(srv *caddy.HTTPServer) error {
-		if err := checkRouteRevision(srv.Routes, req.Revision); err != nil {
-			return err
-		}
-		route, err := getRoute(srv, index)
-		if err != nil {
-			return err
-		}
+	return s.routeMutate(ctx, server, index, req.Revision, true, func(srv *caddy.HTTPServer, route *caddy.Route) error {
 		if req.Index == nil || *req.Index < 0 || *req.Index >= len(srv.Routes) {
 			return ErrInvalidRoutePosition
 		}
@@ -54,6 +47,22 @@ func (s *Service) RouteMove(ctx context.Context, server string, index int, req R
 }
 
 // ─── 辅助函数 ───
+
+// routeMutate 在同一配置事务中校验路由版本、定位下标并执行修改。
+func (s *Service) routeMutate(ctx context.Context, server string, index int, revision string, requireRevision bool, edit func(*caddy.HTTPServer, *caddy.Route) error) error {
+	return s.serverMutate(ctx, server, func(srv *caddy.HTTPServer) error {
+		if requireRevision || revision != "" {
+			if err := checkRouteRevision(srv.Routes, revision); err != nil {
+				return err
+			}
+		}
+		route, err := getRoute(srv, index)
+		if err != nil {
+			return err
+		}
+		return edit(srv, route)
+	})
+}
 
 // routeRevision 与列表来自同一快照，包含执行顺序及路由的全部原生字段。
 func routeRevision(routes []caddy.Route) (string, error) {
