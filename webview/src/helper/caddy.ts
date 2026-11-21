@@ -1,4 +1,4 @@
-import type { CaddyRoute, CaddyRouteUpsert } from '@/service/types'
+import type { CaddyCert, CaddyRoute, CaddyRouteUpsert } from '@/service/types'
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
     value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -192,4 +192,28 @@ export const caddyRouteInsertionIndex = (route: CaddyRouteUpsert, routes: CaddyR
         return undefined
     }
     return index
+}
+
+export function caddyCertSummary(cert: CaddyCert, t: (key: string) => string): string {
+    if (cert.subject) {
+        return cert.subject
+    }
+    if (cert.source === 'file') {
+        return cert.certificate || '-'
+    }
+    return cert.certificate?.split('\n')[0].trim() || t('(空)')
+}
+
+export function caddyCertExpireLabel(notAfter: string | undefined, t: (key: string, ...args: unknown[]) => string): string {
+    if (!notAfter) {
+        return '-'
+    }
+    const days = Math.floor((new Date(notAfter).getTime() - Date.now()) / 86400000)
+    if (days < 0) {
+        return t('已过期 {0} 天', -days)
+    }
+    if (days === 0) {
+        return t('今日过期')
+    }
+    return t('{0} 天后到期', days)
 }
