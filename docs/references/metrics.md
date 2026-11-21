@@ -99,6 +99,8 @@ scrape_configs:
 isrvd_get "/metrics/status"
 ```
 
+并行检查 Caddy 和 APISIX 的管理开关与抓取端点，所有检查共用 5 秒超时。单项超时记录在对应来源的状态里，仍返回其他来源的结果。
+
 响应 `payload`：
 
 ```json
