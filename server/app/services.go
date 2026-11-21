@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"maps"
 	"net/http"
 	"sync"
 	"time"
@@ -35,13 +36,13 @@ import (
 // initServices 初始化/刷新所有业务服务
 // 依赖外部服务（apisix/caddy/docker）初始化失败时对应字段为 nil，由 serviceAvailableMiddleware 返回 503
 func (app *App) initServices(ctx context.Context) {
+	available := &availableServices{probes: map[string]func(context.Context) bool{}}
 	app.overviewSvc = overview.NewService()
 	app.configSvc = system.NewConfigService()
 	app.auditSvc = system.NewAuditService()
 	app.accountSvc = account.NewService()
 	app.filerSvc = filer.NewService()
 	app.shellSvc = shell.NewService()
-	app.probes = map[string]func(context.Context) bool{}
 
 	app.copilotSvc = copilot.NewService()
 	if spec, err := public.Efs.ReadFile("openapi/data.json"); err != nil {
@@ -54,28 +55,28 @@ func (app *App) initServices(ctx context.Context) {
 	if app.websshSvc, err = webssh.NewService(); err != nil {
 		logman.Warn("WebSSH service unavailable", "error", err)
 	} else {
-		app.markReady("ssh", nil) // 本地存储，无需探活
+		available.markReady("ssh", nil) // 本地存储，无需探活
 	}
 
 	// 中控模式：节点管理由进程内的网关提供（不在本路由表中），这里只向前端声明该能力已启用，
 	// 前端据此显示节点切换与节点管理页面
 	if config.IsCenter() {
-		app.markReady("node", func(context.Context) bool { return true })
+		available.markReady("node", func(context.Context) bool { return true })
 	}
 
 	if app.dockerSvc, err = docker.NewService(); err != nil {
 		logman.Warn("Docker service unavailable", "error", err)
 	} else {
-		app.markReady("docker", app.dockerSvc.CheckAvailability)
+		available.markReady("docker", app.dockerSvc.CheckAvailability)
 	}
-	app.initProbedServices(ctx)
+	app.initProbedServices(ctx, available)
 
 	// Docker 不可用时 app.dockerSvc 为 nil，Raw() 对 nil 接收者安全并返回 nil
 	dockerRaw := app.dockerSvc.Raw()
 	if app.composeSvc, err = compose.NewService(dockerRaw, app.swarmSvc.Raw()); err != nil {
 		logman.Warn("Compose service unavailable", "error", err)
 	} else {
-		app.markReady("compose", app.composeSvc.CheckAvailability)
+		available.markReady("compose", app.composeSvc.CheckAvailability)
 	}
 
 	// Cron 任务跨服务重载继续执行，仅在整个进程生命周期结束时取消。
@@ -85,60 +86,69 @@ func (app *App) initServices(ctx context.Context) {
 	app.monitorCollector = monitor.NewCollector(dockerRaw)
 	app.monitorCollector.Start(ctx)
 
-	app.initGatewayConsumers(ctx)
+	app.publishAvailableServices(ctx, available)
 }
 
-func (app *App) initGatewayConsumers(ctx context.Context) {
+// availableServices 发布后不可修改。配置重载与网关重试由同一循环串行写入。
+type availableServices struct {
+	apisixSvc  *apisix.Service
+	caddySvc   *caddy.Service
+	metricsSvc *metrics.Service
+	probes     map[string]func(context.Context) bool
+}
+
+func (app *App) publishAvailableServices(ctx context.Context, available *availableServices) {
 	dockerRaw := app.dockerSvc.Raw()
+	cfg := config.Current()
+	// 指标统一读出口；只登记已配置抓取地址的网关，管理服务不可用时不提供开关状态
+	available.metricsSvc = metrics.NewService(dockerRaw != nil)
+	if u := apisix.MetricsURL(cfg.Apisix); u != "" {
+		var status func(context.Context) (bool, error)
+		if available.apisixSvc != nil {
+			status = available.apisixSvc.MetricsStatus
+		}
+		available.metricsSvc.AddGateway(metrics.GatewayApisix, u, status)
+	}
+	if u := caddy.MetricsURL(cfg.Caddy); u != "" {
+		var status func(context.Context) (bool, error)
+		if available.caddySvc != nil {
+			status = available.caddySvc.MetricsStatus
+		}
+		available.metricsSvc.AddGateway(metrics.GatewayCaddy, u, status)
+	}
+	app.availability.Store(available)
+
 	// 注入可用服务，故障检测独立于监控日志采集。
 	sources := notify.FaultSources{
-		DockerKey: config.Current().Docker.Host,
-		CaddyKey:  config.Current().Caddy.AdminURL,
-		ApisixKey: config.Current().Apisix.AdminURL,
+		DockerKey: cfg.Docker.Host,
+		CaddyKey:  cfg.Caddy.AdminURL,
+		ApisixKey: cfg.Apisix.AdminURL,
 	}
 	if dockerRaw != nil {
 		sources.Docker = dockerRaw
 	}
-	if app.caddySvc != nil {
-		sources.Caddy = caddyCertSource{app.caddySvc}
+	if available.caddySvc != nil {
+		sources.Caddy = caddyCertSource{available.caddySvc}
 	}
-	if app.apisixSvc != nil {
-		sources.Apisix = app.apisixSvc
+	if available.apisixSvc != nil {
+		sources.Apisix = available.apisixSvc
 	}
 	if app.faultWatcher != nil {
 		app.faultWatcher.Stop()
 	}
-	app.faultWatcher = notify.NewFaultWatcher(config.Current().Notify, sources, app.faultWatcher)
+	app.faultWatcher = notify.NewFaultWatcher(cfg.Notify, sources, app.faultWatcher)
 	app.faultWatcher.Start(ctx)
-
-	// 指标统一读出口；只登记已配置抓取地址的网关，管理服务不可用时不提供开关状态
-	app.metricsSvc = metrics.NewService(dockerRaw != nil)
-	cfg := config.Current()
-	if u := apisix.MetricsURL(cfg.Apisix); u != "" {
-		var status func(context.Context) (bool, error)
-		if app.apisixSvc != nil {
-			status = app.apisixSvc.MetricsStatus
-		}
-		app.metricsSvc.AddGateway(metrics.GatewayApisix, u, status)
-	}
-	if u := caddy.MetricsURL(cfg.Caddy); u != "" {
-		var status func(context.Context) (bool, error)
-		if app.caddySvc != nil {
-			status = app.caddySvc.MetricsStatus
-		}
-		app.metricsSvc.AddGateway(metrics.GatewayCaddy, u, status)
-	}
 }
 
 // initProbedServices 并行初始化需要访问外部服务的模块，探活共用 5 秒预算。
-func (app *App) initProbedServices(ctx context.Context) {
+func (app *App) initProbedServices(ctx context.Context, available *availableServices) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	var wg sync.WaitGroup
 	var apisixErr, caddyErr, swarmErr error
-	wg.Go(func() { app.apisixSvc, apisixErr = apisix.NewService(ctx) })
-	wg.Go(func() { app.caddySvc, caddyErr = caddy.NewService(ctx) })
+	wg.Go(func() { available.apisixSvc, apisixErr = apisix.NewService(ctx) })
+	wg.Go(func() { available.caddySvc, caddyErr = caddy.NewService(ctx) })
 	app.swarmSvc = nil
 	if dockerRaw := app.dockerSvc.Raw(); dockerRaw != nil {
 		wg.Go(func() { app.swarmSvc, swarmErr = swarm.NewService(ctx, dockerRaw) })
@@ -148,25 +158,26 @@ func (app *App) initProbedServices(ctx context.Context) {
 	if apisixErr != nil {
 		logman.Warn("Apisix service unavailable", "error", apisixErr)
 	} else {
-		app.markReady("apisix", app.apisixSvc.CheckAvailability)
+		available.markReady("apisix", available.apisixSvc.CheckAvailability)
 	}
 	if caddyErr != nil {
 		logman.Warn("Caddy service unavailable", "error", caddyErr)
 	} else {
-		app.markReady("caddy", app.caddySvc.CheckAvailability)
+		available.markReady("caddy", available.caddySvc.CheckAvailability)
 	}
 	if swarmErr != nil {
 		logman.Warn("Swarm service unavailable", "error", swarmErr)
 	} else if app.swarmSvc != nil {
-		app.markReady("swarm", app.swarmSvc.CheckAvailability)
+		available.markReady("swarm", app.swarmSvc.CheckAvailability)
 	}
 }
 
 // retryGateways 只重试已配置、初始化失败的网关。
 func (app *App) retryGateways(ctx context.Context) {
+	current := app.availability.Load()
 	cfg := config.Current()
-	wantApisix := app.apisixSvc == nil && cfg.Apisix.AdminURL != ""
-	wantCaddy := app.caddySvc == nil && cfg.Caddy.AdminURL != ""
+	wantApisix := current.apisixSvc == nil && cfg.Apisix.AdminURL != ""
+	wantCaddy := current.caddySvc == nil && cfg.Caddy.AdminURL != ""
 	if !wantApisix && !wantCaddy {
 		return
 	}
@@ -185,17 +196,17 @@ func (app *App) retryGateways(ctx context.Context) {
 	if ctx.Err() != nil || apisixSvc == nil && caddySvc == nil {
 		return
 	}
-	app.servicesMu.Lock()
-	defer app.servicesMu.Unlock()
+	available := *current
+	available.probes = maps.Clone(current.probes)
 	if apisixSvc != nil {
-		app.apisixSvc = apisixSvc
-		app.markReady("apisix", apisixSvc.CheckAvailability)
+		available.apisixSvc = apisixSvc
+		available.markReady("apisix", apisixSvc.CheckAvailability)
 	}
 	if caddySvc != nil {
-		app.caddySvc = caddySvc
-		app.markReady("caddy", caddySvc.CheckAvailability)
+		available.caddySvc = caddySvc
+		available.markReady("caddy", caddySvc.CheckAvailability)
 	}
-	app.initGatewayConsumers(app.servicesCtx)
+	app.publishAvailableServices(app.servicesCtx, &available)
 }
 
 // closeServices 释放所有有状态服务持有的资源，并返回旧计划任务全部结束的信号。
@@ -245,11 +256,11 @@ var optionalModules = map[string]bool{"ssh": true, "node": true, "apisix": true,
 
 // markReady 标记可选模块已就绪并登记探活函数（probe 为 nil 表示无需探活）。
 // 登记了未在 optionalModules 声明的模块会被忽略可用性判断，因此这里直接告警。
-func (app *App) markReady(module string, probe func(context.Context) bool) {
+func (available *availableServices) markReady(module string, probe func(context.Context) bool) {
 	if !optionalModules[module] {
 		logman.Warn("module not declared in optionalModules", "module", module)
 	}
-	app.probes[module] = probe
+	available.probes[module] = probe
 }
 
 // isServiceAvailable 检查指定模块的服务是否可用
@@ -257,8 +268,11 @@ func (app *App) isServiceAvailable(module string) bool {
 	if module == "copilot" {
 		return config.Current().Copilot.BaseURL != ""
 	}
-	_, ready := app.probes[module]
-	return ready || !optionalModules[module]
+	if !optionalModules[module] {
+		return true
+	}
+	_, ready := app.availability.Load().probes[module]
+	return ready
 }
 
 // caddyCertSource 将 Caddy 服务的证书列表适配为告警层所需的精简结构。

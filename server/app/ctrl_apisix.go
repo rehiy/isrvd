@@ -61,16 +61,16 @@ func (app *App) apisixMetricsUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	respondMetricsToggled(c, *req.Enabled, app.apisixSvc.MetricsUpdate(c.Request.Context(), *req.Enabled), apisix.ErrMetricsExternallyManaged)
+	respondMetricsToggled(c, *req.Enabled, app.availability.Load().apisixSvc.MetricsUpdate(c.Request.Context(), *req.Enabled), apisix.ErrMetricsExternallyManaged)
 }
 
 func (app *App) apisixRouteList(c *gin.Context) {
-	result, err := app.apisixSvc.RouteList(c.Request.Context())
+	result, err := app.availability.Load().apisixSvc.RouteList(c.Request.Context())
 	respondResult(c, result, err)
 }
 
 func (app *App) apisixRouteInspect(c *gin.Context) {
-	result, err := app.apisixSvc.RouteInspect(c.Request.Context(), c.Param("id"))
+	result, err := app.availability.Load().apisixSvc.RouteInspect(c.Request.Context(), c.Param("id"))
 	respondResult(c, result, err)
 }
 
@@ -80,7 +80,7 @@ func (app *App) apisixRouteCreate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.RouteCreate(c.Request.Context(), req)
+	result, err := app.availability.Load().apisixSvc.RouteCreate(c.Request.Context(), req)
 	respondResultMsg(c, "路由创建成功", result, err)
 }
 
@@ -90,7 +90,7 @@ func (app *App) apisixRouteUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.RouteUpdate(c.Request.Context(), c.Param("id"), req)
+	result, err := app.availability.Load().apisixSvc.RouteUpdate(c.Request.Context(), c.Param("id"), req)
 	respondResultMsg(c, "路由更新成功", result, err)
 }
 
@@ -102,17 +102,17 @@ func (app *App) apisixRouteStatusPatch(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	err := app.apisixSvc.RouteStatusPatch(c.Request.Context(), c.Param("id"), req.Status)
+	err := app.availability.Load().apisixSvc.RouteStatusPatch(c.Request.Context(), c.Param("id"), req.Status)
 	respondResultMsg(c, "路由状态更新成功", nil, err)
 }
 
 func (app *App) apisixRouteDelete(c *gin.Context) {
-	err := app.apisixSvc.RouteDelete(c.Request.Context(), c.Param("id"))
+	err := app.availability.Load().apisixSvc.RouteDelete(c.Request.Context(), c.Param("id"))
 	respondResultMsg(c, "路由删除成功", nil, err)
 }
 
 func (app *App) apisixConsumerList(c *gin.Context) {
-	result, err := app.apisixSvc.ConsumerList(c.Request.Context())
+	result, err := app.availability.Load().apisixSvc.ConsumerList(c.Request.Context())
 	respondResult(c, result, err)
 }
 
@@ -126,7 +126,7 @@ func (app *App) apisixConsumerCreate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.ConsumerCreate(c.Request.Context(), req.Username, req.Desc, req.Plugins)
+	result, err := app.availability.Load().apisixSvc.ConsumerCreate(c.Request.Context(), req.Username, req.Desc, req.Plugins)
 	respondResultMsg(c, "消费者创建成功", result, err)
 }
 
@@ -140,7 +140,7 @@ func (app *App) apisixConsumerUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.apisixSvc.ConsumerUpdate(c.Request.Context(), username, req.Desc, req.Plugins); err != nil {
+	if err := app.availability.Load().apisixSvc.ConsumerUpdate(c.Request.Context(), username, req.Desc, req.Plugins); err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -148,12 +148,12 @@ func (app *App) apisixConsumerUpdate(c *gin.Context) {
 }
 
 func (app *App) apisixConsumerDelete(c *gin.Context) {
-	err := app.apisixSvc.ConsumerDelete(c.Request.Context(), c.Param("username"))
+	err := app.availability.Load().apisixSvc.ConsumerDelete(c.Request.Context(), c.Param("username"))
 	respondResultMsg(c, "消费者删除成功", nil, err)
 }
 
 func (app *App) apisixWhitelistInspect(c *gin.Context) {
-	result, err := app.apisixSvc.WhitelistList(c.Request.Context())
+	result, err := app.availability.Load().apisixSvc.WhitelistList(c.Request.Context())
 	respondResult(c, result, err)
 }
 
@@ -163,7 +163,7 @@ func (app *App) apisixWhitelistCreate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.WhitelistCreate(c.Request.Context(), req)
+	result, err := app.availability.Load().apisixSvc.WhitelistCreate(c.Request.Context(), req)
 	respondResultMsg(c, "访问授权配置成功", result, err)
 }
 
@@ -173,17 +173,17 @@ func (app *App) apisixWhitelistUserCreate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.WhitelistUserCreate(c.Request.Context(), req)
+	result, err := app.availability.Load().apisixSvc.WhitelistUserCreate(c.Request.Context(), req)
 	respondResultMsg(c, "用户创建并加入访问授权成功", result, err)
 }
 
 func (app *App) apisixPluginConfigList(c *gin.Context) {
-	result, err := app.apisixSvc.PluginConfigList(c.Request.Context())
+	result, err := app.availability.Load().apisixSvc.PluginConfigList(c.Request.Context())
 	respondResult(c, result, err)
 }
 
 func (app *App) apisixPluginConfigInspect(c *gin.Context) {
-	result, err := app.apisixSvc.PluginConfigInspect(c.Request.Context(), c.Param("id"))
+	result, err := app.availability.Load().apisixSvc.PluginConfigInspect(c.Request.Context(), c.Param("id"))
 	respondResult(c, result, err)
 }
 
@@ -193,7 +193,7 @@ func (app *App) apisixPluginConfigCreate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.PluginConfigCreate(c.Request.Context(), req)
+	result, err := app.availability.Load().apisixSvc.PluginConfigCreate(c.Request.Context(), req)
 	respondResultMsg(c, "插件配置创建成功", result, err)
 }
 
@@ -203,22 +203,22 @@ func (app *App) apisixPluginConfigUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.PluginConfigUpdate(c.Request.Context(), c.Param("id"), req)
+	result, err := app.availability.Load().apisixSvc.PluginConfigUpdate(c.Request.Context(), c.Param("id"), req)
 	respondResultMsg(c, "插件配置更新成功", result, err)
 }
 
 func (app *App) apisixPluginConfigDelete(c *gin.Context) {
-	err := app.apisixSvc.PluginConfigDelete(c.Request.Context(), c.Param("id"))
+	err := app.availability.Load().apisixSvc.PluginConfigDelete(c.Request.Context(), c.Param("id"))
 	respondResultMsg(c, "插件配置删除成功", nil, err)
 }
 
 func (app *App) apisixUpstreamList(c *gin.Context) {
-	result, err := app.apisixSvc.UpstreamList(c.Request.Context())
+	result, err := app.availability.Load().apisixSvc.UpstreamList(c.Request.Context())
 	respondResult(c, result, err)
 }
 
 func (app *App) apisixUpstreamInspect(c *gin.Context) {
-	result, err := app.apisixSvc.UpstreamInspect(c.Request.Context(), c.Param("id"))
+	result, err := app.availability.Load().apisixSvc.UpstreamInspect(c.Request.Context(), c.Param("id"))
 	respondResult(c, result, err)
 }
 
@@ -228,7 +228,7 @@ func (app *App) apisixUpstreamCreate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.UpstreamCreate(c.Request.Context(), req)
+	result, err := app.availability.Load().apisixSvc.UpstreamCreate(c.Request.Context(), req)
 	respondResultMsg(c, "上游创建成功", result, err)
 }
 
@@ -238,22 +238,22 @@ func (app *App) apisixUpstreamUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.UpstreamUpdate(c.Request.Context(), c.Param("id"), req)
+	result, err := app.availability.Load().apisixSvc.UpstreamUpdate(c.Request.Context(), c.Param("id"), req)
 	respondResultMsg(c, "上游更新成功", result, err)
 }
 
 func (app *App) apisixUpstreamDelete(c *gin.Context) {
-	err := app.apisixSvc.UpstreamDelete(c.Request.Context(), c.Param("id"))
+	err := app.availability.Load().apisixSvc.UpstreamDelete(c.Request.Context(), c.Param("id"))
 	respondResultMsg(c, "上游删除成功", nil, err)
 }
 
 func (app *App) apisixSSLList(c *gin.Context) {
-	result, err := app.apisixSvc.SSLList(c.Request.Context())
+	result, err := app.availability.Load().apisixSvc.SSLList(c.Request.Context())
 	respondResult(c, result, err)
 }
 
 func (app *App) apisixSSLInspect(c *gin.Context) {
-	result, err := app.apisixSvc.SSLInspect(c.Request.Context(), c.Param("id"))
+	result, err := app.availability.Load().apisixSvc.SSLInspect(c.Request.Context(), c.Param("id"))
 	respondResult(c, result, err)
 }
 
@@ -263,7 +263,7 @@ func (app *App) apisixSSLCreate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.SSLCreate(c.Request.Context(), req)
+	result, err := app.availability.Load().apisixSvc.SSLCreate(c.Request.Context(), req)
 	respondResultMsg(c, "证书创建成功", result, err)
 }
 
@@ -273,16 +273,16 @@ func (app *App) apisixSSLUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.SSLUpdate(c.Request.Context(), c.Param("id"), req)
+	result, err := app.availability.Load().apisixSvc.SSLUpdate(c.Request.Context(), c.Param("id"), req)
 	respondResultMsg(c, "证书更新成功", result, err)
 }
 
 func (app *App) apisixSSLDelete(c *gin.Context) {
-	err := app.apisixSvc.SSLDelete(c.Request.Context(), c.Param("id"))
+	err := app.availability.Load().apisixSvc.SSLDelete(c.Request.Context(), c.Param("id"))
 	respondResultMsg(c, "证书删除成功", nil, err)
 }
 
 func (app *App) apisixPluginList(c *gin.Context) {
-	result, err := app.apisixSvc.PluginList(c.Request.Context())
+	result, err := app.availability.Load().apisixSvc.PluginList(c.Request.Context())
 	respondResult(c, result, err)
 }

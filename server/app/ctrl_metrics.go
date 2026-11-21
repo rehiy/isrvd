@@ -30,7 +30,7 @@ func (app *App) defineMetricsRoutes() []Route {
 // 网关未配置返回 404，抓取失败返回 502（抓取端据此判定目标不可用）。
 func (app *App) metricsGatewayScrape(gateway string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		data, err := app.metricsSvc.Scrape(c.Request.Context(), gateway)
+		data, err := app.availability.Load().metricsSvc.Scrape(c.Request.Context(), gateway)
 		switch {
 		case errors.Is(err, metrics.ErrGatewayUnknown):
 			respondError(c, http.StatusNotFound, "网关未配置")
@@ -60,7 +60,7 @@ func (app *App) metricsLocalExport(source string) gin.HandlerFunc {
 }
 
 func (app *App) metricsStatus(c *gin.Context) {
-	respondSuccess(c, "", app.metricsSvc.Status(c.Request.Context()))
+	respondSuccess(c, "", app.availability.Load().metricsSvc.Status(c.Request.Context()))
 }
 
 // ─── 辅助函数 ───

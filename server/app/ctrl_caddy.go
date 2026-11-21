@@ -60,7 +60,7 @@ func (app *App) caddyMetricsUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	respondMetricsToggled(c, *req.Enabled, app.caddySvc.MetricsUpdate(c.Request.Context(), *req.Enabled))
+	respondMetricsToggled(c, *req.Enabled, app.availability.Load().caddySvc.MetricsUpdate(c.Request.Context(), *req.Enabled))
 }
 
 // ─── HTTP server CRUD ───
@@ -71,7 +71,7 @@ type caddyServerURI struct {
 }
 
 func (app *App) caddyServerList(c *gin.Context) {
-	result, err := app.caddySvc.ServerList(c.Request.Context())
+	result, err := app.availability.Load().caddySvc.ServerList(c.Request.Context())
 	if err != nil {
 		respondCaddyError(c, err)
 		return
@@ -85,7 +85,7 @@ func (app *App) caddyServerInspect(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.caddySvc.ServerInspect(c.Request.Context(), uri.Name)
+	result, err := app.availability.Load().caddySvc.ServerInspect(c.Request.Context(), uri.Name)
 	if err != nil {
 		respondCaddyError(c, err)
 		return
@@ -99,7 +99,7 @@ func (app *App) caddyServerCreate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.caddySvc.ServerCreate(c.Request.Context(), req); err != nil {
+	if err := app.availability.Load().caddySvc.ServerCreate(c.Request.Context(), req); err != nil {
 		respondCaddyError(c, err)
 		return
 	}
@@ -117,7 +117,7 @@ func (app *App) caddyServerUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.caddySvc.ServerUpdate(c.Request.Context(), uri.Name, req); err != nil {
+	if err := app.availability.Load().caddySvc.ServerUpdate(c.Request.Context(), uri.Name, req); err != nil {
 		respondCaddyError(c, err)
 		return
 	}
@@ -130,7 +130,7 @@ func (app *App) caddyServerDelete(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.caddySvc.ServerDelete(c.Request.Context(), uri.Name); err != nil {
+	if err := app.availability.Load().caddySvc.ServerDelete(c.Request.Context(), uri.Name); err != nil {
 		respondCaddyError(c, err)
 		return
 	}
@@ -140,12 +140,12 @@ func (app *App) caddyServerDelete(c *gin.Context) {
 // ─── 概览与原始配置 ───
 
 func (app *App) caddyInfoInspect(c *gin.Context) {
-	result, err := app.caddySvc.Info(c.Request.Context())
+	result, err := app.availability.Load().caddySvc.Info(c.Request.Context())
 	respondResult(c, result, err)
 }
 
 func (app *App) caddyConfigInspect(c *gin.Context) {
-	result, err := app.caddySvc.ConfigAll(c.Request.Context())
+	result, err := app.availability.Load().caddySvc.ConfigAll(c.Request.Context())
 	if err != nil {
 		respondCaddyError(c, err)
 		return
@@ -161,7 +161,7 @@ func (app *App) caddyConfigLoad(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.caddySvc.ConfigLoad(c.Request.Context(), req.Config); err != nil {
+	if err := app.availability.Load().caddySvc.ConfigLoad(c.Request.Context(), req.Config); err != nil {
 		respondCaddyError(c, err, http.StatusBadRequest)
 		return
 	}
@@ -171,7 +171,7 @@ func (app *App) caddyConfigLoad(c *gin.Context) {
 // ─── 全局选项 ───
 
 func (app *App) caddyGlobalInspect(c *gin.Context) {
-	result, err := app.caddySvc.Global(c.Request.Context())
+	result, err := app.availability.Load().caddySvc.Global(c.Request.Context())
 	if err != nil {
 		respondCaddyError(c, err)
 		return
@@ -185,7 +185,7 @@ func (app *App) caddyGlobalUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.caddySvc.GlobalUpdate(c.Request.Context(), req); err != nil {
+	if err := app.availability.Load().caddySvc.GlobalUpdate(c.Request.Context(), req); err != nil {
 		respondCaddyError(c, err)
 		return
 	}
@@ -203,7 +203,7 @@ func (app *App) caddyRouteList(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, revision, err := app.caddySvc.RouteList(c.Request.Context(), query.Server)
+	result, revision, err := app.availability.Load().caddySvc.RouteList(c.Request.Context(), query.Server)
 	if err != nil {
 		respondCaddyError(c, err)
 		return
@@ -222,7 +222,7 @@ func (app *App) caddyRouteInspect(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "index 必须为整数")
 		return
 	}
-	result, err := app.caddySvc.RouteInspect(c.Request.Context(), server, idx)
+	result, err := app.availability.Load().caddySvc.RouteInspect(c.Request.Context(), server, idx)
 	if err != nil {
 		respondCaddyError(c, err)
 		return
@@ -245,7 +245,7 @@ func (app *App) caddyRouteCreate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	idx, err := app.caddySvc.RouteCreate(c.Request.Context(), query.Server, req, query.Index, query.Revision)
+	idx, err := app.availability.Load().caddySvc.RouteCreate(c.Request.Context(), query.Server, req, query.Index, query.Revision)
 	if err != nil {
 		respondCaddyError(c, err)
 		return
@@ -265,7 +265,7 @@ func (app *App) caddyRouteUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.caddySvc.RouteUpdate(c.Request.Context(), server, idx, req, c.Query("revision")); err != nil {
+	if err := app.availability.Load().caddySvc.RouteUpdate(c.Request.Context(), server, idx, req, c.Query("revision")); err != nil {
 		respondCaddyError(c, err)
 		return
 	}
@@ -279,7 +279,7 @@ func (app *App) caddyRouteDelete(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "index 必须为整数")
 		return
 	}
-	if err := app.caddySvc.RouteDelete(c.Request.Context(), server, idx, c.Query("revision")); err != nil {
+	if err := app.availability.Load().caddySvc.RouteDelete(c.Request.Context(), server, idx, c.Query("revision")); err != nil {
 		respondCaddyError(c, err)
 		return
 	}
@@ -297,7 +297,7 @@ func (app *App) caddyRouteMove(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.caddySvc.RouteMove(c.Request.Context(), c.Query("server"), idx, req); err != nil {
+	if err := app.availability.Load().caddySvc.RouteMove(c.Request.Context(), c.Query("server"), idx, req); err != nil {
 		respondCaddyError(c, err)
 		return
 	}
@@ -315,7 +315,7 @@ func (app *App) caddyBasicAuthList(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.caddySvc.BasicAuthSnapshot(c.Request.Context(), query.Server)
+	result, err := app.availability.Load().caddySvc.BasicAuthSnapshot(c.Request.Context(), query.Server)
 	if err != nil {
 		respondCaddyError(c, err)
 		return
@@ -349,7 +349,7 @@ func (app *App) caddyBasicAuthUserCreate(c *gin.Context) {
 		respondCaddyError(c, caddy.ErrRouteRevisionRequired)
 		return
 	}
-	if err := app.caddySvc.BasicAuthUserCreate(c.Request.Context(), server, idx, req.Username, req.Password, req.Realm, req.ForwardHeader, req.Revision); err != nil {
+	if err := app.availability.Load().caddySvc.BasicAuthUserCreate(c.Request.Context(), server, idx, req.Username, req.Password, req.Realm, req.ForwardHeader, req.Revision); err != nil {
 		respondCaddyError(c, err, http.StatusBadRequest)
 		return
 	}
@@ -368,7 +368,7 @@ func (app *App) caddyBasicAuthUserDelete(c *gin.Context) {
 		respondCaddyError(c, caddy.ErrRouteRevisionRequired)
 		return
 	}
-	if err := app.caddySvc.BasicAuthUserDelete(c.Request.Context(), server, idx, c.Param("username"), revision); err != nil {
+	if err := app.availability.Load().caddySvc.BasicAuthUserDelete(c.Request.Context(), server, idx, c.Param("username"), revision); err != nil {
 		respondCaddyError(c, err, http.StatusBadRequest)
 		return
 	}
@@ -403,7 +403,7 @@ func (app *App) caddyBasicAuthConfigUpdate(c *gin.Context) {
 		}
 	}
 	options := caddy.BasicAuthConfigOptions{Revision: req.Revision, RemoveUsers: req.RemoveUsers}
-	if err := app.caddySvc.BasicAuthConfigUpdate(c.Request.Context(), server, idx, req.Realm, req.ForwardHeader, options); err != nil {
+	if err := app.availability.Load().caddySvc.BasicAuthConfigUpdate(c.Request.Context(), server, idx, req.Realm, req.ForwardHeader, options); err != nil {
 		respondCaddyError(c, err, http.StatusBadRequest)
 		return
 	}
@@ -413,7 +413,7 @@ func (app *App) caddyBasicAuthConfigUpdate(c *gin.Context) {
 // ─── SSL 证书 CRUD ───
 
 func (app *App) caddyCertList(c *gin.Context) {
-	result, err := app.caddySvc.CertList(c.Request.Context())
+	result, err := app.availability.Load().caddySvc.CertList(c.Request.Context())
 	if err != nil {
 		respondCaddyError(c, err)
 		return
@@ -427,7 +427,7 @@ func (app *App) caddyCertCreate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.caddySvc.CertCreate(c.Request.Context(), req); err != nil {
+	if err := app.availability.Load().caddySvc.CertCreate(c.Request.Context(), req); err != nil {
 		respondCaddyError(c, err, http.StatusBadRequest)
 		return
 	}
@@ -440,7 +440,7 @@ func (app *App) caddyCertUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.caddySvc.CertUpdate(c.Request.Context(), c.Param("key"), req); err != nil {
+	if err := app.availability.Load().caddySvc.CertUpdate(c.Request.Context(), c.Param("key"), req); err != nil {
 		respondCaddyError(c, err, http.StatusBadRequest)
 		return
 	}
@@ -448,7 +448,7 @@ func (app *App) caddyCertUpdate(c *gin.Context) {
 }
 
 func (app *App) caddyCertDelete(c *gin.Context) {
-	if err := app.caddySvc.CertDelete(c.Request.Context(), c.Param("key")); err != nil {
+	if err := app.availability.Load().caddySvc.CertDelete(c.Request.Context(), c.Param("key")); err != nil {
 		respondCaddyError(c, err, http.StatusBadRequest)
 		return
 	}
