@@ -44,13 +44,9 @@ func (s *Service) RouteList(ctx context.Context, server string) ([]RouteView, st
 	if err != nil {
 		return nil, "", err
 	}
-	cfg, err := s.client.ConfigAll(ctx)
+	srv, err := s.serverConfig(ctx, server)
 	if err != nil {
 		return nil, "", err
-	}
-	srv := getServer(cfg, server)
-	if srv == nil {
-		return nil, "", ErrServerNotFound
 	}
 	out := make([]RouteView, len(srv.Routes))
 	for i, r := range srv.Routes {
@@ -66,13 +62,9 @@ func (s *Service) RouteInspect(ctx context.Context, server string, index int) (*
 	if err != nil {
 		return nil, err
 	}
-	cfg, err := s.client.ConfigAll(ctx)
+	srv, err := s.serverConfig(ctx, server)
 	if err != nil {
 		return nil, err
-	}
-	srv := getServer(cfg, server)
-	if srv == nil {
-		return nil, ErrServerNotFound
 	}
 	route, err := getRoute(srv, index)
 	if err != nil {
@@ -115,16 +107,7 @@ func (s *Service) RouteUpdate(ctx context.Context, server string, index int, req
 	if err != nil {
 		return err
 	}
-	return s.serverMutate(ctx, server, func(srv *caddy.HTTPServer) error {
-		if revision != "" {
-			if err := checkRouteRevision(srv.Routes, revision); err != nil {
-				return err
-			}
-		}
-		route, err := getRoute(srv, index)
-		if err != nil {
-			return err
-		}
+	return s.routeMutate(ctx, server, index, revision, false, func(_ *caddy.HTTPServer, route *caddy.Route) error {
 		*route = req
 		return nil
 	})
@@ -136,15 +119,7 @@ func (s *Service) RouteDelete(ctx context.Context, server string, index int, rev
 	if err != nil {
 		return err
 	}
-	return s.serverMutate(ctx, server, func(srv *caddy.HTTPServer) error {
-		if revision != "" {
-			if err := checkRouteRevision(srv.Routes, revision); err != nil {
-				return err
-			}
-		}
-		if _, err := getRoute(srv, index); err != nil {
-			return err
-		}
+	return s.routeMutate(ctx, server, index, revision, false, func(srv *caddy.HTTPServer, _ *caddy.Route) error {
 		srv.Routes = slices.Delete(srv.Routes, index, index+1)
 		return nil
 	})

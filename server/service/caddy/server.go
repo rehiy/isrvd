@@ -96,13 +96,9 @@ func (s *Service) ServerInspect(ctx context.Context, ref string) (*ServerView, e
 	if err != nil {
 		return nil, err
 	}
-	cfg, err := s.client.ConfigAll(ctx)
+	srv, err := s.serverConfig(ctx, name)
 	if err != nil {
 		return nil, err
-	}
-	srv := getServer(cfg, name)
-	if srv == nil {
-		return nil, ErrServerNotFound
 	}
 	view := serverView(name, srv)
 	return &view, nil

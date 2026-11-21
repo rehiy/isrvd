@@ -56,13 +56,9 @@ func (s *Service) BasicAuthSnapshot(ctx context.Context, server string) (*BasicA
 	if err != nil {
 		return nil, err
 	}
-	cfg, err := s.client.ConfigAll(ctx)
+	srv, err := s.serverConfig(ctx, server)
 	if err != nil {
 		return nil, err
-	}
-	srv := getServer(cfg, server)
-	if srv == nil {
-		return nil, ErrServerNotFound
 	}
 	revision, err := routeRevision(srv.Routes)
 	if err != nil {
@@ -117,16 +113,7 @@ func (s *Service) BasicAuthUserCreate(ctx context.Context, server string, routeI
 		return err
 	}
 
-	return s.serverMutate(ctx, server, func(srv *caddy.HTTPServer) error {
-		if len(revision) > 0 && revision[0] != "" {
-			if err := checkRouteRevision(srv.Routes, revision[0]); err != nil {
-				return err
-			}
-		}
-		route, err := getRoute(srv, routeIndex)
-		if err != nil {
-			return err
-		}
+	return s.routeMutate(ctx, server, routeIndex, optionalRevision(revision), false, func(_ *caddy.HTTPServer, route *caddy.Route) error {
 		authIdx := findAuthIndex(route)
 
 		if authIdx >= 0 {
@@ -167,17 +154,7 @@ func (s *Service) BasicAuthUserDelete(ctx context.Context, server string, routeI
 	if err != nil {
 		return err
 	}
-	return s.serverMutate(ctx, server, func(srv *caddy.HTTPServer) error {
-		if len(revision) > 0 && revision[0] != "" {
-			if err := checkRouteRevision(srv.Routes, revision[0]); err != nil {
-				return err
-			}
-		}
-		route, err := getRoute(srv, routeIndex)
-		if err != nil {
-			return err
-		}
-
+	return s.routeMutate(ctx, server, routeIndex, optionalRevision(revision), false, func(_ *caddy.HTTPServer, route *caddy.Route) error {
 		authIdx := findAuthIndex(route)
 		if authIdx < 0 {
 			return fmt.Errorf("该路由未配置 Basic Auth")
@@ -211,17 +188,7 @@ func (s *Service) BasicAuthConfigUpdate(ctx context.Context, server string, rout
 	if len(options) > 0 {
 		option = options[0]
 	}
-	return s.serverMutate(ctx, server, func(srv *caddy.HTTPServer) error {
-		if option.Revision != "" || len(option.RemoveUsers) > 0 {
-			if err := checkRouteRevision(srv.Routes, option.Revision); err != nil {
-				return err
-			}
-		}
-		route, err := getRoute(srv, routeIndex)
-		if err != nil {
-			return err
-		}
-
+	return s.routeMutate(ctx, server, routeIndex, option.Revision, len(option.RemoveUsers) > 0, func(_ *caddy.HTTPServer, route *caddy.Route) error {
 		authIdx := findAuthIndex(route)
 		if authIdx < 0 {
 			return fmt.Errorf("该路由未配置 Basic Auth")
@@ -248,6 +215,13 @@ func (s *Service) BasicAuthConfigUpdate(ctx context.Context, server string, rout
 }
 
 // ─── 辅助函数 ───
+
+func optionalRevision(revisions []string) string {
+	if len(revisions) == 0 {
+		return ""
+	}
+	return revisions[0]
+}
 
 func findAuthIndex(route *caddy.Route) int {
 	return slices.IndexFunc(route.Handle, func(h caddy.Handler) bool {
