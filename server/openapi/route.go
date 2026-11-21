@@ -21,7 +21,6 @@ type RouteDef struct {
 	QueryType   *SchemaInfo // ShouldBindQuery 类型
 	FormData    bool        // multipart/form-data
 	FormFields  []ParamDef  // c.PostForm / c.GetPostForm / c.FormFile 字段
-	PathParams  []ParamDef  // c.Param 参数
 	QueryParams []ParamDef  // c.Query / c.DefaultQuery 参数
 	IsWS        bool        // WebSocket 路由
 	IsSSE       bool        // SSE 路由
