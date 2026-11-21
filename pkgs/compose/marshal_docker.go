@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"maps"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -155,7 +156,7 @@ func serviceFromDockerInspect(info container.InspectResponse, imageConfig *v1.Do
 	}
 
 	var entrypoint types.ShellCommand
-	if len(info.Config.Entrypoint) > 0 && (imageConfig == nil || !sliceEqual(info.Config.Entrypoint, imageConfig.Entrypoint)) {
+	if len(info.Config.Entrypoint) > 0 && (imageConfig == nil || !slices.Equal(info.Config.Entrypoint, imageConfig.Entrypoint)) {
 		entrypoint = types.ShellCommand(info.Config.Entrypoint)
 	}
 
@@ -516,19 +517,6 @@ func restartPolicy(name string) string {
 		return "no"
 	}
 	return name
-}
-
-// sliceEqual 判断两个字符串切片是否完全相同
-func sliceEqual(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }
 
 // parsePort 解析 "8080" 或 "8080/tcp" 为端口号

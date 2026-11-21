@@ -14,21 +14,7 @@ import type {
 } from '@/service/types'
 
 /** 配置分区，对应后端 AllConfig 的顶层字段 */
-export type ConfigSection =
-    | 'server'
-    | 'password'
-    | 'passkey'
-    | 'oidc'
-    | 'tha'
-    | 'copilot'
-    | 'notify'
-    | 'apisix'
-    | 'caddy'
-    | 'docker'
-    | 'monitor'
-    | 'metrics'
-    | 'marketplace'
-    | 'links'
+export type ConfigSection = keyof AllConfig
 
 /** 配置分组，一个分组包含若干配置分区，对应一个子路由 */
 export type ConfigGroup = 'service' | 'auth' | 'gateway' | 'alert' | 'metrics' | 'integrations'
@@ -41,6 +27,8 @@ export interface ConfigGroupMeta {
     sections: ConfigSection[]
 }
 
+const viewingNode = Boolean(nodeLocation().id)
+
 /** 配置分组导航定义：顺序即展示顺序 */
 export const configGroups = ([
     { id: 'service', label: '基础服务', description: '端口、目录、上传、跨域与 JWT', icon: 'fa-server', sections: ['server'] },
@@ -50,8 +38,8 @@ export const configGroups = ([
     { id: 'alert', label: '告警通知', description: '通知通道、资源阈值与应用故障告警', icon: 'fa-bell', sections: ['notify'] },
     { id: 'integrations', label: '扩展集成', description: 'AI 助手、应用市场与导航链接', icon: 'fa-puzzle-piece', sections: ['copilot', 'marketplace', 'links'] },
 ] satisfies ConfigGroupMeta[])
-    .filter(item => !nodeLocation().id || item.id !== 'auth')
-    .map(item => ({ ...item, sections: item.sections.filter(section => !nodeLocation().id || section !== 'copilot') }))
+    .filter(item => !viewingNode || item.id !== 'auth')
+    .map(item => ({ ...item, sections: item.sections.filter(section => !viewingNode || section !== 'copilot') }))
 
 /** 默认配置，保证各分区字段完整，避免表单绑定出现 undefined */
 function defaultConfig(): AllConfig {
@@ -155,7 +143,7 @@ export const useConfigStore = defineStore('config', () => {
             case 'tha':
                 return { ...draft.value.tha, trustedCIDRs: splitList(thaTrustedCIDRsText.value) }
             default:
-                return clone(draft.value[section as keyof AllConfig])
+                return clone(draft.value[section])
         }
     }
 
@@ -168,21 +156,11 @@ export const useConfigStore = defineStore('config', () => {
         return payload as Partial<AllConfig>
     }
 
-    /** 分组是否存在未保存改动 */
-    function isDirty(group: ConfigGroup): boolean {
-        const meta = configGroups.find(item => item.id === group)
-        // 未完成首次加载时基线不可用，避免误判为已修改
-        if (!meta || !loaded.value) {
-            return false
-        }
-        return meta.sections.some(
-            section => JSON.stringify(sectionPayload(section)) !== JSON.stringify(baseline.value[section as keyof AllConfig]),
-        )
-    }
-
     /** 是否存在任一分组的未保存改动 */
     function hasUnsaved(): boolean {
-        return configGroups.some(item => isDirty(item.id))
+        return loaded.value && configGroups.some(group => group.sections.some(section =>
+            JSON.stringify(sectionPayload(section)) !== JSON.stringify(baseline.value[section]),
+        ))
     }
 
     /** 加载全量配置；force 为 true 时请求后端重载后返回 */

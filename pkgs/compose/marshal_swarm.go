@@ -163,10 +163,13 @@ func ProjectFromSwarmInspect(svc swarm.Service, containerDir string) (*types.Pro
 	for _, m := range cs.Mounts {
 		volume := types.ServiceVolumeConfig{
 			Type:        string(m.Type),
-			Source:      swarmMountSource(m, containerDir),
+			Source:      m.Source,
 			Target:      m.Target,
 			ReadOnly:    m.ReadOnly,
 			Consistency: string(m.Consistency),
+		}
+		if m.Type == mount.TypeBind {
+			volume.Source = relativeBindSource(m.Source, containerDir)
 		}
 		if m.BindOptions != nil {
 			volume.Bind = &types.ServiceVolumeBind{Propagation: string(m.BindOptions.Propagation), CreateHostPath: types.OptOut(m.BindOptions.CreateMountpoint)}
@@ -214,17 +217,6 @@ func swarmUpdateConfigToCompose(config *swarm.UpdateConfig) *types.UpdateConfig 
 		MaxFailureRatio: config.MaxFailureRatio,
 		Order:           config.Order,
 	}
-}
-
-func swarmMountSource(m mount.Mount, containerDir string) string {
-	switch m.Type {
-	case mount.TypeBind:
-		return relativeBindSource(m.Source, containerDir)
-	case mount.TypeVolume:
-		// swarm Mount.Source 对 named volume 即为卷名
-		return m.Source
-	}
-	return m.Source
 }
 
 func swarmExtraHostsToMap(hosts []string) types.HostsList {

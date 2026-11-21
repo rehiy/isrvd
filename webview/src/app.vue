@@ -1,4 +1,5 @@
 <script lang="ts">
+import { defineAsyncComponent } from 'vue'
 import { Component, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { useCopilotStore, usePortal } from '@/stores'
@@ -6,7 +7,6 @@ import { useCopilotStore, usePortal } from '@/stores'
 import api from '@/service/api'
 
 import ConfirmModal from '@/component/confirm.vue'
-import Copilot from '@/component/copilot/index.vue'
 import LocaleSwitch from '@/component/locale-switch.vue'
 import NavigationBar from '@/component/navigation.vue'
 import NodeSwitcher from '@/component/node-switcher.vue'
@@ -15,6 +15,8 @@ import ToolbarLinks from '@/component/toolbar-links.vue'
 import UserMenu from '@/component/user-menu.vue'
 
 import AuthLogin from '@/views/account/login.vue'
+
+const Copilot = defineAsyncComponent(() => import('@/component/copilot/index.vue'))
 
 @Component({
     components: { ConfirmModal, NavigationBar, NodeSwitcher, NotificationManager, Copilot, ToolbarLinks, LocaleSwitch, UserMenu, AuthLogin }
@@ -125,6 +127,7 @@ export default toNative(App)
           <button
             v-if="hasCopilot"
             :title="$t('AI 助手')"
+            :disabled="!copilotStore.sidebarReady"
             class="btn btn-ghost gap-2"
             :class="copilotStore.sidebarOpen
               ? 'text-primary-600 bg-primary-50 hover:bg-primary-100'

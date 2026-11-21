@@ -1,6 +1,7 @@
 package compose
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/compose-spec/compose-go/v2/types"
@@ -14,7 +15,7 @@ func diffCmd(containerCmd []string, imageConfig *v1.DockerOCIImageConfig) []stri
 	if imageConfig == nil {
 		return containerCmd
 	}
-	if sliceEqual(containerCmd, imageConfig.Cmd) {
+	if slices.Equal(containerCmd, imageConfig.Cmd) {
 		return nil
 	}
 	return containerCmd

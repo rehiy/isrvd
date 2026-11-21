@@ -220,19 +220,21 @@ class SystemProcessInfoView extends Vue {
         }
     }
 
-    startPoll() {
-        if (this.pollTimer) {
-            return
-        }
-        this.pollTimer = setInterval(() => this.loadProcesses(), POLL_INTERVAL)
-    }
-
     stopPoll() {
         if (!this.pollTimer) {
             return
         }
         clearInterval(this.pollTimer)
         this.pollTimer = null
+    }
+
+    handleVisibilityChange() {
+        if (document.hidden) {
+            this.stopPoll()
+            return
+        }
+        this.loadProcesses()
+        this.pollTimer ??= setInterval(() => this.loadProcesses(), POLL_INTERVAL)
     }
 
     // ─── 操作 ───
@@ -269,11 +271,12 @@ class SystemProcessInfoView extends Vue {
             return
         }
 
-        this.loadProcesses()
-        this.startPoll()
+        document.addEventListener('visibilitychange', this.handleVisibilityChange)
+        this.handleVisibilityChange()
     }
 
     unmounted() {
+        document.removeEventListener('visibilitychange', this.handleVisibilityChange)
         this.stopPoll()
     }
 }

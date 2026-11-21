@@ -22,8 +22,7 @@ class Shell extends Vue {
     }
 
     unmounted() {
-        this.adapter?.disconnect()
-        this.adapter = null
+        this.handleDisconnect()
     }
 
     handleConnect() {
@@ -36,13 +35,6 @@ class Shell extends Vue {
     handleDisconnect() {
         this.adapter?.disconnect()
         this.adapter = null
-    }
-
-    handleShellChange() {
-        if (this.connected) {
-            this.handleDisconnect()
-            this.$nextTick(() => this.handleConnect())
-        }
     }
 }
 
@@ -65,7 +57,7 @@ export default toNative(Shell)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <select v-model="shellType" :disabled="connected" class="w-28 select-sm" @change="handleShellChange">
+            <select v-model="shellType" :disabled="connected" class="w-28 select-sm">
               <option value="bash">bash</option>
               <option value="sh">sh</option>
               <option value="zsh">zsh</option>
@@ -92,7 +84,7 @@ export default toNative(Shell)
             </div>
           </div>
           <div class="action-group">
-            <select v-model="shellType" :disabled="connected" class="w-24 select-sm" @change="handleShellChange">
+            <select v-model="shellType" :disabled="connected" class="w-24 select-sm">
               <option value="bash">bash</option>
               <option value="sh">sh</option>
               <option value="zsh">zsh</option>
