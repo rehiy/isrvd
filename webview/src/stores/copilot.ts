@@ -10,21 +10,24 @@ interface SidebarCtl {
 
 export const useCopilotStore = defineStore('copilot', () => {
     const sidebarOpen = ref(false)
+    const sidebarReady = ref(false)
     let ctl: SidebarCtl | null = null
 
     function bindSidebar(c: SidebarCtl) {
         ctl = c
         sidebarOpen.value = c.isOpen
+        sidebarReady.value = true
     }
 
     function unbindSidebar() {
         ctl = null
         sidebarOpen.value = false
+        sidebarReady.value = false
     }
 
     function toggleSidebar() {
         ctl?.toggle()
     }
 
-    return { sidebarOpen, bindSidebar, unbindSidebar, toggleSidebar }
+    return { sidebarOpen, sidebarReady, bindSidebar, unbindSidebar, toggleSidebar }
 })
