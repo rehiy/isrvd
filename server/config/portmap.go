@@ -4,8 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"strconv"
 	"strings"
+
+	"github.com/goccy/go-yaml"
 )
 
 // ErrInvalidPortMapConfig 表示中控端口映射（端口转发）配置无效。
@@ -51,6 +54,31 @@ func (f *PortMapConfig) BindAddr() string {
 }
 
 // validatePortMap 校验 portmap 配置；未配置（nil）合法。
+// PortMapRangeFromFile 供容器安装器使用，与应用共用 YAML 和范围校验。
+func PortMapRangeFromFile(filename string) (string, error) {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return "", err
+	}
+	var config struct {
+		PortMap *PortMapConfig `yaml:"portmap"`
+	}
+	if err := yaml.Unmarshal(data, &config); err != nil {
+		return "", err
+	}
+	if err := validatePortMap(config.PortMap); err != nil {
+		return "", err
+	}
+	lo, hi := config.PortMap.PortRange()
+	if lo == 0 {
+		return "", nil
+	}
+	if lo == hi {
+		return strconv.Itoa(lo), nil
+	}
+	return fmt.Sprintf("%d-%d", lo, hi), nil
+}
+
 func validatePortMap(f *PortMapConfig) error {
 	if f == nil {
 		return nil
