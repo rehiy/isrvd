@@ -3,6 +3,8 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import type { CaddyCert } from '@/service/types'
 
+import { caddyCertExpireLabel, caddyCertSummary } from '@/helper/caddy'
+
 import BaseModal from '@/component/modal.vue'
 
 @Component({
@@ -23,15 +25,7 @@ class CertDetailModal extends Vue {
         return source ? map[source] || source : '-'
     }
 
-    certSummary(cert: CaddyCert) {
-        if (cert.subject) {
-            return cert.subject
-        }
-        if (cert.source === 'file') {
-            return cert.certificate || '-'
-        }
-        return cert.certificate?.split('\n')[0].trim() || this.$t('(空)')
-    }
+    certSummary = caddyCertSummary
 
     formatDate(value?: string) {
         if (!value) {
@@ -58,19 +52,7 @@ class CertDetailModal extends Vue {
         return 'text-emerald-600 font-medium'
     }
 
-    expireLabel(notAfter?: string) {
-        if (!notAfter) {
-            return '-'
-        }
-        const days = Math.floor((new Date(notAfter).getTime() - Date.now()) / 86400000)
-        if (days < 0) {
-            return this.$t('已过期 {0} 天', -days)
-        }
-        if (days === 0) {
-            return this.$t('今日过期')
-        }
-        return this.$t('{0} 天后到期', days)
-    }
+    expireLabel = caddyCertExpireLabel
 
     certificatePreview(cert: CaddyCert) {
         const text = cert.certificate || ''
@@ -106,7 +88,7 @@ export default toNative(CertDetailModal)
         </div>
         <div class="min-w-0">
           <h1 class="title-text">{{ $t('SSL 证书详情') }}</h1>
-          <p class="text-xs text-slate-500 truncate">{{ certSummary(cert) }}</p>
+          <p class="text-xs text-slate-500 truncate">{{ certSummary(cert, $t) }}</p>
         </div>
       </div>
     </template>
@@ -137,7 +119,7 @@ export default toNative(CertDetailModal)
           </div>
           <div class="md:col-span-2">
             <label class="form-label">{{ $t('主体') }}</label>
-            <code class="detail-value-mono">{{ certSummary(cert) }}</code>
+            <code class="detail-value-mono">{{ certSummary(cert, $t) }}</code>
           </div>
         </div>
       </section>
@@ -155,7 +137,7 @@ export default toNative(CertDetailModal)
           </div>
           <div>
             <label class="form-label">{{ $t('剩余时间') }}</label>
-            <div class="detail-value" :class="expireClass(cert.notAfter)">{{ expireLabel(cert.notAfter) }}</div>
+            <div class="detail-value" :class="expireClass(cert.notAfter)">{{ expireLabel(cert.notAfter, $t) }}</div>
           </div>
         </div>
       </section>
