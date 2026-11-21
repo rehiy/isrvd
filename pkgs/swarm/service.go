@@ -175,16 +175,7 @@ func (s *SwarmService) ServiceForceUpdate(ctx context.Context, id string) error 
 
 // ServiceLogs 获取服务日志
 func (s *SwarmService) ServiceLogs(ctx context.Context, serviceID, tail string) ([]string, error) {
-	if tail == "" {
-		tail = "100"
-	}
-
-	reader, err := s.client.ServiceLogs(ctx, serviceID, container.LogsOptions{
-		ShowStdout: true,
-		ShowStderr: true,
-		Tail:       tail,
-		Timestamps: true,
-	})
+	reader, err := s.client.ServiceLogs(ctx, serviceID, docker.LogOptions(tail, false))
 	if err != nil {
 		logman.Error("ServiceLogs failed", "error", err)
 		return nil, err
@@ -197,17 +188,7 @@ func (s *SwarmService) ServiceLogs(ctx context.Context, serviceID, tail string) 
 // ServiceLogsStream 实时转发服务日志到 writer。
 // writer 可选实现 httpd.Writer 以区分 error 事件与普通 data 事件。
 func (s *SwarmService) ServiceLogsStream(ctx context.Context, w io.Writer, serviceID, tail string) {
-	if tail == "" {
-		tail = "100"
-	}
-
-	reader, err := s.client.ServiceLogs(ctx, serviceID, container.LogsOptions{
-		ShowStdout: true,
-		ShowStderr: true,
-		Tail:       tail,
-		Follow:     true,
-		Timestamps: true,
-	})
+	reader, err := s.client.ServiceLogs(ctx, serviceID, docker.LogOptions(tail, true))
 	if err != nil {
 		logman.Error("Start service logs stream failed", "id", serviceID, "error", err)
 		docker.LogErrorWrite(w, "获取服务日志失败: "+err.Error())
