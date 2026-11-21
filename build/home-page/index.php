@@ -71,9 +71,9 @@ function respond(string $content, int $status = 200, bool $cacheable = true): vo
  * 下载白名单文件，优先使用 CACHE_TTL 秒内的有效缓存。
  * 拉取失败或内容无效时回退到有效旧缓存；有效新内容通过临时文件原子写入。
  * 缓存写入失败不影响返回已下载的有效内容。
- * $file 为 DOWNLOAD_FILES 的本地缓存文件名，$validate 为可选业务校验函数。
+ * $file 为 DOWNLOAD_FILES 的本地缓存文件名。
  */
-function fetchFile(string $file, ?callable $validate = null): ?string
+function fetchFile(string $file): ?string
 {
     if (!array_key_exists($file, DOWNLOAD_FILES)) {
         return null;
@@ -85,7 +85,7 @@ function fetchFile(string $file, ?callable $validate = null): ?string
 
     if (is_file($cacheFile)) {
         $cached = @file_get_contents($cacheFile);
-        if ($cached === false || !isValidFile($file, $cached, $validate)) {
+        if ($cached === false || !isValidFile($file, $cached)) {
             $cached = null;
         }
         $mtime = @filemtime($cacheFile);
@@ -115,7 +115,7 @@ function fetchFile(string $file, ?callable $validate = null): ?string
         }
     }
 
-    if ($body === false || $status !== 200 || !isValidFile($file, $body, $validate)) {
+    if ($body === false || $status !== 200 || !isValidFile($file, $body)) {
         return $cached;
     }
 
@@ -140,34 +140,25 @@ function fetchFile(string $file, ?callable $validate = null): ?string
 }
 
 /**
- * 校验非空内容、PHP 语法及 JSON 对象或数组格式。
- * 基础校验通过后执行可选业务校验。
+ * 首页必须非空。两个 PHP 入口另需通过语法检查后才能写入缓存。
  */
-function isValidFile(string $file, string $content, ?callable $validate = null): bool
+function isValidFile(string $file, string $content): bool
 {
     if ($content === '') {
         return false;
     }
-
-    if (substr($file, -4) === '.php') {
-        if (strncmp($content, '<?php', 5) !== 0) {
-            return false;
-        }
-        try {
-            token_get_all($content, TOKEN_PARSE);
-        } catch (ParseError $e) {
-            return false;
-        }
+    if ($file === 'home.html') {
+        return true;
     }
-
-    if (substr($file, -5) === '.json') {
-        $data = json_decode($content, true);
-        if (!is_array($data) || json_last_error() !== JSON_ERROR_NONE) {
-            return false;
-        }
+    if (strncmp($content, '<?php', 5) !== 0) {
+        return false;
     }
-
-    return $validate === null || $validate($content);
+    try {
+        token_get_all($content, TOKEN_PARSE);
+        return true;
+    } catch (ParseError $e) {
+        return false;
+    }
 }
 
 main();
