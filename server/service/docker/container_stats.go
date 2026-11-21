@@ -13,6 +13,8 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/shirou/gopsutil/v3/cpu"
+
+	"isrvd/pkgs/docker"
 )
 
 // ContainerStatsResponse 容器统计信息响应，保持前端稳定响应结构。
@@ -76,10 +78,12 @@ func (s *Service) ContainerStats(ctx context.Context, id string) (*ContainerStat
 	if id == "" {
 		return nil, fmt.Errorf("容器ID不能为空")
 	}
-	stats, top, err := s.docker.ContainerStats(ctx, id)
+	stats, err := s.docker.ContainerStats(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("获取容器统计信息失败: %w", err)
 	}
+	// 进程列表不可用时仍返回统计数据。
+	top, _ := s.docker.ContainerProcessList(ctx, id)
 	return containerStatsResponse(id, stats, top), nil
 }
 
@@ -101,11 +105,7 @@ func containerStatsResponse(id string, v container.StatsResponse, top *container
 		cpuPercent = (cpuDelta / systemDelta) * float64(cpuCores) * 100.0
 	}
 
-	memCache, cgroupV1 := v.MemoryStats.Stats["total_inactive_file"]
-	if !cgroupV1 {
-		memCache = v.MemoryStats.Stats["inactive_file"]
-	}
-	memoryUsage := v.MemoryStats.Usage - min(memCache, v.MemoryStats.Usage)
+	memoryUsage := docker.ContainerMemoryUsage(v.MemoryStats)
 	var memoryPercent float64
 	if v.MemoryStats.Limit > 0 {
 		memoryPercent = float64(memoryUsage) / float64(v.MemoryStats.Limit) * 100.0
@@ -123,25 +123,28 @@ func containerStatsResponse(id string, v container.StatsResponse, top *container
 	}
 
 	var blockRead, blockWrite int64
-	blockDetailMap := make(map[string]*StatsBlockDetail)
+	type blockKey struct{ major, minor uint64 }
+	blockDetailMap := make(map[blockKey]*StatsBlockDetail)
 	for _, blkStats := range v.BlkioStats.IoServiceBytesRecursive {
-		blkStats.Op = strings.ToLower(blkStats.Op)
-		switch blkStats.Op {
+		op := strings.ToLower(blkStats.Op)
+		switch op {
 		case "read":
 			blockRead += int64(blkStats.Value)
 		case "write":
 			blockWrite += int64(blkStats.Value)
+		default:
+			continue
 		}
-		if blkStats.Op == "read" || blkStats.Op == "write" {
-			key := fmt.Sprintf("%d:%d", blkStats.Major, blkStats.Minor)
-			if _, ok := blockDetailMap[key]; !ok {
-				blockDetailMap[key] = &StatsBlockDetail{Major: blkStats.Major, Minor: blkStats.Minor}
-			}
-			if blkStats.Op == "read" {
-				blockDetailMap[key].Read += blkStats.Value
-			} else {
-				blockDetailMap[key].Write += blkStats.Value
-			}
+		key := blockKey{blkStats.Major, blkStats.Minor}
+		detail := blockDetailMap[key]
+		if detail == nil {
+			detail = &StatsBlockDetail{Major: blkStats.Major, Minor: blkStats.Minor}
+			blockDetailMap[key] = detail
+		}
+		if op == "read" {
+			detail.Read += blkStats.Value
+		} else {
+			detail.Write += blkStats.Value
 		}
 	}
 	blockDetail := slices.AppendSeq(make([]*StatsBlockDetail, 0, len(blockDetailMap)), maps.Values(blockDetailMap))

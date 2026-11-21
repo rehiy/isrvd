@@ -117,11 +117,7 @@ func (s *Service) BasicAuthUserCreate(ctx context.Context, server string, routeI
 		return err
 	}
 
-	return s.client.ConfigMutate(ctx, func(cfg *caddy.Config) error {
-		srv := getServer(cfg, server)
-		if srv == nil {
-			return ErrServerNotFound
-		}
+	return s.serverMutate(ctx, server, func(srv *caddy.HTTPServer) error {
 		if len(revision) > 0 && revision[0] != "" {
 			if err := checkRouteRevision(srv.Routes, revision[0]); err != nil {
 				return err
@@ -171,11 +167,7 @@ func (s *Service) BasicAuthUserDelete(ctx context.Context, server string, routeI
 	if err != nil {
 		return err
 	}
-	return s.client.ConfigMutate(ctx, func(cfg *caddy.Config) error {
-		srv := getServer(cfg, server)
-		if srv == nil {
-			return ErrServerNotFound
-		}
+	return s.serverMutate(ctx, server, func(srv *caddy.HTTPServer) error {
 		if len(revision) > 0 && revision[0] != "" {
 			if err := checkRouteRevision(srv.Routes, revision[0]); err != nil {
 				return err
@@ -219,11 +211,7 @@ func (s *Service) BasicAuthConfigUpdate(ctx context.Context, server string, rout
 	if len(options) > 0 {
 		option = options[0]
 	}
-	return s.client.ConfigMutate(ctx, func(cfg *caddy.Config) error {
-		srv := getServer(cfg, server)
-		if srv == nil {
-			return ErrServerNotFound
-		}
+	return s.serverMutate(ctx, server, func(srv *caddy.HTTPServer) error {
 		if option.Revision != "" || len(option.RemoveUsers) > 0 {
 			if err := checkRouteRevision(srv.Routes, option.Revision); err != nil {
 				return err

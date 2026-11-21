@@ -116,7 +116,7 @@ func (c *Collector) CollectContainerStatNow(ctx context.Context, id string) *Rec
 	if c.docker == nil {
 		return nil
 	}
-	stats, _, err := c.docker.ContainerStats(ctx, id)
+	stats, err := c.docker.ContainerStats(ctx, id)
 	if err != nil {
 		return nil
 	}

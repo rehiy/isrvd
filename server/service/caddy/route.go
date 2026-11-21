@@ -89,11 +89,7 @@ func (s *Service) RouteCreate(ctx context.Context, server string, req caddy.Rout
 		return -1, err
 	}
 	index := -1
-	err = s.client.ConfigMutate(ctx, func(cfg *caddy.Config) error {
-		srv := getServer(cfg, server)
-		if srv == nil {
-			return ErrServerNotFound
-		}
+	err = s.serverMutate(ctx, server, func(srv *caddy.HTTPServer) error {
 		index = len(srv.Routes)
 		if position != nil {
 			if err := checkRouteRevision(srv.Routes, revision); err != nil {
@@ -119,11 +115,7 @@ func (s *Service) RouteUpdate(ctx context.Context, server string, index int, req
 	if err != nil {
 		return err
 	}
-	return s.client.ConfigMutate(ctx, func(cfg *caddy.Config) error {
-		srv := getServer(cfg, server)
-		if srv == nil {
-			return ErrServerNotFound
-		}
+	return s.serverMutate(ctx, server, func(srv *caddy.HTTPServer) error {
 		if revision != "" {
 			if err := checkRouteRevision(srv.Routes, revision); err != nil {
 				return err
@@ -144,11 +136,7 @@ func (s *Service) RouteDelete(ctx context.Context, server string, index int, rev
 	if err != nil {
 		return err
 	}
-	return s.client.ConfigMutate(ctx, func(cfg *caddy.Config) error {
-		srv := getServer(cfg, server)
-		if srv == nil {
-			return ErrServerNotFound
-		}
+	return s.serverMutate(ctx, server, func(srv *caddy.HTTPServer) error {
 		if revision != "" {
 			if err := checkRouteRevision(srv.Routes, revision); err != nil {
 				return err

@@ -35,11 +35,7 @@ func (s *Service) RouteMove(ctx context.Context, server string, index int, req R
 	if err != nil {
 		return err
 	}
-	return s.client.ConfigMutate(ctx, func(cfg *caddy.Config) error {
-		srv := getServer(cfg, server)
-		if srv == nil {
-			return ErrServerNotFound
-		}
+	return s.serverMutate(ctx, server, func(srv *caddy.HTTPServer) error {
 		if err := checkRouteRevision(srv.Routes, req.Revision); err != nil {
 			return err
 		}
