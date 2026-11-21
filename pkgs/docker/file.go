@@ -2,10 +2,11 @@ package docker
 
 import (
 	"archive/tar"
-	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"os"
 	"path"
 	"strings"
 	"time"
@@ -13,7 +14,6 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/rehiy/libgo/command"
 	"github.com/rehiy/libgo/filer"
-	"github.com/rehiy/libgo/logman"
 
 	"isrvd/pkgs/helper"
 )
@@ -86,61 +86,65 @@ func (s *DockerService) resolveContainerLinkTargets(ctx context.Context, contain
 	}
 }
 
-// ContainerFileDownload 从容器内下载文件，写入 dst
-func (s *DockerService) ContainerFileDownload(ctx context.Context, containerID, filePath string, dst io.Writer) error {
-	rc, _, err := s.client.CopyFromContainer(ctx, containerID, filePath)
+// ContainerFileOpen 打开容器归档中的普通文件并返回其长度。
+func (s *DockerService) ContainerFileOpen(ctx context.Context, containerID, filePath string) (io.ReadCloser, int64, error) {
+	body, _, err := s.client.CopyFromContainer(ctx, containerID, filePath)
 	if err != nil {
-		logman.Error("CopyFromContainer failed", "container", containerID, "path", filePath, "error", err)
-		return fmt.Errorf("下载失败: %w", err)
+		return nil, 0, fmt.Errorf("下载失败: %w", err)
 	}
-	defer rc.Close()
-
-	tr := tar.NewReader(rc)
-	_, err = tr.Next()
+	tr := tar.NewReader(body)
+	hdr, err := tr.Next()
+	if err == nil && hdr.Typeflag != tar.TypeReg {
+		err = os.ErrInvalid
+	}
 	if err != nil {
-		return fmt.Errorf("读取 tar 头失败: %w", err)
+		body.Close()
+		return nil, 0, fmt.Errorf("读取 tar 头失败: %w", err)
 	}
-	if _, err := io.Copy(dst, tr); err != nil {
-		return fmt.Errorf("读取文件内容失败: %w", err)
-	}
-	return nil
+	return struct {
+		io.Reader
+		io.Closer
+	}{tr, body}, hdr.Size, nil
 }
 
-// ContainerFileUpload 上传单个文件到容器内指定目录。
-// fileName 可含子目录（如 "subdir/file.txt"），此时会自动创建父目录。
-func (s *DockerService) ContainerFileUpload(ctx context.Context, containerID, destDir, fileName string, content io.Reader) error {
-	data, err := io.ReadAll(content)
-	if err != nil {
-		return fmt.Errorf("读取上传内容失败: %w", err)
+// ContainerFileUpload 将已知长度的文件流式打包到容器。
+func (s *DockerService) ContainerFileUpload(ctx context.Context, containerID, destDir, fileName string, content io.Reader, size int64) error {
+	if size < 0 {
+		return os.ErrInvalid
 	}
-
-	// 若 fileName 含子目录，预先在容器内创建对应目录
-	if dir := path.Dir(fileName); dir != "" && dir != "." && dir != "/" {
-		if mkErr := s.ContainerFileMkdir(ctx, containerID, path.Join(destDir, dir)); mkErr != nil {
-			logman.Warn("ContainerFileUpload mkdir failed", "dir", dir, "error", mkErr)
+	if dir := path.Dir(fileName); dir != "." && dir != "/" {
+		if err := s.ContainerFileMkdir(ctx, containerID, path.Join(destDir, dir)); err != nil {
+			return err
 		}
 	}
 
-	var buf bytes.Buffer
-	tw := tar.NewWriter(&buf)
-	hdr := &tar.Header{
-		Name:     fileName,
-		Size:     int64(len(data)),
-		Mode:     0644,
-		ModTime:  time.Now(),
-		Typeflag: tar.TypeReg,
-	}
-	if err := tw.WriteHeader(hdr); err != nil {
-		return fmt.Errorf("写 tar 头失败: %w", err)
-	}
-	if _, err := tw.Write(data); err != nil {
-		return fmt.Errorf("写 tar 内容失败: %w", err)
-	}
-	tw.Close()
-
-	err = s.client.CopyToContainer(ctx, containerID, destDir, &buf, container.CopyToContainerOptions{})
-	if err != nil {
-		logman.Error("CopyToContainer failed", "container", containerID, "dest", destDir, "error", err)
+	reader, writer := io.Pipe()
+	packed := make(chan error, 1)
+	go func() {
+		tarWriter := tar.NewWriter(writer)
+		err := tarWriter.WriteHeader(&tar.Header{Name: fileName, Size: size, Mode: 0644, ModTime: time.Now()})
+		if err == nil {
+			src := helper.ContextReader{Context: ctx, Reader: content}
+			_, err = io.CopyN(tarWriter, src, size)
+			if err == nil {
+				var extra [1]byte
+				if n, readErr := io.ReadFull(src, extra[:]); n != 0 || readErr != io.EOF {
+					err = io.ErrShortWrite
+					if n == 0 && readErr != nil {
+						err = readErr
+					}
+				}
+			}
+		}
+		if err == nil {
+			err = tarWriter.Close()
+		}
+		_ = writer.CloseWithError(err)
+		packed <- err
+	}()
+	err := s.client.CopyToContainer(ctx, containerID, destDir, reader, container.CopyToContainerOptions{})
+	_ = reader.Close()
+	if err := errors.Join(err, <-packed); err != nil {
 		return fmt.Errorf("上传失败: %w", err)
 	}
 	return nil
@@ -182,7 +186,15 @@ func (s *DockerService) ContainerFileRename(ctx context.Context, containerID, ol
 // ContainerFileRead 读取用于在线编辑的容器文件内容，超大文件应使用流式下载接口。
 func (s *DockerService) ContainerFileRead(ctx context.Context, containerID, filePath string) (string, error) {
 	buf := &helper.EditBuffer{}
-	err := s.ContainerFileDownload(ctx, containerID, filePath, buf)
+	src, size, err := s.ContainerFileOpen(ctx, containerID, filePath)
+	if err != nil {
+		return "", err
+	}
+	defer src.Close()
+	if size > helper.MaxEditableFileBytes {
+		return "", helper.ErrTooLarge
+	}
+	_, err = io.Copy(buf, src)
 	if buf.Exceeded() {
 		return "", helper.ErrTooLarge
 	}
@@ -199,7 +211,7 @@ func (s *DockerService) ContainerFileRead(ctx context.Context, containerID, file
 func (s *DockerService) ContainerFileWrite(ctx context.Context, containerID, filePath, content string) error {
 	dir := path.Dir(filePath)
 	name := path.Base(filePath)
-	return s.ContainerFileUpload(ctx, containerID, dir, name, strings.NewReader(content))
+	return s.ContainerFileUpload(ctx, containerID, dir, name, strings.NewReader(content), int64(len(content)))
 }
 
 // ContainerFileChmod 修改容器内文件权限

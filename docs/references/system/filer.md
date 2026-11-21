@@ -103,7 +103,7 @@ isrvd_put "/filer/chmod" '{"path":"<FILE>","mode":"0644"}'
 isrvd_upload "/filer/upload" "file" "<LOCAL_FILE>" "path=<FILER_DIR>"
 ```
 
-- 只处理单个 `file` 字段；`path` 为**表单字段**（目标目录），文件写入 `<path>/<原文件名>`，已存在时覆盖（流式写入）
+- 只处理单个 `file` 字段；`path` 为**表单字段**（目标目录），文件写入 `<path>/<原文件名>`，写入成功后原子替换同名文件并保留原权限。上传中断时保留原文件
 - 目标父目录不会自动创建，不存在时返回 500
 - `Content-Length` 超过 `server.maxUploadSize` 时返回 400"文件大小超过限制"
 
@@ -147,4 +147,4 @@ isrvd_post "/filer/unzip" '{"path":"<FILE>.zip","targetDir":"<DIR_NAME>"}'
 
 `targetDir` 仅允许输入标准目录名（不能包含 `/` 等路径分隔符），会自动在 zip 文件的当前目录下创建。
 
-解压后，`<FILE>.zip` 文件会移回原位置。
+ZIP 直接解压到目标目录。源 ZIP 留在原处，目标目录已有的同名归档也会保留，除非它本身是压缩包内声明的待覆盖条目。压缩包中的条目不能覆盖源 ZIP。

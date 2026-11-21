@@ -12,21 +12,21 @@ import (
 // 上传入口与表单解析放在同一文件，供 OpenAPI 生成器跟进 multipart 字段。
 func (app *App) dockerContainerFileUpload(c *gin.Context) {
 	id := c.Param("id")
-	uploadFileBatch(c, http.StatusInternalServerError, func(dirPath, fileName string, file multipart.File) error {
-		return app.dockerSvc.ContainerFileUpload(c.Request.Context(), id, dirPath, fileName, file)
+	uploadFileBatch(c, http.StatusInternalServerError, func(dirPath, fileName string, file multipart.File, size int64) error {
+		return app.dockerSvc.ContainerFileUpload(c.Request.Context(), id, dirPath, fileName, file, size)
 	})
 }
 
 func (app *App) websshSFTPUpload(c *gin.Context) {
 	id := c.Param("id")
-	uploadFileBatch(c, http.StatusBadRequest, func(dirPath, fileName string, file multipart.File) error {
-		return app.websshSvc.SFTPUpload(id, dirPath, file, fileName)
+	uploadFileBatch(c, http.StatusBadRequest, func(dirPath, fileName string, file multipart.File, _ int64) error {
+		return app.websshSvc.SFTPUpload(c.Request.Context(), id, dirPath, file, fileName)
 	})
 }
 
 // ─── 辅助函数 ───
 
-func uploadFileBatch(c *gin.Context, uploadErrorStatus int, upload func(dirPath, fileName string, file multipart.File) error) {
+func uploadFileBatch(c *gin.Context, uploadErrorStatus int, upload func(dirPath, fileName string, file multipart.File, size int64) error) {
 	dirPath := c.Query("path")
 	if dirPath == "" {
 		respondError(c, http.StatusBadRequest, "path 参数不能为空")
@@ -55,7 +55,7 @@ func uploadFileBatch(c *gin.Context, uploadErrorStatus int, upload func(dirPath,
 			respondError(c, http.StatusBadRequest, "打开文件失败: "+err.Error())
 			return
 		}
-		err = upload(dirPath, fileName, file)
+		err = upload(dirPath, fileName, file, header.Size)
 		file.Close()
 		if err != nil {
 			respondError(c, uploadErrorStatus, err.Error())
