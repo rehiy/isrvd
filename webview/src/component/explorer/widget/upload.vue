@@ -135,7 +135,9 @@ const UploadNodeItem = defineComponent({
                                         style: { width: `${file.percent}%` },
                                     })
                                 ),
-                                h('span', { class: 'text-xs text-slate-400 w-8 text-right flex-shrink-0' }, `${file.percent}%`),
+                                h('span', { class: 'text-xs text-slate-400 text-right flex-shrink-0' },
+                                    file.percent === 100 && !file.done ? t('服务器写入中') : `${file.percent}%`
+                                ),
                             ])
                             : h('p', {
                                 class: `text-xs mt-0.5 ${file.error ? 'text-red-400' : 'text-slate-300'}`,
@@ -278,12 +280,12 @@ class Upload extends Vue {
         if (node.type === 'file') {
             return node.cancelled
         }
-        return node.cancelled || flattenUploadTree(node.children).every(f => f.cancelled)
+        return node.cancelled || (node.children.length > 0 && node.children.every(child => this.isNodeCancelled(child)))
     }
 
     private isBatchCancelled(files: UploadFileNode[], nodesForDirs?: UploadNode[]): boolean {
-        if (nodesForDirs && nodesForDirs.length > 0 && nodesForDirs.every(n => this.isNodeCancelled(n))) {
-            return true
+        if (nodesForDirs?.length) {
+            return nodesForDirs.every(node => this.isNodeCancelled(node))
         }
         return files.length > 0 && files.every(f => f.cancelled)
     }
@@ -334,15 +336,6 @@ class Upload extends Vue {
         this.scheduleClear(hasFailed ? 5000 : 1500)
     }
 
-    private async cleanupPartialFile(fileNode: UploadFileNode): Promise<boolean> {
-        try {
-            await this.adapter.remove(`${fileNode.destDir.replace(/\/+$/, '')}/${fileNode.name}`, false)
-            return true
-        } catch {
-            return false
-        }
-    }
-
     private retryFiles(files: UploadFileNode[]) {
         const failed = files.filter(f => !!f.error)
         if (failed.length === 0) {
@@ -391,10 +384,11 @@ class Upload extends Vue {
     }
 
     private async doUploadFiles(files: UploadFileNode[], nodesForDirs?: UploadNode[]) {
-        let failCount = 0, cancelCount = 0, cleanupFailCount = 0
+        let failCount = 0, cancelCount = 0
 
+        const selectedDirs = new Set(nodesForDirs ? this.collectDirs(nodesForDirs) : [])
         const dirsToCreate = new Set([
-            ...(nodesForDirs ? this.collectDirs(nodesForDirs) : []),
+            ...selectedDirs,
             ...files.map(f => f.destDir),
         ].filter(d => d !== '/'))
         for (const dir of dirsToCreate) {
@@ -404,7 +398,9 @@ class Upload extends Vue {
             try {
                 await this.adapter.mkdir(dir)
             } catch {
-                /* 已存在则忽略 */
+                if (selectedDirs.has(dir)) {
+                    this.portal.showNotification('error', this.$t('无法创建目录 {0}', dir))
+                }
             }
         }
 
@@ -436,13 +432,8 @@ class Upload extends Vue {
                     fileNode.cancelled = true
                     cancelCount++
                 } else {
-                    const ok = await this.cleanupPartialFile(fileNode)
-                    if (!ok) {
-                        cleanupFailCount++
-                    }
-                    fileNode.error = ok
-                        ? ((err instanceof Error ? err.message : '') || this.$t('上传失败，已尝试清理残留文件'))
-                        : ((err instanceof Error ? err.message : '') || this.$t('上传失败，可能残留不完整文件'))
+                    const message = axios.isAxiosError<{ message?: string }>(err) ? err.response?.data?.message : undefined
+                    fileNode.error = message || (err instanceof Error ? err.message : '') || this.$t('上传失败')
                     fileNode.done = true
                     failCount++
                 }
@@ -469,7 +460,7 @@ class Upload extends Vue {
         if (total > 0) {
             failCount === 0
                 ? this.portal.showNotification('success', this.$t('上传成功（{0} 个文件）', total))
-                : this.portal.showNotification('error', this.$t('{0} 个成功，{1} 个失败{2}', total - failCount, failCount, cleanupFailCount > 0 ? '，部分残留文件清理失败' : ''))
+                : this.portal.showNotification('error', this.$t('{0} 个成功，{1} 个失败', total - failCount, failCount))
         }
         this.finishBatch()
     }

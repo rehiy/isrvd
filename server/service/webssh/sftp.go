@@ -2,6 +2,7 @@ package webssh
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
@@ -9,10 +10,12 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/sftp"
 	"github.com/rehiy/libgo/filer"
+	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/webssh"
 	"golang.org/x/crypto/ssh"
 
@@ -21,6 +24,8 @@ import (
 
 // SFTPListResult SFTP 目录列表结果。
 type SFTPListResult = webssh.ListResult
+
+const sftpConcurrentRequests = 8
 
 func (s *Service) SFTPList(ctx context.Context, hostID, dirPath string) (*SFTPListResult, error) {
 	conn, closeConn, err := s.sftpConnect(ctx, hostID)
@@ -68,7 +73,7 @@ func (s *Service) SFTPOpen(ctx context.Context, hostID, filePath string) (io.Rea
 		return nil, 0, fmt.Errorf("打开文件失败: %w", err)
 	}
 	info, err := file.Stat()
-	if err != nil || !info.Mode().IsRegular() {
+	if err != nil || !info.Mode().IsRegular() || info.Size() < 0 {
 		closeConn()
 		if err == nil {
 			err = os.ErrInvalid
@@ -89,7 +94,7 @@ func (f *sftpFile) Close() error {
 }
 
 // SFTPUpload 上传单个文件；上传子目录时先创建远端父目录。
-func (s *Service) SFTPUpload(ctx context.Context, hostID, dirPath string, file io.Reader, relativePath string) error {
+func (s *Service) SFTPUpload(ctx context.Context, hostID, dirPath string, file io.Reader, relativePath string, size int64) error {
 	return s.withSFTP(ctx, hostID, func(conn *sftp.Client) error {
 		dest := path.Join(dirPath, relativePath)
 		if dir := path.Dir(dest); dir != "/" && dir != "." && dir != dirPath {
@@ -97,7 +102,7 @@ func (s *Service) SFTPUpload(ctx context.Context, hostID, dirPath string, file i
 				return err
 			}
 		}
-		return sftpWrite(conn, dest, file)
+		return s.sftpWrite(ctx, hostID, conn, dest, file, size)
 	})
 }
 
@@ -151,7 +156,7 @@ func (s *Service) SFTPRead(ctx context.Context, hostID, filePath string) (string
 
 func (s *Service) SFTPWrite(ctx context.Context, hostID, filePath, content string) error {
 	return s.withSFTP(ctx, hostID, func(conn *sftp.Client) error {
-		return sftpWrite(conn, filePath, strings.NewReader(content))
+		return s.sftpWrite(ctx, hostID, conn, filePath, strings.NewReader(content), int64(len(content)))
 	})
 }
 
@@ -229,15 +234,17 @@ func (s *Service) sftpConnect(ctx context.Context, hostID string) (*sftp.Client,
 	if err = conn.SetDeadline(time.Now().Add(connectTimeout)); err != nil {
 		return nil, nil, err
 	}
-	sshConn, channels, requests, err := ssh.NewClientConn(conn, addr, &ssh.ClientConfig{
+	transport := &sftpTransport{Conn: conn, idleTimeout: 30 * time.Second}
+	sshConn, channels, requests, err := ssh.NewClientConn(transport, addr, &ssh.ClientConfig{
 		User: opt.User, Auth: []ssh.AuthMethod{auth}, HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	})
 	if err != nil {
 		return nil, nil, err
 	}
-	client, err := sftp.NewClient(ssh.NewClient(sshConn, channels, requests))
+	client, err := sftp.NewClient(ssh.NewClient(sshConn, channels, requests),
+		sftp.MaxConcurrentRequestsPerFile(sftpConcurrentRequests), sftp.UseFstat(true))
 	if err == nil {
-		err = conn.SetDeadline(time.Time{})
+		err = transport.startIdleTimeout()
 	}
 	if err != nil {
 		return nil, nil, err
@@ -245,14 +252,140 @@ func (s *Service) sftpConnect(ctx context.Context, hostID string) (*sftp.Client,
 	return client, closeConn, nil
 }
 
-func sftpWrite(conn *sftp.Client, name string, source io.Reader) error {
-	file, err := conn.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC)
+// sftpTransport 将握手期限切换为传输空闲期限。
+type sftpTransport struct {
+	net.Conn
+	idleTimeout time.Duration
+	ready       atomic.Bool
+}
+
+func (c *sftpTransport) startIdleTimeout() error {
+	c.ready.Store(true)
+	return c.SetDeadline(time.Now().Add(c.idleTimeout))
+}
+
+func (c *sftpTransport) Read(p []byte) (int, error) {
+	if c.ready.Load() {
+		if err := c.SetReadDeadline(time.Now().Add(c.idleTimeout)); err != nil {
+			return 0, err
+		}
+	}
+	return c.Conn.Read(p)
+}
+
+func (c *sftpTransport) Write(p []byte) (int, error) {
+	if c.ready.Load() {
+		if err := c.SetWriteDeadline(time.Now().Add(c.idleTimeout)); err != nil {
+			return 0, err
+		}
+	}
+	return c.Conn.Write(p)
+}
+
+func (s *Service) sftpWrite(ctx context.Context, hostID string, conn *sftp.Client, name string, source io.Reader, size int64) error {
+	existing, err := conn.Lstat(name)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	if existing != nil && existing.Mode()&os.ModeSymlink != 0 {
+		name, err = conn.RealPath(name)
+		if err != nil {
+			return err
+		}
+		existing, err = conn.Stat(name)
+		if err != nil {
+			return err
+		}
+	}
+	_, replace := conn.HasExtension("posix-rename@openssh.com")
+	if existing != nil {
+		if !existing.Mode().IsRegular() {
+			return os.ErrInvalid
+		}
+		if !replace {
+			return errors.New("SFTP 服务器不支持安全覆盖已有文件")
+		}
+		target, err := conn.OpenFile(name, os.O_WRONLY)
+		if err != nil {
+			return err
+		}
+		if err := target.Close(); err != nil {
+			return err
+		}
+	}
+
+	staged := path.Join(path.Dir(name), ".isrvd-upload-"+rand.Text())
+	file, err := conn.OpenFile(staged, os.O_WRONLY|os.O_CREATE|os.O_EXCL)
 	if err != nil {
 		return fmt.Errorf("创建文件失败: %w", err)
 	}
-	_, err = io.Copy(file, source)
+	committed := false
+	defer func() {
+		if !committed {
+			s.removeSFTPTemp(ctx, hostID, conn, staged)
+		}
+	}()
+	info, err := conn.Stat(staged)
+	if err == nil {
+		err = conn.Chmod(staged, 0600)
+	}
+	var written int64
+	if err == nil {
+		if size > 32<<10 {
+			written, err = file.ReadFromWithConcurrency(source, sftpConcurrentRequests)
+		} else {
+			written, err = file.ReadFrom(source)
+		}
+	}
 	if err := errors.Join(err, file.Close()); err != nil {
 		return fmt.Errorf("写入文件失败: %w", err)
 	}
+	if written != size {
+		return fmt.Errorf("写入文件失败: %w", io.ErrUnexpectedEOF)
+	}
+	mode := info.Mode()
+	if existing != nil {
+		mode = existing.Mode()
+		oldOwner, oldOK := existing.Sys().(*sftp.FileStat)
+		newOwner, newOK := info.Sys().(*sftp.FileStat)
+		if oldOK && newOK && (oldOwner.UID != newOwner.UID || oldOwner.GID != newOwner.GID) {
+			if err := conn.Chown(staged, int(oldOwner.UID), int(oldOwner.GID)); err != nil {
+				return err
+			}
+		}
+	}
+	if err := conn.Chmod(staged, mode); err != nil {
+		return err
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if existing != nil {
+		err = conn.PosixRename(staged, name)
+	} else {
+		err = conn.Rename(staged, name)
+	}
+	if err != nil {
+		return fmt.Errorf("重命名失败: %w", err)
+	}
+	committed = true
 	return nil
+}
+
+func (s *Service) removeSFTPTemp(ctx context.Context, hostID string, conn *sftp.Client, staged string) {
+	if ctx.Err() == nil {
+		if err := conn.Remove(staged); err == nil || errors.Is(err, os.ErrNotExist) {
+			return
+		}
+	}
+	cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
+	defer cancel()
+	cleanup, closeConn, err := s.sftpConnect(cleanupCtx, hostID)
+	if err == nil {
+		defer closeConn()
+		err = cleanup.Remove(staged)
+	}
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		logman.Warn("SFTP temporary file cleanup failed", "host", hostID, "path", staged, "error", err)
+	}
 }

@@ -92,7 +92,7 @@ func respondFileDownload(c *gin.Context, name string, src io.ReadCloser, size in
 	}
 	c.Header("Content-Type", "application/octet-stream")
 	c.Header("Content-Length", strconv.FormatInt(size, 10))
-	if _, err := io.CopyN(c.Writer, src, size); err != nil {
+	if err := copyDownload(c.Writer, src, size); err != nil {
 		if c.Writer.Written() {
 			logman.Warn("file download interrupted", "error", err)
 			return
@@ -102,4 +102,41 @@ func respondFileDownload(c *gin.Context, name string, src io.ReadCloser, size in
 		c.Header("Content-Disposition", "")
 		respondError(c, errorStatus, err.Error())
 	}
+}
+
+func copyDownload(dst io.Writer, src io.Reader, size int64) error {
+	if size == 0 {
+		return nil
+	}
+	if stream, ok := src.(io.WriterTo); ok {
+		// 保留 SFTP 的并发读取，同时遵守响应已经声明的长度。
+		bounded := &downloadWriter{dst: dst, remaining: size}
+		_, err := stream.WriteTo(bounded)
+		if err != nil && !errors.Is(err, io.EOF) {
+			return err
+		}
+		if bounded.remaining != 0 {
+			return io.ErrUnexpectedEOF
+		}
+		return nil
+	}
+	_, err := io.CopyN(dst, src, size)
+	return err
+}
+
+type downloadWriter struct {
+	dst       io.Writer
+	remaining int64
+}
+
+func (w *downloadWriter) Write(p []byte) (int, error) {
+	if w.remaining == 0 {
+		return 0, io.EOF
+	}
+	n, err := w.dst.Write(p[:min(int64(len(p)), w.remaining)])
+	w.remaining -= int64(n)
+	if err == nil && n < len(p) {
+		err = io.EOF
+	}
+	return n, err
 }
