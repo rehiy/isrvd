@@ -220,10 +220,20 @@ func updateSnapshot(mutator func(*Snapshot) error) (*Snapshot, error) {
 }
 
 func persistSnapshot(snapshot *Snapshot) error {
+	root := snapshot.Server.RootDirectory
+	// 仅复制需要还原路径的值，运行时快照保留绝对路径。
+	docker := snapshot.Docker
+	if docker != nil {
+		storedDocker := *docker
+		storedDocker.ContainerRoot = PathToRel(docker.ContainerRoot, root)
+		docker = &storedDocker
+	}
 	members := make([]*MemberConfig, 0, len(snapshot.Members))
 	for _, member := range snapshot.Members {
 		if member != nil {
-			members = append(members, member)
+			storedMember := *member
+			storedMember.HomeDirectory = PathToRel(member.HomeDirectory, root)
+			members = append(members, &storedMember)
 		}
 	}
 	slices.SortFunc(members, func(a, b *MemberConfig) int {
@@ -241,7 +251,7 @@ func persistSnapshot(snapshot *Snapshot) error {
 		Notify:      snapshot.Notify,
 		Apisix:      snapshot.Apisix,
 		Caddy:       snapshot.Caddy,
-		Docker:      snapshot.Docker,
+		Docker:      docker,
 		Monitor:     snapshot.Monitor,
 		Metrics:     snapshot.Metrics,
 		Marketplace: snapshot.Marketplace,
@@ -250,12 +260,7 @@ func persistSnapshot(snapshot *Snapshot) error {
 		Members:     members,
 	}
 
-	persistent, err := cloneYAML(conf)
-	if err != nil {
-		return err
-	}
-	denormalizePaths(persistent)
-	data, err := yaml.Marshal(persistent)
+	data, err := yaml.Marshal(conf)
 	if err != nil {
 		return err
 	}
