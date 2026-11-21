@@ -36,8 +36,7 @@ class ContainerTerminal extends Vue {
     }
 
     unmounted() {
-        this.adapter?.disconnect()
-        this.adapter = null
+        this.handleDisconnect()
         this.filePane.stop()
     }
 
@@ -65,13 +64,6 @@ class ContainerTerminal extends Vue {
         this.adapter?.disconnect()
         this.adapter = null
     }
-
-    handleShellChange() {
-        if (this.connected) {
-            this.handleDisconnect()
-            this.$nextTick(() => this.handleConnect())
-        }
-    }
 }
 
 export default toNative(ContainerTerminal)
@@ -93,7 +85,7 @@ export default toNative(ContainerTerminal)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <select v-model="shell" :disabled="connected" class="w-28 select-sm" @change="handleShellChange">
+            <select v-model="shell" :disabled="connected" class="w-28 select-sm">
               <option value="/bin/sh">/bin/sh</option>
               <option value="/bin/bash">/bin/bash</option>
               <option value="/bin/ash">/bin/ash</option>
@@ -117,7 +109,7 @@ export default toNative(ContainerTerminal)
             </div>
           </div>
           <div class="action-group-sm">
-            <select v-model="shell" :disabled="connected" class="w-24 select-sm" @change="handleShellChange">
+            <select v-model="shell" :disabled="connected" class="w-24 select-sm">
               <option value="/bin/sh">/bin/sh</option>
               <option value="/bin/bash">/bin/bash</option>
               <option value="/bin/ash">/bin/ash</option>
