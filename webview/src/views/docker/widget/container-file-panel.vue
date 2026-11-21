@@ -6,8 +6,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 
 import { ExplorerPanel } from '@/component/explorer'
-import { remoteFileInfo } from '@/component/explorer/helper'
-import type { ExplorerAdapter, ListResult } from '@/component/explorer/types'
+import { remoteListResult } from '@/component/explorer/helper'
+import type { ExplorerAdapter } from '@/component/explorer/types'
 
 function createContainerFileAdapter(containerId: string): ExplorerAdapter {
     const portal = usePortal()
@@ -29,13 +29,9 @@ function createContainerFileAdapter(containerId: string): ExplorerAdapter {
     }
     return {
         can,
-        async list(path: string): Promise<ListResult> {
+        async list(path: string) {
             const res = await api.dockerContainerFileLs(containerId, path)
-            const payload = res.payload ?? { path: '', files: [] }
-            return {
-                path: payload.path,
-                files: (payload.files || []).map(file => remoteFileInfo(path, file)),
-            }
+            return remoteListResult(res.payload)
         },
         async download(path: string, onProgress): Promise<Blob> {
             return await api.dockerContainerFileDownload(containerId, path, onProgress)

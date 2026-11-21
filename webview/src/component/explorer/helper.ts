@@ -1,17 +1,27 @@
-import type { FileInfo } from './types'
+import type { FileInfo, ListResult } from './types'
 
-// SSH 和容器文件列表共用路径、权限与符号链接字段转换。
-export function remoteFileInfo(basePath: string, file: Omit<FileInfo, 'path' | 'modeOctal'>): FileInfo {
+type RemoteListPayload = {
+    path: string
+    files?: Omit<FileInfo, 'path' | 'modeOctal'>[]
+}
+
+// 子项路径与当前目录均以服务端解析后的目录为准。
+export function remoteListResult(payload?: RemoteListPayload | null): ListResult {
+    const path = payload?.path ?? ''
+    const basePath = path.replace(/\/+$/, '')
     return {
-        name: file.name,
-        path: basePath.replace(/\/+$/, '') + '/' + file.name,
-        size: file.size,
-        mode: file.mode,
-        modeOctal: modeToOctal(file.mode),
-        modTime: file.modTime,
-        isDir: file.isDir,
-        isLink: file.isLink || !!file.linkTarget,
-        linkTarget: file.linkTarget,
+        path,
+        files: (payload?.files ?? []).map(file => ({
+            name: file.name,
+            path: basePath + '/' + file.name,
+            size: file.size,
+            mode: file.mode,
+            modeOctal: modeToOctal(file.mode),
+            modTime: file.modTime,
+            isDir: file.isDir,
+            isLink: file.isLink || !!file.linkTarget,
+            linkTarget: file.linkTarget,
+        })),
     }
 }
 
