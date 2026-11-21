@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -140,7 +139,7 @@ func Run(ctx context.Context, enc *Encoder, input RunAgentInput, opt RunOptions)
 		return fmt.Errorf("上游 LLM 返回 %d: %s", resp.StatusCode, strings.TrimSpace(string(payload)))
 	}
 
-	return translate(ctx, enc, resp.Body, input)
+	return translate(reqCtx, enc, resp.Body, input)
 }
 
 // buildChatRequest 将 AG-UI 输入映射为 OpenAI 请求。
@@ -221,6 +220,7 @@ func translate(ctx context.Context, enc *Encoder, body io.Reader, input RunAgent
 	toolIDByIndex := make(map[int]string)
 	var toolIDs []string
 	messageStarted := false
+	finished := false
 	messageID := input.RunID
 
 	scanner := bufio.NewScanner(body)
@@ -238,7 +238,11 @@ func translate(ctx context.Context, enc *Encoder, body io.Reader, input RunAgent
 			continue
 		}
 		payload := strings.TrimSpace(strings.TrimPrefix(line, "data:"))
-		if payload == "" || payload == StreamDone {
+		if payload == StreamDone {
+			finished = true
+			break
+		}
+		if payload == "" {
 			continue
 		}
 
@@ -315,20 +319,18 @@ func translate(ctx context.Context, enc *Encoder, body io.Reader, input RunAgent
 			}
 		}
 
-		if chunk.Choices[0].FinishReason != nil && *chunk.Choices[0].FinishReason == "tool_calls" {
-			// 工具参数已发送完毕，按开始顺序补发 TOOL_CALL_END，前端据此执行工具
-			for _, id := range toolIDs {
-				if err := enc.Write(Event{Type: ToolCallEnd, ToolCallID: id}); err != nil {
-					return err
-				}
-			}
+		reason := chunk.Choices[0].FinishReason
+		if reason == nil || *reason == "" {
+			continue
 		}
+		finished = true
+		break
 	}
 
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if err := scanner.Err(); err != nil {
-		if errors.Is(ctx.Err(), context.Canceled) {
-			return nil
-		}
 		return fmt.Errorf("读取上游流式响应失败: %w", err)
 	}
 
@@ -338,5 +340,14 @@ func translate(ctx context.Context, enc *Encoder, body io.Reader, input RunAgent
 		}
 	}
 
+	if !finished {
+		return io.ErrUnexpectedEOF
+	}
+	// 终止后按开始顺序结束工具调用。
+	for _, id := range toolIDs {
+		if err := enc.Write(Event{Type: ToolCallEnd, ToolCallID: id}); err != nil {
+			return err
+		}
+	}
 	return enc.Write(Event{Type: RunFinished, ThreadID: input.ThreadID, RunID: input.RunID})
 }

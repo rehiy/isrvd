@@ -91,7 +91,7 @@ func NewAuditService() *AuditService {
 		store:  store,
 	}
 
-	// 启动时加载今日文件最近的 maxAuditBufferSize 条到内存
+	// 启动时加载近期文件最后的 maxAuditBufferSize 条到内存
 	s.loadRecent()
 	return s
 }
@@ -237,16 +237,14 @@ func (s *AuditService) Close() error {
 	return s.store.Close()
 }
 
-// loadRecent 启动时从今日文件尾部读取最近 maxAuditBufferSize 条到内存。
-// 使用 TailLines 反向读取，避免加载整个日志文件。
+// loadRecent 回扫近期审计文件，直到补齐内存缓冲。
 func (s *AuditService) loadRecent() {
 	if s.store == nil {
 		return
 	}
-	path := s.store.FilePath(s.store.Today())
-	entries, err := jsonl.DecodeTail[AuditLog](path, maxAuditBufferSize, nil)
+	entries, err := s.store.DecodeTailDays[AuditLog](30, maxAuditBufferSize, nil)
 	if err != nil {
-		logman.Warn("audit log load recent failed", "path", path, "error", err)
+		logman.Warn("audit log load recent failed", "error", err)
 		return
 	}
 	// DecodeTail 返回顺序为"由新到旧"，buffer 期望"由旧到新"

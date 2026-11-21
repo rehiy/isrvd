@@ -376,7 +376,7 @@ func (s *Service) JobStatusPatch(id string, enabled bool) error {
 
 // JobRun 立即触发一次任务（异步执行）
 func (s *Service) JobRun(id string) error {
-	job, ctx, err := s.prepareRun(id)
+	job, ctx, err := s.prepareRun(id, nil)
 	if err != nil {
 		return err
 	}
@@ -433,7 +433,8 @@ func (s *Service) jobReplace(id string, job *Job) error {
 
 // register 向调度器注册一个任务（调用前须持有锁或在初始化阶段）
 func (s *Service) register(job *Job) error {
-	entryID, err := s.cron.AddFunc(job.Schedule, func() { s.runJob(job.ID) })
+	var entryID cron.EntryID
+	entryID, err := s.cron.AddFunc(job.Schedule, func() { s.runJob(job.ID, &entryID) })
 	if err != nil {
 		return fmt.Errorf("invalid schedule %q: %w", job.Schedule, err)
 	}

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -59,7 +60,7 @@ func (app *App) copilotAGUI(c *gin.Context) {
 		return
 	}
 
-	if err := app.copilotSvc.RunAGUI(c.Request.Context(), w, input); err != nil {
+	if err := app.copilotSvc.RunAGUI(c.Request.Context(), w, input); err != nil && !errors.Is(err, context.Canceled) {
 		logman.Error("copilot agui: run failed", "error", err)
 		_ = copilot.WriteAGUIError(w, input, err)
 	}
