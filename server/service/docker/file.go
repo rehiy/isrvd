@@ -50,6 +50,10 @@ func (s *Service) ContainerFileWrite(ctx context.Context, containerID, filePath,
 	return s.docker.ContainerFileWrite(ctx, containerID, filePath, content)
 }
 
+func (s *Service) ContainerFileCreateOnly(ctx context.Context, containerID, filePath, content string) error {
+	return s.docker.ContainerFileCreateOnly(ctx, containerID, filePath, content)
+}
+
 // ContainerFileChmod 修改容器内文件权限
 func (s *Service) ContainerFileChmod(ctx context.Context, containerID, targetPath, mode string) error {
 	return s.docker.ContainerFileChmod(ctx, containerID, targetPath, mode)

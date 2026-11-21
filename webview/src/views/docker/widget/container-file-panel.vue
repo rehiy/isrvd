@@ -62,7 +62,7 @@ function createContainerFileAdapter(containerId: string): ExplorerAdapter {
             await api.dockerContainerFileChmod(containerId, path, mode)
         },
         async createFile(path, content = ''): Promise<void> {
-            await api.dockerContainerFileWrite(containerId, path, content)
+            await api.dockerContainerFileWrite(containerId, path, content, true)
         },
         previewUrl(path, token): string {
             return api.dockerContainerFileDownloadURL(containerId, path, token)

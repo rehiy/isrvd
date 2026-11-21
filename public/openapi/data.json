@@ -4610,6 +4610,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "createOnly",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -5962,6 +5970,16 @@
       },
       "post": {
         "operationId": "post_filer_file",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "createOnly",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -7096,6 +7114,14 @@
             "in": "path",
             "name": "id",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "createOnly",
+            "required": false,
             "schema": {
               "type": "string"
             }

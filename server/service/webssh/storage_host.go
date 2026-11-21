@@ -41,9 +41,11 @@ func (s *Service) hostOption(id string) (*webssh.SSHClientOption, error) {
 	}
 	opt := &webssh.SSHClientOption{Addr: h.Addr, User: h.User, Password: h.Password, PrivateKey: h.PrivateKey}
 	if h.CredentialID != "" {
-		if c := s.credentialStore.get(h.CredentialID); c != nil {
-			opt.User, opt.Password, opt.PrivateKey = c.User, c.Password, c.PrivateKey
+		c := s.credentialStore.get(h.CredentialID)
+		if c == nil {
+			return nil, fmt.Errorf("主机绑定的凭据 %s 不存在", h.CredentialID)
 		}
+		opt.User, opt.Password, opt.PrivateKey = c.User, c.Password, c.PrivateKey
 	}
 	return opt, nil
 }

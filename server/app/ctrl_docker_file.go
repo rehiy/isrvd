@@ -1,7 +1,9 @@
 package app
 
 import (
+	"errors"
 	"net/http"
+	"os"
 	"path"
 
 	"github.com/gin-gonic/gin"
@@ -103,7 +105,16 @@ func (app *App) dockerContainerFileWrite(c *gin.Context) {
 		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用上传功能")
 		return
 	}
-	err := app.dockerSvc.ContainerFileWrite(c.Request.Context(), id, req.Path, req.Content)
+	var err error
+	if c.Query("createOnly") == "true" {
+		err = app.dockerSvc.ContainerFileCreateOnly(c.Request.Context(), id, req.Path, req.Content)
+	} else {
+		err = app.dockerSvc.ContainerFileWrite(c.Request.Context(), id, req.Path, req.Content)
+	}
+	if errors.Is(err, os.ErrExist) {
+		respondError(c, http.StatusConflict, "文件已存在")
+		return
+	}
 	respondResultMsg(c, "文件保存成功", nil, err)
 }
 

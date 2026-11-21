@@ -50,7 +50,7 @@ isrvd_post "/filer/dir" '{"path":"<DIR>"}'
 isrvd_post "/filer/file" '{"path":"<FILE>","content":"<CONTENT>"}'
 ```
 
-自动创建缺失的父目录；文件已存在则覆盖。
+自动创建缺失的父目录。默认覆盖同名文件。页面的新建文件操作会传 `?createOnly=true`，同名时返回 409 并保留原文件。目标文件系统须支持硬链接。
 
 ## 读取文件
 
@@ -129,7 +129,7 @@ isrvd_get "/filer/download?path=<FILE>&inline=1"
 isrvd_post "/filer/zip" '{"path":"<DIR_OR_FILE>"}'
 ```
 
-输出为 `<path>.zip`，位于源路径同目录。
+输出为 `<path>.zip`，位于源路径同目录。压缩成功后才替换已有归档，失败或取消时保留旧归档。压缩遇到符号链接或其他特殊文件时返回错误。
 
 ## 解压
 
@@ -148,3 +148,5 @@ isrvd_post "/filer/unzip" '{"path":"<FILE>.zip","targetDir":"<DIR_NAME>"}'
 `targetDir` 仅允许输入标准目录名（不能包含 `/` 等路径分隔符），会自动在 zip 文件的当前目录下创建。
 
 ZIP 直接解压到目标目录。源 ZIP 留在原处，目标目录已有的同名归档也会保留，除非它本身是压缩包内声明的待覆盖条目。压缩包中的条目不能覆盖源 ZIP。
+
+普通文件逐个写入并校验，成功后才替换目标文件。失败或取消时，当前条目的旧文件会保留，此前写入的条目仍然存在。

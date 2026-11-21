@@ -213,7 +213,7 @@ wscat -c "ws://<HOST>/api/docker/container/<CONTAINER_ID>/exec?token=$TOKEN&shel
 isrvd_get "/docker/container/<ID>/file/ls?path=/"
 ```
 
-`path` 默认 `/`。返回 `{path, files: ContainerFileInfo[]}`（容器内无 GNU `find` 时回退为 `ls -la`，此时 `modTime` 为 0）：
+`path` 默认 `/`。返回 `{path, files: ContainerFileInfo[]}`。容器内的 `find` 缺少 `-printf` 时，使用 shell、`stat` 和 `readlink` 取得相同字段。命令失败、输出超过 4 MiB 或记录无法表示为 UTF-8 时，接口返回错误。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -240,6 +240,8 @@ isrvd_post "/docker/container/<ID>/file/write" '{"path":"/tmp/hello.txt","conten
 ```
 
 `path` 必填；`content` 最大 8MB、请求体最大 32MB，超出返回 413。写入会覆盖原文件，权限重置为 `0644`。
+
+页面的新建文件操作会传 `?createOnly=true`，同名时返回 409 并保留原文件。该操作需要容器内的 `ln -T` 和目标文件系统的硬链接支持。
 
 ### 下载文件
 

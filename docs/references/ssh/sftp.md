@@ -44,6 +44,8 @@ isrvd_post "/sftp/<ID>/write" '{"path":"/path/to/file","content":"<FILE_CONTENT>
 
 `path` 必填，`content` 可为空字符串；`content` 超过 8 MiB 返回 413。
 
+页面的新建文件操作会传 `?createOnly=true`。同名时返回 409，原文件保持原样。新建使用 SFTP 的普通重命名操作发布暂存文件。
+
 编辑与上传共用同目录暂存。文件写完并关闭后才重命名到目标。覆盖已有文件要求远端目录可写且服务器支持 `posix-rename@openssh.com`，并检查原文件写权限，保留原权限位、所有者和组。覆盖会替换文件 inode，其他硬链接仍指向旧 inode。失败或取消时，后端清理本次创建的暂存文件。远端断开且无法重新连接时，可能留下以 `.isrvd-upload-` 开头的暂存文件。如果在重命名期间断开连接，客户端需刷新列表确认远端结果。
 
 ---

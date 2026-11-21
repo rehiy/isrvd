@@ -286,8 +286,8 @@ class ApiService {
         return http.post<void>('filer/dir', { path }, config)
     }
 
-    filerCreate(path: string, content = '') {
-        return http.post<void>('filer/file', { path, content })
+    filerCreate(path: string, content = '', createOnly?: boolean) {
+        return http.post<void>('filer/file', { path, content }, { params: { createOnly } })
     }
 
     filerRead(path: string) {
@@ -661,8 +661,8 @@ class ApiService {
         return http.get<{ content: string }>(`docker/container/${id}/file/read`, { params: { path } })
     }
 
-    dockerContainerFileWrite(id: string, path: string, content: string) {
-        return http.post<void>(`docker/container/${id}/file/write`, { path, content })
+    dockerContainerFileWrite(id: string, path: string, content: string, createOnly?: boolean) {
+        return http.post<void>(`docker/container/${id}/file/write`, { path, content }, { params: { createOnly } })
     }
 
     dockerContainerFileChmod(id: string, path: string, mode: string) {
@@ -1053,8 +1053,8 @@ class ApiService {
         return http.get<{ content: string }>(`sftp/${hostId}/read`, { params: { path } })
     }
 
-    sftpWrite(hostId: string, data: SFTPWrite) {
-        return http.post<void>(`sftp/${hostId}/write`, data)
+    sftpWrite(hostId: string, data: SFTPWrite, createOnly?: boolean) {
+        return http.post<void>(`sftp/${hostId}/write`, data, { params: { createOnly } })
     }
 
     sftpDirSize(hostId: string, path: string) {

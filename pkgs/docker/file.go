@@ -3,17 +3,21 @@ package docker
 import (
 	"archive/tar"
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/rehiy/libgo/command"
 	"github.com/rehiy/libgo/filer"
+	"github.com/rehiy/libgo/logman"
 
 	"isrvd/pkgs/helper"
 )
@@ -35,37 +39,45 @@ type ContainerFileListResult struct {
 	Files []ContainerFileInfo `json:"files"` // 目录下的文件/子目录列表
 }
 
-// ContainerFileList 列出容器内目录内容，通过 exec ls 实现（兼容所有镜像）
+// ContainerFileList 使用 NUL 分隔字段，保留任意可用 UTF-8 表示的文件名。
 func (s *DockerService) ContainerFileList(ctx context.Context, containerID, dirPath string) (*ContainerFileListResult, error) {
 	if dirPath == "" {
 		dirPath = "/"
 	}
-
-	listPath := containerDirListPath(dirPath)
-
-	// 先尝试 GNU find -printf（获取结构化信息），输出含 | 分隔符
-	// format: type|targetType|name|size|mode|mtime|linkTarget
-	findScript := fmt.Sprintf(
-		`find %s -maxdepth 1 -mindepth 1 -printf '%%y|%%Y|%%f|%%s|%%#m|%%T@|%%l\n'`,
-		command.POSIXQuote(listPath),
-	)
-	out, err := s.ContainerExecRun(ctx, containerID, "/bin/sh", findScript, 10)
-	// 判断是否为有效的 find -printf 输出（每行至少含 4 个 |）
-	if err == nil && isFindOutput(out) {
-		result := parseFindOutput(dirPath, out)
-		s.resolveContainerLinkTargets(ctx, containerID, result)
-		return result, nil
+	listPath := command.POSIXQuote(containerDirListPath(dirPath))
+	findScript := fmt.Sprintf(`find %s -maxdepth 1 -mindepth 1 -printf '%%y\0%%Y\0%%f\0%%s\0%%#m\0%%T@\0%%l\0'`, listPath)
+	out, truncated, err := s.containerExecRun(ctx, containerID, "/bin/sh", findScript, 10)
+	if _, exited := errors.AsType[commandExitError](err); exited && ctx.Err() == nil && !truncated {
+		// BusyBox find 不支持 -printf。用 glob、stat 及 readlink 输出相同格式。
+		script := "dir=" + listPath + "\n" + `
+LC_ALL=C
+export LC_ALL
+[ -d "$dir" ] && [ -r "$dir" ] && [ -x "$dir" ] || exit 1
+for entry in "$dir"/* "$dir"/.[!.]* "$dir"/..?*; do
+    [ -e "$entry" ] || [ -L "$entry" ] || continue
+    kind=f
+    if [ -L "$entry" ]; then kind=l; elif [ -d "$entry" ]; then kind=d; fi
+    metadata=$(stat -c '%s %a %Y' "$entry") || exit 1
+    set -- $metadata
+    [ "$#" -eq 3 ] || exit 1
+    printf '%s\0%s\0%s\0%s\0%s\0%s\0' "$kind" "$kind" "${entry##*/}" "$1" "$2" "$3"
+    if [ "$kind" = l ]; then readlink -n "$entry" || exit 1; fi
+    printf '\0'
+done`
+		out, truncated, err = s.containerExecRun(ctx, containerID, "/bin/sh", script, 10)
 	}
-
-	// 回退：ls -la（busybox / alpine 兼容）
-	lsScript := fmt.Sprintf(`ls -la %s`, command.POSIXQuote(listPath))
-	out, err = s.ContainerExecRun(ctx, containerID, "/bin/sh", lsScript, 10)
-	if err != nil && out == "" {
+	if truncated {
+		return nil, errors.New("容器目录列表超过输出上限")
+	}
+	if err != nil {
 		return nil, fmt.Errorf("列出目录失败: %w", err)
 	}
-	result := parseLsOutput(dirPath, out)
+	result, err := parseDirectoryRecords(dirPath, out)
+	if err != nil {
+		return nil, err
+	}
 	s.resolveContainerLinkTargets(ctx, containerID, result)
-	return result, nil
+	return result, ctx.Err()
 }
 
 func (s *DockerService) resolveContainerLinkTargets(ctx context.Context, containerID string, result *ContainerFileListResult) {
@@ -81,7 +93,7 @@ func (s *DockerService) resolveContainerLinkTargets(ctx context.Context, contain
 		stat, err := s.client.ContainerStatPath(ctx, containerID, containerLinkTargetPath(result.Path, file.LinkTarget))
 		if err == nil && stat.Mode.IsDir() {
 			file.IsDir = true
-			file.Mode = octalToStr(fileModePerm(file.Mode), true)
+			file.Mode = "d" + file.Mode[1:]
 		}
 	}
 }
@@ -214,6 +226,34 @@ func (s *DockerService) ContainerFileWrite(ctx context.Context, containerID, fil
 	return s.ContainerFileUpload(ctx, containerID, dir, name, strings.NewReader(content), int64(len(content)))
 }
 
+// ContainerFileCreateOnly 写入临时文件，再以硬链接原子发布，避免容器内同名写入。
+func (s *DockerService) ContainerFileCreateOnly(ctx context.Context, containerID, filePath, content string) error {
+	staged := path.Join(path.Dir(filePath), ".isrvd-create-"+rand.Text())
+	quotedStage := command.POSIXQuote(staged)
+	if _, err := s.ContainerExecRun(ctx, containerID, "/bin/sh", "mkdir -m 700 -- "+quotedStage, 10); err != nil {
+		return err
+	}
+	defer func() {
+		cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+		defer cancel()
+		if _, err := s.ContainerExecRun(cleanup, containerID, "/bin/sh", "rm -rf -- "+quotedStage, 5); err != nil {
+			logman.Warn("Remove staged container file failed", "error", err)
+		}
+	}()
+	if err := s.ContainerFileUpload(ctx, containerID, staged, "content", strings.NewReader(content), int64(len(content))); err != nil {
+		return err
+	}
+	const conflict = 73
+	script := "destination=" + command.POSIXQuote(filePath) + "\n" +
+		"ln -T -- " + command.POSIXQuote(path.Join(staged, "content")) + " \"$destination\" && exit 0\n" +
+		fmt.Sprintf("if [ -e \"$destination\" ] || [ -L \"$destination\" ]; then exit %d; fi\nexit 1", conflict)
+	_, err := s.ContainerExecRun(ctx, containerID, "/bin/sh", script, 10)
+	if status, ok := errors.AsType[commandExitError](err); ok && status == conflict {
+		return os.ErrExist
+	}
+	return err
+}
+
 // ContainerFileChmod 修改容器内文件权限
 func (s *DockerService) ContainerFileChmod(ctx context.Context, containerID, targetPath, mode string) error {
 	cmd := fmt.Sprintf("chmod %s %s", command.POSIXQuote(mode), command.POSIXQuote(targetPath))
@@ -225,18 +265,6 @@ func (s *DockerService) ContainerFileChmod(ctx context.Context, containerID, tar
 }
 
 // ─── 辅助函数 ───
-
-// isFindOutput 检查输出是否为 find -printf 格式（每行至少含 4 个 | 分隔符）
-func isFindOutput(output string) bool {
-	for _, line := range strings.SplitN(strings.TrimSpace(output), "\n", 3) {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		return strings.Count(line, "|") >= 4
-	}
-	return true // 空目录也视为有效
-}
 
 // containerLinkTargetPath 返回软链接目标在容器内的绝对路径。
 func containerLinkTargetPath(parentPath, targetPath string) string {
@@ -250,7 +278,7 @@ func containerLinkTargetPath(parentPath, targetPath string) string {
 }
 
 // containerDirListPath 返回用于列目录的容器内路径。
-// 追加 /. 可让 find/ls 展开命令行参数中的目录软链接，例如 /sbin -> /usr/sbin。
+// 追加 /. 可让 find 展开命令行参数中的目录软链接，例如 /sbin -> /usr/sbin。
 func containerDirListPath(dirPath string) string {
 	if dirPath == "" {
 		return "/"
@@ -265,158 +293,33 @@ func containerDirListPath(dirPath string) string {
 	return strings.TrimRight(cleaned, "/") + "/."
 }
 
-func fileModePerm(mode string) string {
-	if len(mode) < 10 {
-		return "0644"
-	}
-	toOctal := func(s string) byte {
-		var v byte = '0'
-		if s[0] == 'r' {
-			v += 4
-		}
-		if s[1] == 'w' {
-			v += 2
-		}
-		if s[2] == 'x' || s[2] == 's' || s[2] == 't' {
-			v++
-		}
-		return v
-	}
-	return string([]byte{'0', toOctal(mode[1:4]), toOctal(mode[4:7]), toOctal(mode[7:10])})
-}
-
-// parseFindOutput 解析 find -printf 输出
-func parseFindOutput(dirPath, output string) *ContainerFileListResult {
+func parseDirectoryRecords(dirPath, output string) (*ContainerFileListResult, error) {
 	result := &ContainerFileListResult{Path: dirPath, Files: []ContainerFileInfo{}}
-	for line := range strings.SplitSeq(strings.TrimSpace(output), "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		parts := strings.SplitN(line, "|", 7)
-		if len(parts) < 5 {
-			continue
-		}
-		ftype, targetType, fname, fsize, fmode, fmtime, linkTarget := "", "", "", "", "", "", ""
-		if len(parts) >= 7 {
-			ftype, targetType, fname, fsize, fmode, fmtime, linkTarget = parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6]
-		} else {
-			ftype, fname, fsize, fmode, fmtime = parts[0], parts[1], parts[2], parts[3], parts[4]
-		}
-		if fname == "" || fname == "." || fname == ".." {
-			continue
-		}
-
-		var size int64
-		fmt.Sscanf(fsize, "%d", &size)
-		var mtime float64
-		fmt.Sscanf(fmtime, "%f", &mtime)
-
-		isLink := ftype == "l" || linkTarget != ""
-		isDir := ftype == "d" || (isLink && targetType == "d")
-		mode := octalToStr(fmode, isDir)
-
-		result.Files = append(result.Files, ContainerFileInfo{
-			Name:       fname,
-			Size:       size,
-			Mode:       mode,
-			ModTime:    int64(mtime),
-			IsDir:      isDir,
-			IsLink:     isLink,
-			LinkTarget: linkTarget,
-		})
+	if output == "" {
+		return result, nil
 	}
-	return result
-}
-
-// parseLsOutput 简单解析 ls -la 输出（回退方案）
-func parseLsOutput(dirPath, output string) *ContainerFileListResult {
-	result := &ContainerFileListResult{Path: dirPath, Files: []ContainerFileInfo{}}
-	for line := range strings.SplitSeq(output, "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "total") {
-			continue
-		}
-		fields := strings.Fields(line)
-		if len(fields) < 9 {
-			continue
-		}
-		modeStr := fields[0]
-		name := strings.Join(fields[8:], " ")
-		linkTarget := ""
-		if before, after, ok := strings.Cut(name, " -> "); ok {
-			linkTarget = after
-			name = before
-		}
-		if name == "." || name == ".." {
-			continue
-		}
-		var size int64
-		fmt.Sscanf(fields[4], "%d", &size)
-
-		isLink := len(modeStr) > 0 && modeStr[0] == 'l'
-		isDir := len(modeStr) > 0 && modeStr[0] == 'd'
-		// ls -la 已输出字符串权限，转换为标准格式（确保 modeOctal 可用）
-		normalizedMode := normalizeLsMode(modeStr, isDir)
-
-		result.Files = append(result.Files, ContainerFileInfo{
-			Name:       name,
-			Size:       size,
-			Mode:       normalizedMode,
-			ModTime:    0,
-			IsDir:      isDir,
-			IsLink:     isLink,
-			LinkTarget: linkTarget,
-		})
+	fields := strings.Split(output, "\x00")
+	if !utf8.ValidString(output) || fields[len(fields)-1] != "" || (len(fields)-1)%7 != 0 {
+		return nil, errors.New("容器目录记录格式无效")
 	}
-	return result
-}
-
-// normalizeLsMode 将 ls -la 输出的权限字符串标准化为固定 10 位格式（如 "-rw-r--r--"）
-// ls 输出已经是 10 位，但 ACL 等场景可能有 + 后缀，统一截取前 10 位
-func normalizeLsMode(mode string, isDir bool) string {
-	if len(mode) >= 10 {
-		return mode[:10]
-	}
-	if isDir {
-		return "drwxr-xr-x"
-	}
-	return "-rw-r--r--"
-}
-
-// octalToStr 将八进制权限字符串（如 0755）转为 rwxr-xr-x 格式
-func octalToStr(octal string, isDir bool) string {
-	octal = strings.TrimPrefix(octal, "0")
-	if len(octal) < 3 {
+	for i := 0; i < len(fields)-1; i += 7 {
+		kind, target, name, link := fields[i], fields[i+1], fields[i+2], fields[i+6]
+		size, sizeErr := strconv.ParseInt(fields[i+3], 10, 64)
+		perm, permErr := strconv.ParseUint(fields[i+4], 8, 16)
+		mtime, timeErr := strconv.ParseFloat(fields[i+5], 64)
+		if sizeErr != nil || permErr != nil || timeErr != nil || name == "" || name == "." || name == ".." || strings.Contains(name, "/") {
+			return nil, errors.New("容器目录记录格式无效")
+		}
+		isLink := kind == "l"
+		isDir := kind == "d" || isLink && target == "d"
+		mode := os.FileMode(perm) & os.ModePerm
 		if isDir {
-			return "drwxr-xr-x"
+			mode |= os.ModeDir
 		}
-		return "-rw-r--r--"
+		result.Files = append(result.Files, ContainerFileInfo{
+			Name: name, Size: size, Mode: mode.String(),
+			ModTime: int64(mtime), IsDir: isDir, IsLink: isLink, LinkTarget: link,
+		})
 	}
-	prefix := "-"
-	if isDir {
-		prefix = "d"
-	}
-	toRwx := func(c byte) string {
-		v := int(c - '0')
-		r, w, x := "-", "-", "-"
-		if v&4 != 0 {
-			r = "r"
-		}
-		if v&2 != 0 {
-			w = "w"
-		}
-		if v&1 != 0 {
-			x = "x"
-		}
-		return r + w + x
-	}
-	o := octal
-	if len(o) == 4 {
-		o = o[1:] // 去掉特殊位
-	}
-	if len(o) < 3 {
-		o = "644"
-	}
-	return prefix + toRwx(o[0]) + toRwx(o[1]) + toRwx(o[2])
+	return result, nil
 }

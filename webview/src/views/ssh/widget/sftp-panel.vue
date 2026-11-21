@@ -51,7 +51,7 @@ function createSftpAdapter(hostId: string): ExplorerAdapter {
         async chmod(path, mode): Promise<void> { await api.sftpFileChmod(hostId, { path, mode }) },
         async dirSize(path): Promise<number | null> { return (await api.sftpDirSize(hostId, path)).payload?.size ?? null },
         previewUrl(path, token): string { return api.sftpDownloadURL(hostId, path, token) },
-        async createFile(path, content = ''): Promise<void> { await api.sftpWrite(hostId, { path, content }) },
+        async createFile(path, content = ''): Promise<void> { await api.sftpWrite(hostId, { path, content }, true) },
     }
 }
 
