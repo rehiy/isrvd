@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"isrvd/pkgs/helper"
-	"isrvd/server/config"
 )
 
 func (app *App) dockerContainerFileLs(c *gin.Context) {
@@ -33,44 +32,6 @@ func (app *App) dockerContainerFileDownload(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-}
-
-func (app *App) dockerContainerFileUpload(c *gin.Context) {
-	id := c.Param("id")
-	dirPath := c.Query("path")
-	if dirPath == "" {
-		respondError(c, http.StatusBadRequest, "path 参数不能为空")
-		return
-	}
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, config.Current().Server.MaxUploadSize)
-	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
-		respondError(c, http.StatusBadRequest, "解析上传表单失败: "+err.Error())
-		return
-	}
-	files := c.Request.MultipartForm.File["file"]
-	if len(files) == 0 {
-		respondError(c, http.StatusBadRequest, "未找到上传文件")
-		return
-	}
-	relativePaths := c.Request.MultipartForm.Value["relativePath"]
-	for i, header := range files {
-		fileName := header.Filename
-		if i < len(relativePaths) && relativePaths[i] != "" {
-			fileName = relativePaths[i]
-		}
-		f, err := header.Open()
-		if err != nil {
-			respondError(c, http.StatusBadRequest, "打开文件失败: "+err.Error())
-			return
-		}
-		uploadErr := app.dockerSvc.ContainerFileUpload(c.Request.Context(), id, dirPath, fileName, f)
-		f.Close()
-		if uploadErr != nil {
-			respondError(c, http.StatusInternalServerError, uploadErr.Error())
-			return
-		}
-	}
-	respondSuccess(c, "上传成功", nil)
 }
 
 func (app *App) dockerContainerFileRemove(c *gin.Context) {
