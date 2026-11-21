@@ -6,14 +6,17 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
 
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/docker/docker/api/types/container"
-	"github.com/rehiy/libgo/archive"
 	"github.com/rehiy/libgo/request"
+
+	"isrvd/pkgs/helper"
 )
 
 const (
@@ -77,17 +80,6 @@ func ProjectParse(ctx context.Context, name, content, installDir string) (*types
 		return nil, fmt.Errorf("缺少 compose 项目工作目录")
 	}
 	return LoadProjectFromContentInDir(ctx, content, installDir, name, nil)
-}
-
-// ContentSave 持久化 compose.yml。
-func ContentSave(installDir, content string) {
-	if installDir == "" {
-		return
-	}
-	_ = os.MkdirAll(installDir, 0755)
-	if content != "" {
-		_ = os.WriteFile(filepath.Join(installDir, ComposeFileName), []byte(content), 0644)
-	}
 }
 
 // EnvSave 以 env 为准写入 .env，空串表示清空内容。
@@ -183,31 +175,39 @@ func EnvContentRead(installDir string) (string, error) {
 	return state.Content, nil
 }
 
-// InitFilesHandle 处理附加运行文件（支持本地上传或 URL 下载），解压到 installDir。
-func InitFilesHandle(installDir string, payload InitPayload) error {
+// InitFilesHandle 下载或读取附加包，解压新增文件并返回失败时的清理函数。
+func InitFilesHandle(ctx context.Context, installDir string, payload InitPayload) (func() error, error) {
 	if payload.File == nil && payload.URL == "" {
-		return nil
+		return nil, nil
 	}
-	if err := os.MkdirAll(installDir, 0755); err != nil {
-		return fmt.Errorf("创建安装目录失败: %w", err)
-	}
-	zipPath := filepath.Join(installDir, "init.zip")
-
-	if payload.File != nil {
-		if closer, ok := payload.File.(io.Closer); ok {
-			defer closer.Close()
+	const maximumBytes = 512 << 20
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
+	var source = payload.File
+	if source == nil {
+		response, err := (&request.Client{Method: http.MethodGet, Url: payload.URL}).DoContext(ctx, http.DefaultClient)
+		if err != nil {
+			return nil, err
 		}
-		return writeAndUnzip(zipPath, payload.File)
+		defer response.Body.Close()
+		if response.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("下载附加文件失败: HTTP %d", response.StatusCode)
+		}
+		source = response.Body
 	}
-
-	if _, err := request.Download(payload.URL, zipPath, false); err != nil {
-		return fmt.Errorf("下载附加文件失败: %w", err)
+	temp, err := os.CreateTemp("", "compose-init-*.zip")
+	if err != nil {
+		return nil, err
 	}
-	if err := archive.NewZipper().Unzip(zipPath); err != nil {
-		return fmt.Errorf("解压附加文件失败: %w", err)
+	defer os.Remove(temp.Name())
+	n, err := io.Copy(temp, io.LimitReader(helper.ContextReader{Context: ctx, Reader: source}, maximumBytes+1))
+	if err := errors.Join(err, temp.Close()); err != nil {
+		return nil, err
 	}
-	_ = os.Remove(zipPath)
-	return nil
+	if n > maximumBytes {
+		return nil, fmt.Errorf("附加文件大小超过限制")
+	}
+	return helper.ExtractZIP(ctx, temp.Name(), installDir, false, maximumBytes)
 }
 
 // ==================== Content mutation ====================
@@ -294,22 +294,3 @@ func DockerComposeProjectName(info container.InspectResponse) string {
 }
 
 // ─── 辅助函数 ───
-
-// ==================== File helpers ====================
-
-func writeAndUnzip(zipPath string, r io.Reader) error {
-	f, err := os.Create(zipPath)
-	if err != nil {
-		return fmt.Errorf("创建附加文件失败: %w", err)
-	}
-	defer f.Close()
-
-	if _, err = io.Copy(f, r); err != nil {
-		return fmt.Errorf("写入附加文件失败: %w", err)
-	}
-	if err := archive.NewZipper().Unzip(zipPath); err != nil {
-		return fmt.Errorf("解压附加文件失败: %w", err)
-	}
-	_ = os.Remove(zipPath)
-	return nil
-}

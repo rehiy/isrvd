@@ -119,6 +119,10 @@ func (s *SwarmService) ServiceCreate(ctx context.Context, spec swarm.ServiceSpec
 
 // ServiceUpdate 使用调用方读取的版本更新；registryAuthFrom 指定无显式认证时的凭据来源。
 func (s *SwarmService) ServiceUpdate(ctx context.Context, current swarm.Service, spec swarm.ServiceSpec, forcePull bool, registryAuthFrom string) error {
+	if registryAuthFrom == swarm.RegistryAuthFromPreviousSpec {
+		_, err := s.client.ServiceUpdate(ctx, current.ID, current.Version, spec, swarm.ServiceUpdateOptions{RegistryAuthFrom: registryAuthFrom})
+		return err
+	}
 	spec.TaskTemplate.ForceUpdate = current.Spec.TaskTemplate.ForceUpdate
 	if spec.TaskTemplate.ContainerSpec != nil && current.Spec.TaskTemplate.ContainerSpec != nil {
 		newContainer, oldContainer := spec.TaskTemplate.ContainerSpec, current.Spec.TaskTemplate.ContainerSpec
