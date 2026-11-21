@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -49,11 +50,10 @@ func (app *App) initServices(ctx context.Context) {
 		logman.Warn("copilot catalog invalid", "error", err)
 	}
 
-	if websshSvc, err := webssh.NewService(); err != nil {
+	var err error
+	if app.websshSvc, err = webssh.NewService(); err != nil {
 		logman.Warn("WebSSH service unavailable", "error", err)
-		app.websshSvc = nil
 	} else {
-		app.websshSvc = websshSvc
 		app.markReady("ssh", nil) // 本地存储，无需探活
 	}
 
@@ -63,55 +63,19 @@ func (app *App) initServices(ctx context.Context) {
 		app.markReady("node", func(context.Context) bool { return true })
 	}
 
-	probeCtx, probeCancel := context.WithTimeout(ctx, 5*time.Second)
-	apisixSvc, err := apisix.NewService(probeCtx)
-	probeCancel()
-	if err != nil {
-		logman.Warn("Apisix service unavailable", "error", err)
-		app.apisixSvc = nil
-	} else {
-		app.apisixSvc = apisixSvc
-		app.markReady("apisix", apisixSvc.CheckAvailability)
-	}
-
-	probeCtx, probeCancel = context.WithTimeout(ctx, 5*time.Second)
-	caddySvc, err := caddy.NewService(probeCtx)
-	probeCancel()
-	if err != nil {
-		logman.Warn("Caddy service unavailable", "error", err)
-		app.caddySvc = nil
-	} else {
-		app.caddySvc = caddySvc
-		app.markReady("caddy", caddySvc.CheckAvailability)
-	}
-
-	if dockerSvc, err := docker.NewService(); err != nil {
+	if app.dockerSvc, err = docker.NewService(); err != nil {
 		logman.Warn("Docker service unavailable", "error", err)
-		app.dockerSvc = nil
-		app.swarmSvc = nil
 	} else {
-		app.dockerSvc = dockerSvc
-		app.markReady("docker", dockerSvc.CheckAvailability)
-		probeCtx, probeCancel = context.WithTimeout(ctx, 5*time.Second)
-		swarmSvc, err := swarm.NewService(probeCtx, dockerSvc.Raw())
-		probeCancel()
-		if err != nil {
-			logman.Warn("Swarm service unavailable", "error", err)
-			app.swarmSvc = nil
-		} else {
-			app.swarmSvc = swarmSvc
-			app.markReady("swarm", swarmSvc.CheckAvailability)
-		}
+		app.markReady("docker", app.dockerSvc.CheckAvailability)
 	}
+	app.initProbedServices(ctx)
 
 	// Docker 不可用时 app.dockerSvc 为 nil，Raw() 对 nil 接收者安全并返回 nil
 	dockerRaw := app.dockerSvc.Raw()
-	if composeSvc, err := compose.NewService(dockerRaw, app.swarmSvc.Raw()); err != nil {
+	if app.composeSvc, err = compose.NewService(dockerRaw, app.swarmSvc.Raw()); err != nil {
 		logman.Warn("Compose service unavailable", "error", err)
-		app.composeSvc = nil
 	} else {
-		app.composeSvc = composeSvc
-		app.markReady("compose", composeSvc.CheckAvailability)
+		app.markReady("compose", app.composeSvc.CheckAvailability)
 	}
 
 	// Cron 任务跨服务重载继续执行，仅在整个进程生命周期结束时取消。
@@ -155,6 +119,38 @@ func (app *App) initServices(ctx context.Context) {
 			status = app.caddySvc.MetricsStatus
 		}
 		app.metricsSvc.AddGateway(metrics.GatewayCaddy, u, status)
+	}
+}
+
+// initProbedServices 并行初始化需要访问外部服务的模块，探活共用 5 秒预算。
+func (app *App) initProbedServices(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	var wg sync.WaitGroup
+	var apisixErr, caddyErr, swarmErr error
+	wg.Go(func() { app.apisixSvc, apisixErr = apisix.NewService(ctx) })
+	wg.Go(func() { app.caddySvc, caddyErr = caddy.NewService(ctx) })
+	app.swarmSvc = nil
+	if dockerRaw := app.dockerSvc.Raw(); dockerRaw != nil {
+		wg.Go(func() { app.swarmSvc, swarmErr = swarm.NewService(ctx, dockerRaw) })
+	}
+	wg.Wait()
+
+	if apisixErr != nil {
+		logman.Warn("Apisix service unavailable", "error", apisixErr)
+	} else {
+		app.markReady("apisix", app.apisixSvc.CheckAvailability)
+	}
+	if caddyErr != nil {
+		logman.Warn("Caddy service unavailable", "error", caddyErr)
+	} else {
+		app.markReady("caddy", app.caddySvc.CheckAvailability)
+	}
+	if swarmErr != nil {
+		logman.Warn("Swarm service unavailable", "error", swarmErr)
+	} else if app.swarmSvc != nil {
+		app.markReady("swarm", app.swarmSvc.CheckAvailability)
 	}
 }
 
