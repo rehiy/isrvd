@@ -219,16 +219,8 @@ func (app *App) registerRoute(group *gin.RouterGroup, route Route) {
 	app.routeIndex[key] = route
 
 	switch route.Method {
-	case "GET":
-		group.GET(route.Path, route.Handler)
-	case "POST":
-		group.POST(route.Path, route.Handler)
-	case "PUT":
-		group.PUT(route.Path, route.Handler)
-	case "PATCH":
-		group.PATCH(route.Path, route.Handler)
-	case "DELETE":
-		group.DELETE(route.Path, route.Handler)
+	case http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
+		group.Handle(route.Method, route.Path, route.Handler)
 	case "ANY":
 		group.Any(route.Path, route.Handler)
 	}
