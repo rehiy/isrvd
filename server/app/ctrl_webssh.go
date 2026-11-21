@@ -10,7 +10,6 @@ import (
 	"github.com/rehiy/libgo/websocket"
 
 	"isrvd/pkgs/helper"
-	"isrvd/server/config"
 	"isrvd/server/service/webssh"
 )
 
@@ -189,51 +188,6 @@ func (app *App) websshSFTPDownload(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-}
-
-func (app *App) websshSFTPUpload(c *gin.Context) {
-	id := c.Param("id")
-	dirPath := c.Query("path")
-	if dirPath == "" {
-		respondError(c, http.StatusBadRequest, "path 参数不能为空")
-		return
-	}
-
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, config.Current().Server.MaxUploadSize)
-	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
-		respondError(c, http.StatusBadRequest, "解析上传表单失败: "+err.Error())
-		return
-	}
-
-	files := c.Request.MultipartForm.File["file"]
-	if len(files) == 0 {
-		respondError(c, http.StatusBadRequest, "未找到上传文件")
-		return
-	}
-
-	// relativePaths 与 files 数组一一对应（目录上传时前端传入 webkitRelativePath）
-	relativePaths := c.Request.MultipartForm.Value["relativePath"]
-
-	for i, header := range files {
-		relativePath := header.Filename
-		if i < len(relativePaths) && relativePaths[i] != "" {
-			relativePath = relativePaths[i]
-		}
-
-		f, err := header.Open()
-		if err != nil {
-			respondError(c, http.StatusBadRequest, "打开文件失败: "+err.Error())
-			return
-		}
-		uploadErr := app.websshSvc.SFTPUpload(id, dirPath, f, relativePath)
-		f.Close()
-		if uploadErr != nil {
-			respondError(c, http.StatusBadRequest, uploadErr.Error())
-			return
-		}
-	}
-
-	respondSuccess(c, "上传成功", nil)
 }
 
 func (app *App) websshSFTPRemove(c *gin.Context) {

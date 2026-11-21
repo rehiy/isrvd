@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -20,10 +21,6 @@ var errLogSnapshotFull = errors.New("日志快照已达到上限")
 
 // ContainerLogs 获取容器日志快照。
 func (s *DockerService) ContainerLogs(ctx context.Context, id, tail string) ([]string, error) {
-	if tail == "" {
-		tail = "100"
-	}
-
 	// 获取容器信息以判断是否为 TTY 模式
 	info, err := s.client.ContainerInspect(ctx, id)
 	if err != nil {
@@ -31,13 +28,7 @@ func (s *DockerService) ContainerLogs(ctx context.Context, id, tail string) ([]s
 		return nil, err
 	}
 
-	reader, err := s.client.ContainerLogs(ctx, id, container.LogsOptions{
-		ShowStdout: true,
-		ShowStderr: true,
-		Tail:       tail,
-		Follow:     false,
-		Timestamps: true,
-	})
+	reader, err := s.client.ContainerLogs(ctx, id, LogOptions(tail, false))
 	if err != nil {
 		logman.Error("Get container logs failed", "id", id, "error", err)
 		return nil, err
@@ -86,10 +77,6 @@ func ReadLogSnapshot(reader io.Reader, tty bool) ([]string, error) {
 // ContainerLogsStream 实时转发容器日志到 writer。
 // writer 可选实现 httpd.Writer 以区分 error 事件与普通 data 事件。
 func (s *DockerService) ContainerLogsStream(ctx context.Context, w io.Writer, id, tail string) {
-	if tail == "" {
-		tail = "100"
-	}
-
 	info, err := s.client.ContainerInspect(ctx, id)
 	if err != nil {
 		logman.Error("Inspect container for logs stream failed", "id", id, "error", err)
@@ -97,13 +84,7 @@ func (s *DockerService) ContainerLogsStream(ctx context.Context, w io.Writer, id
 		return
 	}
 
-	reader, err := s.client.ContainerLogs(ctx, id, container.LogsOptions{
-		ShowStdout: true,
-		ShowStderr: true,
-		Tail:       tail,
-		Follow:     true,
-		Timestamps: true,
-	})
+	reader, err := s.client.ContainerLogs(ctx, id, LogOptions(tail, true))
 	if err != nil {
 		logman.Error("Start container logs stream failed", "id", id, "error", err)
 		LogErrorWrite(w, "获取容器日志失败: "+err.Error())
@@ -163,6 +144,17 @@ func LogErrorWrite(w io.Writer, message string) {
 }
 
 // ─── 辅助函数 ───
+
+// LogOptions 统一 Docker 容器和 Swarm 服务的日志请求选项。
+func LogOptions(tail string, follow bool) container.LogsOptions {
+	return container.LogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Tail:       cmp.Or(tail, "100"),
+		Follow:     follow,
+		Timestamps: true,
+	}
+}
 
 func readLogSnapshot(reader io.Reader, tty bool, limit int64) ([]string, error) {
 	if limit < 0 {

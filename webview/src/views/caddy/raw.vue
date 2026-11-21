@@ -5,6 +5,8 @@ import { usePortal } from '@/stores'
 
 import api from '@/service/api'
 
+import { caddyConfigReloadConfirm } from '@/helper/caddy'
+
 import CodeEditor from '@/component/code-editor.vue'
 
 @Component({
@@ -30,15 +32,7 @@ class CaddyRaw extends Vue {
             return
         }
         if (this.loadedRaw && this.raw !== this.loadedRaw) {
-            this.portal.showConfirm({
-                title: this.$t('放弃修改并重新加载'),
-                message: this.$t('当前修改尚未保存，重新加载将丢弃这些修改。'),
-                icon: 'fa-rotate',
-                iconColor: 'amber',
-                confirmText: this.$t('放弃修改并重新加载'),
-                danger: true,
-                onConfirm: () => this.fetchConfig()
-            })
+            this.portal.showConfirm(caddyConfigReloadConfirm(this.$t, () => this.fetchConfig()))
             return
         }
         await this.fetchConfig()

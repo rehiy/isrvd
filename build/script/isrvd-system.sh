@@ -89,11 +89,12 @@ has_docker() {
 
 init_arch() {
     local machine
-    case "$(uname -m)" in
+    machine=$(uname -m) || machine=""
+    case "$machine" in
         x86_64|amd64) machine=amd64 ;;
         aarch64|arm64) machine=arm64 ;;
         armv7l|armhf) machine=arm ;;
-        *) fail "Unsupported architecture: $(uname -m)" ;;
+        *) fail "Unsupported architecture: $machine" ;;
     esac
     ARCH="$(uname -s | tr '[:upper:]' '[:lower:]')-$machine"
 }
@@ -163,8 +164,9 @@ resolve_release() {
         RELEASE_AREA="$SERVICE_AREA"
         if [ "$RELEASE_AREA" = auto ]; then
             RELEASE_COUNTRY=$(curl -fsSL --connect-timeout 2 --max-time 5 -A "isrvd-installer" \
-                "https://ipip.rehi.org/country_code" 2>/dev/null | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]') || RELEASE_COUNTRY=""
-            [[ "$RELEASE_COUNTRY" =~ ^[A-Z]{2}$ ]] || RELEASE_COUNTRY=""
+                "https://ipip.rehi.org/country_code" 2>/dev/null | tr -d '[:space:]') || RELEASE_COUNTRY=""
+            [[ "$RELEASE_COUNTRY" =~ ^[A-Za-z]{2}$ ]] || RELEASE_COUNTRY=""
+            RELEASE_COUNTRY="${RELEASE_COUNTRY^^}"
             RELEASE_AREA=global
             [ "$RELEASE_COUNTRY" != CN ] || RELEASE_AREA=cn
         fi

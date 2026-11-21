@@ -59,6 +59,15 @@ export class LogStream {
         this.state = 'snapshot'
     }
 
+    reloadTail(loadSnapshot: () => void, startStream: () => void) {
+        if (this.active) {
+            this.stop()
+            startStream()
+        } else {
+            loadSnapshot()
+        }
+    }
+
     private append(data: string) {
         this.content += data + '\n'
         if (this.content.length > MAX_LOG_LENGTH) {

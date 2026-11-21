@@ -4,8 +4,6 @@ import (
 	"go/ast"
 	"go/token"
 	"mime"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -16,6 +14,28 @@ type handlerAnalysisState struct {
 	localTypes map[string]string // 本地类型别名
 	filename   string            // 当前分析的文件
 	helpers    map[string]bool   // 已跟进过的同文件辅助函数（防递归）
+}
+
+type handlerDecl struct {
+	filename string
+	body     *ast.BlockStmt
+}
+
+// indexHandlers 按控制器文件顺序登记 App 方法，重名时保留首个定义。
+func (g *generator) indexHandlers(filename string) {
+	f := g.parseFile(filename)
+	if f == nil {
+		return
+	}
+	for _, decl := range f.Decls {
+		fd, ok := decl.(*ast.FuncDecl)
+		if !ok || fd.Body == nil || !isAppReceiver(fd) {
+			continue
+		}
+		if _, exists := g.handlers[fd.Name.Name]; !exists {
+			g.handlers[fd.Name.Name] = handlerDecl{filename: filename, body: fd.Body}
+		}
+	}
 }
 
 func (g *generator) analyzeHandler(r *RouteDef) {
@@ -36,46 +56,12 @@ func (g *generator) analyzeHandler(r *RouteDef) {
 		return
 	}
 
-	ctrlDir := filepath.Join(g.root, g.cfg.CtrlDir)
-
-	// 缓存目录条目，避免每个路由重复读取
-	if g.ctrlEntries == nil {
-		var err error
-		g.ctrlEntries, err = os.ReadDir(ctrlDir)
-		if err != nil {
-			return
-		}
+	handler, ok := g.handlers[funcName]
+	if !ok {
+		return
 	}
-
-	for _, entry := range g.ctrlEntries {
-		if !strings.HasPrefix(entry.Name(), g.cfg.CtrlPrefix) || !strings.HasSuffix(entry.Name(), ".go") {
-			continue
-		}
-		filename := filepath.Join(ctrlDir, entry.Name())
-		f := g.parseFile(filename)
-		if f == nil {
-			continue
-		}
-
-		// 查找 handler 函数
-		for _, decl := range f.Decls {
-			fd, ok := decl.(*ast.FuncDecl)
-			if !ok || fd.Name.Name != funcName || fd.Body == nil {
-				continue
-			}
-			// 验证 receiver
-			if !isAppReceiver(fd) {
-				continue
-			}
-
-			// 收集本地类型别名（如 filerPathQuery, cronJobEnableReq）
-			localTypes := g.collectLocalTypes(f)
-
-			// 分析函数体
-			g.analyzeFuncBody(r, fd.Body, localTypes, filename)
-			return
-		}
-	}
+	localTypes := g.collectLocalTypes(g.parseFile(handler.filename))
+	g.analyzeFuncBody(r, handler.body, localTypes, handler.filename)
 }
 
 // ─── 辅助函数 ───

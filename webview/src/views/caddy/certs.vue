@@ -6,6 +6,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { CaddyCert } from '@/service/types'
 
+import { caddyCertExpireLabel, caddyCertSummary } from '@/helper/caddy'
+
 import PageSearch from '@/component/page-search.vue'
 
 import CertDetailModal from './widget/cert-detail-modal.vue'
@@ -80,15 +82,7 @@ class CaddyCerts extends Vue {
         return map[source] || 'bg-slate-100 text-slate-500'
     }
 
-    certSummary(cert: CaddyCert) {
-        if (cert.subject) {
-            return cert.subject
-        }
-        if (cert.source === 'file') {
-            return cert.certificate || '-'
-        }
-        return cert.certificate?.split('\n')[0].trim() || this.$t('(空)')
-    }
+    certSummary = caddyCertSummary
 
     certExpireClass(notAfter?: string) {
         if (!notAfter) {
@@ -104,19 +98,7 @@ class CaddyCerts extends Vue {
         return 'text-emerald-600'
     }
 
-    certExpireLabel(notAfter?: string) {
-        if (!notAfter) {
-            return '-'
-        }
-        const days = Math.floor((new Date(notAfter).getTime() - Date.now()) / 86400000)
-        if (days < 0) {
-            return this.$t('已过期 {0} 天', -days)
-        }
-        if (days === 0) {
-            return this.$t('今日过期')
-        }
-        return this.$t('{0} 天后到期', days)
-    }
+    certExpireLabel = caddyCertExpireLabel
 
     deleteCert(cert: CaddyCert) {
         if (!cert.key) {
@@ -124,7 +106,7 @@ class CaddyCerts extends Vue {
         }
         this.portal.showConfirm({
             title: this.$t('删除证书'),
-            message: this.$t('确定要删除证书 <strong class="text-slate-900">{0}</strong> 吗？此操作不可恢复。', this.certSummary(cert)),
+            message: this.$t('确定要删除证书 <strong class="text-slate-900">{0}</strong> 吗？此操作不可恢复。', this.certSummary(cert, this.$t)),
             icon: 'fa-trash',
             iconColor: 'red',
             confirmText: this.$t('确认删除'),
@@ -213,13 +195,13 @@ export default toNative(CaddyCerts)
                   <div class="row-icon bg-cyan-400">
                     <i class="fas fa-certificate text-white text-sm"></i>
                   </div>
-                  <span class="item-title font-mono" :title="certSummary(cert)">{{ certSummary(cert) }}</span>
+                  <span class="item-title font-mono" :title="certSummary(cert, $t)">{{ certSummary(cert, $t) }}</span>
                 </div>
               </td>
               <td class="px-4 py-3"><span :class="sourceTagClass(cert.source)" class="badge-sm">{{ sourceLabel(cert.source) }}</span></td>
               <td class="td-text">{{ cert.issuer || '-' }}</td>
               <td class="px-4 py-3">
-                <span v-if="cert.notAfter" :class="certExpireClass(cert.notAfter)" class="text-xs">{{ certExpireLabel(cert.notAfter) }}</span>
+                <span v-if="cert.notAfter" :class="certExpireClass(cert.notAfter)" class="text-xs">{{ certExpireLabel(cert.notAfter, $t) }}</span>
                 <span v-else class="text-xs text-slate-400">-</span>
               </td>
               <td class="px-4 py-3">
@@ -247,7 +229,7 @@ export default toNative(CaddyCerts)
               <i class="fas fa-certificate text-white text-base"></i>
             </div>
             <div class="min-w-0">
-              <span class="item-title-sm">{{ certSummary(cert) }}</span>
+              <span class="item-title-sm">{{ certSummary(cert, $t) }}</span>
               <span :class="sourceTagClass(cert.source)" class="inline-block text-xs px-1.5 py-0.5 rounded-lg mt-0.5">{{ sourceLabel(cert.source) }}</span>
             </div>
           </div>
@@ -258,7 +240,7 @@ export default toNative(CaddyCerts)
           </div>
           <div v-if="cert.notAfter" class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('有效期') }}</span>
-            <span :class="certExpireClass(cert.notAfter)" class="text-xs">{{ certExpireLabel(cert.notAfter) }}</span>
+            <span :class="certExpireClass(cert.notAfter)" class="text-xs">{{ certExpireLabel(cert.notAfter, $t) }}</span>
           </div>
           <div v-if="cert.tags && cert.tags.length" class="card-prop-row-start">
             <span class="prop-label-start">{{ $t('标签') }}</span>

@@ -2,20 +2,14 @@ package apisix
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
 // PluginList 获取 Apisix 中所有可用 Plugin 及其 Schema
 func (c *Client) PluginList(ctx context.Context) (map[string]any, error) {
-	data, err := c.doRequest(ctx, http.MethodGet, "/plugins?all=true", nil)
-	if err != nil {
-		return nil, err
-	}
 	var result map[string]any
-	if err := json.Unmarshal(data, &result); err != nil {
-		return nil, fmt.Errorf("解析插件列表失败: %w", err)
+	if err := c.requestJSON(ctx, http.MethodGet, "/plugins?all=true", nil, &result, "解析插件列表失败"); err != nil {
+		return nil, err
 	}
 	return result, nil
 }
