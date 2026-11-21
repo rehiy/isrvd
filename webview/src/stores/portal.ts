@@ -1,10 +1,12 @@
 import { defineStore, storeToRefs } from 'pinia'
+import { watch } from 'vue'
 
-import { nodeLocation } from '@/helper/node'
-import { initTheme } from '@/helper/theme'
 import api from '@/service/api'
 import { interceptors } from '@/service/client'
 import type { BootstrapData } from '@/service/types'
+
+import { nodeLocation } from '@/helper/node'
+import { initTheme } from '@/helper/theme'
 
 import { useAuthStore } from './auth'
 import { useConfigStore } from './config'
@@ -30,6 +32,7 @@ export const usePortalStore = defineStore('portal', () => {
     const uiStore = useUIStore()
     const nodeStore = useNodeStore()
     const localeStore = useLocaleStore()
+    watch(() => authStore.sessionVersion, nodeStore.reset, { flush: 'sync' })
 
     // ─── 分发启动数据到子 store ───
 
@@ -49,8 +52,12 @@ export const usePortalStore = defineStore('portal', () => {
         localeStore.initLocale()
         authStore.restoreToken()
 
+        const sessionVersion = authStore.sessionVersion
         try {
             const res = await api.overviewBootstrap()
+            if (authStore.sessionVersion !== sessionVersion) {
+                return
+            }
             if (!res?.payload) {
                 clearAuth()
                 systemStore.initialized = true
@@ -58,6 +65,9 @@ export const usePortalStore = defineStore('portal', () => {
             }
             applyBootstrap(res.payload as BootstrapData)
         } catch (e) {
+            if (authStore.sessionVersion !== sessionVersion) {
+                return
+            }
             // 网络异常：保持现有登录状态，标记初始化完成
             console.error('Portal initialize failed:', e)
             systemStore.initialized = true
@@ -70,14 +80,21 @@ export const usePortalStore = defineStore('portal', () => {
     async function refresh() {
         systemStore.initialized = false
 
+        const sessionVersion = authStore.sessionVersion
         try {
             const res = await api.overviewBootstrap()
+            if (authStore.sessionVersion !== sessionVersion) {
+                return
+            }
             if (!res?.payload) {
                 systemStore.initialized = true
                 return
             }
             applyBootstrap(res.payload as BootstrapData)
         } catch (e) {
+            if (authStore.sessionVersion !== sessionVersion) {
+                return
+            }
             console.error('Portal refresh failed:', e)
             systemStore.initialized = true
         }
@@ -87,9 +104,9 @@ export const usePortalStore = defineStore('portal', () => {
 
     function clearAuth() {
         authStore.clearAuth()
+        systemStore.initialized = true
         systemStore.title = ''
         useConfigStore().reset()
-        nodeStore.reset()
     }
 
     // ─── 权限检查（组合 auth 和 system）───

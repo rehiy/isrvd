@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { POLL_INTERVAL } from '@/helper/format'
 import api from '@/service/api'
 import type { NodeInfo } from '@/service/types'
+
+import { POLL_INTERVAL } from '@/helper/format'
 
 /**
  * 节点 Store（仅中控模式使用）
@@ -23,21 +24,32 @@ export const useNodeStore = defineStore('node', () => {
     // 并发调用共用同一次请求，避免轮询与手动刷新叠加
     let inflight: Promise<void> | null = null
 
+    let generation = 0
+
     function load(silent = false) {
         if (!silent) {
             loading.value = true
         }
+        const requestGeneration = generation
         inflight ??= api.nodeList()
             .then(res => {
-                nodes.value = res.payload || []
-                loadFailed.value = false
+                if (requestGeneration === generation) {
+                    nodes.value = res.payload || []
+                    loadFailed.value = false
+                }
             })
             .catch(() => {
-                // 错误提示由请求拦截器统一处理，保留现有列表
-                loadFailed.value = true
+                if (requestGeneration === generation) {
+                    loadFailed.value = true
+                }
             })
-            .finally(() => { inflight = null })
-        return inflight.finally(() => { loading.value = false })
+            .finally(() => {
+                if (requestGeneration === generation) {
+                    inflight = null
+                    loading.value = false
+                }
+            })
+        return inflight
     }
 
     // 开始周期刷新，返回停止函数；同一时刻只有一个页面轮询
@@ -47,6 +59,8 @@ export const useNodeStore = defineStore('node', () => {
     }
 
     function reset() {
+        generation++
+        inflight = null
         nodes.value = []
         loading.value = true
         loadFailed.value = false
