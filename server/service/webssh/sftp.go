@@ -1,112 +1,142 @@
 package webssh
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"io"
-	"mime/multipart"
+	"net"
 	"os"
 	"path"
 	"strings"
+	"time"
 
+	"github.com/pkg/sftp"
 	"github.com/rehiy/libgo/filer"
 	"github.com/rehiy/libgo/webssh"
+	"golang.org/x/crypto/ssh"
 
 	"isrvd/pkgs/helper"
 )
 
-// SFTPListResult SFTP 目录列表结果
+// SFTPListResult SFTP 目录列表结果。
 type SFTPListResult = webssh.ListResult
 
-// SFTPList 列出目录内容，返回实际路径和文件列表
-func (s *Service) SFTPList(hostID, dirPath string) (*SFTPListResult, error) {
-	opt, err := s.hostOption(hostID)
+func (s *Service) SFTPList(ctx context.Context, hostID, dirPath string) (*SFTPListResult, error) {
+	conn, closeConn, err := s.sftpConnect(ctx, hostID)
 	if err != nil {
 		return nil, err
 	}
-	return s.sftpClient.List(opt, dirPath)
-}
-
-// SFTPDownload 下载文件到 dst
-func (s *Service) SFTPDownload(hostID, filePath string, dst io.Writer) error {
-	opt, err := s.hostOption(hostID)
-	if err != nil {
-		return err
-	}
-	return s.sftpClient.Download(opt, filePath, dst)
-}
-
-// SFTPUpload 上传单个文件。
-// relativePath 为文件相对于 dirPath 的路径（含文件名），上传目录时由前端传入 webkitRelativePath；
-// 普通单文件上传时直接传文件名即可。
-// 若 relativePath 包含子目录，会自动在远端创建对应目录。
-func (s *Service) SFTPUpload(hostID, dirPath string, file multipart.File, relativePath string) error {
-	opt, err := s.hostOption(hostID)
-	if err != nil {
-		return err
-	}
-	destPath := path.Join(dirPath, relativePath)
-	// 若路径中含子目录，先确保目录存在
-	if dir := path.Dir(destPath); dir != "/" && dir != "." && dir != dirPath {
-		if err := s.sftpClient.Mkdir(opt, dir); err != nil {
-			return err
+	defer closeConn()
+	if dirPath == "" || dirPath == "~" {
+		dirPath, err = conn.Getwd()
+		if err != nil {
+			dirPath = "/"
 		}
 	}
-	return s.sftpClient.Upload(opt, destPath, file)
-}
-
-// SFTPRemove 删除文件或目录，目录支持递归删除
-func (s *Service) SFTPRemove(hostID, targetPath string, recursive bool) error {
-	opt, err := s.hostOption(hostID)
+	entries, err := conn.ReadDirContext(ctx, dirPath)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("读取目录失败: %w", err)
 	}
-	return s.sftpClient.Remove(opt, targetPath, recursive)
+	files := make([]*webssh.FileInfo, 0, len(entries))
+	for _, entry := range entries {
+		file := &webssh.FileInfo{
+			Name: entry.Name(), Size: entry.Size(), Mode: entry.Mode().String(),
+			ModTime: entry.ModTime().Unix(), IsDir: entry.IsDir(), IsLink: entry.Mode()&os.ModeSymlink != 0,
+		}
+		if file.IsLink {
+			name := path.Join(dirPath, file.Name)
+			if target, err := conn.Stat(name); err == nil {
+				file.IsDir = target.IsDir()
+			}
+			file.LinkTarget, _ = conn.ReadLink(name)
+		}
+		files = append(files, file)
+	}
+	return &SFTPListResult{Path: dirPath, Files: files}, ctx.Err()
 }
 
-// SFTPMkdir 创建目录
-func (s *Service) SFTPMkdir(hostID, dirPath string) error {
-	opt, err := s.hostOption(hostID)
+// SFTPOpen 打开可取消的远程文件流，调用方负责关闭。
+func (s *Service) SFTPOpen(ctx context.Context, hostID, filePath string) (io.ReadCloser, int64, error) {
+	conn, closeConn, err := s.sftpConnect(ctx, hostID)
 	if err != nil {
-		return err
+		return nil, 0, err
 	}
-	return s.sftpClient.Mkdir(opt, dirPath)
-}
-
-// SFTPRename 重命名/移动文件或目录
-func (s *Service) SFTPRename(hostID, oldPath, newPath string) error {
-	opt, err := s.hostOption(hostID)
+	file, err := conn.Open(filePath)
 	if err != nil {
-		return err
+		closeConn()
+		return nil, 0, fmt.Errorf("打开文件失败: %w", err)
 	}
-	return s.sftpClient.Rename(opt, oldPath, newPath)
+	info, err := file.Stat()
+	if err != nil || !info.Mode().IsRegular() {
+		closeConn()
+		if err == nil {
+			err = os.ErrInvalid
+		}
+		return nil, 0, err
+	}
+	return &sftpFile{File: file, closeConn: closeConn}, info.Size(), nil
 }
 
-// SFTPChmod 修改文件或目录权限
-func (s *Service) SFTPChmod(hostID, targetPath string, mode os.FileMode) error {
-	opt, err := s.hostOption(hostID)
-	if err != nil {
-		return err
-	}
-	return s.sftpClient.Chmod(opt, targetPath, mode)
+type sftpFile struct {
+	*sftp.File
+	closeConn func()
 }
 
-// SFTPChown 修改文件或目录所有者和组
-func (s *Service) SFTPChown(hostID, targetPath string, uid, gid int) error {
-	opt, err := s.hostOption(hostID)
-	if err != nil {
-		return err
-	}
-	return s.sftpClient.Chown(opt, targetPath, uid, gid)
+func (f *sftpFile) Close() error {
+	f.closeConn()
+	return nil
 }
 
-// SFTPRead 读取文件内容
-func (s *Service) SFTPRead(hostID, filePath string) (string, error) {
-	opt, err := s.hostOption(hostID)
+// SFTPUpload 上传单个文件；上传子目录时先创建远端父目录。
+func (s *Service) SFTPUpload(ctx context.Context, hostID, dirPath string, file io.Reader, relativePath string) error {
+	return s.withSFTP(ctx, hostID, func(conn *sftp.Client) error {
+		dest := path.Join(dirPath, relativePath)
+		if dir := path.Dir(dest); dir != "/" && dir != "." && dir != dirPath {
+			if err := conn.MkdirAll(dir); err != nil {
+				return err
+			}
+		}
+		return sftpWrite(conn, dest, file)
+	})
+}
+
+func (s *Service) SFTPRemove(ctx context.Context, hostID, targetPath string, recursive bool) error {
+	return s.withSFTP(ctx, hostID, func(conn *sftp.Client) error {
+		if recursive {
+			return conn.RemoveAll(targetPath)
+		}
+		return conn.Remove(targetPath)
+	})
+}
+
+func (s *Service) SFTPMkdir(ctx context.Context, hostID, dirPath string) error {
+	return s.withSFTP(ctx, hostID, func(conn *sftp.Client) error { return conn.MkdirAll(dirPath) })
+}
+
+func (s *Service) SFTPRename(ctx context.Context, hostID, oldPath, newPath string) error {
+	return s.withSFTP(ctx, hostID, func(conn *sftp.Client) error { return conn.Rename(oldPath, newPath) })
+}
+
+func (s *Service) SFTPChmod(ctx context.Context, hostID, targetPath string, mode os.FileMode) error {
+	return s.withSFTP(ctx, hostID, func(conn *sftp.Client) error { return conn.Chmod(targetPath, mode) })
+}
+
+func (s *Service) SFTPChown(ctx context.Context, hostID, targetPath string, uid, gid int) error {
+	return s.withSFTP(ctx, hostID, func(conn *sftp.Client) error { return conn.Chown(targetPath, uid, gid) })
+}
+
+func (s *Service) SFTPRead(ctx context.Context, hostID, filePath string) (string, error) {
+	file, size, err := s.SFTPOpen(ctx, hostID, filePath)
 	if err != nil {
 		return "", err
 	}
-
+	defer file.Close()
+	if size > helper.MaxEditableFileBytes {
+		return "", helper.ErrTooLarge
+	}
 	buf := &helper.EditBuffer{}
-	err = s.sftpClient.Download(opt, filePath, buf)
+	_, err = io.Copy(buf, file)
 	if buf.Exceeded() {
 		return "", helper.ErrTooLarge
 	}
@@ -119,23 +149,110 @@ func (s *Service) SFTPRead(hostID, filePath string) (string, error) {
 	return strings.ToValidUTF8(buf.String(), "\uFFFD"), nil
 }
 
-// SFTPWrite 写入文件内容
-func (s *Service) SFTPWrite(hostID, filePath, content string) error {
-	opt, err := s.hostOption(hostID)
+func (s *Service) SFTPWrite(ctx context.Context, hostID, filePath, content string) error {
+	return s.withSFTP(ctx, hostID, func(conn *sftp.Client) error {
+		return sftpWrite(conn, filePath, strings.NewReader(content))
+	})
+}
+
+func (s *Service) SFTPDirSize(ctx context.Context, hostID, dirPath string) (int64, error) {
+	var size int64
+	err := s.withSFTP(ctx, hostID, func(conn *sftp.Client) error {
+		walker := conn.Walk(dirPath)
+		for walker.Step() {
+			if err := walker.Err(); err != nil {
+				return err
+			}
+			info := walker.Stat()
+			if info != nil && !info.IsDir() && info.Mode()&os.ModeSymlink == 0 {
+				size += info.Size()
+			}
+		}
+		return nil
+	})
+	return size, err
+}
+
+// ─── 辅助函数 ───
+
+func (s *Service) withSFTP(ctx context.Context, hostID string, run func(*sftp.Client) error) error {
+	conn, closeConn, err := s.sftpConnect(ctx, hostID)
 	if err != nil {
 		return err
 	}
-
-	// 使用 strings.Reader 作为源读取器
-	src := strings.NewReader(content)
-	return s.sftpClient.Upload(opt, filePath, src)
+	defer closeConn()
+	err = run(conn)
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	return err
 }
 
-// SFTPDirSize 计算远程目录大小（包含所有子目录和文件）
-func (s *Service) SFTPDirSize(hostID, dirPath string) (int64, error) {
+// sftpConnect 为每次操作建立独立连接，取消时只关闭该请求的传输。
+func (s *Service) sftpConnect(ctx context.Context, hostID string) (*sftp.Client, func(), error) {
 	opt, err := s.hostOption(hostID)
 	if err != nil {
-		return 0, err
+		return nil, nil, err
 	}
-	return s.sftpClient.DirSize(opt, dirPath)
+	var auth ssh.AuthMethod
+	switch {
+	case opt.Password != "":
+		auth = ssh.Password(opt.Password)
+	case opt.PrivateKey != "":
+		key, err := ssh.ParsePrivateKey([]byte(opt.PrivateKey))
+		if err != nil {
+			return nil, nil, err
+		}
+		auth = ssh.PublicKeys(key)
+	default:
+		return nil, nil, errors.New("SSHClient: no Password or PrivateKey")
+	}
+	addr := opt.Addr
+	if _, _, err := net.SplitHostPort(addr); err != nil {
+		addr = net.JoinHostPort(strings.Trim(addr, "[]"), "22")
+	}
+	const connectTimeout = 5 * time.Second
+	conn, err := (&net.Dialer{Timeout: connectTimeout}).DialContext(ctx, "tcp", addr)
+	if err != nil {
+		return nil, nil, err
+	}
+	stop := context.AfterFunc(ctx, func() { _ = conn.Close() })
+	closeConn := func() {
+		stop()
+		_ = conn.Close()
+	}
+	defer func() {
+		if err != nil {
+			closeConn()
+		}
+	}()
+	if err = conn.SetDeadline(time.Now().Add(connectTimeout)); err != nil {
+		return nil, nil, err
+	}
+	sshConn, channels, requests, err := ssh.NewClientConn(conn, addr, &ssh.ClientConfig{
+		User: opt.User, Auth: []ssh.AuthMethod{auth}, HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	client, err := sftp.NewClient(ssh.NewClient(sshConn, channels, requests))
+	if err == nil {
+		err = conn.SetDeadline(time.Time{})
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+	return client, closeConn, nil
+}
+
+func sftpWrite(conn *sftp.Client, name string, source io.Reader) error {
+	file, err := conn.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC)
+	if err != nil {
+		return fmt.Errorf("创建文件失败: %w", err)
+	}
+	_, err = io.Copy(file, source)
+	if err := errors.Join(err, file.Close()); err != nil {
+		return fmt.Errorf("写入文件失败: %w", err)
+	}
+	return nil
 }

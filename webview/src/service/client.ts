@@ -62,13 +62,16 @@ export const isNotifiedError = (error: unknown): boolean =>
     typeof error === 'object' && error !== null && notifiedErrors.has(error)
 
 export const interceptors = (
-    state: { token: string | null },
+    state: { token: string | null; sessionVersion: number },
     actions: { showNotification: (type: NotificationType, message: string) => void; clearAuth: () => void }
 ) => {
     // 提示文案以中文为 key，其他语言取 locales/<lang>.ts 的译文
     const t = (key: string): string => useLocaleStore().t(key)
 
+    const requestSessions = new WeakMap<InternalAxiosRequestConfig, number>()
+
     const attachAuth = (config: InternalAxiosRequestConfig) => {
+        requestSessions.set(config, state.sessionVersion)
         if (state.token) {
             config.headers['Authorization'] = state.token
         }
@@ -103,8 +106,10 @@ export const interceptors = (
         // 登录接口本身返回的 401（用户名/密码错误等）是登录失败，不是会话过期，走下方通用错误提示
         const isLoginRequest = error.config?.url?.includes('account/login')
         if (error.response?.status === 401 && !isLoginRequest) {
-            actions.showNotification('error', message || t('登录已过期，请重新登录'))
-            actions.clearAuth()
+            if (error.config && requestSessions.get(error.config) === state.sessionVersion) {
+                actions.showNotification('error', message || t('登录已过期，请重新登录'))
+                actions.clearAuth()
+            }
         } else if (error.response) {
             const prefix = isBlob ? t('下载失败') : t('请求失败')
             actions.showNotification('error', message || `${prefix}: ${error.response.status}`)

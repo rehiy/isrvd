@@ -90,14 +90,14 @@ func checkRule(key string, rule *config.AlertRule, usage *HostUsage, webhooks []
 			return
 		}
 		st.firing = true
+		sendTo(webhooks, "resource:"+key, buildEvent("resource.alert", rule, value))
 		statesMu.Unlock()
-		sendTo(webhooks, buildEvent("resource.alert", rule, value))
 	case st.firing:
 		// 已回落到阈值以下，发送恢复通知
 		st.firing = false
 		st.exceed = 0
+		sendTo(webhooks, "resource:"+key, buildEvent("resource.recover", rule, value))
 		statesMu.Unlock()
-		sendTo(webhooks, buildEvent("resource.recover", rule, value))
 	default:
 		st.exceed = 0
 		statesMu.Unlock()

@@ -120,7 +120,7 @@ func (app *App) overviewMonitor(c *gin.Context) {
 			return
 		}
 	}
-	records, err := app.monitorCollector.History(id, since)
+	records, err := app.monitorCollector.History(c.Request.Context(), id, since)
 	respondResult(c, records, err)
 }
 

@@ -276,7 +276,7 @@ func (app *App) filerFileUpload(c *gin.Context) {
 		return
 	}
 
-	if err := app.filerSvc.FileWriteFrom(absPath, file); err != nil {
+	if err := app.filerSvc.FileWriteFrom(absPath, helper.ContextReader{Context: c.Request.Context(), Reader: file}); err != nil {
 		respondError(c, http.StatusInternalServerError, "无法写入文件")
 		return
 	}
@@ -372,10 +372,13 @@ func (app *App) filerFileUnzip(c *gin.Context) {
 			return
 		}
 		// 拼接到 zip 文件的当前目录
-		targetPath = filepath.Join(filepath.Dir(absPath), req.TargetDir)
+		targetPath, ok = app.filerAbsPath(c, filepath.Join(filepath.Dir(req.Path), req.TargetDir))
+		if !ok {
+			return
+		}
 	}
 
-	if err := app.filerSvc.FileUnzip(absPath, targetPath); err != nil {
+	if err := app.filerSvc.FileUnzip(c.Request.Context(), absPath, targetPath); err != nil {
 		logman.Error("Unzip failed", "path", absPath, "targetDir", req.TargetDir, "error", err)
 		respondError(c, http.StatusInternalServerError, "无法解压文件")
 		return

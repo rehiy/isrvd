@@ -45,7 +45,7 @@ GLOBAL=$(isrvd_get "/caddy/global")
 isrvd_put "/caddy/global" "$(echo "$GLOBAL" | jq '.email = "you@example.com" | .logLevel = "WARN"')"
 ```
 
-> ⚠️ `PUT /caddy/global` 为**全量替换**：未提交的字段会被清空（如日志级别、日志格式、ACME issuer、on_demand 开关、`gracePeriod`）。只传 `{"logLevel":"WARN"}` 会清掉 `email` / `acmeCA` / `gracePeriod` 等。
+> ⚠️ `PUT /caddy/global` 为**全量替换**：未提交的字段会被清空（如日志级别、日志格式、ACME issuer、on_demand 开关、`gracePeriod`）。只传 `{"logLevel":"WARN"}` 会清掉 `email` / `acmeCA` / `gracePeriod` 等。表单读取并更新默认策略中第一个 ACME 或内部签发器。继续使用同一签发器时保留 challenge 等表单未管理的参数，其余签发器也会保留。
 
 ## 指标开关
 

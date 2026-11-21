@@ -6,6 +6,16 @@ package i18n
 // 填好译文后用 scripts/apply-translations.mjs 导入，可保持格式与 gofmt 一致。
 func init() {
 	Register(Language{Code: "ja", Tags: []string{"ja"}}, map[string]string{
+		"非法 ZIP 路径: %s":           "無効な ZIP パス: %s",
+		"不支持的 ZIP 文件类型: %s":       "未対応の ZIP エントリー形式: %s",
+		"ZIP 解压大小超过限制":            "ZIP の展開サイズが上限を超えています",
+		"ZIP 条目与源归档同名: %s":        "ZIP エントリーが元のアーカイブを上書きします: %s",
+		"附加文件大小超过限制":              "添付ファイルのサイズが上限を超えています",
+		"无法确认授权状态，已保留消费者: %w":     "認可状態を確認できなかったため、コンシューマーを保持しました: %w",
+		"回滚消费者失败: %w":             "コンシューマーのロールバックに失敗しました: %w",
+		"compose.yml 回滚失败（%v），%s": "compose.yml の復元に失敗しました（%v）、%s",
+		"compose.yml 回滚成功":        "compose.yml を復元しました",
+
 		// ─── Compose 变更预览与重部署 ───
 		"预览 Docker Compose 变更":         "Docker Compose の変更をプレビュー",
 		"预览 Swarm Compose 变更":          "Swarm Compose の変更をプレビュー",

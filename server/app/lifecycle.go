@@ -15,6 +15,7 @@ import (
 
 	"isrvd/server/config"
 	"isrvd/server/service/notify"
+	"isrvd/server/service/overview"
 )
 
 // watchReload 统一持有 HTTP 服务与信号生命周期，避免多个退出回调抢先终止进程。
@@ -30,19 +31,25 @@ func (app *App) watchReload(server *http.Server, listener net.Listener) {
 	reloadDone := make(chan struct{})
 	go func() {
 		defer close(reloadDone)
+		retry := time.NewTicker(15 * time.Second)
+		defer retry.Stop()
 		for {
+			force := false
 			select {
 			case <-ctx.Done():
 				return
+			case <-retry.C:
+				app.retryGateways(ctx)
+				continue
 			case <-hup:
+				force = true
 				logman.Info("received SIGHUP, reloading...")
 			case <-config.ReloadCh:
-				logman.Info("config changed, reloading...")
 			}
 			if ctx.Err() != nil {
 				return
 			}
-			app.reload()
+			app.reload(force)
 		}
 	}()
 
@@ -105,9 +112,11 @@ func (app *App) tryLockRequestServices() context.Context {
 
 // shutdown 先等待 HTTP 请求，再为后台任务提供独立宽限期。
 func (app *App) shutdown(server *http.Server, reloadDone <-chan struct{}) {
-	app.servicesMu.RLock()
-	app.overviewSvc.StopSelfUpgrade()
-	app.servicesMu.RUnlock()
+	upgradeDone := make(chan struct{})
+	go func() {
+		defer close(upgradeDone)
+		overview.StopSelfUpgrade()
+	}()
 	httpCtx, httpCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	if err := server.Shutdown(httpCtx); err != nil {
 		logman.Warn("httpd shutdown grace period expired", "error", err)
@@ -118,6 +127,7 @@ func (app *App) shutdown(server *http.Server, reloadDone <-chan struct{}) {
 	closed := make(chan struct{})
 	go func() {
 		defer close(closed)
+		<-upgradeDone
 		<-reloadDone
 		app.servicesMu.Lock()
 		cronDone := app.closeServices()
@@ -158,12 +168,23 @@ func (app *App) shutdown(server *http.Server, reloadDone <-chan struct{}) {
 }
 
 // reload 等待当前请求结束后读取并发布同一份配置候选，再重建服务。
-func (app *App) reload() {
+func (app *App) reload(force bool) {
+	// 先过滤相同的配置通知，避免取消正在运行的请求。取得服务锁后按最新存储状态发布。
+	if !force {
+		changed, err := config.HasStoredChanges()
+		if err != nil {
+			logman.Error("config reload rejected, keeping previous runtime", "error", err)
+			return
+		}
+		if !changed {
+			return
+		}
+	}
 	app.cancelServiceRequests()
 	app.servicesMu.Lock()
 	defer app.servicesMu.Unlock()
 
-	candidate, err := config.ReadStored()
+	candidate, err := config.PublishStored(force)
 	if err != nil {
 		logman.Error("config reload rejected, keeping previous runtime", "error", err)
 		app.resetRequestContext()
@@ -173,8 +194,10 @@ func (app *App) reload() {
 		app.resetRequestContext()
 		return
 	}
-	config.Publish(candidate)
 	app.wsConfig.AllowedOrigins = slices.Clone(candidate.Server.AllowedOrigins)
+	if app.afterConfigReload != nil {
+		app.afterConfigReload()
+	}
 
 	oldDockerRaw := app.dockerSvc.Raw()
 	if app.servicesCancel != nil {

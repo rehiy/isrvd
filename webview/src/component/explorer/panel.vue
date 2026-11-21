@@ -80,6 +80,7 @@ class ExplorerPanel extends Vue {
     downloadingFile = ''
     mkdirMode = false
     mkdirLoading = false
+    private loadGeneration = 0
     private refreshDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
     formatFileSize = formatFileSize
@@ -126,11 +127,23 @@ class ExplorerPanel extends Vue {
         this.loadFiles()
     }
 
+    unmounted() {
+        this.loadGeneration++
+        if (this.refreshDebounceTimer) {
+            clearTimeout(this.refreshDebounceTimer)
+        }
+    }
+
     async loadFiles(path?: string) {
+        const generation = ++this.loadGeneration
         const target = path ?? this.currentPath
-        this.loading = true; this.error = ''
+        this.loading = true
+        this.error = ''
         try {
             const result = await this.adapter.list(target)
+            if (generation !== this.loadGeneration) {
+                return
+            }
             this.currentPath = result.path
             this.files = [
                 ...result.files.filter(f => f.isDir).sort((a, b) => a.name.localeCompare(b.name)),
@@ -138,10 +151,14 @@ class ExplorerPanel extends Vue {
             ]
             this.$emit('path-change', this.currentPath)
         } catch {
-            this.error = this.$t('加载失败')
-            this.files = []
+            if (generation === this.loadGeneration) {
+                this.error = this.$t('加载失败')
+                this.files = []
+            }
         } finally {
-            this.loading = false
+            if (generation === this.loadGeneration) {
+                this.loading = false
+            }
         }
     }
 

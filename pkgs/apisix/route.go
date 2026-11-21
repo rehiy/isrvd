@@ -191,18 +191,33 @@ func (c *Client) RouteConsumerRestrictionUpdate(ctx context.Context, route *Rout
 		return err
 	}
 
-	// 子路径 PATCH 整体替换该插件配置（而非深度合并）；consumer-restriction 写成纯白名单
-	// （原有的黑名单、自定义拒绝响应等配置会被覆盖）
-	if keyAuth != nil && !info.ManagedElsewhere {
-		if _, err := c.doRequest(ctx, http.MethodPatch, base+"/plugins/key-auth", keyAuth); err != nil {
-			return err
-		}
+	plugins := map[string]any{
+		"consumer-restriction": pluginReplacement(route.Plugins["consumer-restriction"], map[string]any{"whitelist": consumers}),
 	}
-	_, err := c.doRequest(ctx, http.MethodPatch, base+"/plugins/consumer-restriction", map[string]any{"whitelist": consumers})
+	if keyAuth != nil && !info.ManagedElsewhere {
+		plugins["key-auth"] = pluginReplacement(route.Plugins["key-auth"], keyAuth)
+	}
+	_, err := c.doRequest(ctx, http.MethodPatch, base, map[string]any{"plugins": plugins})
 	return err
 }
 
 // ─── 辅助函数 ───
+
+// pluginReplacement 保留 PATCH 的局部提交，并显式移除旧插件中不再需要的字段。
+func pluginReplacement(old any, desired map[string]any) map[string]any {
+	patch := maps.Clone(desired)
+	if previous, ok := old.(map[string]any); ok {
+		for key, original := range previous {
+			value, exists := patch[key]
+			if !exists {
+				patch[key] = nil
+			} else if nested, ok := value.(map[string]any); ok {
+				patch[key] = pluginReplacement(original, nested)
+			}
+		}
+	}
+	return patch
+}
 
 // buildRouteBody 将 Route 转换为 Apisix API 请求体
 func buildRouteBody(req Route) map[string]any {

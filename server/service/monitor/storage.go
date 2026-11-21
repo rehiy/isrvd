@@ -51,7 +51,7 @@ func (i *recordIndex) read(ctx context.Context, s *jsonl.Store) ([]Record, error
 		return nil, ctx.Err()
 	}
 
-	cutoff := time.Now().AddDate(0, 0, -retainDays).Unix()
+	cutoff := historyCutoff(time.Now())
 	err := i.cursor.ScanSince(ctx, s, cutoff, "ts", nil, func(line []byte) bool {
 		var record Record
 		if json.Unmarshal(line, &record) == nil && record.ContainerID != "" && len(record.Data) > 0 && string(record.Data) != "null" {
@@ -109,7 +109,7 @@ func readLatest(s *jsonl.Store, containerID string) (*Record, error) {
 		limit = 2 // 短 ID 必须只匹配一个完整容器 ID
 	}
 	seen := make(map[string]bool)
-	records, err := s.DecodeTailDays[Record](retainDays+1, limit, func(line []byte) bool {
+	records, err := s.DecodeTailDays[Record](retainDays, limit, func(line []byte) bool {
 		var record Record
 		if json.Unmarshal(line, &record) != nil || record.Ts <= 0 || len(record.Data) == 0 || string(record.Data) == "null" || seen[record.ContainerID] {
 			return false
@@ -129,21 +129,39 @@ func readLatest(s *jsonl.Store, containerID string) (*Record, error) {
 	return &records[0], nil
 }
 
-// readSince 读取 ts >= (now-sinceSeconds) 的记录，containerID 非空时只返回指定容器；
-// 结果按时间窗口降采样到 samplePoints 左右
-func readSince(s *jsonl.Store, containerID string, sinceSeconds int64) ([]Record, error) {
+// readHistory 按保留窗口扫描并降采样，每个时间桶保留最新记录。
+func readHistory(ctx context.Context, s *jsonl.Store, sinceSeconds int64, filter jsonl.Filter) ([]Record, error) {
 	if s == nil {
-		return nil, nil
+		return nil, ctx.Err()
 	}
-	cutoff := time.Now().Unix() - sinceSeconds
-	return s.DecodeSinceSampled[Record](cutoff, "ts", jsonl.StrEq("container_id", containerID), samplePoints)
+	now := time.Now()
+	cutoff := max(now.Unix()-max(sinceSeconds, 1), historyCutoff(now))
+	bucketSeconds := max((now.Unix()-cutoff+samplePoints-1)/samplePoints, 1)
+	buckets := make([]Record, samplePoints)
+	var cursor jsonl.Cursor
+	if err := cursor.ScanSince(ctx, s, cutoff, "ts", filter, func(line []byte) bool {
+		var record Record
+		if json.Unmarshal(line, &record) == nil && record.Ts >= cutoff && record.Ts <= now.Unix() {
+			bucket := min((record.Ts-cutoff)/bucketSeconds, samplePoints-1)
+			if record.Ts >= buckets[bucket].Ts {
+				buckets[bucket] = record
+			}
+		}
+		return true
+	}); err != nil {
+		return nil, err
+	}
+	return slices.DeleteFunc(buckets, func(record Record) bool { return record.Ts == 0 }), nil
+}
+
+// historyCutoff 和文件保留规则一致，以本地日期为边界。
+func historyCutoff(now time.Time) int64 {
+	year, month, day := now.Date()
+	return time.Date(year, month, day-retainDays+1, 0, 0, 0, 0, now.Location()).Unix()
 }
 
 // readContainerNameSince 按原始记录中的名称查询不同实例的历史，保留各实例 ID。
-func readContainerNameSince(s *jsonl.Store, name string, sinceSeconds int64) ([]Record, error) {
-	if s == nil {
-		return nil, nil
-	}
+func readContainerNameSince(ctx context.Context, s *jsonl.Store, name string, sinceSeconds int64) ([]Record, error) {
 	name = strings.TrimPrefix(name, "/")
 	if name == "" {
 		return nil, nil
@@ -157,7 +175,7 @@ func readContainerNameSince(s *jsonl.Store, name string, sinceSeconds int64) ([]
 		}
 		return json.Unmarshal(line, &record) == nil && record.ContainerID != "" && strings.TrimPrefix(record.Data.Name, "/") == name
 	}
-	return s.DecodeSinceSampled[Record](time.Now().Unix()-sinceSeconds, "ts", filter, samplePoints)
+	return readHistory(ctx, s, sinceSeconds, filter)
 }
 
 // openStore 打开指定前缀的监控数据存储，失败时返回 nil

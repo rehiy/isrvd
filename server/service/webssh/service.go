@@ -17,9 +17,8 @@ var logger = logman.Named("webssh")
 
 // Service WebSSH 业务服务
 type Service struct {
-	hostStore       *hostStore         // 主机配置存储
-	credentialStore *credentialStore   // 凭据存储
-	sftpClient      *webssh.SFTPClient // SFTP 客户端（用于文件管理）
+	hostStore       *hostStore       // 主机配置存储
+	credentialStore *credentialStore // 凭据存储
 }
 
 // NewService 创建 WebSSH 业务服务
@@ -36,12 +35,7 @@ func NewService() (*Service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("初始化凭据存储失败: %w", err)
 	}
-	return &Service{hostStore: hs, credentialStore: cs, sftpClient: webssh.NewSFTPClient(0)}, nil
-}
-
-// Close 释放 Service 持有的所有资源（连接池等），应在应用退出时调用
-func (s *Service) Close() {
-	s.sftpClient.Close()
+	return &Service{hostStore: hs, credentialStore: cs}, nil
 }
 
 // ─── Credential 凭据管理 ───

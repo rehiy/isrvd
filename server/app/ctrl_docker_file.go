@@ -1,9 +1,8 @@
 package app
 
 import (
-	"mime"
 	"net/http"
-	"path/filepath"
+	"path"
 
 	"github.com/gin-gonic/gin"
 
@@ -24,13 +23,12 @@ func (app *App) dockerContainerFileDownload(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "path 参数不能为空")
 		return
 	}
-	filename := filepath.Base(filePath)
-	c.Header("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": filename}))
-	c.Header("Content-Type", "application/octet-stream")
-	if err := app.dockerSvc.ContainerFileDownload(c.Request.Context(), id, filePath, c.Writer); err != nil {
+	src, size, err := app.dockerSvc.ContainerFileOpen(c.Request.Context(), id, filePath)
+	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	respondFileDownload(c, path.Base(filePath), src, size, http.StatusInternalServerError)
 }
 
 func (app *App) dockerContainerFileRemove(c *gin.Context) {

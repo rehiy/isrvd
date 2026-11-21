@@ -19,6 +19,7 @@ import (
 // nodeConn 一个在线节点的会话及其到该节点的 HTTP 代理
 type nodeConn struct {
 	nodeID    string
+	tokenHash string
 	sess      *wstunnel.Session
 	transport *http.Transport
 	proxy     *httputil.ReverseProxy
@@ -41,8 +42,12 @@ func newNodeConn(nodeID string, sess *wstunnel.Session) *nodeConn {
 }
 
 func (c *nodeConn) close() {
-	_ = c.sess.Close()
-	c.transport.CloseIdleConnections()
+	if c.sess != nil {
+		_ = c.sess.Close()
+	}
+	if c.transport != nil {
+		c.transport.CloseIdleConnections()
+	}
 }
 
 // get 经隧道对节点发起一次 GET 请求（10 秒超时），调用方负责关闭响应体
@@ -108,12 +113,11 @@ func (s *Service) Serve(ctx context.Context, ws io.ReadWriteCloser, remote strin
 	}
 	conn := newNodeConn(n.ID, sess)
 	conn.negotiate(ctx)
-	s.syncInfo(n, conn.info)
-
 	if !s.attach(conn, n.TokenHash) {
 		conn.close()
 		return
 	}
+	s.syncInfo(n, conn.info)
 	logger.Info("节点已上线", "id", n.ID, "name", n.Name, "remote", remote)
 	go conn.pingLoop()
 
@@ -135,6 +139,9 @@ func (s *Service) syncInfo(n *Node, info *AgentInfo) {
 		return
 	}
 	if _, err := s.nodes.update(n.ID, func(m *Node) error {
+		if m.Status != StatusActive || m.TokenHash != n.TokenHash {
+			return ErrUnauthorized
+		}
 		m.Hostname, m.OS, m.Arch = hostname, osName, arch
 		return nil
 	}); err != nil {
@@ -144,12 +151,14 @@ func (s *Service) syncInfo(n *Node, info *AgentInfo) {
 
 // attach 在吊销/删除使用的同一把锁内复核令牌与状态，再登记在线会话。
 func (s *Service) attach(c *nodeConn, tokenHash string) bool {
+	s.RefreshNodes()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	n := s.nodes.byID(c.nodeID)
 	if s.closed || n == nil || n.Status != StatusActive || n.TokenHash != tokenHash || s.conns[c.nodeID] != nil {
 		return false
 	}
+	c.tokenHash = tokenHash
 	s.conns[c.nodeID] = c
 	delete(s.connecting, c.nodeID)
 	return true
@@ -167,6 +176,7 @@ func (s *Service) detach(c *nodeConn) {
 
 // connFor 返回在线会话，并说明不可用的原因
 func (s *Service) connFor(id string) (*nodeConn, error) {
+	s.RefreshNodes()
 	s.mu.RLock()
 	c := s.conns[id]
 	s.mu.RUnlock()

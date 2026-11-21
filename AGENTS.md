@@ -340,12 +340,12 @@ docs/
 服务初始化（`server/app/services.go` 的 `initServices()`）：
 
 - `overviewSvc`、`configSvc`、`auditSvc`、`accountSvc`、`filerSvc`、`shellSvc`、`copilotSvc`：直接初始化
-- `websshSvc`：初始化自己的主机/凭据存储和 SFTP 客户端，失败时标记不可用
+- `websshSvc`：初始化自己的主机/凭据存储，失败时标记不可用。每个 SFTP 请求独立建立连接并按请求上下文关闭
 - `apisixSvc`、`caddySvc`：根据可用性检查可选初始化
 - `dockerSvc`、`swarmSvc`：根据 Docker 可用性可选初始化
 - `composeSvc`：根据 Docker 可用性可选初始化
 - `cronSvc`：始终初始化，可选依赖 Docker 原生客户端（用于 DOCKER 类型任务）
-- `monitorCollector`：始终创建并启动；reload/退出时与 `websshSvc` 一起释放资源
+- `monitorCollector`：始终创建并启动，reload/退出时停止。已配置地址且初始化失败的 APISIX 和 Caddy 由重载循环定期探活
 
 ---
 

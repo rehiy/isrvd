@@ -189,20 +189,9 @@ func (s *Service) Global(ctx context.Context) (*GlobalForm, error) {
 			}
 			// on_demand 以策略级开关为准（全局 permission + 策略 on_demand 两者均需启用）
 			form.OnDemandTLS = p.OnDemand
-			for _, issuer := range p.Issuers {
-				mod, _ := issuer["module"].(string)
-				switch mod {
-				case "internal":
-					form.LocalCerts = true
-				case "acme", "zerossl":
-					if v, ok := issuer["email"].(string); ok {
-						form.Email = v
-					}
-					if v, ok := issuer["ca"].(string); ok {
-						form.AcmeCA = v
-					}
-				}
-			}
+			_, issuer := formIssuer(p.Issuers)
+			form.LocalCerts = issuer.LocalCerts
+			form.Email, form.AcmeCA = issuer.Email, issuer.AcmeCA
 			break
 		}
 	}
@@ -292,11 +281,7 @@ func (s *Service) GlobalUpdate(ctx context.Context, req GlobalForm) error {
 			if globalPolicyIdx >= 0 {
 				policy := &auto.Policies[globalPolicyIdx]
 				policy.OnDemand = req.OnDemandTLS
-				if issuer == nil {
-					policy.Issuers = nil
-				} else {
-					policy.Issuers = []map[string]any{issuer}
-				}
+				policy.Issuers = updateIssuer(policy.Issuers, req, issuer)
 			} else if issuer != nil || req.OnDemandTLS {
 				policy := caddy.TLSPolicy{OnDemand: req.OnDemandTLS}
 				if issuer != nil {
@@ -329,4 +314,50 @@ func buildIssuer(req GlobalForm) map[string]any {
 		return m
 	}
 	return nil
+}
+
+// formIssuer 只投影一个受表单管理的签发器，其余配置留在原策略中。
+func formIssuer(issuers []map[string]any) (int, GlobalForm) {
+	for index, issuer := range issuers {
+		switch issuer["module"] {
+		case "internal":
+			return index, GlobalForm{LocalCerts: true}
+		case "acme", "zerossl":
+			email, _ := issuer["email"].(string)
+			ca, _ := issuer["ca"].(string)
+			return index, GlobalForm{Email: email, AcmeCA: ca}
+		}
+	}
+	return -1, GlobalForm{}
+}
+
+func updateIssuer(issuers []map[string]any, req GlobalForm, desired map[string]any) []map[string]any {
+	index, previous := formIssuer(issuers)
+	if previous.LocalCerts == req.LocalCerts && previous.Email == req.Email && previous.AcmeCA == req.AcmeCA {
+		return issuers
+	}
+	if index < 0 {
+		if desired != nil {
+			return append(issuers, desired)
+		}
+		return issuers
+	}
+	current := issuers[index]
+	if previous.LocalCerts != req.LocalCerts {
+		if desired == nil {
+			return slices.Delete(issuers, index, index+1)
+		}
+		issuers[index] = desired
+		return issuers
+	}
+	if !req.LocalCerts {
+		for _, field := range []string{"email", "ca"} {
+			if value, ok := desired[field]; ok {
+				current[field] = value
+			} else {
+				delete(current, field)
+			}
+		}
+	}
+	return issuers
 }

@@ -2,6 +2,8 @@
 package filer
 
 import (
+	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -174,17 +176,42 @@ func (s *Service) FileRead(absPath string) ([]byte, error) {
 
 // FileWrite 写入文件内容（覆盖）
 func (s *Service) FileWrite(absPath string, content []byte) error {
-	return os.WriteFile(absPath, content, 0644)
+	return s.FileWriteFrom(absPath, bytes.NewReader(content))
 }
 
 // FileWriteFrom 流式写入文件（覆盖），避免大文件整体读入内存
 func (s *Service) FileWriteFrom(absPath string, r io.Reader) error {
-	f, err := os.OpenFile(absPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	mode := os.FileMode(0644)
+	if info, err := os.Lstat(absPath); err == nil {
+		if info.Mode()&os.ModeSymlink != 0 {
+			absPath, err = filepath.EvalSymlinks(absPath)
+			if err != nil {
+				return err
+			}
+			info, err = os.Stat(absPath)
+			if err != nil {
+				return err
+			}
+		}
+		if !info.Mode().IsRegular() {
+			return os.ErrInvalid
+		}
+		mode = info.Mode().Perm()
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	f, err := os.CreateTemp(filepath.Dir(absPath), ".upload-*")
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(f, r)
-	return errors.Join(err, f.Close())
+	defer os.Remove(f.Name())
+	if _, err := io.Copy(f, r); err != nil {
+		return errors.Join(err, f.Close())
+	}
+	if err := errors.Join(f.Chmod(mode), f.Close()); err != nil {
+		return err
+	}
+	return os.Rename(f.Name(), absPath)
 }
 
 // FileCreate 创建文件（使用 libgo/filer）
@@ -234,33 +261,15 @@ func (s *Service) FileZip(absPath string) error {
 // FileUnzip 解压 zip 文件
 // absPath: zip 文件的绝对路径
 // targetPath: 空值则在文件同级目录解压；非空则在该绝对路径目录解压
-func (s *Service) FileUnzip(absPath, targetPath string) error {
+func (s *Service) FileUnzip(ctx context.Context, absPath, targetPath string) error {
 	if targetPath == "" {
-		return archive.NewZipper().Unzip(absPath)
+		targetPath = filepath.Dir(absPath)
 	}
-
-	zipName := filepath.Base(absPath)
-	zipTargetPath := filepath.Join(targetPath, zipName)
-
-	// 确保目标目录存在
 	if err := os.MkdirAll(targetPath, 0755); err != nil {
-		return fmt.Errorf("无法创建目标目录: %w", err)
-	}
-
-	// 移动 zip 到目标目录
-	if err := os.Rename(absPath, zipTargetPath); err != nil {
-		return fmt.Errorf("无法移动文件到目标目录: %w", err)
-	}
-
-	// 解压
-	if err := archive.NewZipper().Unzip(zipTargetPath); err != nil {
-		// 解压失败，移回原位置
-		_ = os.Rename(zipTargetPath, absPath)
 		return err
 	}
-
-	// 移回 zip 文件
-	return os.Rename(zipTargetPath, absPath)
+	_, err := helper.ExtractZIP(ctx, absPath, targetPath, true, 0)
+	return err
 }
 
 // previewContentTypes 支持在线预览的文件扩展名 → Content-Type 映射

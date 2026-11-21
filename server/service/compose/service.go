@@ -141,40 +141,65 @@ func (s *Service) projectDeploy(ctx context.Context, req DeployRequest, rollback
 		return nil, err
 	}
 	installDir := filepath.Join(root, projectName)
-	composeFile := filepath.Join(installDir, "compose.yml")
-	if _, err := os.Stat(composeFile); err == nil {
+	composeFile := filepath.Join(installDir, compose.ComposeFileName)
+	if _, err := os.Lstat(composeFile); err == nil {
 		return nil, fmt.Errorf("目录 %s 已包含 compose 配置，请先移除", installDir)
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return nil, err
 	}
-	_, err = os.Stat(installDir)
-	installDirExists := err == nil
 	initialEnvState, err := compose.EnvStateRead(installDir)
 	if err != nil {
 		return nil, err
 	}
-	deployed := false
+	var deployed, dirCreated, composeCreated, envApplied bool
+	var removeAttachments func() error
 	defer func() {
 		if deployed {
 			return
 		}
-		if !installDirExists {
-			_ = os.RemoveAll(installDir)
-			return
+		if removeAttachments != nil {
+			if err := removeAttachments(); err != nil {
+				logman.Warn("Remove deployment attachments failed", "name", projectName, "error", err)
+			}
 		}
-		_ = os.Remove(composeFile)
-		if err := compose.EnvStateRestore(installDir, initialEnvState); err != nil {
-			logman.Warn(rollbackMessage, "name", projectName, "error", err)
+		if composeCreated {
+			_ = os.Remove(composeFile)
+		}
+		if envApplied {
+			if err := compose.EnvStateRestore(installDir, initialEnvState); err != nil {
+				logman.Warn(rollbackMessage, "name", projectName, "error", err)
+			}
+		}
+		if dirCreated {
+			_ = os.Remove(installDir)
 		}
 	}()
-	if err := os.MkdirAll(installDir, 0755); err != nil {
+	if err := os.MkdirAll(root, 0755); err != nil {
 		return nil, fmt.Errorf("创建安装目录失败: %w", err)
 	}
-	if err := compose.InitFilesHandle(installDir, compose.InitPayload{URL: req.InitURL, File: req.InitFile}); err != nil {
+	if err := os.Mkdir(installDir, 0755); err == nil {
+		dirCreated = true
+	} else if !errors.Is(err, os.ErrExist) {
+		return nil, fmt.Errorf("创建安装目录失败: %w", err)
+	}
+	removeAttachments, err = compose.InitFilesHandle(ctx, installDir, compose.InitPayload{URL: req.InitURL, File: req.InitFile})
+	if err != nil {
 		return nil, err
 	}
+	envApplied = true
 	if err := compose.EnvApply(installDir, req.EnvContent); err != nil {
 		return nil, err
 	}
-	project, err := compose.ProjectLoad(ctx, projectName, req.Content, installDir)
+	file, err := os.OpenFile(composeFile, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("写入 compose 文件失败: %w", err)
+	}
+	composeCreated = true
+	_, err = file.WriteString(req.Content)
+	if err := errors.Join(err, file.Close()); err != nil {
+		return nil, fmt.Errorf("写入 compose 文件失败: %w", err)
+	}
+	project, err := compose.LoadProject(ctx, compose.LoadOptions{WorkingDir: installDir, ProjectName: projectName})
 	if err != nil {
 		return nil, err
 	}

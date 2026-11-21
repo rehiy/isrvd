@@ -142,18 +142,37 @@ func (c *Collector) Latest(containerID string) (*Record, error) {
 }
 
 // History 查询最近 sinceSeconds 秒的历史监控记录；containerID 为空时查询主机
-func (c *Collector) History(containerID string, sinceSeconds int64) ([]Record, error) {
+func (c *Collector) History(ctx context.Context, containerID string, sinceSeconds int64) ([]Record, error) {
 	if containerID == "" {
-		return readSince(c.host, "", sinceSeconds)
+		return readHistory(ctx, c.host, sinceSeconds, jsonl.StrEq("container_id", ""))
 	}
-	if len(containerID) < 64 {
-		record, err := c.Latest(containerID)
-		if err != nil || record == nil {
+	if len(containerID) >= 64 {
+		return readHistory(ctx, c.ctr, sinceSeconds, jsonl.StrEq("container_id", containerID))
+	}
+	var fullID string
+	if c.ctr != nil {
+		var cursor jsonl.Cursor
+		ambiguous := false
+		err := cursor.ScanSince(ctx, c.ctr, historyCutoff(time.Now()), "ts", nil, func(line []byte) bool {
+			var record Record
+			if json.Unmarshal(line, &record) == nil && strings.HasPrefix(record.ContainerID, containerID) &&
+				len(record.Data) > 0 && string(record.Data) != "null" {
+				ambiguous = fullID != "" && fullID != record.ContainerID
+				fullID = record.ContainerID
+			}
+			return !ambiguous
+		})
+		if err != nil {
 			return nil, err
 		}
-		containerID = record.ContainerID
+		if ambiguous {
+			return nil, errors.New("容器 ID 不明确")
+		}
 	}
-	return readSince(c.ctr, containerID, sinceSeconds)
+	if fullID == "" {
+		return nil, ctx.Err()
+	}
+	return readHistory(ctx, c.ctr, sinceSeconds, jsonl.StrEq("container_id", fullID))
 }
 
 // HistoryByName 显式查询同名容器历次重建的历史，先核对当前实例名称。
@@ -169,7 +188,7 @@ func (c *Collector) HistoryByName(ctx context.Context, id, name string, sinceSec
 	if current.ContainerJSONBase == nil || name == "" || strings.TrimPrefix(current.Name, "/") != name {
 		return nil, errors.New("容器名称与 ID 不匹配")
 	}
-	return readContainerNameSince(c.ctr, name, sinceSeconds)
+	return readContainerNameSince(ctx, c.ctr, name, sinceSeconds)
 }
 
 // collect 执行一次采集

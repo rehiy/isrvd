@@ -218,7 +218,7 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) download
 ```
 
-二进制更新会先下载并校验安装包，再停止服务，并保留 `config.yml`。Docker 更新会保留旧容器，直到新容器通过启动检查；失败时恢复旧容器。若更新中断后遗留 `isrvd-update-backup` 容器，需先处理该容器再重试。执行 `bash isrvd-system.sh --help` 查看可用命令与选项。
+二进制更新先暂存并校验安装包，再停止服务。安装器保留上一版二进制与配置，直到 systemd 确认新进程持续运行。启动失败时恢复原版本。Docker 更新会保留旧容器，直到新容器通过启动检查；失败时恢复旧容器。Docker 中控会用目标镜像校验端口范围，再切换容器，请使用支持此检查的镜像。若更新中断后遗留 `isrvd-update-backup` 容器，需先处理该容器再重试。执行 `bash isrvd-system.sh --help` 查看可用命令与选项。
 
 配置文件位置通过 `ISRVD_CONFIG` 指定，详见 [配置](#配置)。
 

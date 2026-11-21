@@ -255,7 +255,7 @@ func (w *FaultWatcher) checkContainer(id, name string, info container.InspectRes
 		evt.Title = fmt.Sprintf("容器 %s已恢复", name)
 		evt.Message = "容器已恢复运行，未检测到异常或频繁重启"
 	}
-	sendTo(w.webhooks, evt)
+	sendTo(w.webhooks, "container:"+id, evt)
 }
 
 func (w *FaultWatcher) pollCertificates(parent context.Context, now time.Time) {
@@ -353,7 +353,7 @@ func (w *FaultWatcher) checkCertificates(provider string, certs []certificateExp
 			// 身份不明的 PEM 可能是同身份的旧证书，暂缓恢复以免掩盖其告警。
 			if old != nil && !(unreadablePEM && strings.HasPrefix(key, "caddy:pem:")) {
 				delete(w.certificates, key)
-				sendTo(w.webhooks, &Event{Event: "certificate.recover", Level: "info", Title: fmt.Sprintf("%s 证书 %s有效期已恢复", provider, cert.subject),
+				sendTo(w.webhooks, "certificate:"+key, &Event{Event: "certificate.recover", Level: "info", Title: fmt.Sprintf("%s 证书 %s有效期已恢复", provider, cert.subject),
 					Message: "证书有效期已超过提前告警阈值", Data: data})
 			}
 			continue
@@ -366,7 +366,7 @@ func (w *FaultWatcher) checkCertificates(provider string, certs []certificateExp
 			continue
 		}
 		w.certificates[key] = &certificateFaultState{notAfter: cert.notAfter, lastSent: now, level: level}
-		sendTo(w.webhooks, &Event{Event: "certificate.alert", Level: level, Title: fmt.Sprintf("%s 证书 %s%s", provider, cert.subject, description),
+		sendTo(w.webhooks, "certificate:"+key, &Event{Event: "certificate.alert", Level: level, Title: fmt.Sprintf("%s 证书 %s%s", provider, cert.subject, description),
 			Message: fmt.Sprintf("证书%s，到期时间 %s", description, cert.notAfter.UTC().Format(time.RFC3339)), Data: data})
 	}
 	for key := range w.certificates {
@@ -409,7 +409,7 @@ func NodeStatusNotify(id, name string, recovered bool, offline time.Duration) {
 		title = fmt.Sprintf("节点 %s 已恢复上线", name)
 		message = fmt.Sprintf("受管节点 %s 已重新上线，离线约 %d 秒", name, int64(offline.Seconds()))
 	}
-	sendTo(snapshotWebhooks(cfg), &Event{
+	sendTo(snapshotWebhooks(cfg), "node:"+id, &Event{
 		Event: event, Level: level, Title: title, Message: message,
 		Data: map[string]any{"nodeId": id, "nodeName": name, "offlineSeconds": int64(offline.Seconds())},
 	})
@@ -424,7 +424,7 @@ func JobFailureNotifier(cfg *config.NotifyConfig) func(string, string, string, i
 		if !enabled {
 			return
 		}
-		sendTo(hooks, &Event{Event: "cron.failed", Level: "warning", Title: fmt.Sprintf("计划任务 %s执行失败", jobName),
+		sendTo(hooks, "", &Event{Event: "cron.failed", Level: "warning", Title: fmt.Sprintf("计划任务 %s执行失败", jobName),
 			Message: "请在计划任务执行历史中查看失败原因", Data: map[string]any{
 				"jobId": jobID, "jobName": jobName, "runId": runID, "duration": duration,
 			}})

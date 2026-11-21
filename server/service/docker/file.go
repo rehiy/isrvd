@@ -15,14 +15,14 @@ func (s *Service) ContainerFileList(ctx context.Context, containerID, dirPath st
 	return s.docker.ContainerFileList(ctx, containerID, dirPath)
 }
 
-// ContainerFileDownload 从容器下载文件，写入 dst
-func (s *Service) ContainerFileDownload(ctx context.Context, containerID, filePath string, dst io.Writer) error {
-	return s.docker.ContainerFileDownload(ctx, containerID, filePath, dst)
+// ContainerFileOpen 打开容器文件流。
+func (s *Service) ContainerFileOpen(ctx context.Context, containerID, filePath string) (io.ReadCloser, int64, error) {
+	return s.docker.ContainerFileOpen(ctx, containerID, filePath)
 }
 
 // ContainerFileUpload 上传单个文件到容器内指定目录
-func (s *Service) ContainerFileUpload(ctx context.Context, containerID, destDir, fileName string, content io.Reader) error {
-	return s.docker.ContainerFileUpload(ctx, containerID, destDir, fileName, content)
+func (s *Service) ContainerFileUpload(ctx context.Context, containerID, destDir, fileName string, content io.Reader, size int64) error {
+	return s.docker.ContainerFileUpload(ctx, containerID, destDir, fileName, content, size)
 }
 
 // ContainerFileRemove 删除容器内文件或目录

@@ -211,6 +211,9 @@ func (g *generator) analyzeCallExpr(stmt *ast.CallExpr, r *RouteDef, state *hand
 				g.analyzeRespondData(stmt.Args[2], r, state)
 			}
 			return
+		case "respondFileDownload":
+			r.RawContentType = "application/octet-stream"
+			return
 		case "respondError":
 			// 错误处理，无需特殊处理
 			return
@@ -234,8 +237,6 @@ func (g *generator) analyzeCallExpr(stmt *ast.CallExpr, r *RouteDef, state *hand
 		extractQueryParam(stmt, r, "string", false)
 	case "DefaultQuery":
 		extractDefaultQueryParam(stmt, r)
-	case "Param":
-		extractParamCall(stmt, r)
 	case "PostForm", "GetPostForm":
 		r.FormData = true
 		extractFormField(stmt, r, "string")
@@ -248,6 +249,16 @@ func (g *generator) analyzeCallExpr(stmt *ast.CallExpr, r *RouteDef, state *hand
 		r.IsSSE = true
 	case "Data":
 		analyzeTextResponse(stmt, r)
+	}
+
+	if receiver, ok := sel.X.(*ast.Ident); ok && receiver.Name == "app" && !state.helpers[sel.Sel.Name] {
+		if method, ok := g.handlers[sel.Sel.Name]; ok && method.filename == state.filename {
+			state.helpers[sel.Sel.Name] = true
+			ast.Inspect(method.body, func(n ast.Node) bool {
+				g.analyzeNode(n, r, state)
+				return true
+			})
+		}
 	}
 
 	// 检测 WebSocket：既支持直接的 wsConfig.Handler，也支持 serveWebSocket 封装
@@ -423,21 +434,7 @@ func extractDefaultQueryParam(stmt *ast.CallExpr, r *RouteDef) {
 	}
 }
 
-// extractParamCall 提取 Param 参数
-func extractParamCall(stmt *ast.CallExpr, r *RouteDef) {
-	if len(stmt.Args) >= 1 {
-		if lit, ok := stmt.Args[0].(*ast.BasicLit); ok {
-			name := strings.Trim(lit.Value, `"`)
-			if !hasParam(r.PathParams, name) {
-				r.PathParams = append(r.PathParams, ParamDef{
-					Name: name, Type: "string", Required: true,
-				})
-			}
-		}
-	}
-}
-
-// extractFormField 提取 multipart 表单字段（PostForm/GetPostForm/FormFile）
+// extractFormField 提取表单字段。
 func extractFormField(stmt *ast.CallExpr, r *RouteDef, typ string) {
 	if len(stmt.Args) < 1 {
 		return

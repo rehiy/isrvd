@@ -8,6 +8,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     const authMode = ref<'jwt' | 'header' | null>(null)
     const token = ref<string | null>(null)
+    const sessionVersion = ref(0)
     const username = ref<string | null>(null)
     const permissionsLoaded = ref(false)
     const founder = ref(false)
@@ -22,6 +23,9 @@ export const useAuthStore = defineStore('auth', () => {
     // ─── 操作定义 ───
 
     function setAuth(data: { authMode: 'jwt' | 'header'; token: string; username: string }) {
+        if (authMode.value !== data.authMode || username.value !== data.username || token.value !== (data.token || '')) {
+            sessionVersion.value++
+        }
         authMode.value = data.authMode
         username.value = data.username
         token.value = data.token || ''
@@ -32,6 +36,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     function clearAuth() {
+        sessionVersion.value++
         authMode.value = null
         token.value = null
         username.value = null
@@ -75,9 +80,7 @@ export const useAuthStore = defineStore('auth', () => {
         const savedToken = localStorage.getItem('app-token')
         const savedUsername = localStorage.getItem('app-username')
         if (savedToken && savedUsername) {
-            token.value = savedToken
-            username.value = savedUsername
-            authMode.value = 'jwt'
+            setAuth({ authMode: 'jwt', token: savedToken, username: savedUsername })
         }
     }
 
@@ -85,6 +88,7 @@ export const useAuthStore = defineStore('auth', () => {
         // 状态
         authMode,
         token,
+        sessionVersion,
         username,
         permissionsLoaded,
         founder,

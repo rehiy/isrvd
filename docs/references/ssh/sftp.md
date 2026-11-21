@@ -52,7 +52,7 @@ isrvd_post "/sftp/<ID>/write" '{"path":"/path/to/file","content":"<FILE_CONTENT>
 isrvd_get "/sftp/<ID>/download?path=/path/to/file"
 ```
 
-返回原始文件流（未设置 `Content-Disposition: attachment`）；浏览器直连下载可携带 `token` 查询参数认证。
+返回原始文件流和文件长度。浏览器直连下载可携带 `token` 查询参数认证。传输开始前的读取错误返回 JSON，发送部分文件后发生的错误由客户端通过长度不符识别。每个 SFTP 请求使用独立连接，取消请求会关闭该连接。
 
 ---
 

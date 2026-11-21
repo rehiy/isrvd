@@ -17,7 +17,8 @@ var logger = logman.Named("node")
 
 // Service 中控侧节点服务
 type Service struct {
-	nodes *nodeStore
+	nodes          *nodeStore
+	failedSnapshot *config.Snapshot // listenMu 保护，下一次配置发布后重试
 
 	mu         sync.RWMutex
 	conns      map[string]*nodeConn // 节点 ID → 当前在线会话
@@ -51,6 +52,8 @@ func NewService() (*Service, error) {
 
 // Close 关闭全部在线会话与端口转发监听，应在应用退出或重载时调用
 func (s *Service) Close() {
+	s.listenMu.Lock()
+	defer s.listenMu.Unlock()
 	s.mu.Lock()
 	s.closed = true
 	conns := s.conns
@@ -60,13 +63,14 @@ func (s *Service) Close() {
 	for _, c := range conns {
 		c.close()
 	}
-	s.portmapStopWhere(func(*portListener) bool {
-		return true
-	})
+	for key := range s.listeners {
+		s.portmapStop(key)
+	}
 }
 
 // NodeList 列出全部节点，附带在线状态
 func (s *Service) NodeList() []*NodeInfo {
+	s.RefreshNodes()
 	list := s.nodes.list()
 	slices.SortFunc(list, func(a, b *Node) int { return a.CreatedAt.Compare(b.CreatedAt) })
 	result := make([]*NodeInfo, len(list))
@@ -84,6 +88,7 @@ type NodeCreateResult struct {
 
 // NodeCreate 创建待接入节点，令牌由密码学随机数采样为 86 个字母数字字符。
 func (s *Service) NodeCreate(req *NodeRequest) (*NodeCreateResult, error) {
+	s.RefreshNodes()
 	name, err := req.name()
 	if err != nil {
 		return nil, err
@@ -102,6 +107,7 @@ func (s *Service) NodeCreate(req *NodeRequest) (*NodeCreateResult, error) {
 
 // NodeUpdate 重命名节点
 func (s *Service) NodeUpdate(id string, req *NodeRequest) (*NodeInfo, error) {
+	s.RefreshNodes()
 	name, err := req.name()
 	if err != nil {
 		return nil, err
@@ -147,6 +153,9 @@ func (s *Service) NodeDelete(id string) error {
 
 // dropNode 在 s.mu 内执行 change（吊销或删除记录），成功后断开在线会话并撤销该节点的端口转发监听。
 func (s *Service) dropNode(id string, change func() error) error {
+	s.RefreshNodes()
+	s.listenMu.Lock()
+	defer s.listenMu.Unlock()
 	s.mu.Lock()
 	if err := change(); err != nil {
 		s.mu.Unlock()
@@ -158,8 +167,65 @@ func (s *Service) dropNode(id string, change func() error) error {
 	if c != nil {
 		c.close()
 	}
-	s.portmapStopWhere(func(l *portListener) bool {
-		return l.nodeID == id
-	})
+	for key, listener := range s.listeners {
+		if listener.nodeID == id {
+			s.portmapStop(key)
+		}
+	}
 	return nil
+}
+
+// RefreshNodes 切换数据目录时核对现有会话、握手与监听。
+func (s *Service) RefreshNodes() {
+	snapshot := config.Current()
+	root := snapshot.Server.RootDirectory
+	if s.nodes.sameRoot(root) {
+		return
+	}
+	s.listenMu.Lock()
+	defer s.listenMu.Unlock()
+	snapshot = config.Current()
+	root = snapshot.Server.RootDirectory
+	if s.nodes.sameRoot(root) || s.failedSnapshot == snapshot {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.closed {
+		return
+	}
+	nodes, err := s.nodes.switchRoot(root)
+	if err != nil {
+		s.failedSnapshot = snapshot
+		logger.Warn("加载新节点目录失败", "root", root, "error", err)
+		return
+	}
+	s.failedSnapshot = nil
+	byID := make(map[string]*Node, len(nodes))
+	for _, n := range nodes {
+		byID[n.ID] = n
+	}
+	for id, c := range s.conns {
+		n := byID[id]
+		if n == nil || n.Status != StatusActive || n.TokenHash != c.tokenHash {
+			delete(s.conns, id)
+			c.close()
+		}
+	}
+	for id, pending := range s.connecting {
+		n := byID[id]
+		if n == nil || n.Status != StatusActive || n.TokenHash != pending.TokenHash {
+			delete(s.connecting, id)
+		}
+	}
+
+	for key, listener := range s.listeners {
+		n := byID[listener.nodeID]
+		if n == nil || n.Status == StatusRevoked || !slices.ContainsFunc(n.PortMaps, func(rule PortMap) bool {
+			return rule.Proto == key.proto && rule.Listen == key.port && rule.Target == listener.targetAddr()
+		}) {
+			s.portmapStop(key)
+		}
+	}
+	s.restorePortMaps(nodes)
 }

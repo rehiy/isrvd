@@ -246,19 +246,24 @@ ensure_swarm_and_network() {
 }
 
 portmap_range() {
-    local file="$DATA_DIR/conf/isrvd.yml" value
+    local image="$1" file="$DATA_DIR/conf/isrvd.yml"
     [ -f "$file" ] || return 0
-    value=$(awk '
-        /^[^[:space:]#]/ { in_portmap = ($0 ~ /^portmap:[[:space:]]*(#.*)?$/); next }
-        in_portmap && /^[[:space:]]+range:/ {
-            sub(/^[[:space:]]+range:[[:space:]]*/, ""); sub(/[[:space:]]*#.*$/, ""); gsub(/["'"'"']/, ""); print; exit
-        }' "$file")
-    [ -z "$value" ] || [[ "$value" =~ ^[0-9]+(-[0-9]+)?$ ]] || fail "portmap.range in $file must look like 20000-20999 or 20022"
-    printf '%s' "$value"
+    timeout 15s docker run --rm --network none -v "$file:/tmp/isrvd-config.yml:ro" \
+        --entrypoint /usr/local/bin/isrvd "$image" --portmap-range /tmp/isrvd-config.yml
+}
+
+deployment_portmap_range() {
+    local entry
+    for entry in "${DEPLOYMENT_ENV[@]}"; do
+        if [ "$entry" = ISRVD_MODE=center ]; then
+            portmap_range "$1"
+            return
+        fi
+    done
 }
 
 run_isrvd_container() {
-    local variant="$1" image="$2" mode=server entry range
+    local variant="$1" image="$2" range="$3" mode=server entry
     local ports=() environment=()
     for entry in "${DEPLOYMENT_ENV[@]}"; do
         environment+=(-e "$entry")
@@ -266,7 +271,6 @@ run_isrvd_container() {
     done
     [ "$mode" = agent ] || ports+=(-p 8080:8080)
     if [ "$mode" = center ]; then
-        range=$(portmap_range)
         [ -z "$range" ] || ports+=(-p "$range:$range" -p "$range:$range/udp")
     fi
     case "$variant" in
@@ -305,7 +309,9 @@ install() {
     echo "  Image:   $DOCKER_IMAGE"
     mkdir -p "$DATA_DIR"
     docker pull "$DOCKER_IMAGE"
-    run_isrvd_container "$DOCKER_VARIANT" "$DOCKER_IMAGE"
+    local port_range
+    port_range=$(deployment_portmap_range "$DOCKER_IMAGE") || fail "Cannot read the center portmap range"
+    run_isrvd_container "$DOCKER_VARIANT" "$DOCKER_IMAGE" "$port_range"
     container_started || fail "isrvd container exited unexpectedly"
     cat <<EOF
 [info] Installation complete
@@ -356,7 +362,7 @@ cleanup_legacy_config() {
 }
 
 update() {
-    local old_image variant previous_variant entry environment tag
+    local old_image variant previous_variant entry environment tag port_range
     local backup="$SERVICE_NAME-update-backup"
     has_docker && docker info >/dev/null 2>&1 || fail "Docker is unavailable"
     container_exists "$SERVICE_NAME" || fail "Not installed; use install first (system service deployments use isrvd-system.sh)"
@@ -397,13 +403,14 @@ update() {
     print_banner "Docker Updater"
     echo "  Image:   $DOCKER_IMAGE"
     docker pull "$DOCKER_IMAGE"
+    port_range=$(deployment_portmap_range "$DOCKER_IMAGE") || fail "Cannot read the center portmap range"
     docker rename "$SERVICE_NAME" "$backup"
     if ! docker stop "$backup"; then
         docker rename "$backup" "$SERVICE_NAME"
         fail "Cannot stop the previous container"
     fi
     if preserve_apisix_data "$backup" "$previous_variant" && migrate_legacy_config "$variant" \
-        && run_isrvd_container "$variant" "$DOCKER_IMAGE" && container_started; then
+        && run_isrvd_container "$variant" "$DOCKER_IMAGE" "$port_range" && container_started; then
         docker rm "$backup"
         cleanup_legacy_config "$variant"
         echo "[info] Docker deployment updated: $DOCKER_IMAGE"

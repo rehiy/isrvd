@@ -14,6 +14,7 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/rehiy/libgo/command"
 	"github.com/rehiy/libgo/strutil"
+	"github.com/robfig/cron/v3"
 
 	"isrvd/pkgs/docker"
 )
@@ -44,8 +45,8 @@ func (b *jobOutputBuffer) String() string {
 }
 
 // runJob 执行指定 ID 的任务
-func (s *Service) runJob(id string) {
-	job, ctx, err := s.prepareRun(id)
+func (s *Service) runJob(id string, entryID *cron.EntryID) {
+	job, ctx, err := s.prepareRun(id, entryID)
 	if errors.Is(err, ErrJobRunning) {
 		logger.Info("Cron job skipped because previous run is active", "id", id)
 		return
@@ -57,7 +58,7 @@ func (s *Service) runJob(id string) {
 }
 
 // prepareRun 在同一把锁内接受任务、建立取消上下文并阻止同一任务重入。
-func (s *Service) prepareRun(id string) (*Job, context.Context, error) {
+func (s *Service) prepareRun(id string, entryID *cron.EntryID) (*Job, context.Context, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.closed {
@@ -66,6 +67,9 @@ func (s *Service) prepareRun(id string) (*Job, context.Context, error) {
 	job, ok := s.jobs[id]
 	if !ok {
 		return nil, nil, fmt.Errorf("job not found: %s", id)
+	}
+	if entryID != nil && s.entries[id] != *entryID {
+		return nil, nil, errors.New("cron entry replaced")
 	}
 	if _, running := s.running[id]; running {
 		return nil, nil, ErrJobRunning

@@ -165,7 +165,7 @@ func (app *App) websshTerminal(c *gin.Context) {
 func (app *App) websshSFTPList(c *gin.Context) {
 	id := c.Param("id")
 	dirPath := c.Query("path")
-	result, err := app.websshSvc.SFTPList(id, dirPath)
+	result, err := app.websshSvc.SFTPList(c.Request.Context(), id, dirPath)
 	if err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -181,12 +181,12 @@ func (app *App) websshSFTPDownload(c *gin.Context) {
 		return
 	}
 
-	// 直接下载到 ResponseWriter
-	err := app.websshSvc.SFTPDownload(id, filePath, c.Writer)
+	src, size, err := app.websshSvc.SFTPOpen(c.Request.Context(), id, filePath)
 	if err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
+	respondFileDownload(c, "", src, size, http.StatusBadRequest)
 }
 
 func (app *App) websshSFTPRemove(c *gin.Context) {
@@ -197,7 +197,7 @@ func (app *App) websshSFTPRemove(c *gin.Context) {
 		return
 	}
 	recursive := c.Query("recursive") == "true"
-	if err := app.websshSvc.SFTPRemove(id, targetPath, recursive); err != nil {
+	if err := app.websshSvc.SFTPRemove(c.Request.Context(), id, targetPath, recursive); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -213,7 +213,7 @@ func (app *App) websshSFTPMkdir(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.websshSvc.SFTPMkdir(id, req.Path); err != nil {
+	if err := app.websshSvc.SFTPMkdir(c.Request.Context(), id, req.Path); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -230,7 +230,7 @@ func (app *App) websshSFTPRename(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.websshSvc.SFTPRename(id, req.OldPath, req.NewPath); err != nil {
+	if err := app.websshSvc.SFTPRename(c.Request.Context(), id, req.OldPath, req.NewPath); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -256,7 +256,7 @@ func (app *App) websshSFTPChmod(c *gin.Context) {
 		return
 	}
 
-	if err := app.websshSvc.SFTPChmod(id, req.Path, mode); err != nil {
+	if err := app.websshSvc.SFTPChmod(c.Request.Context(), id, req.Path, mode); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -276,7 +276,7 @@ func (app *App) websshSFTPChown(c *gin.Context) {
 		return
 	}
 
-	if err := app.websshSvc.SFTPChown(id, req.Path, req.UID, req.GID); err != nil {
+	if err := app.websshSvc.SFTPChown(c.Request.Context(), id, req.Path, req.UID, req.GID); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -292,7 +292,7 @@ func (app *App) websshSFTPRead(c *gin.Context) {
 		return
 	}
 
-	content, err := app.websshSvc.SFTPRead(id, filePath)
+	content, err := app.websshSvc.SFTPRead(c.Request.Context(), id, filePath)
 	if respondEditableReadError(c, err) {
 		return
 	}
@@ -323,7 +323,7 @@ func (app *App) websshSFTPWrite(c *gin.Context) {
 		return
 	}
 
-	if err := app.websshSvc.SFTPWrite(id, req.Path, req.Content); err != nil {
+	if err := app.websshSvc.SFTPWrite(c.Request.Context(), id, req.Path, req.Content); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -340,7 +340,7 @@ func (app *App) websshSFTPDirSize(c *gin.Context) {
 		return
 	}
 
-	size, err := app.websshSvc.SFTPDirSize(id, dirPath)
+	size, err := app.websshSvc.SFTPDirSize(c.Request.Context(), id, dirPath)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "无法计算目录大小: "+err.Error())
 		return
