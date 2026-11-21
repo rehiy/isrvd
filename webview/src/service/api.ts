@@ -592,8 +592,8 @@ class ApiService {
         return http.post<DockerContainerCreateResult>('docker/container', data, config)
     }
 
-    dockerContainerLogs(id: string, tail = '100') {
-        return http.get<{ logs: string[] }>(`docker/container/${id}/logs`, { params: { tail } })
+    dockerContainerLogs(id: string, tail = '100', signal?: AbortSignal) {
+        return http.get<{ logs: string[] }>(`docker/container/${id}/logs`, { params: { tail }, signal })
     }
 
     dockerContainerStats(id: string) {
@@ -818,8 +818,8 @@ class ApiService {
         return http.get<SwarmServiceCompose>(`compose/swarm/${name}`, { params: force ? { force: 'true' } : undefined })
     }
 
-    swarmServiceLogs(id: string, tail = '100') {
-        return http.get<{ logs: string[] }>(`swarm/service/${id}/logs`, { params: { tail } })
+    swarmServiceLogs(id: string, tail = '100', signal?: AbortSignal) {
+        return http.get<{ logs: string[] }>(`swarm/service/${id}/logs`, { params: { tail }, signal })
     }
 
     swarmTaskList(serviceID = '') {

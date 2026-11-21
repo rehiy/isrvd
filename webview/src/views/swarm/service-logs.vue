@@ -30,7 +30,7 @@ class ServiceLogs extends Vue {
     }
 
     async loadLogs() {
-        await this.logs.load(async () => (await api.swarmServiceLogs(this.serviceId, this.logs.tail)).payload?.logs || [])
+        await this.logs.load(async signal => (await api.swarmServiceLogs(this.serviceId, this.logs.tail, signal)).payload?.logs || [])
     }
 
     startStream() {

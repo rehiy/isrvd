@@ -40,7 +40,7 @@ class ContainerLogs extends Vue {
         if (!this.container) {
             return
         }
-        await this.logs.load(async () => (await api.dockerContainerLogs(this.containerId, this.logs.tail)).payload?.logs || [])
+        await this.logs.load(async signal => (await api.dockerContainerLogs(this.containerId, this.logs.tail, signal)).payload?.logs || [])
     }
 
     startStream() {
