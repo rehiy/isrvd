@@ -106,7 +106,7 @@ isrvd_put "/compose/swarm/<NAME>" '{"content":"<HISTORICAL_COMPOSE_YAML>","envCo
 
 ### 变量插值优先级
 
-从低到高：磁盘 `.env` < 请求中显式提交的 `envContent`（同键时优先于磁盘 `.env`） < 进程环境（与 docker compose 一致）。
+进程环境优先于项目 `.env`。省略 `envContent` 时使用磁盘 `.env`，提交时以请求内容作为完整 `.env`，空字符串表示清空。预览时，变量插值与指向项目 `.env` 的 `env_file` 引用均使用提交的内容，磁盘文件保留原样。
 
 ### 部署结果
 

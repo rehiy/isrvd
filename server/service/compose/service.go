@@ -203,7 +203,7 @@ func (s *Service) projectDeploy(ctx context.Context, req DeployRequest, rollback
 	if err := errors.Join(err, file.Close()); err != nil {
 		return nil, fmt.Errorf("写入 compose 文件失败: %w", err)
 	}
-	project, err := compose.LoadProject(ctx, compose.LoadOptions{WorkingDir: installDir, ProjectName: projectName})
+	project, err := compose.LoadProject(ctx, installDir, projectName)
 	if err != nil {
 		return nil, err
 	}
@@ -219,25 +219,22 @@ func (s *Service) projectDeploy(ctx context.Context, req DeployRequest, rollback
 }
 
 // prepareRedeployContent 校验新配置并预拉取所需镜像。
-func (s *Service) prepareRedeployContent(ctx context.Context, name, installDir, oldContent string, req RedeployRequest) (string, error) {
-	content, project, err := s.resolveRedeployContent(ctx, name, installDir, oldContent, nil, req)
+func (s *Service) prepareRedeployContent(ctx context.Context, name, installDir, oldContent string, req RedeployRequest) (string, *types.Project, error) {
+	content, project, err := s.resolveRedeployContent(ctx, name, installDir, oldContent, req)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	if err := s.imagesEnsure(ctx, project, req.ForcePull); err != nil {
-		return "", err
+		return "", nil, err
 	}
-	return content, nil
+	return content, project, nil
 }
 
 // resolveRedeployContent 解析待部署内容并返回项目，供预览与实际部署共用。
-func (s *Service) resolveRedeployContent(ctx context.Context, name, installDir, oldContent string, contentErr error, req RedeployRequest) (string, *types.Project, error) {
+func (s *Service) resolveRedeployContent(ctx context.Context, name, installDir, oldContent string, req RedeployRequest) (string, *types.Project, error) {
 	content := oldContent
 	switch {
 	case req.ServiceName != "":
-		if contentErr != nil {
-			return "", nil, contentErr
-		}
 		var err error
 		content, err = compose.ServiceImageUpdate(ctx, name, oldContent, req.ServiceName, req.Image, installDir)
 		if err != nil {
@@ -246,11 +243,16 @@ func (s *Service) resolveRedeployContent(ctx context.Context, name, installDir, 
 		content = withGeneratedHeader(content)
 	case req.Content != nil:
 		content = *req.Content
-	case contentErr != nil:
-		return "", nil, contentErr
 	}
 
-	project, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, req.EnvContent)
+	envContent := req.EnvContent
+	if envContent == nil {
+		// EnvApply 会为没有 .env 的项目创建空文件。
+		if _, err := os.Stat(filepath.Join(installDir, compose.EnvFileName)); errors.Is(err, os.ErrNotExist) {
+			envContent = new("")
+		}
+	}
+	project, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, envContent)
 	if err != nil {
 		return "", nil, err
 	}

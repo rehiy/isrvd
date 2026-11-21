@@ -71,15 +71,7 @@ func ProjectLoad(ctx context.Context, name, content, installDir string) (*types.
 	if err := os.WriteFile(filepath.Join(installDir, ComposeFileName), []byte(content), 0644); err != nil {
 		return nil, fmt.Errorf("写入 compose 文件失败: %w", err)
 	}
-	return LoadProject(ctx, LoadOptions{WorkingDir: installDir, ProjectName: name})
-}
-
-// ProjectParse 解析 compose 内容（不写文件），相对路径基于 installDir 展开。
-func ProjectParse(ctx context.Context, name, content, installDir string) (*types.Project, error) {
-	if installDir == "" {
-		return nil, fmt.Errorf("缺少 compose 项目工作目录")
-	}
-	return LoadProjectFromContentInDir(ctx, content, installDir, name, nil)
+	return LoadProject(ctx, installDir, name)
 }
 
 // EnvSave 以 env 为准写入 .env，空串表示清空内容。
