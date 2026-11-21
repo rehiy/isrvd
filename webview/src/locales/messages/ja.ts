@@ -1379,13 +1379,14 @@ const messages: Record<string, string> = {
     // "{0}" is already in the upload queue
     '「{0}」已在上传队列中': '「{0}」はすでにアップロード待ちです',
     // Upload failed, leftover files have been cleaned up
-    '上传失败，已尝试清理残留文件': 'アップロードに失敗しました。残ったファイルの削除を試みました',
+    '上传失败': 'アップロードに失敗しました',
+    '服务器写入中': 'サーバーでファイルに書き込み中',
+    '无法创建目录 {0}': 'ディレクトリ {0} を作成できませんでした',
     // Upload failed, incomplete files may remain
-    '上传失败，可能残留不完整文件': 'アップロードに失敗しました。不完全なファイルが残っている可能性があります',
     // Uploaded ({0} files)
     '上传成功（{0} 个文件）': '{0} 件のファイルをアップロードしました',
     // {0} succeeded, {1} failed{2}
-    '{0} 个成功，{1} 个失败{2}': '{0} 件成功、{1} 件失敗{2}',
+    '{0} 个成功，{1} 个失败': '{0} 件成功、{1} 件失敗',
     // Upload Queue
     '上传队列': 'アップロード待ち',
     // Confirm Compress

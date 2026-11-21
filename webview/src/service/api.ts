@@ -638,7 +638,7 @@ class ApiService {
             onUploadProgress: onProgress
                 ? (e) => {
                     if (e.total) {
-                        onProgress(Math.round((e.loaded / e.total) * 100))
+                        onProgress(Math.floor((e.loaded / e.total) * 100))
                     }
                 }
                 : undefined,
@@ -1003,7 +1003,7 @@ class ApiService {
             onUploadProgress: onProgress
                 ? (e) => {
                     if (e.total) {
-                        onProgress(Math.round((e.loaded / e.total) * 100))
+                        onProgress(Math.floor((e.loaded / e.total) * 100))
                     }
                 }
                 : undefined,
