@@ -293,46 +293,34 @@ func (g *generator) analyzeHelperFunc(r *RouteDef, state *handlerAnalysisState, 
 
 // analyzeShouldBindJSON 分析 ShouldBindJSON 调用
 func (g *generator) analyzeShouldBindJSON(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
-	if len(stmt.Args) < 1 {
-		return
-	}
-	var varName string
-	if unary, ok := stmt.Args[0].(*ast.UnaryExpr); ok && unary.Op == token.AND {
-		if ident, ok := unary.X.(*ast.Ident); ok {
-			varName = ident.Name
-		}
-	}
-	if varName == "" {
-		return
-	}
-	if typeName, ok := state.varTypes[varName]; ok && r.JSONBody == nil {
-		schema := g.resolveStructSchema(typeName, state.localTypes, state.filename)
-		if schema != nil {
-			r.JSONBody = schema
-		}
+	if r.JSONBody == nil {
+		r.JSONBody = g.boundSchema(stmt, state)
 	}
 }
 
 // analyzeShouldBindQuery 分析 ShouldBindQuery 调用
 func (g *generator) analyzeShouldBindQuery(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
+	if r.QueryType == nil {
+		r.QueryType = g.boundSchema(stmt, state)
+	}
+}
+
+func (g *generator) boundSchema(stmt *ast.CallExpr, state *handlerAnalysisState) *SchemaInfo {
 	if len(stmt.Args) < 1 {
-		return
+		return nil
 	}
-	var varName string
-	if unary, ok := stmt.Args[0].(*ast.UnaryExpr); ok && unary.Op == token.AND {
-		if ident, ok := unary.X.(*ast.Ident); ok {
-			varName = ident.Name
-		}
+	arg, ok := stmt.Args[0].(*ast.UnaryExpr)
+	if !ok || arg.Op != token.AND {
+		return nil
 	}
-	if varName == "" {
-		return
+	ident, ok := arg.X.(*ast.Ident)
+	if !ok {
+		return nil
 	}
-	if typeName, ok := state.varTypes[varName]; ok && r.QueryType == nil {
-		schema := g.resolveStructSchema(typeName, state.localTypes, state.filename)
-		if schema != nil {
-			r.QueryType = schema
-		}
+	if typeName, ok := state.varTypes[ident.Name]; ok {
+		return g.resolveStructSchema(typeName, state.localTypes, state.filename)
 	}
+	return nil
 }
 
 // analyzeRespondSuccess 分析 respondSuccess(c, msg, data) 调用
