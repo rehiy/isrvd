@@ -80,32 +80,24 @@ class MonitorPage extends Vue {
         return !!res.payload && !Array.isArray(res.payload) && this.dispatchData(res.payload as MonitorHostRecord)
     }
 
-    async loadHistory(version = this.dataVersion): Promise<boolean> {
+    private async loadHistory(version: number) {
         try {
             const res = await api.overviewMonitor({ type: 'host', since: this.selectedRange })
             if (this.destroyed || version !== this.dataVersion) {
-                return false
+                return
             }
-            let ok = false
-            if (res.payload && Array.isArray(res.payload) && res.payload.length > 0) {
+            if (Array.isArray(res.payload)) {
                 const sorted = [...res.payload].sort((a, b) => a.ts - b.ts)
                 for (const rec of sorted) {
-                    // 批量加载时只更新数据，最后统一更新图表
-                    ok = this.dispatchData(rec) || ok
-                }
-                // 数据加载完成后，显式更新所有图表
-                if (ok) {
-                    this.updateCharts()
+                    this.dispatchData(rec)
                 }
             }
-            return ok
         } catch {
-            return false
+            // 历史请求失败时仍尝试读取实时数据。
         }
     }
 
     clearAllData() {
-        this.dataVersion++
         this.lastDispatchedTs = 0
         this.cpuMemRef?.clearData()
         this.gpuRef?.clearData()
@@ -119,42 +111,7 @@ class MonitorPage extends Vue {
             return
         }
         this.selectedRange = range
-        this.loading = true
-        this.ready = false
-        this.clearAllData()
-        this.stopPoll()
-        const version = this.dataVersion
-        const historyOk = await this.loadHistory(version)
-        if (this.destroyed || version !== this.dataVersion) {
-            return
-        }
-        const realtimeOk = await this.loadData(version)
-        if (this.destroyed || version !== this.dataVersion) {
-            return
-        }
-        this.ready = historyOk || realtimeOk
-        this.loading = false
-        if (this.ready) {
-            this.updateCharts()
-        }
-        // 只有5分钟模式才启动轮询
-        if (this.selectedRange === 300) {
-            this.startPoll()
-        }
-    }
-
-    async loadData(version = this.dataVersion) {
-        try {
-            const ok = await this.fetchRealtime(version)
-            if (ok) {
-                this.ready = true
-                this.updateCharts()
-            }
-            return ok
-        } catch {
-            /* ignore */
-        }
-        return false
+        await this.refresh(true)
     }
 
     async poll() {
@@ -182,27 +139,8 @@ class MonitorPage extends Vue {
     async handleVisibilityChange() {
         if (document.hidden) {
             this.stopPoll()
-        } else {
-            // 只有5分钟模式才在页面重新可见时启动轮询
-            if (this.selectedRange === 300) {
-                this.loading = true
-                this.ready = false
-                const version = this.dataVersion
-                const historyOk = await this.loadHistory(version)
-                if (this.destroyed || version !== this.dataVersion) {
-                    return
-                }
-                const realtimeOk = await this.loadData(version)
-                if (this.destroyed || version !== this.dataVersion) {
-                    return
-                }
-                this.ready = historyOk || realtimeOk
-                this.loading = false
-                if (this.ready) {
-                    this.updateCharts()
-                }
-                this.startPoll()
-            }
+        } else if (this.selectedRange === 300) {
+            await this.refresh(false)
         }
     }
 
@@ -222,36 +160,39 @@ class MonitorPage extends Vue {
         }
     }
 
-    async load() {
+    private async refresh(reset: boolean) {
         this.loading = true
         this.ready = false
         this.stopPoll()
-        this.clearAllData()
-        const version = this.dataVersion
-        const historyOk = await this.loadHistory(version)
+        const version = ++this.dataVersion
+        if (reset) {
+            this.clearAllData()
+        }
+        await this.loadHistory(version)
         if (this.destroyed || version !== this.dataVersion) {
             return
         }
-        const realtimeOk = await this.loadData(version)
+        try {
+            await this.fetchRealtime(version)
+        } catch {
+            // 实时请求失败时保留已加载的数据。
+        }
         if (this.destroyed || version !== this.dataVersion) {
             return
         }
-        this.ready = historyOk || realtimeOk
+        this.ready = this.lastDispatchedTs > 0
         this.loading = false
         if (this.ready) {
             this.updateCharts()
         }
-        // 只有5分钟模式才启动轮询
-        if (this.selectedRange === 300) {
-            this.startPoll()
-        }
+        this.startPoll()
     }
 
     // ─── 生命周期 ───
     mounted() {
         // 组件挂载后开始监听页面可见性变化并加载数据
         document.addEventListener('visibilitychange', this.handleVisibilityChange)
-        this.load()
+        this.refresh(true)
     }
 
     unmounted() {
