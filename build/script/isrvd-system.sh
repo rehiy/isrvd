@@ -55,6 +55,10 @@ INSTALL_SERVICE_CREATED=0
 INSTALL_ROLE_DIR_CREATED=0
 INSTALL_COMPONENTS_CREATED=()
 INSTALL_SYSCONF_CREATED=0
+UPDATE_DIR=""
+UPDATE_IN_PROGRESS=0
+UPDATE_WAS_RUNNING=0
+UPDATE_FILES=()
 
 installer_exit() {
     local status="$1"
@@ -63,6 +67,14 @@ installer_exit() {
         rollback_install || echo "[error] Installation rollback was incomplete" >&2
         [ "$status" -ne 0 ] || status=1
     fi
+    if [ "$UPDATE_IN_PROGRESS" -eq 1 ]; then
+        if ! rollback_update; then
+            echo "[error] Update rollback incomplete; previous files retained in $UPDATE_DIR" >&2
+            UPDATE_DIR=""
+        fi
+        [ "$status" -ne 0 ] || status=1
+    fi
+    [ -z "$UPDATE_DIR" ] || rm -rf -- "$UPDATE_DIR"
     [ -z "$DOWNLOAD_TMP_FILE" ] || rm -f "$DOWNLOAD_TMP_FILE"
     exit "$status"
 }
@@ -321,18 +333,15 @@ validate_package() {
         || fail "Package must contain only regular files"
 }
 
-# $1=update 时保留已有 config.yml
 files_install() {
-    local options=() entry
+    local entry
     validate_package
-    [ "${1:-}" != update ] || options+=(--exclude=config.yml)
     mkdir -p "$INSTALL_DIR"
     for entry in "isrvd-$ARCH" config.yml isrvd.sh isrvd-system.sh isrvd-docker.sh; do
-        [ "${1:-}" != update ] || [ "$entry" != config.yml ] || continue
         [ ! -L "$INSTALL_DIR/$entry" ] || fail "Refusing to extract over a symbolic link: $entry"
     done
     echo "[info] Extracting to: $INSTALL_DIR"
-    tar xzf "$DOWNLOAD_TMP_FILE" --no-same-owner --no-same-permissions "${options[@]+"${options[@]}"}" -C "$INSTALL_DIR" || return 1
+    tar xzf "$DOWNLOAD_TMP_FILE" --no-same-owner --no-same-permissions -C "$INSTALL_DIR" || return 1
     ln -sf "$(get_bin_file)" "$BIN_LINK"
 }
 
@@ -412,23 +421,90 @@ install_binary() {
     echo "  Logs:   journalctl -u $SERVICE_NAME -f"
 }
 
+# 保存将被替换的文件，配置和链接单独备份。
+stage_update() {
+    local entry
+    UPDATE_DIR=$(mktemp -d "$INSTALL_DIR/.update.XXXXXX")
+    mkdir -p "$UPDATE_DIR/new" "$UPDATE_DIR/old"
+    tar xzf "$DOWNLOAD_TMP_FILE" --no-same-owner --no-same-permissions --exclude=config.yml -C "$UPDATE_DIR/new" ||
+        fail "Failed to extract update"
+    [ -x "$UPDATE_DIR/new/isrvd-$ARCH" ] || fail "Update package binary is not executable"
+    for entry in "isrvd-$ARCH" isrvd.sh isrvd-system.sh isrvd-docker.sh; do
+        [ -f "$UPDATE_DIR/new/$entry" ] || continue
+        [ ! -L "$INSTALL_DIR/$entry" ] || fail "Refusing to overwrite a symbolic link: $entry"
+        if [ -e "$INSTALL_DIR/$entry" ]; then
+            [ -f "$INSTALL_DIR/$entry" ] || fail "Expected a regular file: $entry"
+            cp -p -- "$INSTALL_DIR/$entry" "$UPDATE_DIR/old/$entry"
+        fi
+        UPDATE_FILES+=("$entry")
+    done
+    cp -p -- "$CONFIG_FILE" "$UPDATE_DIR/old/config.yml"
+    if [ -e "$BIN_LINK" ] || [ -L "$BIN_LINK" ]; then
+        [ -f "$BIN_LINK" ] || [ -L "$BIN_LINK" ] || fail "Unexpected binary link path: $BIN_LINK"
+        cp -pP -- "$BIN_LINK" "$UPDATE_DIR/old/bin-link"
+    fi
+}
+
+rollback_update() {
+    local entry failed=0
+    service_stop || failed=1
+    for entry in "${UPDATE_FILES[@]}"; do
+        if [ -e "$UPDATE_DIR/old/$entry" ]; then
+            cp -p -- "$UPDATE_DIR/old/$entry" "$UPDATE_DIR/restore" &&
+                mv -f -- "$UPDATE_DIR/restore" "$INSTALL_DIR/$entry" || failed=1
+        else
+            rm -f -- "$INSTALL_DIR/$entry" || failed=1
+        fi
+    done
+    cp -p -- "$UPDATE_DIR/old/config.yml" "$CONFIG_FILE" || failed=1
+    if [ -e "$UPDATE_DIR/old/bin-link" ] || [ -L "$UPDATE_DIR/old/bin-link" ]; then
+        cp -pP --remove-destination -- "$UPDATE_DIR/old/bin-link" "$BIN_LINK" || failed=1
+    else
+        rm -f -- "$BIN_LINK" || failed=1
+    fi
+    if [ "$UPDATE_WAS_RUNNING" -eq 1 ]; then
+        service_start && service_update_ready || failed=1
+    fi
+    if [ "$failed" -eq 0 ]; then
+        echo "[info] Previous system deployment restored" >&2
+    fi
+    return "$failed"
+}
+
+# Type=simple 的 start 完成后仍需检查服务进程没有立即退出或进入重启循环。
+service_update_ready() {
+    local pid next
+    pid=$(systemctl show --property=MainPID --value "$SERVICE_NAME") || return 1
+    [[ "$pid" =~ ^[1-9][0-9]*$ ]] || return 1
+    sleep 3
+    next=$(systemctl show --property=MainPID --value "$SERVICE_NAME") || return 1
+    [ "$pid" = "$next" ] && systemctl is-active --quiet "$SERVICE_NAME"
+}
+
 update_binary() {
+    local entry
     [ -d "$INSTALL_DIR" ] || fail "Not installed; use install first"
     discover_binary_data
     discover_components
     resolve_release
     print_banner Updater
-    # 下载与归档检查在停服之前完成，失败不影响正在运行的服务。
     download_package "$RELEASE_URL"
     validate_package
+    stage_update
     update_components
-    service_stop
-    if ! files_install update; then
-        service_start
-        fail "Failed to extract update"
+    if systemctl is-active --quiet "$SERVICE_NAME"; then
+        UPDATE_WAS_RUNNING=1
     fi
+    UPDATE_IN_PROGRESS=1
+    service_stop
+    for entry in "${UPDATE_FILES[@]}"; do
+        mv -f -- "$UPDATE_DIR/new/$entry" "$INSTALL_DIR/$entry"
+    done
+    ln -sfn "$(get_bin_file)" "$BIN_LINK"
     configure_binary_components
     service_start
+    service_update_ready || fail "Updated service did not stay running"
+    UPDATE_IN_PROGRESS=0
     echo "[info] Update complete (configuration preserved)"
     print_binary_info
 }
