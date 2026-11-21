@@ -156,12 +156,7 @@ func (app *App) filerFileRead(c *gin.Context) {
 	}
 
 	content, err := app.filerSvc.FileRead(absPath)
-	if errors.Is(err, helper.ErrTooLarge) {
-		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用下载功能")
-		return
-	}
-	if errors.Is(err, helper.ErrBinary) {
-		respondError(c, http.StatusUnsupportedMediaType, "文件不是文本文件，无法在线编辑")
+	if respondEditableReadError(c, err) {
 		return
 	}
 	if errors.Is(err, syscall.EISDIR) {

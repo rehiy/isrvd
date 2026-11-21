@@ -59,6 +59,18 @@ func (s *Service) CheckAvailability(ctx context.Context) bool {
 
 // ─── 共享辅助函数 ───
 
+func (s *Service) serverConfig(ctx context.Context, name string) (*caddy.HTTPServer, error) {
+	cfg, err := s.client.ConfigAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	srv := getServer(cfg, name)
+	if srv == nil {
+		return nil, ErrServerNotFound
+	}
+	return srv, nil
+}
+
 // serverMutate 在配置更新的同一临界区中查找目标服务，业务校验失败时不提交。
 // name 由调用方按各自的名称或 ID 规则完成校验。
 func (s *Service) serverMutate(ctx context.Context, name string, fn func(*caddy.HTTPServer) error) error {

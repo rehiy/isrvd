@@ -8,10 +8,12 @@ import type { DockerContainerInfo } from '@/service/types'
 
 import { LogStream } from '@/helper/log'
 
+import LogControls from '@/component/log-controls.vue'
+
 import ContainerTabs from '@/views/docker/widget/container-tabs.vue'
 
 @Component({
-    components: { ContainerTabs }
+    components: { ContainerTabs, LogControls }
 })
 class ContainerLogs extends Vue {
     portal = usePortal()
@@ -54,7 +56,8 @@ class ContainerLogs extends Vue {
         )
     }
 
-    handleTailChange() {
+    handleTailChange(tail: string) {
+        this.logs.tail = tail
         this.logs.reloadTail(this.loadLogs, this.startStream)
     }
 
@@ -88,22 +91,7 @@ export default toNative(ContainerLogs)
         </div>
         <div class="action-group">
           <ContainerTabs :container-id="containerId" />
-          <select v-model="logs.tail" class="w-28 select-sm" @change="handleTailChange">
-            <option value="50">{{ $t('显示 50 行') }}</option>
-            <option value="100">{{ $t('显示 100 行') }}</option>
-            <option value="200">{{ $t('显示 200 行') }}</option>
-            <option value="500">{{ $t('显示 500 行') }}</option>
-            <option value="1000">{{ $t('显示 1000 行') }}</option>
-          </select>
-          <button class="btn btn-secondary" :disabled="logs.active" @click="loadLogs">
-            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
-          </button>
-          <button v-if="!logs.active && portal.hasPerm('GET /api/docker/container/:id/logs/stream')" class="btn btn-emerald" @click="startStream">
-            <i class="fas fa-play"></i>{{ $t('实时') }}
-          </button>
-          <button v-else-if="logs.active" class="btn btn-secondary" @click="logs.stop()">
-            <i :class="logs.state === 'connecting' ? 'fas fa-spinner fa-spin' : 'fas fa-stop'"></i>{{ $t('停止') }}
-          </button>
+          <LogControls :logs="logs" :can-stream="portal.hasPerm('GET /api/docker/container/:id/logs/stream')" @tail-change="handleTailChange" @refresh="loadLogs" @start="startStream" @stop="logs.stop()" />
         </div>
       </div>
       <!-- 移动端 -->
@@ -119,22 +107,7 @@ export default toNative(ContainerLogs)
             </div>
           </div>
           <div class="action-group-sm">
-            <select v-model="logs.tail" class="select-sm" @change="handleTailChange">
-              <option value="50">{{ $t('50 行') }}</option>
-              <option value="100">{{ $t('100 行') }}</option>
-              <option value="200">{{ $t('200 行') }}</option>
-              <option value="500">{{ $t('500 行') }}</option>
-              <option value="1000">{{ $t('1000 行') }}</option>
-            </select>
-            <button class="btn btn-secondary btn-square" :title="$t('刷新')" :disabled="logs.active" @click="loadLogs">
-              <i class="fas fa-rotate text-sm"></i>
-            </button>
-            <button v-if="!logs.active && portal.hasPerm('GET /api/docker/container/:id/logs/stream')" class="btn btn-emerald btn-square" :title="$t('实时')" @click="startStream">
-              <i class="fas fa-play text-sm"></i>
-            </button>
-            <button v-else-if="logs.active" class="btn btn-secondary btn-square" :title="$t('停止')" @click="logs.stop()">
-              <i :class="logs.state === 'connecting' ? 'fas fa-spinner fa-spin text-sm' : 'fas fa-stop text-sm'"></i>
-            </button>
+            <LogControls :logs="logs" :can-stream="portal.hasPerm('GET /api/docker/container/:id/logs/stream')" mobile @tail-change="handleTailChange" @refresh="loadLogs" @start="startStream" @stop="logs.stop()" />
           </div>
         </div>
         <ContainerTabs :container-id="containerId" />
