@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"isrvd/pkgs/helper"
 	"isrvd/server/i18n"
 )
 
@@ -44,6 +45,19 @@ func respondBindError(c *gin.Context, err error) {
 		return
 	}
 	respondError(c, http.StatusBadRequest, err.Error())
+}
+
+// respondEditableReadError 处理各文件后端共用的在线编辑错误。
+func respondEditableReadError(c *gin.Context, err error) bool {
+	switch {
+	case errors.Is(err, helper.ErrTooLarge):
+		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用下载功能")
+	case errors.Is(err, helper.ErrBinary):
+		respondError(c, http.StatusUnsupportedMediaType, "文件不是文本文件，无法在线编辑")
+	default:
+		return false
+	}
+	return true
 }
 
 // respondResult 统一处理返回数据的 service 调用结果。
