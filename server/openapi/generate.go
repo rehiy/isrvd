@@ -28,7 +28,7 @@ type generator struct {
 	inlineFuncs  map[string]*ast.FuncLit // 内联 handler 闭包，键为 inline:<id>
 	inlineSeq    int                     // 内联 handler 序号
 	structCache  map[string]*SchemaInfo  // "pkg.TypeName" -> schema
-	ctrlEntries  []os.DirEntry           // ctrl 目录条目缓存
+	handlers     map[string]handlerDecl  // App handler 名称索引
 	fset         *token.FileSet          // 复用 FileSet
 	fileCache    map[string]*ast.File    // 已解析文件缓存
 	contentCache map[string][]string     // 文件内容行缓存
@@ -40,6 +40,7 @@ func newGenerator(root string, cfg *ProjectConfig) *generator {
 		cfg:          cfg,
 		inlineFuncs:  map[string]*ast.FuncLit{},
 		structCache:  map[string]*SchemaInfo{},
+		handlers:     map[string]handlerDecl{},
 		fset:         token.NewFileSet(),
 		fileCache:    map[string]*ast.File{},
 		contentCache: map[string][]string{},
@@ -74,6 +75,7 @@ func (g *generator) run() ([]byte, error) {
 	}
 
 	for _, filename := range g.getCtrlFiles(ctrlDir, entries) {
+		g.indexHandlers(filename)
 		g.parseCtrlFile(filename)
 		g.collectAllTypesFromFile(filename)
 	}
