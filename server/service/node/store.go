@@ -15,7 +15,7 @@ const nodeListFile = "node-list.yml"
 
 // nodeStore 带互斥的类型化列表。持久化交给业务数据存储（config.OpenData），
 // 与计划任务、SSH 主机一致：后端选择、原子写入与 etcd 同步都由 cstore 负责。
-// 数据目录（rootDirectory）随配置重载变化时，下一次访问会使用对应位置，与其他业务数据的重载行为一致。
+// 数据目录切换由 Service 在核对会话与监听时统一提交。
 type nodeStore struct {
 	mu    sync.RWMutex
 	root  string // 当前数据所在的 rootDirectory
@@ -25,15 +25,15 @@ type nodeStore struct {
 
 func newNodeStore() (*nodeStore, error) {
 	root := config.Current().Server.RootDirectory
-	ts, items, err := openNodes()
+	ts, items, err := openNodes(root)
 	if err != nil {
 		return nil, err
 	}
 	return &nodeStore{root: root, ts: ts, items: items}, nil
 }
 
-func openNodes() (*cstore.TypedStore[[]*Node], []*Node, error) {
-	ts, err := config.OpenData[[]*Node](nodeListFile)
+func openNodes(root string) (*cstore.TypedStore[[]*Node], []*Node, error) {
+	ts, err := config.OpenDataAt[[]*Node](nodeListFile, root)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -44,34 +44,26 @@ func openNodes() (*cstore.TypedStore[[]*Node], []*Node, error) {
 	return ts, slices.DeleteFunc(items, func(item *Node) bool { return item == nil }), nil
 }
 
-// refresh 在 rootDirectory 变化后加载对应位置的数据。打开失败时保留旧数据并只告警一次（重启后生效）。
-func (s *nodeStore) refresh() {
-	root := config.Current().Server.RootDirectory
+func (s *nodeStore) sameRoot(root string) bool {
 	s.mu.RLock()
-	same := root == s.root
-	s.mu.RUnlock()
-	if same {
-		return
-	}
+	defer s.mu.RUnlock()
+	return s.root == root
+}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if root == s.root {
-		return
-	}
-	s.root = root
-	ts, items, err := openNodes()
+// switchRoot 仅在新目录加载成功时替换存储，并返回新节点表。
+func (s *nodeStore) switchRoot(root string) ([]*Node, error) {
+	ts, items, err := openNodes(root)
 	if err != nil {
-		logger.Warn("rootDirectory 已变更但无法打开新位置，继续使用旧位置，重启后生效", "file", nodeListFile, "error", err)
-		return
+		return nil, err
 	}
-	s.ts, s.items = ts, items
-	logger.Info("数据目录已变更，已切换到新位置", "file", nodeListFile, "root", root)
+	s.mu.Lock()
+	s.root, s.ts, s.items = root, ts, items
+	s.mu.Unlock()
+	return items, nil
 }
 
 // list 返回全部条目副本
 func (s *nodeStore) list() []*Node {
-	s.refresh()
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	result := make([]*Node, len(s.items))
@@ -90,7 +82,6 @@ func (s *nodeStore) byID(id string) *Node {
 
 // find 在锁内查找并返回节点副本。
 func (s *nodeStore) find(match func(*Node) bool) *Node {
-	s.refresh()
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for _, n := range s.items {
@@ -160,7 +151,6 @@ func (s *nodeStore) remove(id string) error {
 
 // mutate 在锁内基于当前列表的副本生成新列表并持久化；fn 返回错误则放弃修改
 func (s *nodeStore) mutate(fn func(items []*Node) ([]*Node, error)) error {
-	s.refresh()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	items, err := fn(slices.Clone(s.items))

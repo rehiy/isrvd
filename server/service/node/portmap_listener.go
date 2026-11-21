@@ -68,6 +68,7 @@ func (l *portListener) close() {
 // NodePortMapUpdate 整体替换节点的端口转发规则。先确认新增端口可监听，再持久化，最后撤销被移除的监听；
 // 任一步失败都回滚，不会出现「已保存但未生效」。
 func (s *Service) NodePortMapUpdate(id string, req *PortMapRequest) (*NodeInfo, error) {
+	s.RefreshNodes()
 	rules, err := normalizePortMaps(req.PortMaps, s.portmap)
 	if err != nil {
 		return nil, err
@@ -75,6 +76,9 @@ func (s *Service) NodePortMapUpdate(id string, req *PortMapRequest) (*NodeInfo, 
 
 	s.listenMu.Lock()
 	defer s.listenMu.Unlock()
+	if s.closed {
+		return nil, net.ErrClosed
+	}
 
 	n := s.nodes.byID(id)
 	if n == nil {
@@ -158,7 +162,11 @@ func (s *Service) agentSupportsPortMap(id string) bool {
 func (s *Service) portmapRestore() {
 	s.listenMu.Lock()
 	defer s.listenMu.Unlock()
-	for _, n := range s.nodes.list() {
+	s.restorePortMaps(s.nodes.list())
+}
+
+func (s *Service) restorePortMaps(nodes []*Node) {
+	for _, n := range nodes {
 		if n.Status == StatusRevoked {
 			continue
 		}
@@ -167,20 +175,12 @@ func (s *Service) portmapRestore() {
 				logger.Warn("端口转发未启用或端口超出允许范围，已跳过", "node", n.ID, "listen", f.Listen, "proto", f.Proto)
 				continue
 			}
+			if s.listeners[portKey{f.Proto, f.Listen}] != nil {
+				continue
+			}
 			if err := s.portmapStart(n.ID, f); err != nil {
 				logger.Warn("恢复端口转发失败", "node", n.ID, "listen", f.Listen, "proto", f.Proto, "error", err)
 			}
-		}
-	}
-}
-
-// portmapStopWhere 撤销满足条件的监听：吊销、删除节点时撤销该节点的全部监听，服务关闭时撤销全部。
-func (s *Service) portmapStopWhere(match func(*portListener) bool) {
-	s.listenMu.Lock()
-	defer s.listenMu.Unlock()
-	for key, l := range s.listeners {
-		if match(l) {
-			s.portmapStop(key)
 		}
 	}
 }

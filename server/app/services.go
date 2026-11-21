@@ -81,6 +81,15 @@ func (app *App) initServices(ctx context.Context) {
 	// Cron 任务跨服务重载继续执行，仅在整个进程生命周期结束时取消。
 	app.cronSvc = cron.NewService(app.lifecycleCtx, dockerRaw)
 
+	// 启动后台监控采集
+	app.monitorCollector = monitor.NewCollector(dockerRaw)
+	app.monitorCollector.Start(ctx)
+
+	app.initGatewayConsumers(ctx)
+}
+
+func (app *App) initGatewayConsumers(ctx context.Context) {
+	dockerRaw := app.dockerSvc.Raw()
 	// 注入可用服务，故障检测独立于监控日志采集。
 	sources := notify.FaultSources{
 		DockerKey: config.Current().Docker.Host,
@@ -96,12 +105,11 @@ func (app *App) initServices(ctx context.Context) {
 	if app.apisixSvc != nil {
 		sources.Apisix = app.apisixSvc
 	}
+	if app.faultWatcher != nil {
+		app.faultWatcher.Stop()
+	}
 	app.faultWatcher = notify.NewFaultWatcher(config.Current().Notify, sources, app.faultWatcher)
 	app.faultWatcher.Start(ctx)
-
-	// 启动后台监控采集
-	app.monitorCollector = monitor.NewCollector(dockerRaw)
-	app.monitorCollector.Start(ctx)
 
 	// 指标统一读出口；只登记已配置抓取地址的网关，管理服务不可用时不提供开关状态
 	app.metricsSvc = metrics.NewService(dockerRaw != nil)
@@ -154,6 +162,42 @@ func (app *App) initProbedServices(ctx context.Context) {
 	}
 }
 
+// retryGateways 只重试已配置、初始化失败的网关。
+func (app *App) retryGateways(ctx context.Context) {
+	cfg := config.Current()
+	wantApisix := app.apisixSvc == nil && cfg.Apisix.AdminURL != ""
+	wantCaddy := app.caddySvc == nil && cfg.Caddy.AdminURL != ""
+	if !wantApisix && !wantCaddy {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	var apisixSvc *apisix.Service
+	var caddySvc *caddy.Service
+	var wg sync.WaitGroup
+	if wantApisix {
+		wg.Go(func() { apisixSvc, _ = apisix.NewService(ctx) })
+	}
+	if wantCaddy {
+		wg.Go(func() { caddySvc, _ = caddy.NewService(ctx) })
+	}
+	wg.Wait()
+	if ctx.Err() != nil || apisixSvc == nil && caddySvc == nil {
+		return
+	}
+	app.servicesMu.Lock()
+	defer app.servicesMu.Unlock()
+	if apisixSvc != nil {
+		app.apisixSvc = apisixSvc
+		app.markReady("apisix", apisixSvc.CheckAvailability)
+	}
+	if caddySvc != nil {
+		app.caddySvc = caddySvc
+		app.markReady("caddy", caddySvc.CheckAvailability)
+	}
+	app.initGatewayConsumers(app.servicesCtx)
+}
+
 // closeServices 释放所有有状态服务持有的资源，并返回旧计划任务全部结束的信号。
 func (app *App) closeServices() <-chan struct{} {
 	closed := make(chan struct{})
@@ -175,9 +219,6 @@ func (app *App) closeServices() <-chan struct{} {
 		if err := app.auditSvc.Close(); err != nil {
 			logman.Warn("close audit service failed", "error", err)
 		}
-	}
-	if app.websshSvc != nil {
-		app.websshSvc.Close()
 	}
 	return cronDone
 }
