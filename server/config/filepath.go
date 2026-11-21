@@ -31,22 +31,3 @@ func PathToRel(path string, rootDir string) string {
 	}
 	return "." + string(filepath.Separator) + rel
 }
-
-// ─── 辅助函数 ───
-
-// denormalizePaths 将 conf 中 Server.RootDirectory 内的绝对路径还原为相对路径。
-// 注意：此函数会直接修改传入的 conf 对象。
-// 只会转换 Server.RootDirectory 内部的绝对路径，外部路径和相对路径保持不变。
-func denormalizePaths(conf *Config) {
-	if conf == nil || conf.Server == nil || conf.Server.RootDirectory == "" {
-		return
-	}
-	if conf.Docker != nil {
-		conf.Docker.ContainerRoot = PathToRel(conf.Docker.ContainerRoot, conf.Server.RootDirectory)
-	}
-	for _, m := range conf.Members {
-		if m != nil {
-			m.HomeDirectory = PathToRel(m.HomeDirectory, conf.Server.RootDirectory)
-		}
-	}
-}
