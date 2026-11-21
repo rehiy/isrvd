@@ -89,5 +89,9 @@ func (g *generator) run() ([]byte, error) {
 	}
 
 	// 4. 生成 OpenAPI JSON
-	return json.MarshalIndent(g.buildOpenAPI(), "", "  ")
+	oa, err := g.buildOpenAPI()
+	if err != nil {
+		return nil, err
+	}
+	return json.MarshalIndent(oa, "", "  ")
 }

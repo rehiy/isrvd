@@ -1,6 +1,7 @@
 package openapi
 
 import (
+	"fmt"
 	"maps"
 	"net/http"
 	"slices"
@@ -38,7 +39,7 @@ type OpenAPIComponents struct {
 	SecuritySchemes map[string]any `json:"securitySchemes"`
 }
 
-func (g *generator) buildOpenAPI() *OpenAPI {
+func (g *generator) buildOpenAPI() (*OpenAPI, error) {
 	oa := &OpenAPI{
 		OpenAPI: "3.0.3",
 		Info: OpenAPIInfo{
@@ -88,7 +89,60 @@ func (g *generator) buildOpenAPI() *OpenAPI {
 	}
 
 	g.completeBasicAuthContract(oa, allSchemas)
-	return oa
+	if err := oa.retainReferencedSchemas(); err != nil {
+		return nil, err
+	}
+	return oa, nil
+}
+
+// retainReferencedSchemas 仅发布接口可达的类型，并拒绝无法解析的引用。
+func (oa *OpenAPI) retainReferencedSchemas() error {
+	reachable := map[string]any{}
+	var visit func(any) error
+	visit = func(value any) error {
+		switch value := value.(type) {
+		case map[string]any:
+			if ref, ok := value["$ref"].(string); ok {
+				if name, ok := strings.CutPrefix(ref, "#/components/schemas/"); ok {
+					if _, visited := reachable[name]; !visited {
+						schema, exists := oa.Components.Schemas[name]
+						if !exists {
+							return fmt.Errorf("OpenAPI 类型引用无法解析: %s", name)
+						}
+						reachable[name] = schema
+						if err := visit(schema); err != nil {
+							return err
+						}
+					}
+				}
+			}
+			for _, field := range value {
+				if err := visit(field); err != nil {
+					return err
+				}
+			}
+		case []any:
+			for _, item := range value {
+				if err := visit(item); err != nil {
+					return err
+				}
+			}
+		case []map[string]any:
+			for _, item := range value {
+				if err := visit(item); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+	for _, path := range oa.Paths {
+		if err := visit(path); err != nil {
+			return err
+		}
+	}
+	oa.Components.Schemas = reachable
+	return nil
 }
 
 // ─── 辅助函数 ───
@@ -223,13 +277,16 @@ func (g *generator) buildOperation(r RouteDef, allSchemas map[string]*SchemaInfo
 	var parameters []map[string]any
 
 	// 路径参数
-	for _, p := range r.PathParams {
+	for _, part := range strings.Split(r.Path, "/") {
+		if !strings.HasPrefix(part, ":") && !strings.HasPrefix(part, "*") {
+			continue
+		}
 		param := map[string]any{
-			"name":     p.Name,
+			"name":     part[1:],
 			"in":       "path",
 			"required": true,
 			"schema": map[string]any{
-				"type": p.Type,
+				"type": "string",
 			},
 		}
 		parameters = append(parameters, param)
@@ -380,6 +437,9 @@ func (g *generator) completeBasicAuthContract(oa *OpenAPI, allSchemas map[string
 
 // buildResponseSchema 根据 RouteDef 生成响应 schema
 func (g *generator) buildResponseSchema(r RouteDef, allSchemas map[string]*SchemaInfo) map[string]any {
+	if r.RawContentType == "application/octet-stream" {
+		return map[string]any{"type": "string", "format": "binary"}
+	}
 	if r.RawContentType != "" {
 		return map[string]any{"type": "string"}
 	}
@@ -574,6 +634,7 @@ func oapiPath(ginPath string) string {
 // externalSchemas 无法从仓库源码解析的第三方类型（如 libgo 的类型别名）的手写描述。
 // 字段需与第三方定义保持一致，升级依赖时同步核对。
 var externalSchemas = map[string]map[string]any{
+	"caddy.Handler": {"type": "object"},
 	"psutil.DetailStat": {
 		"type":        "object",
 		"description": "系统资源明细，其他字段见 overview 接口文档",

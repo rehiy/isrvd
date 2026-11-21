@@ -2960,6 +2960,16 @@
     "/caddy/server/{name}": {
       "delete": {
         "operationId": "delete_caddy_server_name",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -2979,6 +2989,16 @@
       },
       "get": {
         "operationId": "get_caddy_server_name",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -3011,6 +3031,16 @@
       },
       "put": {
         "operationId": "put_caddy_server_name",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3302,12 +3332,45 @@
     "/compose/docker/{name}/preview": {
       "post": {
         "operationId": "post_compose_docker_name_preview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/compose.RedeployRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "$ref": "#/components/schemas/compose.RedeployPreview"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3546,12 +3609,45 @@
     "/compose/swarm/{name}/preview": {
       "post": {
         "operationId": "post_compose_swarm_name_preview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/compose.RedeployRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "$ref": "#/components/schemas/compose.RedeployPreview"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -4191,9 +4287,10 @@
         "responses": {
           "200": {
             "content": {
-              "application/json": {
+              "application/octet-stream": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "format": "binary",
+                  "type": "string"
                 }
               }
             },
@@ -6378,6 +6475,22 @@
           },
           {
             "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "id",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "name",
             "required": false,
             "schema": {
@@ -6628,9 +6741,10 @@
         "responses": {
           "200": {
             "content": {
-              "application/json": {
+              "application/octet-stream": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "format": "binary",
+                  "type": "string"
                 }
               }
             },
@@ -8504,27 +8618,6 @@
         },
         "type": "object"
       },
-      "apisix.GlobalRule": {
-        "properties": {
-          "create_time": {
-            "description": "创建时间（Unix 时间戳，只读）",
-            "type": "integer"
-          },
-          "id": {
-            "description": "Global Rule ID",
-            "type": "string"
-          },
-          "plugins": {
-            "description": "对所有路由生效的插件配置",
-            "type": "object"
-          },
-          "update_time": {
-            "description": "更新时间（Unix 时间戳，只读）",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
       "apisix.PluginConfig": {
         "properties": {
           "create_time": {
@@ -8636,36 +8729,6 @@
               "type": "string"
             },
             "type": "array"
-          }
-        },
-        "type": "object"
-      },
-      "apisix.RouteAuthInfo": {
-        "properties": {
-          "ACLInherited": {
-            "description": "consumer-restriction 来自 PluginConfig 或 Service，路由自身没有",
-            "type": "boolean"
-          },
-          "ManagedElsewhere": {
-            "description": "所需的认证方式也无法确定，不校验 Consumer 是否配置 key-auth。",
-            "type": "boolean"
-          }
-        },
-        "type": "object"
-      },
-      "apisix.RouteTimeout": {
-        "properties": {
-          "connect": {
-            "description": "连接超时",
-            "type": "integer"
-          },
-          "read": {
-            "description": "读取超时",
-            "type": "integer"
-          },
-          "send": {
-            "description": "发送超时",
-            "type": "integer"
           }
         },
         "type": "object"
@@ -8865,128 +8928,6 @@
         },
         "type": "object"
       },
-      "caddy.AdminAutoConfig": {
-        "properties": {
-          "persist": {
-            "description": "是否持久化配置到磁盘",
-            "type": "boolean"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.AdminConfig": {
-        "properties": {
-          "config": {
-            "description": "自动配置（如持久化）",
-            "type": "object"
-          },
-          "disabled": {
-            "description": "是否禁用 admin API",
-            "type": "boolean"
-          },
-          "enforce_origin": {
-            "description": "是否校验 Origin",
-            "type": "boolean"
-          },
-          "listen": {
-            "description": "监听地址，如 \"localhost:2019\"",
-            "type": "string"
-          },
-          "origins": {
-            "description": "允许的 Origin 列表",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.AppsConfig": {
-        "properties": {
-          "http": {
-            "description": "HTTP 应用配置",
-            "type": "object"
-          },
-          "pki": {
-            "description": "PKI（CA）应用配置",
-            "type": "object"
-          },
-          "tls": {
-            "description": "TLS 应用配置",
-            "type": "object"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.AutomaticHTTPS": {
-        "properties": {
-          "disable": {
-            "description": "是否禁用自动 HTTPS",
-            "type": "boolean"
-          },
-          "disable_certificates": {
-            "description": "是否禁用自动证书申请",
-            "type": "boolean"
-          },
-          "disable_redirects": {
-            "description": "是否禁用 HTTP→HTTPS 重定向",
-            "type": "boolean"
-          },
-          "ignore_loaded_certificates": {
-            "description": "是否忽略已加载的证书",
-            "type": "boolean"
-          },
-          "skip": {
-            "description": "跳过自动 HTTPS 的 Host 列表",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "skip_certificates": {
-            "description": "跳过自动证书的域名列表",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.BasicAuthAccount": {
-        "properties": {
-          "password": {
-            "description": "登录密码的 bcrypt hash",
-            "type": "string"
-          },
-          "salt": {
-            "description": "密码 salt（Caddy 兼容字段，可选）",
-            "type": "string"
-          },
-          "username": {
-            "description": "登录用户名",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.BasicAuthConfigOptions": {
-        "properties": {
-          "removeUsers": {
-            "description": "removeUsers",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "revision": {
-            "description": "revision",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "caddy.BasicAuthRouteView": {
         "properties": {
           "forwardHeader": {
@@ -9041,15 +8982,6 @@
             },
             "nullable": true,
             "type": "array"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.BasicAuthUser": {
-        "properties": {
-          "username": {
-            "description": "basic_auth 登录用户名",
-            "type": "string"
           }
         },
         "type": "object"
@@ -9109,31 +9041,6 @@
         },
         "type": "object"
       },
-      "caddy.Config": {
-        "properties": {
-          "@id": {
-            "description": "配置 ID（用于引用）",
-            "type": "object"
-          },
-          "admin": {
-            "description": "Admin API 配置",
-            "type": "object"
-          },
-          "apps": {
-            "description": "应用配置（http/tls/pki 等）",
-            "type": "object"
-          },
-          "logging": {
-            "description": "日志配置",
-            "type": "object"
-          },
-          "storage": {
-            "description": "存储后端配置",
-            "type": "object"
-          }
-        },
-        "type": "object"
-      },
       "caddy.GlobalForm": {
         "properties": {
           "acmeCA": {
@@ -9171,173 +9078,7 @@
         },
         "type": "object"
       },
-      "caddy.HTTPApp": {
-        "properties": {
-          "grace_period": {
-            "description": "优雅关闭等待时间（如 \"5s\"）",
-            "type": "object"
-          },
-          "http_port": {
-            "description": "HTTP 监听端口（默认 80）",
-            "type": "integer"
-          },
-          "https_port": {
-            "description": "HTTPS 监听端口（默认 443）",
-            "type": "integer"
-          },
-          "servers": {
-            "description": "Server 名称 → 配置",
-            "type": "object"
-          },
-          "shutdown_delay": {
-            "description": "延迟关闭等待时间",
-            "type": "object"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.HTTPError": {
-        "properties": {
-          "Body": {
-            "description": "上游响应体原文",
-            "type": "string"
-          },
-          "Method": {
-            "description": "触发错误的 HTTP 方法",
-            "type": "string"
-          },
-          "Path": {
-            "description": "Caddy Admin API 路径",
-            "type": "string"
-          },
-          "StatusCode": {
-            "description": "上游返回的 HTTP 状态码",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.HTTPErrors": {
-        "properties": {
-          "routes": {
-            "description": "错误处理的路由规则",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.HTTPServer": {
-        "properties": {
-          "@id": {
-            "description": "配置 ID（用于引用）",
-            "type": "object"
-          },
-          "automatic_https": {
-            "description": "自动 HTTPS 配置",
-            "type": "object"
-          },
-          "client_ip_headers": {
-            "description": "获取客户端 IP 的请求头",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "enable_full_duplex": {
-            "description": "启用 HTTP/1 全双工",
-            "type": "boolean"
-          },
-          "errors": {
-            "description": "错误处理配置",
-            "type": "object"
-          },
-          "idle_timeout": {
-            "description": "空闲超时",
-            "type": "object"
-          },
-          "keepalive_interval": {
-            "description": "TCP keepalive 间隔",
-            "type": "object"
-          },
-          "listen": {
-            "description": "监听地址列表，如 [\":80\", \":443\"]",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "listener_wrappers": {
-            "description": "listener wrapper 模块配置",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "logs": {
-            "description": "访问日志配置",
-            "type": "object"
-          },
-          "max_header_bytes": {
-            "description": "最大请求头字节数",
-            "type": "integer"
-          },
-          "metrics": {
-            "description": "指标配置（如 per_host）",
-            "type": "object"
-          },
-          "named_routes": {
-            "description": "命名路由",
-            "type": "object"
-          },
-          "protocols": {
-            "description": "启用的协议：h1|h2|h2c|h3",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "read_header_timeout": {
-            "description": "请求头读取超时",
-            "type": "object"
-          },
-          "read_timeout": {
-            "description": "读取超时",
-            "type": "object"
-          },
-          "routes": {
-            "description": "路由规则列表",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "strict_sni_host": {
-            "description": "是否严格校验 SNI",
-            "type": "boolean"
-          },
-          "tls_connection_policies": {
-            "description": "TLS 连接策略列表",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "trusted_proxies": {
-            "description": "可信代理源模块",
-            "type": "object"
-          },
-          "trusted_proxies_strict": {
-            "description": "可信代理头解析顺序",
-            "type": "integer"
-          },
-          "write_timeout": {
-            "description": "写入超时",
-            "type": "object"
-          }
-        },
+      "caddy.Handler": {
         "type": "object"
       },
       "caddy.Info": {
@@ -9361,76 +9102,6 @@
           "servers": {
             "description": "HTTP server 数量",
             "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.Log": {
-        "properties": {
-          "encoder": {
-            "description": "编码器（json/formatted）",
-            "type": "object"
-          },
-          "exclude": {
-            "description": "排除的模块列表",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "include": {
-            "description": "包含的模块列表",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "level": {
-            "description": "日志级别：DEBUG|INFO|WARN|ERROR",
-            "type": "string"
-          },
-          "sampling": {
-            "description": "采样配置",
-            "type": "object"
-          },
-          "writer": {
-            "description": "写入器",
-            "type": "object"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.LogSink": {
-        "properties": {
-          "writer": {
-            "description": "日志写入器配置",
-            "type": "object"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.LoggingConfig": {
-        "properties": {
-          "@id": {
-            "description": "配置 ID",
-            "type": "object"
-          },
-          "logs": {
-            "description": "各模块日志配置",
-            "type": "object"
-          },
-          "sink": {
-            "description": "全局日志输出配置",
-            "type": "object"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.PKIApp": {
-        "properties": {
-          "certificate_authorities": {
-            "description": "CA 名称 → 配置",
-            "type": "object"
           }
         },
         "type": "object"
@@ -9482,40 +9153,11 @@
         ],
         "type": "object"
       },
-      "caddy.RouteSnapshot": {
-        "properties": {
-          "revision": {
-            "description": "revision",
-            "type": "string"
-          },
-          "routes": {
-            "description": "routes",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          }
-        },
-        "type": "object"
-      },
       "caddy.RouteView": {
         "properties": {
           "index": {
             "description": "路由在列表中的下标（用于定位/删除）",
             "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.ServerAutomaticHTTPSForm": {
-        "properties": {
-          "disable": {
-            "description": "禁用自动 HTTPS",
-            "type": "boolean"
-          },
-          "disable_redirects": {
-            "description": "禁用 HTTP 到 HTTPS 自动跳转",
-            "type": "boolean"
           }
         },
         "type": "object"
@@ -9586,54 +9228,6 @@
         ],
         "type": "object"
       },
-      "caddy.ServerLogs": {
-        "properties": {
-          "default_logger_name": {
-            "description": "默认日志名",
-            "type": "string"
-          },
-          "logger_names": {
-            "description": "Host → 日志名列表映射",
-            "type": "object"
-          },
-          "should_log_credentials": {
-            "description": "是否记录凭据请求头",
-            "type": "boolean"
-          },
-          "skip_hosts": {
-            "description": "跳过日志的 Host 列表",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "skip_unmapped_hosts": {
-            "description": "是否跳过未映射 Host 的日志",
-            "type": "boolean"
-          },
-          "trace": {
-            "description": "是否记录 handler trace",
-            "type": "boolean"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.ServerTrustedProxiesForm": {
-        "properties": {
-          "ranges": {
-            "description": "IP 地址或 CIDR 网段",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "source": {
-            "description": "仅支持 static",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "caddy.ServerView": {
         "properties": {
           "id": {
@@ -9651,175 +9245,6 @@
           "trustedProxiesCustom": {
             "description": "非 static 或带扩展字段的代理来源由原始配置管理",
             "type": "boolean"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.TLSApp": {
-        "properties": {
-          "automation": {
-            "description": "自动证书管理",
-            "type": "object"
-          },
-          "cache": {
-            "description": "会话缓存配置",
-            "type": "object"
-          },
-          "certificates": {
-            "description": "证书来源配置",
-            "type": "object"
-          },
-          "dns": {
-            "description": "DNS 挑战提供者配置",
-            "type": "object"
-          },
-          "session_tickets": {
-            "description": "TLS Session Ticket 配置",
-            "type": "object"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.TLSAutomation": {
-        "properties": {
-          "ocsp": {
-            "description": "OCSP 装订配置",
-            "type": "object"
-          },
-          "ocsp_interval": {
-            "description": "OCSP 更新间隔",
-            "type": "object"
-          },
-          "on_demand": {
-            "description": "按需证书配置",
-            "type": "object"
-          },
-          "policies": {
-            "description": "自动化策略列表",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "renew_interval": {
-            "description": "续期检查间隔（如 \"24h\"）",
-            "type": "object"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.TLSCerts": {
-        "properties": {
-          "automate": {
-            "description": "自动管理的域名列表",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "load_files": {
-            "description": "从文件加载证书",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "load_folders": {
-            "description": "从目录加载证书",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "load_pem": {
-            "description": "从内联 PEM 加载证书",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.TLSLoadFile": {
-        "properties": {
-          "certificate": {
-            "description": "证书文件路径",
-            "type": "string"
-          },
-          "format": {
-            "description": "编码格式：pem（默认）| der",
-            "type": "string"
-          },
-          "key": {
-            "description": "私钥文件路径",
-            "type": "string"
-          },
-          "tags": {
-            "description": "标签（用于筛选）",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.TLSLoadPEM": {
-        "properties": {
-          "certificate": {
-            "description": "PEM 格式证书内容",
-            "type": "string"
-          },
-          "key": {
-            "description": "PEM 格式私钥内容",
-            "type": "string"
-          },
-          "tags": {
-            "description": "标签",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.TLSPolicy": {
-        "properties": {
-          "issuers": {
-            "description": "证书颁发者配置（acme/internal）",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "key_type": {
-            "description": "密钥类型：rsa2048|p256|ed25519 等",
-            "type": "string"
-          },
-          "must_staple": {
-            "description": "是否启用 OCSP Must-Staple",
-            "type": "boolean"
-          },
-          "on_demand": {
-            "description": "是否按需申请证书",
-            "type": "boolean"
-          },
-          "renewal_window_ratio": {
-            "description": "续期窗口比例（0-1）",
-            "type": "number"
-          },
-          "storage": {
-            "description": "覆盖默认存储配置",
-            "type": "object"
-          },
-          "subjects": {
-            "description": "适用的域名列表",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
           }
         },
         "type": "object"
@@ -9849,19 +9274,6 @@
         "required": [
           "revision"
         ],
-        "type": "object"
-      },
-      "caddy.caddyBasicAuthList": {
-        "properties": {
-          "server": {
-            "description": "server",
-            "type": "string"
-          },
-          "snapshot": {
-            "description": "snapshot",
-            "type": "boolean"
-          }
-        },
         "type": "object"
       },
       "caddy.caddyBasicAuthUserCreate": {
@@ -9916,36 +9328,6 @@
         "required": [
           "enabled"
         ],
-        "type": "object"
-      },
-      "caddy.caddyRouteCreate": {
-        "properties": {
-          "index": {
-            "description": "index",
-            "type": "integer"
-          },
-          "revision": {
-            "description": "revision",
-            "type": "string"
-          },
-          "server": {
-            "description": "server",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "caddy.caddyRouteList": {
-        "properties": {
-          "server": {
-            "description": "server",
-            "type": "string"
-          },
-          "snapshot": {
-            "description": "snapshot",
-            "type": "boolean"
-          }
-        },
         "type": "object"
       },
       "compose.ConfigDetail": {
@@ -10017,40 +9399,6 @@
         },
         "type": "object"
       },
-      "compose.DockerCreateSpec": {
-        "properties": {
-          "Config": {
-            "$ref": "#/components/schemas/container.Config",
-            "description": "容器配置（镜像、命令、环境等）"
-          },
-          "HostConfig": {
-            "$ref": "#/components/schemas/container.HostConfig",
-            "description": "主机配置（端口、挂载、资源限制等）"
-          },
-          "Name": {
-            "description": "容器名称",
-            "type": "string"
-          },
-          "NetworkingConfig": {
-            "$ref": "#/components/schemas/network.NetworkingConfig",
-            "description": "网络配置"
-          }
-        },
-        "type": "object"
-      },
-      "compose.EnvState": {
-        "properties": {
-          "Content": {
-            "description": ".env 原始内容",
-            "type": "string"
-          },
-          "Exists": {
-            "description": ".env 是否存在",
-            "type": "boolean"
-          }
-        },
-        "type": "object"
-      },
       "compose.HistoryRecord": {
         "properties": {
           "action": {
@@ -10071,43 +9419,6 @@
           },
           "time": {
             "description": "time",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "compose.InitPayload": {
-        "properties": {
-          "File": {
-            "$ref": "#/components/schemas/io.Reader",
-            "description": "附加运行文件流（multipart 上传）"
-          },
-          "URL": {
-            "description": "附加运行文件 zip 的下载地址",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "compose.LoadOptions": {
-        "properties": {
-          "ConfigFiles": {
-            "description": "指定要加载的 compose 文件绝对路径；为空则在 WorkingDir 下自动查找",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "Environment": {
-            "description": "额外的环境变量（并入进程环境，优先级高于 .env）",
-            "type": "object"
-          },
-          "ProjectName": {
-            "description": "项目名（影响生成的网络/容器默认前缀）",
-            "type": "string"
-          },
-          "WorkingDir": {
-            "description": "compose 文件所在目录（用于解析相对路径和 .env）",
             "type": "string"
           }
         },
@@ -10158,40 +9469,6 @@
         },
         "type": "object"
       },
-      "compose.RedeployServiceChange": {
-        "properties": {
-          "action": {
-            "description": "create / recreate / update / unchanged / remove",
-            "type": "string"
-          },
-          "configChanged": {
-            "description": "configChanged",
-            "type": "boolean"
-          },
-          "service": {
-            "description": "service",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "config.AlertRule": {
-        "properties": {
-          "duration": {
-            "description": "连续超阈值次数",
-            "type": "integer"
-          },
-          "metric": {
-            "description": "监控指标",
-            "type": "string"
-          },
-          "threshold": {
-            "description": "阈值（%）",
-            "type": "number"
-          }
-        },
-        "type": "object"
-      },
       "config.ApisixConfig": {
         "properties": {
           "adminKey": {
@@ -10214,102 +9491,6 @@
           "adminUrl": {
             "description": "Caddy Admin API 地址，例如 http://127.0.0.1:2019",
             "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "config.ClusterConfig": {
-        "properties": {
-          "CenterURL": {
-            "description": "CenterURL",
-            "type": "string"
-          },
-          "Mode": {
-            "description": "Mode",
-            "type": "string"
-          },
-          "NodeToken": {
-            "description": "NodeToken",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "config.Config": {
-        "properties": {
-          "Apisix": {
-            "description": "APISIX 配置",
-            "type": "object"
-          },
-          "Caddy": {
-            "description": "Caddy 配置",
-            "type": "object"
-          },
-          "Copilot": {
-            "description": "Copilot LLM 配置",
-            "type": "object"
-          },
-          "Docker": {
-            "description": "Docker 配置",
-            "type": "object"
-          },
-          "Links": {
-            "description": "工具栏链接列表",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "Marketplace": {
-            "description": "应用市场配置",
-            "type": "object"
-          },
-          "Members": {
-            "description": "成员列表",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "Metrics": {
-            "description": "本机与容器指标出口配置",
-            "type": "object"
-          },
-          "Monitor": {
-            "description": "监控配置",
-            "type": "object"
-          },
-          "Notify": {
-            "description": "告警通知配置",
-            "type": "object"
-          },
-          "OIDC": {
-            "description": "OIDC 登录配置",
-            "type": "object"
-          },
-          "Passkey": {
-            "description": "Passkey 登录配置",
-            "type": "object"
-          },
-          "Password": {
-            "description": "密码登录配置",
-            "type": "object"
-          },
-          "PortMap": {
-            "description": "中控端口映射（端口转发）配置，仅 center 模式使用",
-            "type": "object"
-          },
-          "Schema": {
-            "description": "配置格式元信息，用于版本化迁移",
-            "type": "object"
-          },
-          "Server": {
-            "description": "服务配置",
-            "type": "object"
-          },
-          "THA": {
-            "description": "代理 Header 登录配置",
-            "type": "object"
           }
         },
         "type": "object"
@@ -10355,89 +9536,6 @@
         },
         "type": "object"
       },
-      "config.DockerRegistry": {
-        "properties": {
-          "description": {
-            "description": "仓库描述（可选）",
-            "type": "string"
-          },
-          "name": {
-            "description": "仓库名称（用于显示）",
-            "type": "string"
-          },
-          "password": {
-            "description": "登录密码：GET 响应由 ConfigAll 脱敏清空；PUT 时为空表示按 url+username 匹配保留原值，非空则更新（修改 url/username 会导致匹配不到旧值，需重新填写密码）",
-            "type": "string"
-          },
-          "url": {
-            "description": "仓库地址，如 registry.example.com",
-            "type": "string"
-          },
-          "username": {
-            "description": "用户名（可选）",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "config.DockerTLSConfig": {
-        "properties": {
-          "ca": {
-            "description": "校验服务端证书的 CA（PEM）；留空使用系统根证书",
-            "type": "string"
-          },
-          "cert": {
-            "description": "客户端证书（PEM），双向认证时配置，需与私钥成对",
-            "type": "string"
-          },
-          "enabled": {
-            "description": "是否启用 TLS（Host 必须为 tcp:// 地址）",
-            "type": "boolean"
-          },
-          "key": {
-            "description": "客户端私钥（PEM）：写入时为空表示保留原值；响应时不返回",
-            "type": "string"
-          },
-          "skipVerify": {
-            "description": "不校验服务端证书，仅用于测试环境",
-            "type": "boolean"
-          }
-        },
-        "type": "object"
-      },
-      "config.FaultAlertConfig": {
-        "properties": {
-          "certificateDays": {
-            "description": "证书提前告警天数，默认 14",
-            "type": "integer"
-          },
-          "certificateEnabled": {
-            "description": "网关证书到期",
-            "type": "boolean"
-          },
-          "containerEnabled": {
-            "description": "容器异常、健康检查失败和频繁重启",
-            "type": "boolean"
-          },
-          "cronEnabled": {
-            "description": "计划任务执行失败",
-            "type": "boolean"
-          },
-          "nodeEnabled": {
-            "description": "中控受管节点离线与恢复",
-            "type": "boolean"
-          },
-          "restartThreshold": {
-            "description": "窗口内重启次数，默认 3",
-            "type": "integer"
-          },
-          "restartWindow": {
-            "description": "重启统计窗口（秒），默认 300",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
       "config.LinkConfig": {
         "properties": {
           "icon": {
@@ -10459,45 +9557,6 @@
         "properties": {
           "url": {
             "description": "应用市场站点地址，通过 iframe 嵌入",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "config.MemberConfig": {
-        "properties": {
-          "description": {
-            "description": "Description 成员描述信息（可选）",
-            "type": "string"
-          },
-          "founder": {
-            "description": "Founder 创始人标志，创始人拥有所有模块的完整权限",
-            "type": "boolean"
-          },
-          "homeDirectory": {
-            "description": "主目录",
-            "type": "string"
-          },
-          "passkeys": {
-            "description": "Passkey 凭证列表",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "permissions": {
-            "description": "Permissions 允许访问的路由列表，格式为 \"METHOD /api/path\"，如 \"GET /api/docker/containers\"",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "twoFactor": {
-            "description": "二次验证配置",
-            "type": "object"
-          },
-          "username": {
-            "description": "用户名",
             "type": "string"
           }
         },
@@ -10679,15 +9738,6 @@
         },
         "type": "object"
       },
-      "config.SchemaConfig": {
-        "properties": {
-          "Version": {
-            "description": "配置结构版本号，当前: 2",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
       "config.ServerConfig": {
         "properties": {
           "allowedOrigins": {
@@ -10752,37 +9802,11 @@
         },
         "type": "object"
       },
-      "config.TOTPConfig": {
-        "properties": {
-          "enabled": {
-            "description": "是否已启用 TOTP",
-            "type": "boolean"
-          }
-        },
-        "type": "object"
-      },
       "config.TwoFactorConfig": {
         "properties": {
           "totp": {
             "description": "TOTP 二次验证配置",
             "type": "object"
-          }
-        },
-        "type": "object"
-      },
-      "config.WebhookConfig": {
-        "properties": {
-          "name": {
-            "description": "通道名称",
-            "type": "string"
-          },
-          "template": {
-            "description": "请求体模板，留空则发送通用 JSON",
-            "type": "string"
-          },
-          "url": {
-            "description": "接收地址",
-            "type": "string"
           }
         },
         "type": "object"
@@ -10867,188 +9891,6 @@
         },
         "type": "object"
       },
-      "copilot.OpenAPIOpBrief": {
-        "properties": {
-          "method": {
-            "description": "HTTP 方法",
-            "type": "string"
-          },
-          "operationId": {
-            "description": "OpenAPI operationId",
-            "type": "string"
-          },
-          "path": {
-            "description": "相对于 /api 的路径",
-            "type": "string"
-          },
-          "summary": {
-            "description": "中文摘要",
-            "type": "string"
-          },
-          "tag": {
-            "description": "模块标签",
-            "type": "string"
-          },
-          "toolUnsupportedReason": {
-            "description": "不支持通用 Copilot 工具调用的原因",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "copilot.OpenAPIQuery": {
-        "properties": {
-          "method": {
-            "description": "HTTP 方法：get / post / put / patch / delete",
-            "type": "string"
-          },
-          "path": {
-            "description": "API 路径，如 /docker/containers",
-            "type": "string"
-          },
-          "q": {
-            "description": "关键词，匹配路径、摘要、operationId、tag",
-            "type": "string"
-          },
-          "tag": {
-            "description": "模块标签，如 docker、apisix",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "copilot.OpenAPITagInfo": {
-        "properties": {
-          "count": {
-            "description": "该标签下的接口数量",
-            "type": "integer"
-          },
-          "name": {
-            "description": "模块标签",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "cron.Job": {
-        "properties": {
-          "container": {
-            "description": "DOCKER_CTR：目标容器名",
-            "type": "string"
-          },
-          "content": {
-            "description": "脚本内容或命令",
-            "type": "string"
-          },
-          "description": {
-            "description": "任务描述",
-            "type": "string"
-          },
-          "enabled": {
-            "description": "是否启用",
-            "type": "boolean"
-          },
-          "id": {
-            "description": "任务 ID（自动生成）",
-            "type": "string"
-          },
-          "image": {
-            "description": "DOCKER_TMP：镜像名",
-            "type": "string"
-          },
-          "name": {
-            "description": "任务名称",
-            "type": "string"
-          },
-          "schedule": {
-            "description": "cron 表达式（如 \"0 3 * * *\"）",
-            "type": "string"
-          },
-          "timeout": {
-            "description": "超时（秒），0 表示不限制",
-            "type": "integer"
-          },
-          "type": {
-            "description": "脚本类型：SHELL | EXEC | BAT | POWERSHELL | DOCKER_TMP | DOCKER_CTR",
-            "type": "string"
-          },
-          "volumes": {
-            "description": "DOCKER_TMP：额外挂载，格式：/host:/container[:ro]，换行分隔",
-            "type": "string"
-          },
-          "workDir": {
-            "description": "工作目录（非 Docker 类型）",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "cron.JobDetail": {
-        "properties": {
-          "entryId": {
-            "description": "cron 条目 ID",
-            "type": "integer"
-          },
-          "lastRun": {
-            "description": "上次运行时间",
-            "type": "string"
-          },
-          "nextRun": {
-            "description": "下次运行时间",
-            "type": "string"
-          },
-          "registered": {
-            "description": "是否已注册到调度器",
-            "type": "boolean"
-          },
-          "runtimeStatus": {
-            "description": "运行状态：scheduled | disabled | unregistered",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "cron.JobLog": {
-        "properties": {
-          "duration": {
-            "description": "耗时（毫秒）",
-            "type": "integer"
-          },
-          "endTime": {
-            "description": "结束时间",
-            "type": "string"
-          },
-          "error": {
-            "description": "错误信息（失败时非空）",
-            "type": "string"
-          },
-          "jobId": {
-            "description": "所属任务 ID",
-            "type": "string"
-          },
-          "jobName": {
-            "description": "任务名称（冗余，便于展示）",
-            "type": "string"
-          },
-          "output": {
-            "description": "标准输出与标准错误合并",
-            "type": "string"
-          },
-          "runId": {
-            "description": "执行 ID",
-            "type": "string"
-          },
-          "startTime": {
-            "description": "开始时间",
-            "type": "string"
-          },
-          "success": {
-            "description": "是否执行成功",
-            "type": "boolean"
-          }
-        },
-        "type": "object"
-      },
       "cron.JobUpsertRequest": {
         "properties": {
           "container": {
@@ -11104,53 +9946,11 @@
         ],
         "type": "object"
       },
-      "cron.TypeInfo": {
-        "properties": {
-          "label": {
-            "description": "类型显示名称",
-            "type": "string"
-          },
-          "value": {
-            "description": "类型值：SHELL | EXEC | BAT | POWERSHELL | DOCKER_TMP | DOCKER_CTR",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "cronJobEnableReq": {
         "properties": {
           "enabled": {
             "description": "是否启用任务",
             "type": "boolean"
-          }
-        },
-        "type": "object"
-      },
-      "cronJobLogsReq": {
-        "properties": {
-          "limit": {
-            "description": "返回记录数上限（默认 50；\u003c=0 或 \u003e100 按 50）",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "cstore.Event": {
-        "properties": {
-          "Key": {
-            "description": "变更的 key（文件名）",
-            "type": "string"
-          },
-          "Type": {
-            "description": "PUT | DELETE",
-            "type": "object"
-          },
-          "Value": {
-            "description": "PUT 时为新值，DELETE 时为 nil",
-            "items": {
-              "type": "integer"
-            },
-            "type": "array"
           }
         },
         "type": "object"
@@ -11170,23 +9970,6 @@
           "id",
           "action"
         ],
-        "type": "object"
-      },
-      "docker.CPUThrottledData": {
-        "properties": {
-          "periods": {
-            "description": "调度周期总数",
-            "type": "integer"
-          },
-          "throttledPeriods": {
-            "description": "被节流的周期数",
-            "type": "integer"
-          },
-          "throttledTime": {
-            "description": "被节流的累计时间（纳秒）",
-            "type": "integer"
-          }
-        },
         "type": "object"
       },
       "docker.ContainerCreateResult": {
@@ -11223,39 +10006,6 @@
           "state": {
             "description": "运行状态",
             "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "docker.ContainerFileInfo": {
-        "properties": {
-          "isDir": {
-            "description": "是否为目录",
-            "type": "boolean"
-          },
-          "isLink": {
-            "description": "是否为符号链接",
-            "type": "boolean"
-          },
-          "linkTarget": {
-            "description": "符号链接目标",
-            "type": "string"
-          },
-          "modTime": {
-            "description": "修改时间（Unix 时间戳）",
-            "type": "integer"
-          },
-          "mode": {
-            "description": "字符串权限，如 \"-rw-r--r--\"",
-            "type": "string"
-          },
-          "name": {
-            "description": "文件名",
-            "type": "string"
-          },
-          "size": {
-            "description": "文件大小（字节）",
-            "type": "integer"
           }
         },
         "type": "object"
@@ -11331,22 +10081,6 @@
         },
         "type": "object"
       },
-      "docker.ContainerLogsRequest": {
-        "properties": {
-          "id": {
-            "description": "容器 ID",
-            "type": "string"
-          },
-          "tail": {
-            "description": "返回末尾行数（如 \"100\"，空表示全部）",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ],
-        "type": "object"
-      },
       "docker.ContainerLogsResult": {
         "properties": {
           "id": {
@@ -11355,28 +10089,6 @@
           },
           "logs": {
             "description": "日志行列表",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          }
-        },
-        "type": "object"
-      },
-      "docker.ContainerProcessList": {
-        "properties": {
-          "processes": {
-            "description": "进程行数据，每行与 titles 对应",
-            "items": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "type": "array"
-          },
-          "titles": {
-            "description": "列标题（如 PID/USER/CMD）",
             "items": {
               "type": "string"
             },
@@ -11561,34 +10273,6 @@
           "ts": {
             "description": "服务端采样时间（Unix 秒）",
             "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "docker.DockerConfig": {
-        "properties": {
-          "ContainerGuard": {
-            "$ref": "#/components/schemas/ast.FuncType",
-            "description": "仅对 ContainerAction 生效，action 取值同 ContainerAction。"
-          },
-          "ContainerRoot": {
-            "description": "容器数据根目录",
-            "type": "string"
-          },
-          "Host": {
-            "description": "Docker 连接地址",
-            "type": "string"
-          },
-          "Registries": {
-            "description": "镜像仓库配置列表",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "TLS": {
-            "description": "远程 daemon 的 TLS 参数；为 nil 表示不使用 TLS",
-            "type": "object"
           }
         },
         "type": "object"
@@ -11778,44 +10462,6 @@
         },
         "type": "object"
       },
-      "docker.ImageLayerInfo": {
-        "properties": {
-          "created": {
-            "description": "层创建时间",
-            "type": "string"
-          },
-          "createdBy": {
-            "description": "生成该层的构建指令",
-            "type": "string"
-          },
-          "digest": {
-            "description": "层摘要",
-            "type": "string"
-          },
-          "empty": {
-            "description": "是否为空层（无文件变更）",
-            "type": "boolean"
-          },
-          "size": {
-            "description": "层大小（字节）",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "docker.ImagePruneDeleted": {
-        "properties": {
-          "deleted": {
-            "description": "被删除的镜像层 ID",
-            "type": "string"
-          },
-          "untagged": {
-            "description": "被取消标签的镜像引用",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "docker.ImagePruneReport": {
         "properties": {
           "imagesDeleted": {
@@ -11924,31 +10570,6 @@
         ],
         "type": "object"
       },
-      "docker.NetworkContainerInfo": {
-        "properties": {
-          "id": {
-            "description": "容器 ID",
-            "type": "string"
-          },
-          "ipv4": {
-            "description": "容器 IPv4 地址",
-            "type": "string"
-          },
-          "ipv6": {
-            "description": "容器 IPv6 地址",
-            "type": "string"
-          },
-          "macAddress": {
-            "description": "容器 MAC 地址",
-            "type": "string"
-          },
-          "name": {
-            "description": "容器名称",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "docker.NetworkDetail": {
         "properties": {
           "containers": {
@@ -12038,31 +10659,6 @@
         ],
         "type": "object"
       },
-      "docker.RegistryConfig": {
-        "properties": {
-          "Description": {
-            "description": "仓库描述",
-            "type": "string"
-          },
-          "Name": {
-            "description": "仓库名称",
-            "type": "string"
-          },
-          "Password": {
-            "description": "密码",
-            "type": "string"
-          },
-          "URL": {
-            "description": "仓库地址",
-            "type": "string"
-          },
-          "Username": {
-            "description": "用户名",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "docker.RegistryInfo": {
         "properties": {
           "description": {
@@ -12111,121 +10707,6 @@
           "name",
           "url"
         ],
-        "type": "object"
-      },
-      "docker.ScriptRunOptions": {
-        "properties": {
-          "Image": {
-            "description": "镜像名",
-            "type": "string"
-          },
-          "Mounts": {
-            "description": "额外挂载",
-            "items": {
-              "$ref": "#/components/schemas/mount.Mount"
-            },
-            "type": "array"
-          },
-          "NamePrefix": {
-            "description": "临时容器名前缀，默认 script",
-            "type": "string"
-          },
-          "Script": {
-            "description": "脚本内容",
-            "type": "string"
-          },
-          "ScriptName": {
-            "description": "脚本在容器根目录下的文件名，默认 script.sh",
-            "type": "string"
-          },
-          "Shell": {
-            "description": "容器内 shell，默认 /bin/sh",
-            "type": "string"
-          },
-          "Timeout": {
-            "description": "超时秒数，0 不限",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "docker.StatsBlockDetail": {
-        "properties": {
-          "major": {
-            "description": "设备主号",
-            "type": "integer"
-          },
-          "minor": {
-            "description": "设备次号",
-            "type": "integer"
-          },
-          "read": {
-            "description": "读取字节数",
-            "type": "integer"
-          },
-          "write": {
-            "description": "写入字节数",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "docker.StatsNetDetail": {
-        "properties": {
-          "rxBytes": {
-            "description": "接收字节数",
-            "type": "integer"
-          },
-          "rxDropped": {
-            "description": "接收丢包数",
-            "type": "integer"
-          },
-          "rxErrors": {
-            "description": "接收错误数",
-            "type": "integer"
-          },
-          "rxPackets": {
-            "description": "接收包数",
-            "type": "integer"
-          },
-          "txBytes": {
-            "description": "发送字节数",
-            "type": "integer"
-          },
-          "txDropped": {
-            "description": "发送丢包数",
-            "type": "integer"
-          },
-          "txErrors": {
-            "description": "发送错误数",
-            "type": "integer"
-          },
-          "txPackets": {
-            "description": "发送包数",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "docker.TLSConfig": {
-        "properties": {
-          "CA": {
-            "description": "校验服务端证书的 CA；为空时使用系统根证书",
-            "type": "string"
-          },
-          "Cert": {
-            "description": "客户端证书（双向认证，需与 Key 成对配置）",
-            "type": "string"
-          },
-          "Key": {
-            "description": "客户端私钥",
-            "type": "string"
-          },
-          "SkipVerify": {
-            "description": "不校验服务端证书（仅用于测试环境）",
-            "type": "boolean"
-          }
-        },
         "type": "object"
       },
       "docker.VolumeDetail": {
@@ -12293,31 +10774,6 @@
         },
         "type": "object"
       },
-      "docker.VolumeMapping": {
-        "properties": {
-          "containerPath": {
-            "description": "容器内挂载路径",
-            "type": "string"
-          },
-          "hostPath": {
-            "description": "宿主机路径（bind 类型）",
-            "type": "string"
-          },
-          "readOnly": {
-            "description": "是否只读",
-            "type": "boolean"
-          },
-          "source": {
-            "description": "卷名（volume 类型）",
-            "type": "string"
-          },
-          "type": {
-            "description": "挂载类型（volume/bind）",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "docker.VolumeSpec": {
         "properties": {
           "driver": {
@@ -12332,27 +10788,6 @@
         "required": [
           "name"
         ],
-        "type": "object"
-      },
-      "docker.VolumeUsedByContainer": {
-        "properties": {
-          "id": {
-            "description": "容器 ID",
-            "type": "string"
-          },
-          "mountPath": {
-            "description": "容器内挂载路径",
-            "type": "string"
-          },
-          "name": {
-            "description": "容器名称",
-            "type": "string"
-          },
-          "readOnly": {
-            "description": "是否只读挂载",
-            "type": "boolean"
-          }
-        },
         "type": "object"
       },
       "docker.dockerContainerFileChmod": {
@@ -12409,63 +10844,6 @@
           },
           "path": {
             "description": "目标文件路径",
-            "type": "string"
-          }
-        },
-        "required": [
-          "path"
-        ],
-        "type": "object"
-      },
-      "filer.FileInfo": {
-        "properties": {
-          "isDir": {
-            "description": "是否为目录",
-            "type": "boolean"
-          },
-          "isLink": {
-            "description": "是否为符号链接",
-            "type": "boolean"
-          },
-          "linkTarget": {
-            "description": "符号链接目标",
-            "type": "string"
-          },
-          "modTime": {
-            "description": "最后修改时间",
-            "type": "string"
-          },
-          "mode": {
-            "description": "权限字符串（如 -rwxr-xr-x）",
-            "type": "string"
-          },
-          "modeO": {
-            "description": "权限八进制表示（如 755）",
-            "type": "string"
-          },
-          "name": {
-            "description": "文件名",
-            "type": "string"
-          },
-          "path": {
-            "description": "相对成员主目录的路径",
-            "type": "string"
-          },
-          "size": {
-            "description": "文件大小（字节）",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "filer.filerFileDownload": {
-        "properties": {
-          "inline": {
-            "description": "true 内联预览（Content-Disposition: inline），false 触发下载",
-            "type": "boolean"
-          },
-          "path": {
-            "description": "要下载的文件路径",
             "type": "string"
           }
         },
@@ -12564,78 +10942,6 @@
         ],
         "type": "object"
       },
-      "local.ProcessInfo": {
-        "properties": {
-          "cmdline": {
-            "description": "完整命令行",
-            "type": "string"
-          },
-          "cpuMillis": {
-            "description": "累计 CPU 时间（毫秒）",
-            "type": "integer"
-          },
-          "cpuPercent": {
-            "description": "CPU 占用（%，相邻采样区间均值，可超过 100）",
-            "type": "number"
-          },
-          "createTime": {
-            "description": "启动时间（Unix 毫秒）",
-            "type": "integer"
-          },
-          "gpuDevices": {
-            "description": "占用的 GPU 设备标识",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "gpuMemoryBytes": {
-            "description": "GPU 显存占用（字节），未使用 GPU 时省略",
-            "type": "integer"
-          },
-          "gpuUtilization": {
-            "description": "GPU 利用率（%），首次采样或不可用时省略",
-            "type": "number"
-          },
-          "ioReadBps": {
-            "description": "磁盘读取速率（字节/秒），首次采样或不可用时省略",
-            "type": "integer"
-          },
-          "ioWriteBps": {
-            "description": "磁盘写入速率（字节/秒），首次采样或不可用时省略",
-            "type": "integer"
-          },
-          "memoryPercent": {
-            "description": "内存占用（%）",
-            "type": "number"
-          },
-          "memoryRss": {
-            "description": "常驻内存（字节）",
-            "type": "integer"
-          },
-          "name": {
-            "description": "进程名",
-            "type": "string"
-          },
-          "pid": {
-            "description": "进程 ID",
-            "type": "integer"
-          },
-          "ppid": {
-            "description": "父进程 ID",
-            "type": "integer"
-          },
-          "status": {
-            "description": "运行状态",
-            "type": "string"
-          },
-          "username": {
-            "description": "运行用户",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "local.localProcessKill": {
         "properties": {
           "force": {
@@ -12678,417 +10984,6 @@
           "url": {
             "description": "抓取地址",
             "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "monitor.DiskIOStat": {
-        "properties": {
-          "name": {
-            "description": "磁盘设备名",
-            "type": "string"
-          },
-          "readBytes": {
-            "description": "累计读取字节数",
-            "type": "integer"
-          },
-          "readCount": {
-            "description": "累计读取次数",
-            "type": "integer"
-          },
-          "writeBytes": {
-            "description": "累计写入字节数",
-            "type": "integer"
-          },
-          "writeCount": {
-            "description": "累计写入次数",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "monitor.GoRuntimeStat": {
-        "properties": {
-          "numCPU": {
-            "description": "可用 CPU 核数",
-            "type": "integer"
-          },
-          "numGoroutine": {
-            "description": "当前 goroutine 数",
-            "type": "integer"
-          },
-          "version": {
-            "description": "Go 版本",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "monitor.HostStat": {
-        "properties": {
-          "diskIO": {
-            "description": "各磁盘 IO 统计",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "go": {
-            "description": "Go 运行态统计",
-            "type": "object"
-          },
-          "gpu": {
-            "description": "GPU 统计列表",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "system": {
-            "$ref": "#/components/schemas/psutil.DetailStat",
-            "description": "系统资源明细（CPU/内存/磁盘等）"
-          },
-          "time": {
-            "description": "系统当前本地时间",
-            "type": "string"
-          },
-          "timezone": {
-            "description": "系统当前时区",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "monitor.Record": {
-        "properties": {
-          "container_id": {
-            "description": "仅容器监控有值",
-            "type": "string"
-          },
-          "data": {
-            "description": "原始监控数据（主机或容器）",
-            "type": "object"
-          },
-          "ts": {
-            "description": "采集时间戳（Unix 秒）",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "monitor.SystemGPU": {
-        "properties": {
-          "deviceKey": {
-            "description": "设备标识",
-            "type": "string"
-          },
-          "fanSpeed": {
-            "description": "风扇转速（%）",
-            "type": "integer"
-          },
-          "index": {
-            "description": "GPU 索引",
-            "type": "integer"
-          },
-          "memoryTotal": {
-            "description": "总显存（字节）",
-            "type": "integer"
-          },
-          "memoryUsed": {
-            "description": "已用显存（字节）",
-            "type": "integer"
-          },
-          "name": {
-            "description": "GPU 名称",
-            "type": "string"
-          },
-          "powerUsage": {
-            "description": "功耗（W）",
-            "type": "number"
-          },
-          "temperature": {
-            "description": "温度（℃）",
-            "type": "integer"
-          },
-          "utilization": {
-            "description": "GPU 利用率（0-100）",
-            "type": "number"
-          },
-          "vendor": {
-            "description": "厂商",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "node.AgentInfo": {
-        "properties": {
-          "arch": {
-            "description": "CPU 架构",
-            "type": "string"
-          },
-          "features": {
-            "description": "可选能力，如 portmap（端口转发）",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "hostname": {
-            "description": "主机名",
-            "type": "string"
-          },
-          "mode": {
-            "description": "运行模式，agent 恒为 agent",
-            "type": "string"
-          },
-          "os": {
-            "description": "操作系统",
-            "type": "string"
-          },
-          "version": {
-            "description": "程序版本",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "node.AgentOptions": {
-        "properties": {
-          "CenterURL": {
-            "description": "中控地址（http(s)://host:port，不含 /api）",
-            "type": "string"
-          },
-          "NodeToken": {
-            "description": "节点令牌，由中控生成并从环境变量传入；不另存凭据文件",
-            "type": "string"
-          },
-          "Token": {
-            "$ref": "#/components/schemas/ast.FuncType",
-            "description": "返回访问本机 isrvd 的 API 令牌；每个转发的请求都会取一次，转发的请求以令牌所属成员身份执行"
-          },
-          "Upstream": {
-            "$ref": "#/components/schemas/url.URL",
-            "description": "本机 isrvd 的回环地址"
-          },
-          "Version": {
-            "description": "程序版本",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "node.Node": {
-        "properties": {
-          "arch": {
-            "description": "注册时上报的 CPU 架构",
-            "type": "string"
-          },
-          "createdAt": {
-            "description": "创建时间",
-            "type": "string"
-          },
-          "hostname": {
-            "description": "注册时上报的主机名",
-            "type": "string"
-          },
-          "id": {
-            "description": "节点 ID（自动生成）",
-            "type": "string"
-          },
-          "name": {
-            "description": "节点名称",
-            "type": "string"
-          },
-          "os": {
-            "description": "注册时上报的操作系统",
-            "type": "string"
-          },
-          "portmaps": {
-            "description": "端口转发规则",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "status": {
-            "description": "pending / active / revoked",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "node.NodeCreateResult": {
-        "properties": {
-          "node": {
-            "description": "node",
-            "type": "object"
-          },
-          "token": {
-            "description": "token",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "node.NodeInfo": {
-        "properties": {
-          "agentVersion": {
-            "description": "agentVersion",
-            "type": "string"
-          },
-          "features": {
-            "description": "节点声明的可选能力；Negotiated 为 false 时无从判断",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "latency": {
-            "description": "latency",
-            "type": "integer"
-          },
-          "negotiated": {
-            "description": "是否成功取得节点的版本与能力信息",
-            "type": "boolean"
-          },
-          "online": {
-            "description": "online",
-            "type": "boolean"
-          }
-        },
-        "type": "object"
-      },
-      "node.NodeRequest": {
-        "properties": {
-          "name": {
-            "description": "节点名称",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "node.PermissionRoute": {
-        "properties": {
-          "Label": {
-            "description": "Label",
-            "type": "string"
-          },
-          "Method": {
-            "description": "Method",
-            "type": "string"
-          },
-          "Path": {
-            "description": "Path",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "node.PortMap": {
-        "properties": {
-          "listen": {
-            "description": "中控监听端口",
-            "type": "integer"
-          },
-          "name": {
-            "description": "备注",
-            "type": "string"
-          },
-          "proto": {
-            "description": "tcp / udp",
-            "type": "string"
-          },
-          "target": {
-            "description": "节点侧目标 host:port，host 缺省为 127.0.0.1",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "node.PortMapRequest": {
-        "properties": {
-          "portmaps": {
-            "description": "portmaps",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          }
-        },
-        "type": "object"
-      },
-      "notify.CaddyCert": {
-        "properties": {
-          "Certificate": {
-            "description": "file：证书文件路径；pem：证书 PEM 文本",
-            "type": "string"
-          },
-          "Key": {
-            "description": "列表复合主键，缓存证书用作稳定标识",
-            "type": "string"
-          },
-          "NotAfter": {
-            "description": "证书过期时间，无法解析时为 nil",
-            "type": "string"
-          },
-          "Source": {
-            "description": "file / pem / automate / cached",
-            "type": "string"
-          },
-          "Subject": {
-            "description": "域名或证书 CN",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "notify.Event": {
-        "properties": {
-          "data": {
-            "description": "事件相关数据",
-            "type": "object"
-          },
-          "event": {
-            "description": "事件类型，如 resource.alert / resource.recover",
-            "type": "string"
-          },
-          "level": {
-            "description": "级别：warning / critical / info",
-            "type": "string"
-          },
-          "message": {
-            "description": "详细描述",
-            "type": "string"
-          },
-          "source": {
-            "description": "来源标识，固定为 isrvd",
-            "type": "string"
-          },
-          "timestamp": {
-            "description": "触发时间（Unix 秒）",
-            "type": "integer"
-          },
-          "title": {
-            "description": "标题",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "notify.HostUsage": {
-        "properties": {
-          "CPUPercent": {
-            "description": "CPU 使用率（%）",
-            "type": "number"
-          },
-          "DiskPercent": {
-            "description": "磁盘使用率（%）",
-            "type": "number"
-          },
-          "MemoryPercent": {
-            "description": "内存使用率（%）",
-            "type": "number"
           }
         },
         "type": "object"
@@ -13146,175 +11041,6 @@
           },
           "updaterImage": {
             "description": "推荐的 docker-updater 镜像（按国家代码自动选择）",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "psutil.CPUProcessor": {
-        "properties": {
-          "coreId": {
-            "description": "封装内物理核心 ID；须与 packageId 一起使用，未知为 null",
-            "nullable": true,
-            "type": "string"
-          },
-          "id": {
-            "description": "系统逻辑处理器 ID",
-            "type": "integer"
-          },
-          "model": {
-            "type": "string"
-          },
-          "packageId": {
-            "description": "系统封装 ID；0 有效，未知为 null",
-            "nullable": true,
-            "type": "string"
-          },
-          "vendor": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "packageId",
-          "coreId",
-          "model",
-          "vendor"
-        ],
-        "type": "object"
-      },
-      "psutil.CPUStat": {
-        "properties": {
-          "logicalCPUs": {
-            "description": "系统报告的逻辑处理器总数；未知为 null",
-            "nullable": true,
-            "type": "integer"
-          },
-          "models": {
-            "description": "非空型号去重，不表示封装数",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "packages": {
-            "description": "系统报告的逻辑处理器所涉及的封装数，不含空插槽和不可见封装；拓扑不完整时未知",
-            "nullable": true,
-            "type": "integer"
-          },
-          "physicalCores": {
-            "description": "物理核心总数；无法确认时未知",
-            "nullable": true,
-            "type": "integer"
-          },
-          "processors": {
-            "description": "Linux 可识别的逻辑处理器；其他平台或无数据时为空数组",
-            "items": {
-              "$ref": "#/components/schemas/psutil.CPUProcessor"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "models",
-          "packages",
-          "physicalCores",
-          "logicalCPUs",
-          "processors"
-        ],
-        "type": "object"
-      },
-      "psutil.DetailStat": {
-        "description": "系统资源明细，其他字段见 overview 接口文档",
-        "properties": {
-          "cpu": {
-            "$ref": "#/components/schemas/psutil.CPUStat"
-          },
-          "cpuCore": {
-            "type": "integer"
-          },
-          "cpuCoreLogic": {
-            "type": "integer"
-          },
-          "cpuPercent": {
-            "items": {
-              "type": "number"
-            },
-            "type": "array"
-          },
-          "netInterface": {
-            "items": {
-              "$ref": "#/components/schemas/psutil.NetInterface"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "cpu"
-        ],
-        "type": "object"
-      },
-      "psutil.NetInterface": {
-        "properties": {
-          "bytesRecv": {
-            "description": "累计接收字节数",
-            "type": "integer"
-          },
-          "bytesSent": {
-            "description": "累计发送字节数",
-            "type": "integer"
-          },
-          "dropin": {
-            "type": "integer"
-          },
-          "dropout": {
-            "type": "integer"
-          },
-          "ipv4List": {
-            "items": {
-              "type": "string"
-            },
-            "nullable": true,
-            "type": "array"
-          },
-          "ipv6List": {
-            "items": {
-              "type": "string"
-            },
-            "nullable": true,
-            "type": "array"
-          },
-          "name": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "bytesRecv",
-          "bytesSent"
-        ],
-        "type": "object"
-      },
-      "shell.BridgeOptions": {
-        "properties": {
-          "Cleanup": {
-            "$ref": "#/components/schemas/ast.FuncType",
-            "description": "清理终端资源的回调"
-          },
-          "Close": {
-            "$ref": "#/components/schemas/ast.FuncType",
-            "description": "连接结束回调"
-          },
-          "Name": {
-            "description": "会话名称，用于日志标识",
-            "type": "string"
-          },
-          "Resize": {
-            "$ref": "#/components/schemas/ast.FuncType",
-            "description": "终端尺寸变更回调"
-          },
-          "Welcome": {
-            "description": "建立连接后发送的欢迎内容",
             "type": "string"
           }
         },
@@ -13600,48 +11326,6 @@
         },
         "type": "object"
       },
-      "swarm.ServiceMount": {
-        "properties": {
-          "readOnly": {
-            "description": "是否只读",
-            "type": "boolean"
-          },
-          "source": {
-            "description": "来源（卷名或宿主机路径）",
-            "type": "string"
-          },
-          "target": {
-            "description": "容器内挂载路径",
-            "type": "string"
-          },
-          "type": {
-            "description": "挂载类型（volume/bind）",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "swarm.ServicePort": {
-        "properties": {
-          "protocol": {
-            "description": "协议（tcp/udp）",
-            "type": "string"
-          },
-          "publishMode": {
-            "description": "发布模式（ingress/host）",
-            "type": "string"
-          },
-          "publishedPort": {
-            "description": "对外发布端口",
-            "type": "integer"
-          },
-          "targetPort": {
-            "description": "容器内端口",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
       "swarm.ServiceSpec": {
         "properties": {
           "args": {
@@ -13848,47 +11532,6 @@
         },
         "type": "object"
       },
-      "system.AuditLog": {
-        "properties": {
-          "body": {
-            "description": "请求体（文件字段替换为占位符）",
-            "type": "string"
-          },
-          "duration": {
-            "description": "耗时（毫秒）",
-            "type": "integer"
-          },
-          "ip": {
-            "description": "客户端 IP",
-            "type": "string"
-          },
-          "method": {
-            "description": "HTTP 方法（WebSocket 记为 \"WS\"）",
-            "type": "string"
-          },
-          "statusCode": {
-            "description": "响应状态码",
-            "type": "integer"
-          },
-          "success": {
-            "description": "是否成功",
-            "type": "boolean"
-          },
-          "timestamp": {
-            "description": "操作时间",
-            "type": "string"
-          },
-          "uri": {
-            "description": "请求 URI",
-            "type": "string"
-          },
-          "username": {
-            "description": "操作人",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "webssh.Credential": {
         "properties": {
           "authType": {
@@ -14011,44 +11654,6 @@
           "name",
           "addr"
         ],
-        "type": "object"
-      },
-      "webssh.SFTPListResult": {
-        "properties": {
-          "files": {
-            "items": {
-              "properties": {
-                "isDir": {
-                  "type": "boolean"
-                },
-                "isLink": {
-                  "type": "boolean"
-                },
-                "linkTarget": {
-                  "type": "string"
-                },
-                "modTime": {
-                  "type": "integer"
-                },
-                "mode": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                },
-                "size": {
-                  "type": "integer"
-                }
-              },
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "path": {
-            "description": "实际目录路径",
-            "type": "string"
-          }
-        },
         "type": "object"
       }
     },
