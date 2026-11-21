@@ -86,10 +86,10 @@ type SourceStatus struct {
 func (s *Service) Status(ctx context.Context) []SourceStatus {
 	ctx, cancel := context.WithTimeout(ctx, statusTimeout)
 	defer cancel()
-	var caddyStatus, apisixStatus SourceStatus
+	var apisixStatus SourceStatus
 	var wg sync.WaitGroup
-	wg.Go(func() { caddyStatus = s.gatewayStatus(ctx, GatewayCaddy) })
 	wg.Go(func() { apisixStatus = s.gatewayStatus(ctx, GatewayApisix) })
+	caddyStatus := s.gatewayStatus(ctx, GatewayCaddy)
 	wg.Wait()
 	return []SourceStatus{
 		s.localStatus(SourceHost, true),
@@ -116,21 +116,20 @@ func (s *Service) gatewayStatus(ctx context.Context, name string) SourceStatus {
 	st.Configured = true
 	st.Available = src.enabled != nil
 	var wg sync.WaitGroup
+	var scrapeErr error
+	wg.Go(func() { _, scrapeErr = s.fetch(ctx, src.url) })
 	if src.enabled != nil {
-		wg.Go(func() {
-			enabled, err := src.enabled(ctx)
-			st.Enabled = enabled
-			if err != nil {
-				st.EnabledUnknown = true
-				st.Error = i18n.TC(ctx, "查询网关指标开关失败")
-			}
-		})
+		enabled, err := src.enabled(ctx)
+		st.Enabled = enabled
+		if err != nil {
+			st.EnabledUnknown = true
+			st.Error = i18n.TC(ctx, "查询网关指标开关失败")
+		}
 	}
-	_, err := s.fetch(ctx, src.url)
 	wg.Wait()
-	st.Scrapable = err == nil
-	if err != nil && st.Error == "" {
-		st.Error = i18n.TC(ctx, err.Error())
+	st.Scrapable = scrapeErr == nil
+	if scrapeErr != nil && st.Error == "" {
+		st.Error = i18n.TC(ctx, scrapeErr.Error())
 	}
 	return st
 }
