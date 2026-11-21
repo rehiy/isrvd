@@ -104,16 +104,11 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	if currentConfig != nil {
 		oldContent = currentConfig.Content
 	}
-	content, err := s.prepareRedeployContent(ctx, name, installDir, oldContent, contentErr, req)
+	content, newProject, err := s.prepareRedeployContent(ctx, name, installDir, oldContent, contentErr, req)
 	if err != nil {
 		return nil, err
 	}
-	// 删除旧容器前验证新旧配置均可解析，新配置可生成所有待创建容器的 SDK 参数。
-	// 镜像已由 prepareRedeployContent 预拉取，此处不修改运行态或落盘文件。
-	newProject, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, req.EnvContent)
-	if err != nil {
-		return nil, fmt.Errorf("重部署预检失败: %w", err)
-	}
+	// 删除旧容器前，用预拉取镜像时的项目验证待创建容器的 SDK 参数。
 	seenNames := make(map[string]bool, len(newProject.Services))
 	for _, svc := range newProject.Services {
 		spec, err := compose.ServiceToDockerCreateSpec(newProject, svc)

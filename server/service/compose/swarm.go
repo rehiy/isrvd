@@ -157,7 +157,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	if currentConfig != nil {
 		oldContent = currentConfig.Content
 	}
-	content, err := s.prepareRedeployContent(ctx, name, installDir, oldContent, contentErr, req)
+	content, _, err := s.prepareRedeployContent(ctx, name, installDir, oldContent, contentErr, req)
 	if err != nil {
 		return nil, err
 	}
