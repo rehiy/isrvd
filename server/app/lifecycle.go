@@ -87,6 +87,22 @@ func (app *App) resetRequestContext() {
 	app.requestCtxMu.Unlock()
 }
 
+// tryLockRequestServices 获取当前请求代际。返回非 nil 时调用方持有 servicesMu 的读锁，使用完服务后释放。
+func (app *App) tryLockRequestServices() context.Context {
+	// 重载持有或等待写锁时快速失败，避免新请求排队。
+	if app == nil || !app.servicesMu.TryRLock() {
+		return nil
+	}
+	app.requestCtxMu.RLock()
+	ctx := app.requestsCtx
+	app.requestCtxMu.RUnlock()
+	if ctx == nil || ctx.Err() != nil {
+		app.servicesMu.RUnlock()
+		return nil
+	}
+	return ctx
+}
+
 // shutdown 先等待 HTTP 请求，再为后台任务提供独立宽限期。
 func (app *App) shutdown(server *http.Server, reloadDone <-chan struct{}) {
 	app.servicesMu.RLock()

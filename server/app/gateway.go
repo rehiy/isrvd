@@ -68,14 +68,11 @@ var errGatewayUnavailable = errors.New("中控 isrvd 不可用")
 // 不根据中控本机的服务可用性阻止节点业务请求，实际服务由受管机提供。
 func GatewayAuthorize(r *http.Request, allowQueryToken bool) (string, int, error) {
 	app := running.Load()
-	if app == nil || !app.servicesMu.TryRLock() {
+	if app.tryLockRequestServices() == nil {
 		return "", http.StatusBadGateway, errGatewayUnavailable
 	}
 	defer app.servicesMu.RUnlock()
-	app.requestCtxMu.RLock()
-	ready := app.requestsCtx != nil && app.requestsCtx.Err() == nil
-	app.requestCtxMu.RUnlock()
-	if !ready || app.accountSvc == nil || app.gatewayPermissions == nil {
+	if app.accountSvc == nil || app.gatewayPermissions == nil {
 		return "", http.StatusBadGateway, errGatewayUnavailable
 	}
 
