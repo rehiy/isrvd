@@ -141,7 +141,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		var rollbackErr error
 		if cleanupErr == nil {
 			rollbackCtx, rollbackCancel := cleanupContext(ctx)
-			rollbackErr = s.dockerRollback(rollbackCtx, name, oldContent, installDir)
+			rollbackErr = s.dockerRollback(rollbackCtx, name, oldContent, installDir, oldEnvState.Content)
 			rollbackCancel()
 		} else {
 			rollbackErr = fmt.Errorf("继续清理旧容器失败: %w", cleanupErr)
@@ -151,18 +151,22 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 
 	rollback := func() string {
 		// 先恢复旧 .env 再回滚容器；.env 失败不阻断容器回滚
-		compose.ContentSave(installDir, oldContent)
+		fileErr := restoreComposeFile(filepath.Join(installDir, compose.ComposeFileName), oldContent, currentConfig != nil && currentConfig.Source == "file")
 		envErr := compose.EnvStateRestore(installDir, oldEnvState)
 		if envErr != nil {
 			logman.Warn("Restore compose env before rollback failed", "name", name, "error", envErr)
 		}
 		rollbackCtx, cancel := cleanupContext(ctx)
 		defer cancel()
-		runtimeErr := s.dockerRollback(rollbackCtx, name, oldContent, installDir)
+		runtimeErr := s.dockerRollback(rollbackCtx, name, oldContent, installDir, oldEnvState.Content)
 		if runtimeErr != nil {
 			logman.Warn("Rollback containers failed", "name", name, "error", runtimeErr)
 		}
-		return formatRedeployRollbackSummary(envErr, runtimeErr, "容器")
+		summary := formatRedeployRollbackSummary(envErr, runtimeErr, "容器")
+		if fileErr != nil {
+			return fmt.Sprintf("compose.yml 回滚失败（%v），%s", fileErr, summary)
+		}
+		return summary + "，compose.yml 回滚成功"
 	}
 
 	// 先落盘新 .env，确保 ProjectLoad 插值读取到新值（与 Deploy 流程顺序一致）
@@ -332,11 +336,11 @@ func (s *Service) dockerProjectContentFromContainers(ctx context.Context, projec
 }
 
 // dockerRollback 用指定配置内容重建容器（回滚用）
-func (s *Service) dockerRollback(ctx context.Context, name, content, installDir string) error {
+func (s *Service) dockerRollback(ctx context.Context, name, content, installDir, envContent string) error {
 	if content == "" {
 		return fmt.Errorf("无可回滚的 compose 内容")
 	}
-	project, err := compose.ProjectParse(ctx, name, content, installDir)
+	project, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, &envContent)
 	if err != nil {
 		return fmt.Errorf("加载回滚配置失败: %w", err)
 	}
