@@ -73,7 +73,7 @@ func (s *DockerService) ContainerRunScript(ctx context.Context, opts ScriptRunOp
 		}
 	}()
 
-	if err := s.ContainerFileUpload(ctx, resp.ID, scriptDir, scriptName, strings.NewReader(script)); err != nil {
+	if err := s.ContainerFileUpload(ctx, resp.ID, scriptDir, scriptName, strings.NewReader(script), int64(len(script))); err != nil {
 		return "", fmt.Errorf("写入临时容器脚本失败: %w", err)
 	}
 	if err := s.client.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {

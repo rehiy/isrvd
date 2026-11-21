@@ -247,6 +247,8 @@ isrvd_post "/docker/container/<ID>/file/write" '{"path":"/tmp/hello.txt","conten
 GET /api/docker/container/<ID>/file/download?path=/etc/hosts&token=<JWT>
 ```
 
+返回原始文件流和文件长度。传输开始前的读取错误返回 JSON，发送部分文件后发生的错误由客户端通过长度不符识别。
+
 ### 上传文件
 
 ```bash
@@ -255,7 +257,7 @@ isrvd_upload "/docker/container/<ID>/file/upload?path=/tmp" "file" "./local.txt"
 
 - 目标目录 `path` 必须通过 **URL Query** 传递（不能放在表单字段中），为空返回 400
 - 可重复提交多个 `file` 字段；可选表单字段 `relativePath` 与 `file` 按顺序对应，用于指定子路径，父目录自动创建
-- 上传文件权限为 `0644`
+- 上传文件权限为 `0644`。后端根据上传表单提供的文件长度流式生成 Docker 归档
 - 请求总大小受 `server.maxUploadSize` 限制，超出返回 400（解析上传表单失败）
 
 ### 删除文件或目录

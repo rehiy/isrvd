@@ -2,9 +2,13 @@ package app
 
 import (
 	"errors"
+	"io"
+	"mime"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rehiy/libgo/logman"
 
 	"isrvd/pkgs/helper"
 	"isrvd/server/i18n"
@@ -77,4 +81,25 @@ func respondResultMsg(c *gin.Context, message string, data any, err error) {
 		return
 	}
 	respondSuccess(c, message, data)
+}
+
+// respondFileDownload 只在尚未提交响应时返回 JSON。部分传输保留长度，
+// 由 HTTP 客户端检测响应体中断。
+func respondFileDownload(c *gin.Context, name string, src io.ReadCloser, size int64, errorStatus int) {
+	defer src.Close()
+	if name != "" {
+		c.Header("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": name}))
+	}
+	c.Header("Content-Type", "application/octet-stream")
+	c.Header("Content-Length", strconv.FormatInt(size, 10))
+	if _, err := io.CopyN(c.Writer, src, size); err != nil {
+		if c.Writer.Written() {
+			logman.Warn("file download interrupted", "error", err)
+			return
+		}
+		c.Header("Content-Length", "")
+		c.Header("Content-Type", "")
+		c.Header("Content-Disposition", "")
+		respondError(c, errorStatus, err.Error())
+	}
 }
