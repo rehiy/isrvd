@@ -1,12 +1,14 @@
 package compose
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"path/filepath"
 	"reflect"
 	"slices"
 
+	"github.com/compose-spec/compose-go/v2/types"
 
 	"isrvd/pkgs/compose"
 )
@@ -25,7 +27,7 @@ type RedeployServiceChange struct {
 	ConfigChanged bool   `json:"configChanged"`
 }
 
-// RedeployPreview 在不写磁盘、不拉取镜像、不触碰运行态的前提下分析部署计划。
+// PreviewRedeploy 分析部署计划，不写入文件、拉取镜像或修改运行态。
 func (s *Service) PreviewRedeploy(ctx context.Context, target, name string, req RedeployRequest) (*RedeployPreview, error) {
 	if target != "docker" && target != "swarm" {
 		return nil, fmt.Errorf("不支持的 compose 目标 %s", target)
@@ -79,57 +81,52 @@ func (s *Service) PreviewRedeploy(ctx context.Context, target, name string, req 
 	if err != nil {
 		return nil, fmt.Errorf("读取原配置失败: %w", err)
 	}
-	result := &RedeployPreview{Target: target, ProjectName: name, Changes: []RedeployServiceChange{}}
+	changes, err := redeployServiceChanges(target, before, after, req.ForcePull)
+	if err != nil {
+		return nil, err
+	}
+	return &RedeployPreview{Target: target, ProjectName: name, Changes: changes}, nil
+}
+
+// ─── 辅助函数 ───
+
+func redeployServiceChanges(target string, before, after *types.Project, forcePull bool) ([]RedeployServiceChange, error) {
+	changes := make([]RedeployServiceChange, 0, len(after.Services))
 	for serviceName, newService := range after.Services {
 		oldService, existed := before.Services[serviceName]
 		change := RedeployServiceChange{Service: serviceName, Action: "create", ConfigChanged: true}
-		if existed {
-			var same bool
-			if target == "swarm" {
-				oldSpec, oldErr := compose.ServiceToSwarmSpec(before, oldService)
-				newSpec, newErr := compose.ServiceToSwarmSpec(after, newService)
-				if newErr != nil {
-					return nil, newErr
-				}
-				same = oldErr == nil && reflect.DeepEqual(oldSpec, newSpec)
+		if target == "swarm" {
+			newSpec, err := compose.ServiceToSwarmSpec(after, newService)
+			if err != nil {
+				return nil, err
+			}
+			if existed {
+				change.ConfigChanged = !swarmServiceSpecMatches(before, serviceName, newSpec)
 				change.Action = "update"
-				if same && !req.ForcePull {
+				if !change.ConfigChanged && !forcePull {
 					change.Action = "unchanged"
 				}
-			} else {
-				oldSpec, oldErr := compose.ServiceToDockerCreateSpec(before, oldService)
-				newSpec, newErr := compose.ServiceToDockerCreateSpec(after, newService)
-				if newErr != nil {
-					return nil, newErr
-				}
-				same = oldErr == nil && reflect.DeepEqual(oldSpec, newSpec)
-				change.Action = "recreate"
-			}
-			change.ConfigChanged = !same
-		} else if target == "swarm" {
-			if _, err := compose.ServiceToSwarmSpec(after, newService); err != nil {
-				return nil, err
 			}
 		} else {
-			if _, err := compose.ServiceToDockerCreateSpec(after, newService); err != nil {
+			newSpec, err := compose.ServiceToDockerCreateSpec(after, newService)
+			if err != nil {
 				return nil, err
 			}
+			if existed {
+				oldSpec, err := compose.ServiceToDockerCreateSpec(before, oldService)
+				change.ConfigChanged = err != nil || !reflect.DeepEqual(oldSpec, newSpec)
+				change.Action = "recreate"
+			}
 		}
-		result.Changes = append(result.Changes, change)
+		changes = append(changes, change)
 	}
 	for serviceName := range before.Services {
 		if _, ok := after.Services[serviceName]; !ok {
-			result.Changes = append(result.Changes, RedeployServiceChange{Service: serviceName, Action: "remove", ConfigChanged: true})
+			changes = append(changes, RedeployServiceChange{Service: serviceName, Action: "remove", ConfigChanged: true})
 		}
 	}
-	slices.SortFunc(result.Changes, func(a, b RedeployServiceChange) int {
-		if a.Service < b.Service {
-			return -1
-		}
-		if a.Service > b.Service {
-			return 1
-		}
-		return 0
+	slices.SortFunc(changes, func(a, b RedeployServiceChange) int {
+		return cmp.Compare(a.Service, b.Service)
 	})
-	return result, nil
+	return changes, nil
 }

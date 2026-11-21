@@ -323,7 +323,7 @@ func (s *Service) swarmServicesReconcile(ctx context.Context, project, original 
 		}
 		names = append(names, spec.Name)
 		specs[spec.Name] = spec
-		unchanged[spec.Name] = swarmServiceSpecUnchanged(original, spec, forcePull)
+		unchanged[spec.Name] = !forcePull && swarmServiceSpecMatches(original, spec.Name, spec)
 	}
 	sort.Strings(names)
 	if err := s.swarmEnsureNetworks(ctx, project); err != nil {
@@ -448,12 +448,12 @@ func (s *Service) swarmServicesReconcile(ctx context.Context, project, original 
 	return items, nil
 }
 
-// swarmServiceSpecUnchanged 仅跳过本次配置未改变的服务；强制拉取始终执行更新。
-func swarmServiceSpecUnchanged(original *types.Project, spec swarm.ServiceSpec, forcePull bool) bool {
-	if forcePull || original == nil {
+// swarmServiceSpecMatches 比较原项目中的服务规格，供预览和实际重部署使用。
+func swarmServiceSpecMatches(original *types.Project, name string, spec swarm.ServiceSpec) bool {
+	if original == nil {
 		return false
 	}
-	previous, ok := original.Services[spec.Name]
+	previous, ok := original.Services[name]
 	if !ok {
 		return false
 	}
