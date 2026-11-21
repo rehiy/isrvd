@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+. /usr/local/lib/isrvd/entrypoint-functions.sh
+
 echo "=========================================="
 echo "  apisix + etcd + isrvd  All-in-One       "
 echo "=========================================="
@@ -23,15 +25,6 @@ if [ -f "$CONF_DIR/apisix.yaml" ] && [ ! -e "$APISIX_CONF" ]; then
 fi
 
 # 默认配置模板不存在则自动拷贝
-install_default() {
-    local src="$1" dest="$2"
-    if [ ! -f "$dest" ]; then
-        echo "[init] Creating default config: $dest"
-        cp "$src" "$dest"
-    else
-        echo "[init] Using existing config: $dest"
-    fi
-}
 install_default "$DEFAULTS_DIR/isrvd.yml" "$CONF_DIR/isrvd.yml"
 install_default "$DEFAULTS_DIR/apisix.yaml" "$APISIX_CONF"
 
@@ -87,16 +80,7 @@ chmod 600 "$CONF_DIR/isrvd.yml" "$APISIX_CONF"
 # 输出默认密码提示信息
 # ------------------------------------------
 
-if grep -q 'password: admin' "$CONF_DIR/isrvd.yml" 2>/dev/null; then
-    echo "=========================================="
-    echo "  首次启动 - 默认密码为 admin"
-    echo "=========================================="
-    echo "  isrvd 管理员用户: admin"
-    echo "  isrvd 管理员密码: admin"
-    echo ""
-    echo "  请登录后立即修改密码"
-    echo "=========================================="
-fi
+print_default_password_notice "$CONF_DIR/isrvd.yml"
 
 # ------------------------------------------
 # 初始化 runit 服务
