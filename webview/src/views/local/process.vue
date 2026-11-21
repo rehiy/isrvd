@@ -220,13 +220,6 @@ class SystemProcessInfoView extends Vue {
         }
     }
 
-    startPoll() {
-        if (document.hidden || this.pollTimer) {
-            return
-        }
-        this.pollTimer = setInterval(() => this.loadProcesses(), POLL_INTERVAL)
-    }
-
     stopPoll() {
         if (!this.pollTimer) {
             return
@@ -241,7 +234,7 @@ class SystemProcessInfoView extends Vue {
             return
         }
         this.loadProcesses()
-        this.startPoll()
+        this.pollTimer ??= setInterval(() => this.loadProcesses(), POLL_INTERVAL)
     }
 
     // ─── 操作 ───
