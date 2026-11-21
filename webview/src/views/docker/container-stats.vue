@@ -318,7 +318,24 @@ class ContainerStats extends Vue {
         this.netRxRate = this.netTxRate = this.blkRRate = this.blkWRate = 0
     }
 
-    async loadContainer(name = typeof this.$route.query.name === 'string' ? this.$route.query.name : '') {
+    private async containersByName(...names: string[]) {
+        const patterns = names.filter(Boolean).map(name => `^/${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`)
+        return (await api.dockerContainerList(true, { name: patterns })).payload || []
+    }
+
+    private async findContainer(id: string, name: string, generation: number) {
+        if (/^(?:[a-f0-9]{12}|[a-f0-9]{64})$/.test(id)) {
+            const res = await api.dockerContainerList(true, { id: [id] })
+            const found = (res.payload || []).find(c => c.id === id || (id.length === 64 && id.startsWith(c.id)))
+            if (found || this.destroyed || generation !== this.generation) {
+                return found
+            }
+        }
+        const list = await this.containersByName(id, name)
+        return list.find(c => c.name === id) ?? list.find(c => c.name === name)
+    }
+
+    async loadContainer(name = typeof this.$route.query.name === 'string' ? this.$route.query.name : '', candidate?: DockerContainerInfo) {
         if (this.destroyed) {
             return
         }
@@ -333,14 +350,11 @@ class ContainerStats extends Vue {
         this.statsFailed = false
         this.monitoredName = name
         try {
-            const res = await api.dockerContainerList(true)
+            const id = this.$route.params.id as string
+            const ct = candidate ?? await this.findContainer(id, name, generation)
             if (this.destroyed || generation !== this.generation) {
                 return
             }
-            const id = this.$route.params.id as string
-            const list = res.payload || []
-            const ct = list.find(c => c.id === id || c.name === id || (id.length === 64 && id.startsWith(c.id)))
-                || list.find(c => name && c.name === name)
             if (!ct) {
                 if (name) {
                     this.statsFailed = true
@@ -369,13 +383,13 @@ class ContainerStats extends Vue {
             return
         }
         try {
-            const res = await api.dockerContainerList(true)
+            const list = await this.containersByName(this.monitoredName)
             if (this.destroyed || generation !== this.generation) {
                 return
             }
-            const ct = (res.payload || []).find(c => c.name === this.monitoredName)
+            const ct = list.find(c => c.name === this.monitoredName)
             if (ct && (ct.id !== this.container?.id || ct.state !== this.container.state)) {
-                await this.loadContainer(this.monitoredName)
+                await this.loadContainer(this.monitoredName, ct)
             }
         } catch {
             /* ignore */
