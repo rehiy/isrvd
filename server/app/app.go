@@ -113,21 +113,19 @@ type Route struct {
 func StartApp(listener net.Listener) {
 	lifecycleCtx, lifecycleCancel := context.WithCancel(context.Background())
 	servicesCtx, servicesCancel := context.WithCancel(lifecycleCtx)
-	requestsCtx, requestsCancel := context.WithCancel(lifecycleCtx)
 	app := &App{
 		Engine:          httpd.Engine(config.Current().Server.Debug),
 		lifecycleCtx:    lifecycleCtx,
 		lifecycleCancel: lifecycleCancel,
 		servicesCtx:     servicesCtx,
 		servicesCancel:  servicesCancel,
-		requestsCtx:     requestsCtx,
-		requestsCancel:  requestsCancel,
 		wsConfig: &websocket.ServerConfig{
 			AllowedOrigins:   config.Current().Server.AllowedOrigins,
 			AllowEmptyOrigin: config.IsAgent(),
 		},
 		routeIndex: make(map[string]Route),
 	}
+	app.resetRequestContext()
 
 	// 审计 IP 一律取连接对端，不采信任何代理转发头（X-Forwarded-For / X-Real-IP 可被伪造）。
 	// 部署在反向代理后时记录代理 IP；中控模式下上游与受管机的审计只见到回环/隧道来源，
