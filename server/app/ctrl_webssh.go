@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/websocket"
@@ -355,8 +356,7 @@ func (app *App) websshSFTPDirSize(c *gin.Context) {
 func parseFileMode(modeStr string) (os.FileMode, error) {
 	// 如果是 3-4 位的八进制数字字符串
 	if len(modeStr) == 3 || len(modeStr) == 4 {
-		var mode uint32
-		if _, err := fmt.Sscanf(modeStr, "%o", &mode); err == nil {
+		if mode, err := strconv.ParseUint(modeStr, 8, 32); err == nil {
 			return os.FileMode(mode), nil
 		}
 	}

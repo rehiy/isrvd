@@ -4,6 +4,8 @@ package i18n
 
 func init() {
 	Register(langEN, map[string]string{
+		"SFTP 服务器不支持安全覆盖已有文件": "The SFTP server does not support replacing existing files safely",
+
 		"非法 ZIP 路径: %s":           "Invalid ZIP path: %s",
 		"不支持的 ZIP 文件类型: %s":       "Unsupported ZIP entry type: %s",
 		"ZIP 解压大小超过限制":            "Extracted ZIP size exceeds the limit",

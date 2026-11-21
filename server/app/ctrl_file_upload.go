@@ -1,8 +1,10 @@
 package app
 
 import (
+	"context"
 	"mime/multipart"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -19,8 +21,8 @@ func (app *App) dockerContainerFileUpload(c *gin.Context) {
 
 func (app *App) websshSFTPUpload(c *gin.Context) {
 	id := c.Param("id")
-	uploadFileBatch(c, http.StatusBadRequest, func(dirPath, fileName string, file multipart.File, _ int64) error {
-		return app.websshSvc.SFTPUpload(c.Request.Context(), id, dirPath, file, fileName)
+	uploadFileBatch(c, http.StatusBadRequest, func(dirPath, fileName string, file multipart.File, size int64) error {
+		return app.websshSvc.SFTPUpload(c.Request.Context(), id, dirPath, file, fileName, size)
 	})
 }
 
@@ -33,7 +35,7 @@ func uploadFileBatch(c *gin.Context, uploadErrorStatus int, upload func(dirPath,
 		return
 	}
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, config.Current().Server.MaxUploadSize)
-	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
+	if err := parseUploadForm(c); err != nil {
 		respondError(c, http.StatusBadRequest, "解析上传表单失败: "+err.Error())
 		return
 	}
@@ -63,4 +65,24 @@ func uploadFileBatch(c *gin.Context, uploadErrorStatus int, upload func(dirPath,
 		}
 	}
 	respondSuccess(c, "上传成功", nil)
+}
+
+// parseUploadForm 让服务重载也能中断尚未读完的 HTTP 请求体。
+func parseUploadForm(c *gin.Context) error {
+	controller := http.NewResponseController(c.Writer)
+	interrupted := make(chan struct{})
+	stop := context.AfterFunc(c.Request.Context(), func() {
+		defer close(interrupted)
+		_ = controller.SetReadDeadline(time.Now())
+	})
+	defer func() {
+		if !stop() {
+			<-interrupted
+		}
+	}()
+	err := c.Request.ParseMultipartForm(32 << 20)
+	if canceled := c.Request.Context().Err(); canceled != nil {
+		return canceled
+	}
+	return err
 }

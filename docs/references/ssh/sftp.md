@@ -44,6 +44,8 @@ isrvd_post "/sftp/<ID>/write" '{"path":"/path/to/file","content":"<FILE_CONTENT>
 
 `path` 必填，`content` 可为空字符串；`content` 超过 8 MiB 返回 413。
 
+编辑与上传共用同目录暂存。文件写完并关闭后才重命名到目标。覆盖已有文件要求远端目录可写且服务器支持 `posix-rename@openssh.com`，并检查原文件写权限，保留原权限位、所有者和组。覆盖会替换文件 inode，其他硬链接仍指向旧 inode。失败或取消时，后端清理本次创建的暂存文件。远端断开且无法重新连接时，可能留下以 `.isrvd-upload-` 开头的暂存文件。如果在重命名期间断开连接，客户端需刷新列表确认远端结果。
+
 ---
 
 ## 下载文件
@@ -52,7 +54,7 @@ isrvd_post "/sftp/<ID>/write" '{"path":"/path/to/file","content":"<FILE_CONTENT>
 isrvd_get "/sftp/<ID>/download?path=/path/to/file"
 ```
 
-返回原始文件流和文件长度。浏览器直连下载可携带 `token` 查询参数认证。传输开始前的读取错误返回 JSON，发送部分文件后发生的错误由客户端通过长度不符识别。每个 SFTP 请求使用独立连接，取消请求会关闭该连接。
+返回原始文件流和文件长度。浏览器直连下载可携带 `token` 查询参数认证。传输开始前的读取错误返回 JSON，发送部分文件后发生的错误由客户端通过长度不符识别。每个 SFTP 操作使用独立连接，取消操作会关闭该连接。连接建立后，远端连续 30 秒无数据时中止传输。
 
 ---
 
@@ -65,6 +67,8 @@ isrvd_upload "/sftp/<ID>/upload?path=/remote/dir" "file" "/local/file.txt"
 - 目标目录 `path` 必须通过 **URL Query** 传递，为空返回 400
 - 可重复提交多个 `file` 字段；可选表单字段 `relativePath` 与 `file` 按顺序对应，含子目录时自动在远端创建
 - 上传请求总大小受 `server.maxUploadSize` 限制
+- 页面显示「服务器写入中」表示浏览器已发送表单。服务器完成远端文件提交后，页面才显示成功
+- 批量上传逐个提交文件。后续文件失败时，已经成功提交的文件仍保留
 
 ---
 

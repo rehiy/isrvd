@@ -6,6 +6,8 @@ package i18n
 // 填好译文后用 scripts/apply-translations.mjs 导入，可保持格式与 gofmt 一致。
 func init() {
 	Register(Language{Code: "ja", Tags: []string{"ja"}}, map[string]string{
+		"SFTP 服务器不支持安全覆盖已有文件": "SFTP サーバーは既存ファイルの安全な上書きに対応していません",
+
 		"非法 ZIP 路径: %s":           "無効な ZIP パス: %s",
 		"不支持的 ZIP 文件类型: %s":       "未対応の ZIP エントリー形式: %s",
 		"ZIP 解压大小超过限制":            "ZIP の展開サイズが上限を超えています",
