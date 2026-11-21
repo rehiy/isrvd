@@ -1,7 +1,6 @@
 package app
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -294,12 +293,7 @@ func (app *App) websshSFTPRead(c *gin.Context) {
 	}
 
 	content, err := app.websshSvc.SFTPRead(id, filePath)
-	if errors.Is(err, helper.ErrTooLarge) {
-		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用下载功能")
-		return
-	}
-	if errors.Is(err, helper.ErrBinary) {
-		respondError(c, http.StatusUnsupportedMediaType, "文件不是文本文件，无法在线编辑")
+	if respondEditableReadError(c, err) {
 		return
 	}
 	if err != nil {
