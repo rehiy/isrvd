@@ -332,6 +332,8 @@ Windows 脚本直接使用根目录的 `config.yml` 以单机模式启动后端�
 
 ### 构建与校验
 
+`build.sh` 在链接时将最近可达的 Git 标签写入二进制。无可达标签时使用 `v0.0.0`，并根据现有提交历史生成发布说明。
+
 GitHub Actions 从 `go.mod` 读取 Go 版本，CNB 使用 `golang:1.27-bookworm` 构建镜像。若设置了 `GOTOOLCHAIN=local`，本地已安装的 Go 必须满足 `go.mod` 的最低版本要求。
 
 `master` 上的 CNB 定时任务（`crontab: 0 3 * * *`，Asia/Shanghai）每天从 GitHub 镜像仓库拉取新提交，并快进合并到 CNB `master`；若两端分叉则构建失败，不会强制推送，需人工处理。标签和其他分支不自动同步。

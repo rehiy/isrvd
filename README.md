@@ -332,6 +332,8 @@ The Windows script starts the backend in standalone mode using the root `config.
 
 ### Build and Checks
 
+`build.sh` embeds the nearest reachable Git tag in the binaries at link time. It uses `v0.0.0` when no tag is reachable and generates release notes from the available history in that case.
+
 GitHub Actions reads the Go version from `go.mod`; CNB builds images with `golang:1.27-bookworm`. If `GOTOOLCHAIN=local` is set, the locally installed Go must satisfy the minimum version in `go.mod`.
 
 For deployment builds, run `npm ci` in `webview` before `npm run build` (the full `build.sh` already does this). Do not reuse another checkout's `node_modules`: stale dependencies can produce bundles that compile successfully but fail during browser startup. The `prebuild` check rejects missing or incompatible direct dependencies; it does not replace the lockfile-based clean install.

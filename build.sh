@@ -11,23 +11,22 @@ rm -rf public/index.html
 # 尝试获取版本号
 ###########################################
 
-last_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-prev_tag=$(git tag | sort -V | tail -n 2 | head -n 1)
-
-echo "==> build version: $last_tag"
-
-if [ -n "$last_tag$prev_tag" ]; then
-    git log --no-merges "$prev_tag..$last_tag" --pretty=format:"%s" | awk '
-        /^release/ { next }
-        { print "- " $0 }
-    ' | sort > RELEASE.md
+last_tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
+build_version=${last_tag:-v0.0.0}
+release_range=${last_tag:-HEAD}
+if [ -n "$last_tag" ]; then
+    prev_tag=$(git describe --tags --abbrev=0 "${last_tag}^" 2>/dev/null || true)
+    if [ -n "$prev_tag" ]; then
+        release_range="$prev_tag..$last_tag"
+    fi
 fi
 
-###########################################
-# 替换版本号
-###########################################
-
-sed -i "s/Version = \".*\"/Version = \"$last_tag\"/" server/config/config.go
+echo "==> build version: $build_version"
+release_subjects=$(git log --no-merges --format='%s' "$release_range" --)
+printf '%s\n' "$release_subjects" | awk '
+    /^release/ || /^Merge pull request #[0-9]+ from / || /^$/ { next }
+    { print "- " $0 }
+' | sort > RELEASE.md
 
 ###########################################
 # Go 编译环境
@@ -44,7 +43,8 @@ build() {
     fi
     GOOS=$1 GOARCH=$2 go build \
         -tags netgo -trimpath -buildvcs=false \
-        -ldflags="-s -w -buildid=" -o "$target" ./server/cmd/server
+        -ldflags="-s -w -buildid= -X isrvd/server/config.Version=$build_version" \
+        -o "$target" ./server/cmd/server
 }
 
 ###########################################
