@@ -131,23 +131,12 @@ type filerContentBody struct {
 }
 
 func (app *App) filerFileCreate(c *gin.Context) {
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxEditableJSONBytes)
-	var req filerContentBody
-	if err := c.ShouldBindJSON(&req); err != nil {
-		respondBindError(c, err)
-		return
-	}
-	if int64(len(req.Content)) > helper.MaxEditableFileBytes {
-		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用上传功能")
-		return
-	}
-
-	absPath, ok := app.filerAbsPath(c, req.Path)
+	absPath, content, ok := bindFilerContent(c, app)
 	if !ok {
 		return
 	}
 
-	if err := app.filerSvc.FileCreate(absPath, []byte(req.Content)); err != nil {
+	if err := app.filerSvc.FileCreate(absPath, content); err != nil {
 		respondError(c, http.StatusInternalServerError, "无法创建文件")
 		return
 	}
@@ -196,23 +185,12 @@ func (app *App) filerFileRead(c *gin.Context) {
 }
 
 func (app *App) filerFileModify(c *gin.Context) {
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxEditableJSONBytes)
-	var req filerContentBody
-	if err := c.ShouldBindJSON(&req); err != nil {
-		respondBindError(c, err)
-		return
-	}
-	if int64(len(req.Content)) > helper.MaxEditableFileBytes {
-		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用上传功能")
-		return
-	}
-
-	absPath, ok := app.filerAbsPath(c, req.Path)
+	absPath, content, ok := bindFilerContent(c, app)
 	if !ok {
 		return
 	}
 
-	if err := app.filerSvc.FileWrite(absPath, []byte(req.Content)); err != nil {
+	if err := app.filerSvc.FileWrite(absPath, content); err != nil {
 		respondError(c, http.StatusInternalServerError, "无法保存文件")
 		return
 	}
@@ -411,6 +389,24 @@ func (app *App) filerFileUnzip(c *gin.Context) {
 }
 
 // ─── 内部方法 ───
+
+func bindFilerContent(c *gin.Context, app *App) (string, []byte, bool) {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxEditableJSONBytes)
+	var req filerContentBody
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondBindError(c, err)
+		return "", nil, false
+	}
+	if int64(len(req.Content)) > helper.MaxEditableFileBytes {
+		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用上传功能")
+		return "", nil, false
+	}
+	path, ok := app.filerAbsPath(c, req.Path)
+	if !ok {
+		return "", nil, false
+	}
+	return path, []byte(req.Content), true
+}
 
 func (app *App) filerAbsPath(c *gin.Context, path string) (string, bool) {
 	absPath, err := app.filerSvc.AbsPath(c.GetString("username"), path)
