@@ -163,23 +163,34 @@ export const useConfigStore = defineStore('config', () => {
         ))
     }
 
+    let generation = 0
+
     /** 加载全量配置；force 为 true 时请求后端重载后返回 */
     async function load(force = false) {
         if (loading.value) {
             return
         }
+        const requestGeneration = generation
         loading.value = true
         error.value = ''
         try {
             const res = await api.systemConfig(force ? { reload: 'true' } : undefined)
+            if (requestGeneration !== generation) {
+                return
+            }
             applyPayload(res.payload as AllConfig)
             baseline.value = clone(draft.value)
             loaded.value = true
         } catch (e) {
+            if (requestGeneration !== generation) {
+                return
+            }
             error.value = e instanceof Error ? e.message : useLocaleStore().t('加载系统配置失败')
             throw e
         } finally {
-            loading.value = false
+            if (requestGeneration === generation) {
+                loading.value = false
+            }
         }
     }
 
@@ -188,21 +199,33 @@ export const useConfigStore = defineStore('config', () => {
         if (saving.value) {
             return
         }
+        const requestGeneration = generation
         saving.value = true
         error.value = ''
         try {
             await api.systemConfigUpdate(allPayload())
+            if (requestGeneration !== generation) {
+                return
+            }
             // 后端对密钥类字段返回空值，重新加载以刷新基线
             await load()
         } catch (e) {
+            if (requestGeneration !== generation) {
+                return
+            }
             error.value = e instanceof Error ? e.message : useLocaleStore().t('保存系统配置失败')
             throw e
         } finally {
-            saving.value = false
+            if (requestGeneration === generation) {
+                saving.value = false
+            }
         }
     }
 
     function reset() {
+        generation++
+        loading.value = false
+        saving.value = false
         draft.value = defaultConfig()
         baseline.value = defaultConfig()
         allowedOriginsText.value = ''

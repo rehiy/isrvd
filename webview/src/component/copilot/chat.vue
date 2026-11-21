@@ -9,7 +9,7 @@ import { useLocaleStore } from '@/stores'
 
 import api from '@/service/api'
 
-import { executeCopilotAPI, registerCopilotAPILookup, resetCopilotAPICallRefs } from '@/helper/copilot/api'
+import { copilotSessionSignal, executeCopilotAPI, registerCopilotAPILookup, resetCopilotSession } from '@/helper/copilot/api'
 import { blobRead } from '@/helper/copilot/blob'
 import { systemInstruction, getPageInstruction } from '@/helper/copilot/instructions'
 
@@ -46,15 +46,22 @@ useFrontendTool({
         { name: 'method', type: 'string', description: 'HTTP 方法：get / post / put / patch / delete', required: false },
     ],
     handler: async ({ tag, q, path, method }) => {
+        const signal = copilotSessionSignal()
         try {
             const res = await api.copilotCatalog({
                 tag: tag || undefined,
                 q: q || undefined,
                 path: path || undefined,
                 method: method || undefined,
-            })
+            }, signal)
+            if (signal.aborted) {
+                return { success: false, canceled: true }
+            }
             return { success: res?.success ?? true, message: res?.message ?? '', payload: registerCopilotAPILookup(res?.payload ?? null) }
         } catch (e) {
+            if (signal.aborted) {
+                return { success: false, canceled: true }
+            }
             return { success: false, message: e instanceof Error ? e.message : t('查阅 API 文档失败') }
         }
     },
@@ -139,7 +146,7 @@ const chatLabels = computed(() => ({
 
 // 卸载时释放会话级 API 调用引用。
 onUnmounted(() => {
-    resetCopilotAPICallRefs()
+    resetCopilotSession()
 })
 </script>
 

@@ -16,6 +16,10 @@ const MAX_BLOBS = 20
 const blobs = new Map<string, string>()
 let seq = 0
 
+export function clearCopilotBlobs() {
+    blobs.clear()
+}
+
 // blobPut 暂存文本并返回引用 ID
 export function blobPut(text: string): string {
     const id = `b${Date.now().toString(36)}-${(++seq).toString(36)}`

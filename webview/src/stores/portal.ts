@@ -32,7 +32,10 @@ export const usePortalStore = defineStore('portal', () => {
     const uiStore = useUIStore()
     const nodeStore = useNodeStore()
     const localeStore = useLocaleStore()
-    watch(() => authStore.sessionVersion, nodeStore.reset, { flush: 'sync' })
+    watch(() => authStore.sessionVersion, () => {
+        nodeStore.reset()
+        useConfigStore().reset()
+    }, { flush: 'sync' })
 
     // ─── 分发启动数据到子 store ───
 
@@ -106,7 +109,6 @@ export const usePortalStore = defineStore('portal', () => {
         authStore.clearAuth()
         systemStore.initialized = true
         systemStore.title = ''
-        useConfigStore().reset()
     }
 
     // ─── 权限检查（组合 auth 和 system）───

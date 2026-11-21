@@ -5,7 +5,7 @@ import { useLocaleStore } from '@/stores'
 import api from '@/service/api'
 import { http } from '@/service/client'
 
-import { packToolResult } from './blob'
+import { clearCopilotBlobs, packToolResult } from './blob'
 import { sanitizeCopilotValue } from './sanitize'
 
 /** 工具错误提示也展示给用户，按当前语言输出 */
@@ -68,6 +68,11 @@ interface ResolvedCall {
 const callRefTTL = 30 * 60 * 1000
 const maxIdenticalFailures = 2
 const callRefs = new Map<string, RegisteredOperation>()
+let sessionController = new AbortController()
+
+export function copilotSessionSignal() {
+    return sessionController.signal
+}
 
 // registerCopilotAPILookup 将 OpenAPI 查询结果转换为当前页面会话内可执行的引用。
 // callRef 只存在于内存中，刷新页面后失效，模型无法自行拼接 method/path。
@@ -93,8 +98,11 @@ export function registerCopilotAPILookup(payload: unknown): unknown {
     return payload
 }
 
-export function resetCopilotAPICallRefs() {
+export function resetCopilotSession() {
+    sessionController.abort()
+    sessionController = new AbortController()
     callRefs.clear()
+    clearCopilotBlobs()
 }
 
 export function previewCopilotAPICall(args: Partial<CopilotAPIArgs>): CopilotAPIPreview {
@@ -120,7 +128,8 @@ export function previewCopilotAPICall(args: Partial<CopilotAPIArgs>): CopilotAPI
 // executeCopilotAPI 是 Chat 工具调用 iSrvd REST API 的唯一入口。
 // 模型只能提交 lookup_api 签发的 callRef，method/path 均从 OpenAPI 快照解析。
 export async function executeCopilotAPI(args: CopilotAPIArgs, mode: CopilotAPIMode): Promise<unknown> {
-    const operation = getOperation(String(args.callRef || ''))
+    const callRef = String(args.callRef || '')
+    const operation = getOperation(callRef)
     if (!operation) {
         return copilotError('UNKNOWN_CALL_REF', t('调用引用不存在或已过期，请重新调用 lookup_api。'), true)
     }
@@ -130,7 +139,13 @@ export async function executeCopilotAPI(args: CopilotAPIArgs, mode: CopilotAPIMo
         return copilotError('RETRY_LIMIT', t('相同调用已连续失败两次，请重新查询接口或调整参数后再试。'), false)
     }
 
-    const detail = await ensureOperationDetail(operation)
+    const signal = copilotSessionSignal()
+    const retired = () => signal.aborted || getOperation(callRef) !== operation
+    const unavailable = () => copilotError('UNKNOWN_CALL_REF', t('调用引用不存在或已过期，请重新调用 lookup_api。'), true)
+    const detail = await ensureOperationDetail(operation, signal)
+    if (retired()) {
+        return unavailable()
+    }
     if ('error' in detail) {
         return recordFailure(operation, failureKey, detail.error)
     }
@@ -144,7 +159,7 @@ export async function executeCopilotAPI(args: CopilotAPIArgs, mode: CopilotAPIMo
     }
 
     try {
-        const config = { params: resolved.value.query }
+        const config = { params: resolved.value.query, signal }
         let res
         switch (resolved.value.method) {
             case 'get':
@@ -166,6 +181,9 @@ export async function executeCopilotAPI(args: CopilotAPIArgs, mode: CopilotAPIMo
                 return recordFailure(operation, failureKey, copilotError('UNKNOWN_OPERATION', t('OpenAPI 中的 HTTP 方法不受支持。'), false))
         }
 
+        if (retired()) {
+            return unavailable()
+        }
         if (!isRecord(res) || typeof res.success !== 'boolean') {
             return recordFailure(operation, failureKey, copilotError('UNSUPPORTED_RESPONSE', t('接口未返回标准 JSON 响应，请改用页面操作。'), false))
         }
@@ -176,7 +194,7 @@ export async function executeCopilotAPI(args: CopilotAPIArgs, mode: CopilotAPIMo
             payload: res?.payload ?? null,
         })
     } catch (error) {
-        return recordFailure(operation, failureKey, httpError(error))
+        return retired() ? unavailable() : recordFailure(operation, failureKey, httpError(error))
     }
 }
 
@@ -228,12 +246,12 @@ function operationFromPayload(payload: Record<string, unknown>): OpenAPIOperatio
     }
 }
 
-async function ensureOperationDetail(operation: RegisteredOperation): Promise<{ value: RegisteredOperation } | { error: Record<string, unknown> }> {
+async function ensureOperationDetail(operation: RegisteredOperation, signal: AbortSignal): Promise<{ value: RegisteredOperation } | { error: Record<string, unknown> }> {
     if (operation.loaded) {
         return { value: operation }
     }
     try {
-        const res = await api.copilotCatalog({ path: operation.path, method: operation.method })
+        const res = await api.copilotCatalog({ path: operation.path, method: operation.method }, signal)
         const payload = res?.payload
         if (!isRecord(payload)) {
             return { error: copilotError('OPERATION_CHANGED', t('接口定义已变化，请重新调用 lookup_api。'), true) }

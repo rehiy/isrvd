@@ -174,8 +174,8 @@ class ApiService {
 
     // ==================== Copilot 接口目录 ====================
 
-    copilotCatalog(params?: { tag?: string; q?: string; path?: string; method?: string }) {
-        return http.get('copilot/catalog', { params })
+    copilotCatalog(params?: { tag?: string; q?: string; path?: string; method?: string }, signal?: AbortSignal) {
+        return http.get('copilot/catalog', { params, signal })
     }
 
     // ==================== Account 账户相关 ====================
