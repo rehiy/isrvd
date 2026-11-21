@@ -25,7 +25,8 @@ RUN apk add --no-cache curl tar \
 ###############################################
 # 阶段 2: 最终镜像（基于 Apisix）
 ###############################################
-FROM apache/apisix:3.16.0-debian
+# APISIX Runtime 1.4.3 包含 NGINX 1.31.9 的 2026-11-18 安全修复。
+FROM apache/apisix:3.21.0-debian
 
 USER root
 

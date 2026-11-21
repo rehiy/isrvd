@@ -66,6 +66,8 @@
 CNB 流水线会同步推送到 CNB Docker 制品库，镜像路径为 `docker.cnb.cool/<repo-slug>:<tag>`，支持 `slim`、`caddy`、`apisix` 三个标签，其中 `slim` 同时作为 `latest`。
 国内 Docker 部署可将下方示例中的 `rehiy/isrvd:<tag>` 替换为 `docker.cnb.cool/rehiy/isrvd:<tag>`。
 
+APISIX 镜像构建和系统服务新安装使用 `apache/apisix:3.21.0-debian`。其中 APISIX Runtime 1.4.3 包含 NGINX 1.31.9 内核及 2026-11-18 安全修复，包括 CVE-2026-123007、CVE-2026-123633。OpenResty 版本仍可能显示 `1.31.8.1`，验证修复时应核对 Runtime 版本与内置 NGINX 内核。详见[上游发布说明](https://apisix.apache.org/blog/2026/11/20/release-apache-apisix-3.21.0/)。
+
 Docker 版默认管理员账号为 `admin` / `admin`，首次登录成功后会自动跳转至修改密码页面。
 
 ### 脚本安装（推荐）
@@ -97,6 +99,8 @@ bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docke
 数据目录须为非根绝对路径，不能包含 `.`、`..` 路径段、冒号、反斜杠或控制字符，也不能与 `/usr/local/isrvd` 安装目录重叠；脚本用 `realpath` 解析路径，选择网关时，组件子目录及配置文件不能通过符号链接重定向。各组件的配置与数据集中在自己的目录（独立组件与全容器镜像一致）：`caddy/{caddy.json,config}`（含证书等存储）、`etcd/`、`apisix/{apisix.yaml,conf,cert,logs}`。`update` 会迁移旧布局（`conf/components`、`caddy-config`、`conf/caddy.json`、`conf/apisix.yaml`），新容器运行后清理旧文件；全容器镜像启动时也会复制；isrvd 主配置仍为 `/usr/local/isrvd/config.yml`。`--data` 仅用于新安装，不会迁移已有数据。
 
 更新和卸载必须使用对应脚本，不再自动切换部署方式：`isrvd-system.sh update` 更新二进制及所属组件，从所属容器的实际 bind 挂载恢复组件数据目录，挂载不一致时在停服前中止；`isrvd-docker.sh update` 重建主容器。保留已有配置和角色；Docker 更新保留镜像 tag，也可用 `isrvd-docker.sh update --tag YOUR_PUBLISHED_TAG --variant apisix` 更换标签；容器替换失败时恢复旧容器。组件沿用安装时固定的镜像版本，不自动跨版本升级。`isrvd-system.sh uninstall` 删除系统服务及所属组件，保留实际组件数据目录；`isrvd-docker.sh uninstall` 只删除主容器，保留 `/srv/isrvd`。系统服务卸载前请先备份 `/usr/local/isrvd/config.yml`。
+
+应用此次 APISIX 安全更新时，一体化部署须拉取已用新基础镜像重新构建并发布的 isrvd 镜像，再执行 `isrvd-docker.sh update` 重建容器；已有系统服务部署须显式将独立 APISIX 组件替换为 `apache/apisix:3.21.0-debian`，保留原有挂载、环境变量、网络和安装器标签，仅执行 `isrvd-system.sh update` 会沿用旧版本。升级前备份 APISIX 配置和 etcd；`deployment.admin.admin_key` 中每个条目须显式设置 `admin` 或 `viewer` 角色，密钥须为字符串，内置模板已符合要求。启用插件字段加密时，滚动升级期间避免 Admin API 写入；3.21.0 写入带新 `$ENC$v1$` 标记的数据后，回退旧版本须恢复升级前的 etcd 快照，仅恢复旧容器不会恢复数据。替换后检查 APISIX 启动、带密钥的 Admin API 和 HTTP/HTTPS 代理访问。
 
 在线入口 `/install/`（或 `?script=systemd`）提供系统服务脚本，`/install/?script=docker` 提供全容器化脚本，二者独立缓存。发布包包含两份脚本；旧的本地安装器可能不识别新包内的脚本文件，请使用最新在线脚本执行更新。
 
