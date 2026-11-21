@@ -175,64 +175,17 @@ func runLocalJob(parent context.Context, job *Job) (string, error) {
 
 	var bin string
 	var args []string
-	var tempPath string
+	var scriptPattern string
 	switch job.Type {
 	case "BAT":
-		file, err := os.CreateTemp("", "isrvd-cron-*.bat")
-		if err != nil {
-			return "", err
-		}
-		tempPath = file.Name()
-		if _, err := file.WriteString(normalizeScriptContent(job.Content)); err != nil {
-			file.Close()
-			os.Remove(tempPath)
-			return "", err
-		}
-		if err := file.Close(); err != nil {
-			os.Remove(tempPath)
-			return "", err
-		}
-		defer os.Remove(tempPath)
-		bin, args = command.GetShell("cmd"), []string{"/c", "CALL", tempPath}
+		scriptPattern = "isrvd-cron-*.bat"
+		bin, args = command.GetShell("cmd"), []string{"/c", "CALL"}
 	case "POWERSHELL":
-		file, err := os.CreateTemp("", "isrvd-cron-*.ps1")
-		if err != nil {
-			return "", err
-		}
-		tempPath = file.Name()
-		if _, err := file.WriteString(normalizeScriptContent(job.Content)); err != nil {
-			file.Close()
-			os.Remove(tempPath)
-			return "", err
-		}
-		if err := file.Close(); err != nil {
-			os.Remove(tempPath)
-			return "", err
-		}
-		defer os.Remove(tempPath)
-		bin, args = command.GetShell("powershell"), []string{"-File", tempPath}
+		scriptPattern = "isrvd-cron-*.ps1"
+		bin, args = command.GetShell("powershell"), []string{"-File"}
 	case "SHELL":
 		if strings.HasPrefix(job.Content, "#!/") {
-			file, err := os.CreateTemp("", "isrvd-cron-*")
-			if err != nil {
-				return "", err
-			}
-			tempPath = file.Name()
-			if _, err := file.WriteString(normalizeScriptContent(job.Content)); err != nil {
-				file.Close()
-				os.Remove(tempPath)
-				return "", err
-			}
-			if err := file.Close(); err != nil {
-				os.Remove(tempPath)
-				return "", err
-			}
-			if err := os.Chmod(tempPath, 0700); err != nil {
-				os.Remove(tempPath)
-				return "", err
-			}
-			defer os.Remove(tempPath)
-			bin = tempPath
+			scriptPattern = "isrvd-cron-*"
 		} else {
 			bin, args = command.DefaultShell(), []string{"-c", job.Content}
 		}
@@ -244,6 +197,22 @@ func runLocalJob(parent context.Context, job *Job) (string, error) {
 		bin, args = fields[0], fields[1:]
 	default:
 		return "", fmt.Errorf("unsupported script type: %s", job.Type)
+	}
+
+	if scriptPattern != "" {
+		path, err := writeTempScript(scriptPattern, job.Content)
+		if err != nil {
+			return "", err
+		}
+		defer os.Remove(path)
+		if job.Type == "SHELL" {
+			if err := os.Chmod(path, 0700); err != nil {
+				return "", err
+			}
+			bin = path
+		} else {
+			args = append(args, path)
+		}
 	}
 
 	workDir := job.WorkDir
@@ -260,6 +229,22 @@ func runLocalJob(parent context.Context, job *Job) (string, error) {
 		return output.String(), ctx.Err()
 	}
 	return output.String(), err
+}
+
+func writeTempScript(pattern, content string) (string, error) {
+	file, err := os.CreateTemp("", pattern)
+	if err != nil {
+		return "", err
+	}
+	_, err = file.WriteString(normalizeScriptContent(content))
+	if closeErr := file.Close(); err == nil {
+		err = closeErr
+	}
+	if err != nil {
+		os.Remove(file.Name())
+		return "", err
+	}
+	return file.Name(), nil
 }
 
 // parseVolumeLines 将换行分隔的 /host:/container[:ro] 字符串转为 Docker mount 列表
