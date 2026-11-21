@@ -74,7 +74,7 @@ SSE、WebSocket、仅支持 multipart 的上传接口，以及 `/swarm/token`、
 POST /api/copilot/agui
 ```
 
-**功能：** 接收 [AG-UI](https://github.com/ag-ui-protocol/ag-ui) 协议的 `RunAgentInput`，转换为 OpenAI 兼容请求发给上游 LLM，再将流式响应翻译为 AG-UI 事件以 SSE 返回。
+**功能：** 接收 [AG-UI](https://github.com/ag-ui-protocol/ag-ui) 协议的 `RunAgentInput`，转换为 OpenAI 兼容请求发给上游 LLM，再将流式响应翻译为 AG-UI 事件以 SSE 返回。收到上游 `[DONE]` 或 `finish_reason` 后结束本次运行。上游提前断开时返回 `RUN_ERROR`，客户端取消请求会关闭上游流。
 
 普通成员需授予 `POST /api/copilot/agui` 权限；前端仅在具备该权限且服务可用（`bootstrap` 的 `probe.copilot`，要求 `baseUrl` 与 `apiKey` 均已配置）时挂载 Copilot。后端对该接口仅检查 `baseUrl`。
 

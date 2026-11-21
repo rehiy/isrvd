@@ -25,6 +25,7 @@ var (
 	sendsMu     sync.Mutex
 	sendsWG     sync.WaitGroup
 	sendsClosed bool
+	sendTails   = map[[2]string]chan struct{}{}
 )
 
 // Event 告警事件，同时作为通用 JSON 载荷与模板渲染的数据源
@@ -57,29 +58,44 @@ func Shutdown(ctx context.Context) bool {
 	}
 }
 
-func sendTo(hooks []*config.WebhookConfig, evt *Event) {
+func sendTo(hooks []*config.WebhookConfig, key string, evt *Event) {
 	if evt == nil || len(hooks) == 0 {
 		return
 	}
+	event := *evt
+	if event.Timestamp == 0 {
+		event.Timestamp = time.Now().Unix()
+	}
+	if event.Source == "" {
+		event.Source = "isrvd"
+	}
 	sendsMu.Lock()
+	defer sendsMu.Unlock()
 	if sendsClosed {
-		sendsMu.Unlock()
 		return
 	}
-	sendsWG.Add(len(hooks))
-	sendsMu.Unlock()
-	copy := *evt
-	if copy.Timestamp == 0 {
-		copy.Timestamp = time.Now().Unix()
-	}
-	if copy.Source == "" {
-		copy.Source = "isrvd"
-	}
 	for _, hook := range hooks {
-		go func() {
-			defer sendsWG.Done()
-			sendOne(hook, &copy)
-		}()
+		queue := [2]string{key, strings.TrimSpace(hook.URL)}
+		var previous, done chan struct{}
+		if key != "" {
+			previous = sendTails[queue]
+			done = make(chan struct{})
+			sendTails[queue] = done
+		}
+		sendsWG.Go(func() {
+			if previous != nil {
+				<-previous
+			}
+			sendOne(hook, &event)
+			if done != nil {
+				sendsMu.Lock()
+				if sendTails[queue] == done {
+					delete(sendTails, queue)
+				}
+				close(done)
+				sendsMu.Unlock()
+			}
+		})
 	}
 }
 
