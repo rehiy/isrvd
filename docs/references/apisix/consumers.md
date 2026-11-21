@@ -46,7 +46,7 @@ Consumer 仍在任一路由的访问授权白名单中时拒绝删除（返回 5
 
 ## 访问授权
 
-写操作只通过 APISIX 局部更新（`PATCH`）改动路由上的 `key-auth` 与 `consumer-restriction` 插件，不影响路由的其他字段和插件；路由不存在时返回 500。
+写操作通过一次 APISIX 路由局部更新（`PATCH /routes/{id}`）改动路由上的 `key-auth` 与 `consumer-restriction` 插件，不影响路由的其他字段和插件；路由不存在时返回 500。
 
 - **认证由别处管理时**不写入也不删除路由上的 `key-auth`（`key_auth` 参数被忽略），只管理 `consumer-restriction`，清除授权时路由仍保留原有认证。判定规则：路由自身没有 `key-auth`，而路由与其引用的 PluginConfig、Service 合并后已有认证类插件（APISIX 插件元数据 `type` 为 `auth`，如 `key-auth`、`basic-auth`、`jwt-auth`、`multi-auth`，新增的认证插件自动适用）：
   - 再叠加独立 `key-auth` 会变成必须同时通过，只通过其他认证的调用方会被拦截。
@@ -86,7 +86,7 @@ isrvd_post "/apisix/whitelist" '{"route_id":"<ROUTE_ID>","consumers":["<USERNAME
 
 ### 新建用户并加入访问授权
 
-一次调用完成「创建 Consumer + 配置 key-auth + 加入路由访问授权」。先确认路由存在，再创建 Consumer 并更新路由，**非原子**：路由更新失败时会尽力回滚本次新建的 Consumer（已存在而被复用的不受影响）。Consumer 已存在时直接复用，不更新其 `key`，且必须已配置 `key-auth`（认证由别处管理时不校验），否则返回 500；新建的 Consumer 只配置 `key-auth`，认证由别处管理且不含 `key-auth` 时该用户无法通过认证；用户追加到路由现有白名单（已在白名单中则直接返回当前路由，不改动路由）。认证未由别处管理时，`key_auth` 会覆盖路由现有 key-auth 配置。响应 payload 为更新后的路由详情。
+一次调用完成「创建 Consumer + 配置 key-auth + 加入路由访问授权」。先确认路由存在，再创建 Consumer 并更新路由，**非原子**：路由更新失败时先读取当前授权。确认新建 Consumer 未被该路由授权后尝试删除，已授权或无法确认时保留。已存在而被复用的 Consumer 会保留。Consumer 已存在时直接复用，不更新其 `key`，且必须已配置 `key-auth`（认证由别处管理时不校验），否则返回 500；新建的 Consumer 只配置 `key-auth`，认证由别处管理且不含 `key-auth` 时该用户无法通过认证；用户追加到路由现有白名单（已在白名单中则直接返回当前路由，不改动路由）。认证未由别处管理时，`key_auth` 会覆盖路由现有 key-auth 配置。响应 payload 为更新后的路由详情。
 
 ```bash
 isrvd_post "/apisix/whitelist/user" '{"route_id":"<ROUTE_ID>","username":"<USERNAME>","key":"<AUTH_KEY>","key_auth":{"header":"token","query":"token","hide_credentials":false}}'

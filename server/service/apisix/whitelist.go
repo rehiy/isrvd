@@ -2,9 +2,11 @@ package apisix
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 
 	"isrvd/pkgs/apisix"
 )
@@ -187,7 +189,16 @@ func (s *Service) WhitelistUserCreate(ctx context.Context, req WhitelistUserCrea
 	consumers = append(consumers, username)
 	if err := s.client.RouteConsumerRestrictionUpdate(ctx, route, info, consumers, req.KeyAuth); err != nil {
 		if !exists {
-			_ = s.client.ConsumerDelete(ctx, username)
+			checkCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+			defer cancel()
+			observed, checkErr := s.client.RouteInspect(checkCtx, routeID)
+			if checkErr != nil {
+				err = errors.Join(err, fmt.Errorf("无法确认授权状态，已保留消费者: %w", checkErr))
+			} else if !slices.Contains(apisix.RouteWhitelist(observed), username) {
+				if removeErr := s.client.ConsumerDelete(checkCtx, username); removeErr != nil {
+					err = errors.Join(err, fmt.Errorf("回滚消费者失败: %w", removeErr))
+				}
+			}
 		}
 		return nil, fmt.Errorf("配置访问授权失败: %w", err)
 	}
