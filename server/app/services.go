@@ -278,16 +278,16 @@ func (app *App) isServiceAvailable(module string) bool {
 // caddyCertSource 将 Caddy 服务的证书列表适配为告警层所需的精简结构。
 type caddyCertSource struct{ svc *caddy.Service }
 
-func (s caddyCertSource) CertList(ctx context.Context) ([]notify.CaddyCert, error) {
-	list, err := s.svc.CertList(ctx)
+func (s caddyCertSource) CertList(ctx context.Context) ([]notify.CaddyCert, bool, error) {
+	list, complete, err := s.svc.CertListForAlerts(ctx)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	certs := make([]notify.CaddyCert, 0, len(list))
 	for _, c := range list {
 		certs = append(certs, notify.CaddyCert{
-			Key: c.Key, Source: c.Source, Subject: c.Subject, Certificate: c.Certificate, NotAfter: c.NotAfter,
+			Key: c.Key, AlertKey: c.AlertKey, Subject: c.Subject, NotAfter: c.NotAfter,
 		})
 	}
-	return certs, nil
+	return certs, complete, nil
 }

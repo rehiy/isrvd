@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -37,6 +38,10 @@ func (e *HTTPError) Error() string {
 	return fmt.Sprintf("caddy %s %s 状态码 %d: %s", e.Method, e.Path, e.StatusCode, e.Body)
 }
 
+var ErrConfigChanged = errors.New("Caddy 配置已变化，请刷新后重试")
+
+const rootConfigPath = "/config/"
+
 // Client Caddy Admin API 客户端
 type Client struct {
 	baseURL    string
@@ -62,7 +67,7 @@ func NewClient(baseURL string) *Client {
 func (c *Client) ConfigLoadRaw(ctx context.Context, raw []byte) error {
 	c.configMu.Lock()
 	defer c.configMu.Unlock()
-	_, err := c.do(ctx, http.MethodPost, "/load", raw, ctJSON)
+	_, _, err := c.do(ctx, http.MethodPost, "/load", raw, "")
 	return err
 }
 
@@ -73,14 +78,30 @@ func (c *Client) ConfigMutate(ctx context.Context, fn func(*Config) error) error
 	c.configMu.Lock()
 	defer c.configMu.Unlock()
 
-	cfg, err := c.configAll(ctx)
+	raw, etag, err := c.do(ctx, http.MethodGet, rootConfigPath, nil, "")
+	if err != nil {
+		return err
+	}
+	if etag == "" {
+		return errors.New("Caddy Admin API 未返回配置版本")
+	}
+	cfg, err := decodeConfig(raw)
 	if err != nil {
 		return err
 	}
 	if err := fn(cfg); err != nil {
 		return err
 	}
-	return c.configLoad(ctx, cfg)
+	body, err := json.Marshal(cfg)
+	if err != nil {
+		return fmt.Errorf("序列化 caddy 配置失败: %w", err)
+	}
+	_, _, err = c.do(ctx, http.MethodPost, rootConfigPath, body, etag)
+	var status *HTTPError
+	if errors.As(err, &status) && status.StatusCode == http.StatusPreconditionFailed {
+		return ErrConfigChanged
+	}
+	return err
 }
 
 // ConfigAll 获取当前完整配置。
@@ -99,20 +120,15 @@ func (c *Client) ConfigRaw(ctx context.Context, path string) ([]byte, error) {
 
 // ─── 内部方法 ───
 
-func (c *Client) configLoad(ctx context.Context, cfg *Config) error {
-	body, err := json.Marshal(cfg)
-	if err != nil {
-		return fmt.Errorf("序列化 caddy 配置失败: %w", err)
-	}
-	_, err = c.do(ctx, http.MethodPost, "/load", body, ctJSON)
-	return err
-}
-
 func (c *Client) configAll(ctx context.Context) (*Config, error) {
 	raw, err := c.configRaw(ctx, "")
 	if err != nil {
 		return nil, err
 	}
+	return decodeConfig(raw)
+}
+
+func decodeConfig(raw []byte) (*Config, error) {
 	trimmed := bytes.TrimSpace(raw)
 	if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null")) {
 		return &Config{}, nil
@@ -126,50 +142,56 @@ func (c *Client) configAll(ctx context.Context) (*Config, error) {
 
 func (c *Client) configRaw(ctx context.Context, path string) ([]byte, error) {
 	path = strings.Trim(path, "/")
-	cfgPath := "/config/"
+	cfgPath := rootConfigPath
 	if path != "" {
 		segs := strings.Split(path, "/")
 		for i, s := range segs {
 			segs[i] = url.PathEscape(s)
 		}
-		cfgPath = "/config/" + strings.Join(segs, "/")
+		cfgPath += strings.Join(segs, "/")
 	}
-	return c.do(ctx, http.MethodGet, cfgPath, nil, "")
+	raw, _, err := c.do(ctx, http.MethodGet, cfgPath, nil, "")
+	return raw, err
 }
 
-func (c *Client) do(ctx context.Context, method, path string, body []byte, contentType string) ([]byte, error) {
+func (c *Client) do(ctx context.Context, method, path string, body []byte, ifMatch string) ([]byte, string, error) {
 	var reader io.Reader
 	if body != nil {
 		reader = bytes.NewReader(body)
 	}
 	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, reader)
 	if err != nil {
-		return nil, fmt.Errorf("创建 caddy 请求失败: %w", err)
+		return nil, "", fmt.Errorf("创建 caddy 请求失败: %w", err)
 	}
-	if contentType != "" {
-		req.Header.Set("Content-Type", contentType)
+	if body != nil {
+		req.Header.Set("Content-Type", ctJSON)
+	}
+	if ifMatch != "" {
+		req.Header.Set("If-Match", ifMatch)
+		// Caddy 重载会关闭旧连接。条件请求可由 HTTP 传输层重试，空值不发送给服务端。
+		req.Header["Idempotency-Key"] = nil
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		logman.Error("Caddy admin request failed", "method", method, "path", path, "error", err)
-		return nil, fmt.Errorf("请求 Caddy admin 失败: %w", err)
+		return nil, "", fmt.Errorf("请求 Caddy admin 失败: %w", err)
 	}
 	defer resp.Body.Close()
 
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("读取 Caddy admin 响应失败: %w", err)
+		return nil, "", fmt.Errorf("读取 Caddy admin 响应失败: %w", err)
 	}
 
 	if resp.StatusCode >= http.StatusMultipleChoices {
 		logman.Error("Caddy admin error", "method", method, "path", path, "status", resp.StatusCode, "body", string(raw))
-		return nil, &HTTPError{
+		return nil, "", &HTTPError{
 			Method:     method,
 			Path:       path,
 			StatusCode: resp.StatusCode,
 			Body:       string(raw),
 		}
 	}
-	return raw, nil
+	return raw, resp.Header.Get("ETag"), nil
 }

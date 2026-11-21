@@ -51,7 +51,7 @@ isrvd_get "/caddy/basic-auth?server=internal&snapshot=true"
 
 快照版本与 `GET /caddy/routes?snapshot=true` 使用相同算法，覆盖该服务的全部路由，而非仅认证路由。为尚未认证的路由添加首个账号，应从路由快照中选择下标并回传该快照版本。需要同时使用两份列表时，必须验证其 `revision` 相等后才能关联下标，不能通过再次读取后直接沿用旧下标来消除竞态。
 
-任一写操作成功后，版本都会变化。继续修改必须重新读取快照并重新选择目标；失败后应刷新列表并清理旧草稿，不可直接重试旧版本。版本在 iSrvd 的 `ConfigMutate` 修改临界区内原子校验，校验、修改、一次 `POST /load` 串行执行；不代替其他 Caddy Admin API 客户端的并发写入协调。
+任一写操作成功后，版本都会变化。继续修改前需重新读取快照并选择目标。失败后刷新列表并清理旧草稿。iSrvd 校验列表版本，再通过 `POST /config/` 提交条件写入。同期发生其他 Caddy 配置写入时返回 409。
 
 > 添加账号、删除账号、更新配置都会重建整个 `authentication` handler，原 handler 中的其他字段（如 `hash` 设置、其他 provider）不会保留。
 

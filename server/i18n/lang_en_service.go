@@ -4,7 +4,15 @@ package i18n
 
 func init() {
 	Register(langEN, map[string]string{
-		"SFTP 服务器不支持安全覆盖已有文件": "The SFTP server does not support replacing existing files safely",
+		"SFTP 服务器不支持安全覆盖已有文件":     "The SFTP server does not support replacing existing files safely",
+		"Caddy 配置已变化，请刷新后重试":      "The Caddy configuration changed. Refresh and try again",
+		"Caddy Admin API 未返回配置版本": "The Caddy Admin API did not return a configuration version",
+		"SSH 凭据仍被主机引用":            "The SSH credential is still used by a host",
+		"主机绑定的凭据 %s 不存在":          "The host's SSH credential %s does not exist",
+		"容器目录列表超过输出上限":            "The container directory listing exceeds the output limit",
+		"容器目录记录格式无效":              "Invalid container directory record",
+		"连接容器执行输出失败: HTTP %d":     "Failed to connect to container command output: HTTP %d",
+		"文件已存在":                   "The file already exists",
 
 		"非法 ZIP 路径: %s":       "Invalid ZIP path: %s",
 		"不支持的 ZIP 文件类型: %s":   "Unsupported ZIP entry type: %s",

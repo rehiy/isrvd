@@ -2,10 +2,8 @@ package notify
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"math"
-	"slices"
 	"strings"
 	"time"
 
@@ -25,26 +23,12 @@ const (
 	certificateReminderInterval = 24 * time.Hour
 )
 
-// Caddy 证书来源类型。
-//
-// 注意：这三个取值是 server/service/caddy 的 CertSourceFile / CertSourcePEM / CertSourceAutomate
-// 的副本，用来避免 notify 依赖 service/caddy。两侧没有编译期约束，修改任一侧的取值
-// 都必须同步修改另一侧，否则证书到期告警会静默漏报（automate 会被当作普通证书、
-// file/pem 的去重标识会变成空）。
-const (
-	caddyCertSourceFile     = "file"
-	caddyCertSourcePEM      = "pem"
-	caddyCertSourceAutomate = "automate"
-)
-
-// CaddyCert 证书到期检测所需的 Caddy 证书字段，由注入方从具体服务转换而来，
-// 避免告警层依赖 server/service/caddy。
+// CaddyCert 是从 Caddy 获取的已解析证书状态。无法计算身份的 PEM 使用空 AlertKey。
 type CaddyCert struct {
-	Key         string     // 列表复合主键，缓存证书用作稳定标识
-	Source      string     // file / pem / automate / cached
-	Subject     string     // 域名或证书 CN
-	Certificate string     // file：证书文件路径；pem：证书 PEM 文本
-	NotAfter    *time.Time // 证书过期时间，无法解析时为 nil
+	Key      string
+	AlertKey string
+	Subject  string
+	NotAfter *time.Time
 }
 
 // FaultSources 由服务生命周期注入已初始化的客户端，不在告警层创建连接。
@@ -57,7 +41,7 @@ type FaultSources struct {
 		ContainerInspect(context.Context, string) (container.InspectResponse, error)
 	} `json:"-"`
 	Caddy interface {
-		CertList(context.Context) ([]CaddyCert, error)
+		CertList(context.Context) ([]CaddyCert, bool, error)
 	} `json:"-"`
 	Apisix interface {
 		SSLList(context.Context) ([]apisix.SSL, error)
@@ -261,15 +245,12 @@ func (w *FaultWatcher) checkContainer(id, name string, info container.InspectRes
 func (w *FaultWatcher) pollCertificates(parent context.Context, now time.Time) {
 	if w.sources.Caddy != nil {
 		ctx, cancel := context.WithTimeout(parent, faultProbeTimeout)
-		list, err := w.sources.Caddy.CertList(ctx)
+		list, complete, err := w.sources.Caddy.CertList(ctx)
 		cancel()
 		if err == nil && parent.Err() == nil {
 			certs := make([]certificateExpiry, 0, len(list))
 			for _, cert := range list {
-				if cert.Source == caddyCertSourceAutomate {
-					continue // 自动签发策略本身没有证书有效期
-				}
-				key := caddyCertificateKey(cert)
+				key := cert.AlertKey
 				id := cert.Key
 				if id == "" {
 					id = key
@@ -280,7 +261,7 @@ func (w *FaultWatcher) pollCertificates(parent context.Context, now time.Time) {
 				}
 				certs = append(certs, expiry)
 			}
-			w.checkCertificates("caddy", certs, now)
+			w.checkCertificates("caddy", certs, now, complete)
 		} else if err != nil && parent.Err() == nil {
 			logman.Warn("fault watcher: list Caddy certificates failed", "error", err)
 		}
@@ -301,7 +282,7 @@ func (w *FaultWatcher) pollCertificates(parent context.Context, now time.Time) {
 					certs = append(certs, certificateExpiry{id: ssl.ID})
 				}
 			}
-			w.checkCertificates("apisix", certs, now)
+			w.checkCertificates("apisix", certs, now, true)
 		} else if err != nil && parent.Err() == nil {
 			logman.Warn("fault watcher: list APISIX certificates failed", "error", err)
 		}
@@ -321,7 +302,7 @@ type certificateFaultState struct {
 	level    string
 }
 
-func (w *FaultWatcher) checkCertificates(provider string, certs []certificateExpiry, now time.Time) {
+func (w *FaultWatcher) checkCertificates(provider string, certs []certificateExpiry, now time.Time, complete bool) {
 	// 同身份的多张证书按最早到期的一张判断，避免互相覆盖告警状态。
 	seen := make(map[string]certificateExpiry, len(certs))
 	unreadablePEM := false
@@ -368,6 +349,9 @@ func (w *FaultWatcher) checkCertificates(provider string, certs []certificateExp
 		w.certificates[key] = &certificateFaultState{notAfter: cert.notAfter, lastSent: now, level: level}
 		sendTo(w.webhooks, "certificate:"+key, &Event{Event: "certificate.alert", Level: level, Title: fmt.Sprintf("%s 证书 %s%s", provider, cert.subject, description),
 			Message: fmt.Sprintf("证书%s，到期时间 %s", description, cert.notAfter.UTC().Format(time.RFC3339)), Data: data})
+	}
+	if !complete {
+		return
 	}
 	for key := range w.certificates {
 		if unreadablePEM && strings.HasPrefix(key, "caddy:pem:") {
@@ -428,38 +412,5 @@ func JobFailureNotifier(cfg *config.NotifyConfig) func(string, string, string, i
 			Message: "请在计划任务执行历史中查看失败原因", Data: map[string]any{
 				"jobId": jobID, "jobName": jobName, "runId": runID, "duration": duration,
 			}})
-	}
-}
-
-// ─── 辅助函数 ───
-
-func caddyCertificateKey(cert CaddyCert) string {
-	switch cert.Source {
-	case caddyCertSourceFile:
-		return "file:" + cert.Certificate
-	case caddyCertSourcePEM:
-		// 使用证书身份而非 PEM 内容，续期后仍可关联原告警。
-		parsed := certify.PEMParse([]byte(cert.Certificate))
-		if parsed == nil {
-			return ""
-		}
-		names := make([]string, 0, len(parsed.DNSNames))
-		for _, name := range parsed.DNSNames {
-			names = append(names, "dns:"+name)
-		}
-		for _, ip := range parsed.IPAddresses {
-			names = append(names, "ip:"+ip.String())
-		}
-		for _, email := range parsed.EmailAddresses {
-			names = append(names, "email:"+email)
-		}
-		for _, uri := range parsed.URIs {
-			names = append(names, "uri:"+uri.String())
-		}
-		slices.Sort(names)
-		identity := parsed.Subject.String() + "\x00" + parsed.PublicKeyAlgorithm.String() + "\x00" + strings.Join(names, "\x00")
-		return fmt.Sprintf("pem:%x", sha256.Sum256([]byte(identity)))
-	default:
-		return cert.Key // 缓存证书的 Key 包含文件路径，已是稳定标识
 	}
 }

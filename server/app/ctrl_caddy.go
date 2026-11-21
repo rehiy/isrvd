@@ -60,7 +60,7 @@ func (app *App) caddyMetricsUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	respondMetricsToggled(c, *req.Enabled, app.availability.Load().caddySvc.MetricsUpdate(c.Request.Context(), *req.Enabled))
+	respondMetricsToggled(c, *req.Enabled, app.availability.Load().caddySvc.MetricsUpdate(c.Request.Context(), *req.Enabled), pkgCaddy.ErrConfigChanged)
 }
 
 // ─── HTTP server CRUD ───
@@ -467,7 +467,7 @@ func respondCaddyError(c *gin.Context, err error, fallbackStatus ...int) {
 	switch {
 	case errors.Is(err, caddy.ErrRouteRevisionRequired):
 		status = http.StatusPreconditionRequired
-	case errors.Is(err, caddy.ErrRouteRevisionChanged):
+	case errors.Is(err, caddy.ErrRouteRevisionChanged), errors.Is(err, pkgCaddy.ErrConfigChanged):
 		status = http.StatusConflict
 	case errors.Is(err, caddy.ErrInvalidRoutePosition):
 		status = http.StatusBadRequest
