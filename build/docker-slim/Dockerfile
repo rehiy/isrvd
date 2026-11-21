@@ -17,6 +17,7 @@ RUN apk add --no-cache ca-certificates curl \
 
 # 拷贝脚本文件和配置
 COPY --chmod=755 build/docker-slim/entrypoint.sh /entrypoint.sh
+COPY build/docker-common/entrypoint-functions.sh /usr/local/lib/isrvd/entrypoint-functions.sh
 COPY build/docker-slim/isrvd.yml /etc/defaults/isrvd.yml
 
 # 设置环境变量

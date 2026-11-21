@@ -27,6 +27,7 @@ RUN apk add --no-cache bash ca-certificates runit
 # 复制二进制文件和配置
 COPY --from=builder /usr/local/bin/isrvd /usr/local/bin/caddy /usr/local/bin/
 COPY --chmod=755 build/docker-caddy/entrypoint.sh /entrypoint.sh
+COPY build/docker-common/entrypoint-functions.sh /usr/local/lib/isrvd/entrypoint-functions.sh
 COPY build/docker-caddy/isrvd.yml build/docker-caddy/caddy.json /etc/defaults/
 COPY build/docker-caddy/runit /etc/sv
 
