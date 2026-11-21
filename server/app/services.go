@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -63,46 +64,14 @@ func (app *App) initServices(ctx context.Context) {
 		app.markReady("node", func(context.Context) bool { return true })
 	}
 
-	probeCtx, probeCancel := context.WithTimeout(ctx, 5*time.Second)
-	apisixSvc, err := apisix.NewService(probeCtx)
-	probeCancel()
-	if err != nil {
-		logman.Warn("Apisix service unavailable", "error", err)
-		app.apisixSvc = nil
-	} else {
-		app.apisixSvc = apisixSvc
-		app.markReady("apisix", apisixSvc.CheckAvailability)
-	}
-
-	probeCtx, probeCancel = context.WithTimeout(ctx, 5*time.Second)
-	caddySvc, err := caddy.NewService(probeCtx)
-	probeCancel()
-	if err != nil {
-		logman.Warn("Caddy service unavailable", "error", err)
-		app.caddySvc = nil
-	} else {
-		app.caddySvc = caddySvc
-		app.markReady("caddy", caddySvc.CheckAvailability)
-	}
-
 	if dockerSvc, err := docker.NewService(); err != nil {
 		logman.Warn("Docker service unavailable", "error", err)
 		app.dockerSvc = nil
-		app.swarmSvc = nil
 	} else {
 		app.dockerSvc = dockerSvc
 		app.markReady("docker", dockerSvc.CheckAvailability)
-		probeCtx, probeCancel = context.WithTimeout(ctx, 5*time.Second)
-		swarmSvc, err := swarm.NewService(probeCtx, dockerSvc.Raw())
-		probeCancel()
-		if err != nil {
-			logman.Warn("Swarm service unavailable", "error", err)
-			app.swarmSvc = nil
-		} else {
-			app.swarmSvc = swarmSvc
-			app.markReady("swarm", swarmSvc.CheckAvailability)
-		}
 	}
+	app.initProbedServices(ctx)
 
 	// Docker 不可用时 app.dockerSvc 为 nil，Raw() 对 nil 接收者安全并返回 nil
 	dockerRaw := app.dockerSvc.Raw()
@@ -155,6 +124,50 @@ func (app *App) initServices(ctx context.Context) {
 			status = app.caddySvc.MetricsStatus
 		}
 		app.metricsSvc.AddGateway(metrics.GatewayCaddy, u, status)
+	}
+}
+
+// initProbedServices 并行初始化需要访问外部服务的模块，探活共用 5 秒预算。
+func (app *App) initProbedServices(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	var wg sync.WaitGroup
+	wg.Go(func() {
+		svc, err := apisix.NewService(ctx)
+		app.apisixSvc = svc
+		if err != nil {
+			logman.Warn("Apisix service unavailable", "error", err)
+		}
+	})
+	wg.Go(func() {
+		svc, err := caddy.NewService(ctx)
+		app.caddySvc = svc
+		if err != nil {
+			logman.Warn("Caddy service unavailable", "error", err)
+		}
+	})
+	app.swarmSvc = nil
+	if dockerRaw := app.dockerSvc.Raw(); dockerRaw != nil {
+		wg.Go(func() {
+			svc, err := swarm.NewService(ctx, dockerRaw)
+			app.swarmSvc = svc
+			if err != nil {
+				logman.Warn("Swarm service unavailable", "error", err)
+			}
+		})
+	}
+	wg.Wait()
+
+	// 各探活独立运行，就绪表仍在同一协程中更新。
+	if app.apisixSvc != nil {
+		app.markReady("apisix", app.apisixSvc.CheckAvailability)
+	}
+	if app.caddySvc != nil {
+		app.markReady("caddy", app.caddySvc.CheckAvailability)
+	}
+	if app.swarmSvc != nil {
+		app.markReady("swarm", app.swarmSvc.CheckAvailability)
 	}
 }
 

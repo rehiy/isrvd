@@ -37,6 +37,8 @@ ETCD_USERNAME=user ETCD_PASSWORD=pass ISRVD_CONFIG="etcd://h1:2379,h2:2379,h3:23
 
 etcd 配置监听在首次连接、重连后重新读取最新状态，读取失败会重试，相同状态不重复触发重载；只补偿连接间隙的最终状态，不重放历史事件。cron、webssh 的外部数据更新仍需重载服务。
 
+启动和重载时，APISIX、Caddy 与 Swarm 的初始化探活并行执行，共用 5 秒超时；Swarm 仍需先创建 Docker 客户端。探活失败的模块标记为不可用，其余服务继续初始化。
+
 ## 配置段说明
 
 配置文件（`config.yml` 或 etcd value）的顶层配置段：
