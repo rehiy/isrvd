@@ -38,7 +38,8 @@ declare -A LEGACY_MOUNT_SUFFIX=(
 )
 INSTALLER_LABEL="io.isrvd.installer"
 CADDY_IMAGE="caddy:2.8.4"
-APISIX_IMAGE="apache/apisix:3.16.0-debian"
+# 与 build/docker-apisix/Dockerfile 同步，包含 NGINX 2026-11-18 安全修复。
+APISIX_IMAGE="apache/apisix:3.21.0-debian"
 ETCD_IMAGE="quay.io/coreos/etcd:v3.5.29"
 DEPLOYMENT_ENV=()
 DEPLOYMENT_MODE=""
