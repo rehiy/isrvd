@@ -17,6 +17,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // generator 持有一次生成过程中的全部状态
@@ -28,7 +29,9 @@ type generator struct {
 	inlineFuncs  map[string]*ast.FuncLit // 内联 handler 闭包，键为 inline:<id>
 	inlineSeq    int                     // 内联 handler 序号
 	structCache  map[string]*SchemaInfo  // "pkg.TypeName" -> schema
-	handlers     map[string]handlerDecl  // App handler 名称索引
+	handlers     map[string]functionDecl // App 方法名称索引
+	helpers      map[string]functionDecl // app 包级函数名称索引
+	appTypeFiles map[string]string       // app 包级类型的定义文件
 	fset         *token.FileSet          // 复用 FileSet
 	fileCache    map[string]*ast.File    // 已解析文件缓存
 	contentCache map[string][]string     // 文件内容行缓存
@@ -40,7 +43,9 @@ func newGenerator(root string, cfg *ProjectConfig) *generator {
 		cfg:          cfg,
 		inlineFuncs:  map[string]*ast.FuncLit{},
 		structCache:  map[string]*SchemaInfo{},
-		handlers:     map[string]handlerDecl{},
+		handlers:     map[string]functionDecl{},
+		helpers:      map[string]functionDecl{},
+		appTypeFiles: map[string]string{},
 		fset:         token.NewFileSet(),
 		fileCache:    map[string]*ast.File{},
 		contentCache: map[string][]string{},
@@ -74,10 +79,17 @@ func (g *generator) run() ([]byte, error) {
 		return nil, fmt.Errorf("读取目录失败: %w", err)
 	}
 
-	for _, filename := range g.getCtrlFiles(ctrlDir, entries) {
-		g.indexHandlers(filename)
-		g.parseCtrlFile(filename)
-		g.collectAllTypesFromFile(filename)
+	for _, entry := range entries {
+		name := entry.Name()
+		if entry.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		filename := filepath.Join(ctrlDir, name)
+		g.indexAppFile(filename)
+		if strings.HasPrefix(name, g.cfg.CtrlPrefix) {
+			g.parseCtrlFile(filename)
+			g.collectAllTypesFromFile(filename)
+		}
 	}
 
 	// 2.5 解析 service 及额外类型目录中的类型定义

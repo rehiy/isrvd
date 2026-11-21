@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"go/ast"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -100,17 +99,6 @@ func (g *generator) parseCtrlFile(filename string) {
 }
 
 // ─── 辅助函数 ───
-
-// getCtrlFiles 从目录 entries 中筛选 handler 文件并返回完整路径列表
-func (g *generator) getCtrlFiles(dir string, entries []os.DirEntry) []string {
-	var files []string
-	for _, entry := range entries {
-		if !entry.IsDir() && strings.HasPrefix(entry.Name(), g.cfg.CtrlPrefix) && strings.HasSuffix(entry.Name(), ".go") {
-			files = append(files, filepath.Join(dir, entry.Name()))
-		}
-	}
-	return files
-}
 
 func (g *generator) parseRouteLiteral(cl *ast.CompositeLit) RouteDef {
 	var r RouteDef
