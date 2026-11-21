@@ -55,12 +55,7 @@ class ContainerLogs extends Vue {
     }
 
     handleTailChange() {
-        if (this.logs.active) {
-            this.logs.stop()
-            this.startStream()
-            return
-        }
-        this.loadLogs()
+        this.logs.reloadTail(this.loadLogs, this.startStream)
     }
 
     // ─── 生命周期 ───
