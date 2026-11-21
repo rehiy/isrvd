@@ -398,48 +398,49 @@ func (s *Service) JobLogs(id string, limit int) []*JobLog {
 // jobReplace 同步任务、调度条目与持久化；失败时恢复原状态。nil 表示删除。
 // 调用前须持有写锁。
 func (s *Service) jobReplace(id string, job *Job) error {
+	var schedule cron.Schedule
+	if job != nil && job.Enabled {
+		var err error
+		schedule, err = cron.ParseStandard(job.Schedule)
+		if err != nil {
+			return fmt.Errorf("invalid schedule %q: %w", job.Schedule, err)
+		}
+	}
 	oldJob := s.jobs[id]
-	_, registered := s.entries[id]
-	s.unregister(id)
-	var err error
 	if job == nil {
 		delete(s.jobs, id)
 	} else {
 		s.jobs[id] = job
-		if job.Enabled {
-			err = s.register(job)
+	}
+	if err := s.persist(); err != nil {
+		if oldJob == nil {
+			delete(s.jobs, id)
+		} else {
+			s.jobs[id] = oldJob
 		}
+		return err
 	}
-	if err == nil {
-		err = s.persist()
-	}
-	if err == nil {
-		return nil
-	}
-
 	s.unregister(id)
-	if oldJob == nil {
-		delete(s.jobs, id)
-	} else {
-		s.jobs[id] = oldJob
-		if registered {
-			if restoreErr := s.register(oldJob); restoreErr != nil {
-				logger.Warn("Cron job restore failed", "id", id, "error", restoreErr)
-			}
-		}
+	if schedule != nil {
+		s.registerSchedule(id, schedule)
 	}
-	return err
+	return nil
 }
 
 // register 向调度器注册一个任务（调用前须持有锁或在初始化阶段）
 func (s *Service) register(job *Job) error {
-	var entryID cron.EntryID
-	entryID, err := s.cron.AddFunc(job.Schedule, func() { s.runJob(job.ID, &entryID) })
+	schedule, err := cron.ParseStandard(job.Schedule)
 	if err != nil {
 		return fmt.Errorf("invalid schedule %q: %w", job.Schedule, err)
 	}
-	s.entries[job.ID] = entryID
+	s.registerSchedule(job.ID, schedule)
 	return nil
+}
+
+func (s *Service) registerSchedule(id string, schedule cron.Schedule) {
+	var entryID cron.EntryID
+	entryID = s.cron.Schedule(schedule, cron.FuncJob(func() { s.runJob(id, &entryID) }))
+	s.entries[id] = entryID
 }
 
 // unregister 移除任务的调度条目（调用前须持有锁）。

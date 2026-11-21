@@ -6,10 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
+	"net/url"
+	"path"
 	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 )
 
@@ -30,10 +34,6 @@ func (b *commandOutputBuffer) Write(p []byte) (int, error) {
 		b.truncated = true
 	}
 	return len(p), nil
-}
-
-func (b *commandOutputBuffer) String() string {
-	return strings.ToValidUTF8(b.buf.String(), "?")
 }
 
 // ExecSession 容器 exec 会话，封装 hijacked 连接，实现 io.ReadWriteCloser
@@ -107,67 +107,98 @@ func (s *DockerService) ContainerExecAttach(ctx context.Context, containerID, sh
 // ContainerExecRun 在指定容器内非交互地执行命令，返回合并后的 stdout/stderr 输出。
 // timeout 为 0 时不限制。
 func (s *DockerService) ContainerExecRun(ctx context.Context, containerID, shell, script string, timeout uint) (string, error) {
-	cmd := []string{shell, "-c", script}
-	if shell == "" {
-		cmd = []string{"/bin/sh", "-c", script}
-	}
-
-	execCfg := container.ExecOptions{
-		AttachStdout: true,
-		AttachStderr: true,
-		Tty:          false,
-		Cmd:          cmd,
-	}
-
-	execResp, err := s.client.ContainerExecCreate(ctx, containerID, execCfg)
-	if err != nil {
-		return "", err
-	}
-
-	attachResp, err := s.client.ContainerExecAttach(ctx, execResp.ID, container.ExecStartOptions{})
-	if err != nil {
-		return "", err
-	}
-	defer attachResp.Close()
-
-	readCtx := ctx
-	var cancel context.CancelFunc
-	if timeout > 0 {
-		readCtx, cancel = context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
-		defer cancel()
-	}
-	readDone := make(chan struct{})
-	go func() {
-		select {
-		case <-readCtx.Done():
-			attachResp.Close()
-		case <-readDone:
-		}
-	}()
-
-	buf := &commandOutputBuffer{}
-	_, readErr := stdcopy.StdCopy(buf, buf, attachResp.Reader)
-	close(readDone)
-	output := buf.String()
-	if buf.truncated {
+	output, truncated, err := s.containerExecRun(ctx, containerID, shell, script, timeout)
+	output = strings.ToValidUTF8(output, "?")
+	if truncated {
 		output += fmt.Sprintf("\n[output truncated at %d bytes]\n", maxCommandOutputBytes)
 	}
-	if err := readCtx.Err(); err != nil {
-		return output, fmt.Errorf("容器命令执行中止: %w", err)
+	return output, err
+}
+
+func (s *DockerService) containerExecRun(ctx context.Context, containerID, shell, script string, timeout uint) (string, bool, error) {
+	if timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
+		defer cancel()
+	}
+	if shell == "" {
+		shell = "/bin/sh"
+	}
+	execResp, err := s.client.ContainerExecCreate(ctx, containerID, container.ExecOptions{
+		AttachStdout: true,
+		AttachStderr: true,
+		Cmd:          []string{shell, "-c", script},
+	})
+	if err != nil {
+		return "", false, err
+	}
+	body, err := s.execOutput(ctx, execResp.ID)
+	if err != nil {
+		return "", false, err
+	}
+	defer body.Close()
+	stop := context.AfterFunc(ctx, func() { _ = body.Close() })
+	defer stop()
+
+	buf := &commandOutputBuffer{}
+	_, readErr := stdcopy.StdCopy(buf, buf, body)
+	output := buf.buf.String()
+	if err := ctx.Err(); err != nil {
+		return output, buf.truncated, fmt.Errorf("容器命令执行中止: %w", err)
 	}
 	if readErr != nil && !errors.Is(readErr, io.EOF) {
-		return output, fmt.Errorf("读取容器命令输出失败: %w", readErr)
+		return output, buf.truncated, fmt.Errorf("读取容器命令输出失败: %w", readErr)
 	}
-
 	inspect, err := s.client.ContainerExecInspect(ctx, execResp.ID)
 	if err != nil {
-		return output, fmt.Errorf("检查容器命令状态失败: %w", err)
+		return output, buf.truncated, fmt.Errorf("检查容器命令状态失败: %w", err)
 	}
 	if inspect.Running {
-		return output, fmt.Errorf("容器命令仍在运行")
+		return output, buf.truncated, fmt.Errorf("容器命令仍在运行")
 	}
 	if inspect.ExitCode != 0 {
-		return output, fmt.Errorf("exit code %d", inspect.ExitCode)
+		return output, buf.truncated, commandExitError(inspect.ExitCode)
 	}
-	return output, nil
+	return output, buf.truncated, nil
+}
+
+type commandExitError int
+
+func (e commandExitError) Error() string {
+	return fmt.Sprintf("exit code %d", e)
+}
+
+// execOutput 使用 SDK 的 HTTP 传输读取升级响应，使等待响应头也受请求上下文约束。
+func (s *DockerService) execOutput(ctx context.Context, id string) (io.ReadCloser, error) {
+	host, err := client.ParseHostURL(s.client.DaemonHost())
+	if err != nil {
+		return nil, err
+	}
+	httpClient := s.client.HTTPClient()
+	address := host.Host
+	if host.Scheme == "unix" || host.Scheme == "npipe" {
+		address = client.DummyHost
+	}
+	version := "v" + strings.TrimPrefix(s.client.ClientVersion(), "v")
+	if version == "v" {
+		version = ""
+	}
+	target := url.URL{Scheme: s.execScheme, Host: address, Path: path.Join(host.Path, version, "exec", id, "start")}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, target.String(), strings.NewReader("{}"))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Connection", "Upgrade")
+	req.Header.Set("Upgrade", "tcp")
+	httpClient.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusSwitchingProtocols {
+		resp.Body.Close()
+		return nil, fmt.Errorf("连接容器执行输出失败: HTTP %d", resp.StatusCode)
+	}
+	return resp.Body, nil
 }

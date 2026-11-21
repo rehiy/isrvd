@@ -36,6 +36,8 @@
 
 Docker 不可用时，`/api/cron/types` 不返回 Docker 类型；已有的 `DOCKER_TMP` / `DOCKER_CTR` 任务加载时校验失败会被跳过：不调度，不出现在 `GET /cron/jobs` 列表中（删除、立即执行返回 404，更新、启停返回 400），但仍保留在 `cron.yml` 中，Docker 恢复并重载后重新生效。
 
+Docker 任务的 `timeout` 从向 Docker 发出第一个请求开始计时，涵盖连接、执行和读取输出。临时容器在任务结束后单独尝试清理。
+
 ### JobLog
 
 | 字段 | 类型 | 说明 |
@@ -133,6 +135,8 @@ Docker 不可用时，`/api/cron/types` 不返回 Docker 类型；已有的 `DOC
 **PUT** `/api/cron/jobs/:id`
 
 请求体同创建，为整体覆盖：未传的 `enabled`、`timeout` 等按零值处理（漏传 `enabled` 会禁用任务）。响应 `payload`：`{ "job": <Job> }`（仅存储字段）
+
+新配置保存成功后才替换原有调度。校验失败或保存失败时，原调度继续运行。
 
 ---
 
