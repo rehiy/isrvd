@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,6 +18,8 @@ import (
 	"isrvd/pkgs/compose"
 	"isrvd/pkgs/docker"
 	"isrvd/pkgs/swarm"
+
+	"isrvd/server/i18n"
 )
 
 // Service Compose 部署业务服务
@@ -59,6 +62,7 @@ type ConfigDetail struct {
 	ProjectName string `json:"projectName,omitempty"` // 实际解析到的项目名
 	FileModTime int64  `json:"fileModTime,omitempty"` // compose.yml 修改时间戳（Unix 秒）；无落盘文件时为空
 	Source      string `json:"source,omitempty"`      // 内容来源：file=落盘文件，runtime=运行态反推
+	envExists   bool   // 区分缺失和空文件，供回滚使用
 }
 
 // RedeployRequest 重建请求
@@ -215,8 +219,8 @@ func (s *Service) projectDeploy(ctx context.Context, req DeployRequest, rollback
 }
 
 // prepareRedeployContent 校验新配置并预拉取所需镜像。
-func (s *Service) prepareRedeployContent(ctx context.Context, name, installDir, oldContent string, contentErr error, req RedeployRequest) (string, error) {
-	content, project, err := s.resolveRedeployContent(ctx, name, installDir, oldContent, contentErr, req)
+func (s *Service) prepareRedeployContent(ctx context.Context, name, installDir, oldContent string, req RedeployRequest) (string, error) {
+	content, project, err := s.resolveRedeployContent(ctx, name, installDir, oldContent, nil, req)
 	if err != nil {
 		return "", err
 	}
@@ -274,7 +278,7 @@ func withGeneratedHeader(content string) string {
 
 // inspectComposeConfig 优先读取落盘配置，按需反推运行态，再读取 .env 并组装详情。
 func inspectComposeConfig(installDir, projectName string, forceRuntime bool, runtimeContent func() (string, error)) (*ConfigDetail, error) {
-	path := filepath.Join(installDir, "compose.yml")
+	path := filepath.Join(installDir, compose.ComposeFileName)
 	fileModTime := composeFileModTime(path)
 	var content string
 	source := "runtime"
@@ -293,13 +297,14 @@ func inspectComposeConfig(installDir, projectName string, forceRuntime bool, run
 			return nil, err
 		}
 	}
-	envContent, err := compose.EnvContentRead(installDir)
+	env, err := compose.EnvStateRead(installDir)
 	if err != nil {
 		return nil, err
 	}
 	return &ConfigDetail{
 		Content:     content,
-		EnvContent:  envContent,
+		EnvContent:  env.Content,
+		envExists:   env.Exists,
 		ProjectName: projectName,
 		FileModTime: fileModTime,
 		Source:      source,
@@ -313,21 +318,26 @@ func composeFileModTime(path string) int64 {
 	return 0
 }
 
-// formatRedeployRollbackSummary 汇总重建失败后的回滚结果，供前端展示。
-// runtimeLabel 为「容器」或「服务」。
-func formatRedeployRollbackSummary(envErr, runtimeErr error, runtimeLabel string) string {
-	envPart := ".env 回滚成功"
-	if envErr != nil {
-		envPart = fmt.Sprintf(".env 回滚失败（%v）", envErr)
+// restore 恢复重部署前的项目文件，保留空文件与原本不存在的区别。
+func (detail *ConfigDetail) restore(installDir string) (composeErr, envErr error) {
+	path := filepath.Join(installDir, compose.ComposeFileName)
+	if detail.Source == "file" {
+		composeErr = os.WriteFile(path, []byte(detail.Content), 0644)
+	} else if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+		composeErr = err
 	}
-	runtimePart := runtimeLabel + "回滚成功"
-	if runtimeErr != nil {
-		runtimePart = fmt.Sprintf("%s回滚失败（%v）", runtimeLabel, runtimeErr)
-	}
-	return envPart + "，" + runtimePart
+	envErr = compose.EnvStateRestore(installDir, compose.EnvState{Content: detail.EnvContent, Exists: detail.envExists})
+	return composeErr, envErr
 }
 
-// wrapRedeployError 将原始重建错误与回滚摘要一并返回。
-func wrapRedeployError(err error, rollbackSummary string) error {
-	return fmt.Errorf("%w；回滚：%s", err, rollbackSummary)
+func rollbackResult(ctx context.Context, resource string, err error) string {
+	resource = i18n.TC(ctx, resource)
+	if err != nil {
+		return fmt.Sprintf(i18n.TC(ctx, "%s 回滚失败（%v）"), resource, i18n.TC(ctx, err.Error()))
+	}
+	return fmt.Sprintf(i18n.TC(ctx, "%s 回滚成功"), resource)
+}
+
+func wrapRedeployError(ctx context.Context, err error, results ...string) error {
+	return fmt.Errorf("%w%s%s", err, i18n.TC(ctx, "；回滚："), strings.Join(results, i18n.TC(ctx, "，")))
 }

@@ -6,15 +6,18 @@ func init() {
 	Register(langEN, map[string]string{
 		"SFTP 服务器不支持安全覆盖已有文件": "The SFTP server does not support replacing existing files safely",
 
-		"非法 ZIP 路径: %s":           "Invalid ZIP path: %s",
-		"不支持的 ZIP 文件类型: %s":       "Unsupported ZIP entry type: %s",
-		"ZIP 解压大小超过限制":            "Extracted ZIP size exceeds the limit",
-		"ZIP 条目与源归档同名: %s":        "ZIP entry would overwrite the source archive: %s",
-		"附加文件大小超过限制":              "Attachment size exceeds the limit",
-		"无法确认授权状态，已保留消费者: %w":     "Could not confirm authorization status, so the consumer was kept: %w",
-		"回滚消费者失败: %w":             "Failed to roll back the consumer: %w",
-		"compose.yml 回滚失败（%v），%s": "compose.yml restoration failed (%v), %s",
-		"compose.yml 回滚成功":        "compose.yml restored",
+		"非法 ZIP 路径: %s":       "Invalid ZIP path: %s",
+		"不支持的 ZIP 文件类型: %s":   "Unsupported ZIP entry type: %s",
+		"ZIP 解压大小超过限制":        "Extracted ZIP size exceeds the limit",
+		"ZIP 条目与源归档同名: %s":    "ZIP entry would overwrite the source archive: %s",
+		"附加文件大小超过限制":          "Attachment size exceeds the limit",
+		"无法确认授权状态，已保留消费者: %w": "Could not confirm authorization status, so the consumer was kept: %w",
+		"回滚消费者失败: %w":         "Failed to roll back the consumer: %w",
+		"%s 回滚失败（%v）":         "%s restoration failed (%v)",
+		"%s 回滚成功":             "%s restored",
+		"容器":                  "containers",
+		"；回滚：":                "; rollback: ",
+		"，":                   ", ",
 
 		// ─── Compose 变更预览与重部署 ───
 		"预览 Docker Compose 变更":         "Preview Docker Compose changes",

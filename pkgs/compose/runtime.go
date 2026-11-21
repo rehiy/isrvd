@@ -166,15 +166,6 @@ func EnvApply(installDir string, envContent *string) error {
 	return EnvEnsure(installDir)
 }
 
-// EnvContentRead 读取项目 .env 内容；文件不存在时返回空串。读取失败（权限、IO 等）向上返回错误
-func EnvContentRead(installDir string) (string, error) {
-	state, err := EnvStateRead(installDir)
-	if err != nil {
-		return "", err
-	}
-	return state.Content, nil
-}
-
 // InitFilesHandle 下载或读取附加包，解压新增文件并返回失败时的清理函数。
 func InitFilesHandle(ctx context.Context, installDir string, payload InitPayload) (func() error, error) {
 	if payload.File == nil && payload.URL == "" {
