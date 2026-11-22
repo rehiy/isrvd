@@ -118,10 +118,10 @@ export default toNative(Members)
           </div>
         </div>
         <div class="action-group-sm">
-          <button type="button" class="btn-icon-sm" :title="$t('刷新')" @click="loadMembers">
+          <button type="button" class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadMembers">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/account/member')" type="button" class="btn-icon-sm" :title="$t('新建用户')" @click="openAddMember">
+          <button v-if="portal.hasPerm('POST /api/account/member')" type="button" class="btn btn-blue btn-square" :title="$t('新建用户')" @click="openAddMember">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
