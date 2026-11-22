@@ -426,7 +426,7 @@ class Upload extends Vue {
                 }, controller.signal)
                 fileNode.percent = 100
                 fileNode.done = true
-                this.$emit('refresh')
+                this.$emit('refresh', fileNode.destDir)
             } catch (err: unknown) {
                 if (axios.isCancel(err) || controller.signal.aborted || fileNode.cancelled) {
                     fileNode.cancelled = true

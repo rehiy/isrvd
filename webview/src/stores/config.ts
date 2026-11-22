@@ -147,20 +147,20 @@ export const useConfigStore = defineStore('config', () => {
         }
     }
 
-    /** 返回全量提交载荷（应用多行文本转换） */
-    function allPayload(): Partial<AllConfig> {
+    function changedPayload(): Partial<AllConfig> {
         const payload: Record<string, unknown> = {}
         for (const section of configGroups.flatMap(item => item.sections)) {
-            payload[section] = sectionPayload(section)
+            const value = sectionPayload(section)
+            if (JSON.stringify(value) !== JSON.stringify(baseline.value[section])) {
+                payload[section] = value
+            }
         }
         return payload as Partial<AllConfig>
     }
 
     /** 是否存在任一分组的未保存改动 */
     function hasUnsaved(): boolean {
-        return loaded.value && configGroups.some(group => group.sections.some(section =>
-            JSON.stringify(sectionPayload(section)) !== JSON.stringify(baseline.value[section]),
-        ))
+        return loaded.value && Object.keys(changedPayload()).length > 0
     }
 
     let generation = 0
@@ -194,16 +194,20 @@ export const useConfigStore = defineStore('config', () => {
         }
     }
 
-    /** 保存全部配置：一次提交所有分区，避免分组间切换造成改动丢失 */
+    /** 一次保存各分组中有改动的配置分区。 */
     async function saveAll() {
         if (saving.value) {
+            return
+        }
+        const payload = changedPayload()
+        if (Object.keys(payload).length === 0) {
             return
         }
         const requestGeneration = generation
         saving.value = true
         error.value = ''
         try {
-            await api.systemConfigUpdate(allPayload())
+            await api.systemConfigUpdate(payload)
             if (requestGeneration !== generation) {
                 return
             }
