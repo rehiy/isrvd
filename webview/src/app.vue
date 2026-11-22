@@ -125,7 +125,7 @@ export default toNative(App)
         :class="sidebarCollapsed ? 'lg:left-16' : 'lg:left-64'"
       >
         <!-- 移动端菜单切换按钮 -->
-        <button type="button" class="btn-icon lg:hidden" :aria-label="$t('展开菜单')" @click="toggleMobileMenu">
+        <button type="button" class="btn-icon btn-icon-slate lg:hidden" :aria-label="$t('展开菜单')" @click="toggleMobileMenu">
           <i class="fas fa-bars text-slate-600"></i>
         </button>
 
