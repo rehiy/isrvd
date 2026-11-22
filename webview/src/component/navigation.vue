@@ -144,7 +144,7 @@ export default toNative(NavigationBar)
         >
       </div>
       <!-- 移动端关闭按钮，仅展开状态下显示 -->
-      <button type="button" v-if="!collapsed" class="btn-icon btn-icon-slate lg:hidden ml-2" @click="closeMobileSidebar">
+      <button v-if="!collapsed" type="button" class="btn-icon btn-icon-slate lg:hidden ml-2" @click="closeMobileSidebar">
         <i class="fas fa-times text-sm"></i>
       </button>
     </div>
@@ -158,7 +158,7 @@ export default toNative(NavigationBar)
       <!-- 本机管理折叠子菜单 -->
       <div v-if="portal.hasPerm('GET /api/overview/monitor') || portal.hasPerm('GET /api/filer/files') || portal.hasPerm('GET /api/local/processes') || portal.hasPerm('GET /api/shell')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button type="button" v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('local') }" :title="$t('本机管理')" @click.stop="toggleMenu('local')">
+        <button v-if="collapsed" type="button" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('local') }" :title="$t('本机管理')" @click.stop="toggleMenu('local')">
           <i class="fas fa-computer"></i>
         </button>
         <!-- 展开状态：显示完整子菜单 -->
@@ -190,7 +190,7 @@ export default toNative(NavigationBar)
       </div>
       <!-- SSH/SFTP 折叠子菜单 -->
       <div v-if="portal.hasPerm('GET /api/ssh/hosts') || portal.hasPerm('GET /api/ssh/credentials')">
-        <button type="button" v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('ssh') }" title="SSH / SFTP" @click.stop="toggleMenu('ssh')">
+        <button v-if="collapsed" type="button" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('ssh') }" title="SSH / SFTP" @click.stop="toggleMenu('ssh')">
           <i class="fas fa-server"></i>
         </button>
         <template v-else>
@@ -215,7 +215,7 @@ export default toNative(NavigationBar)
       <!-- APISIX 折叠子菜单 -->
       <div v-if="portal.hasPerm('apisix')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button type="button" v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('apisix') }" :title="$t('APISIX 网关')" @click.stop="toggleMenu('apisix')">
+        <button v-if="collapsed" type="button" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('apisix') }" :title="$t('APISIX 网关')" @click.stop="toggleMenu('apisix')">
           <i class="fas fa-cloud"></i>
         </button>
         <!-- 有权限：展开状态显示完整子菜单 -->
@@ -281,7 +281,7 @@ export default toNative(NavigationBar)
 
       <!-- Caddy 折叠子菜单 -->
       <div v-if="portal.hasPerm('caddy')">
-        <button type="button" v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('caddy') }" :title="$t('Caddy 网关')" @click.stop="toggleMenu('caddy')">
+        <button v-if="collapsed" type="button" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('caddy') }" :title="$t('Caddy 网关')" @click.stop="toggleMenu('caddy')">
           <i class="fas fa-shield"></i>
         </button>
         <template v-else>
@@ -331,7 +331,7 @@ export default toNative(NavigationBar)
       <!-- Docker 折叠子菜单 -->
       <div v-if="portal.hasPerm('docker')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button type="button" v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('docker') }" :title="$t('Docker 服务')" @click.stop="toggleMenu('docker')">
+        <button v-if="collapsed" type="button" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('docker') }" :title="$t('Docker 服务')" @click.stop="toggleMenu('docker')">
           <i class="fab fa-docker"></i>
         </button>
         <!-- 展开状态：显示完整子菜单 -->
@@ -394,7 +394,7 @@ export default toNative(NavigationBar)
       <!-- Swarm 折叠子菜单 -->
       <div v-if="portal.hasPerm('swarm')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button type="button" v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('swarm') }" :title="$t('Swarm 集群')" @click.stop="toggleMenu('swarm')">
+        <button v-if="collapsed" type="button" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('swarm') }" :title="$t('Swarm 集群')" @click.stop="toggleMenu('swarm')">
           <i class="fas fa-circle-nodes"></i>
         </button>
         <!-- 有权限：展开状态显示完整子菜单 -->
@@ -432,7 +432,7 @@ export default toNative(NavigationBar)
       </div>
 
       <div v-if="composeVisible">
-        <button type="button" v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('compose') }" :title="$t('Compose 部署')" @click.stop="toggleMenu('compose')">
+        <button v-if="collapsed" type="button" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('compose') }" :title="$t('Compose 部署')" @click.stop="toggleMenu('compose')">
           <i class="fas fa-file-code"></i>
         </button>
         <template v-else>
@@ -488,7 +488,7 @@ export default toNative(NavigationBar)
 
       <!-- 受管机折叠子菜单 -->
       <div v-if="nodeVisible">
-        <button type="button" v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('node') }" :title="$t('集中管控')" @click.stop="toggleMenu('node')">
+        <button v-if="collapsed" type="button" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('node') }" :title="$t('集中管控')" @click.stop="toggleMenu('node')">
           <i class="fas fa-sitemap"></i>
         </button>
         <template v-else>
@@ -513,7 +513,7 @@ export default toNative(NavigationBar)
       <!-- 系统配置折叠子菜单 -->
       <div v-if="configGroups.length">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button type="button" v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('config') }" :title="$t('系统配置')" @click.stop="toggleMenu('config')">
+        <button v-if="collapsed" type="button" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('config') }" :title="$t('系统配置')" @click.stop="toggleMenu('config')">
           <i class="fas fa-gear"></i>
         </button>
         <template v-else>
@@ -561,7 +561,8 @@ export default toNative(NavigationBar)
       >
         <i class="fas fa-code text-base"></i>
       </a>
-      <button type="button"
+      <button
+        type="button"
         class="btn-icon btn-icon-slate max-lg:hidden"
         :class="collapsed ? 'w-full h-10' : 'flex-1 h-10 text-xs font-medium'"
         :title="collapsed ? $t('展开菜单') : $t('收起菜单')"
