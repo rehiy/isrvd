@@ -117,7 +117,7 @@ export default toNative(BaseModal)
           <!-- Header -->
           <div class="flex items-start justify-between gap-3 px-4 py-4 sm:px-6 border-b border-slate-200/50 flex-shrink-0">
             <div class="min-w-0 flex-1 self-center">
-              <h1 class="title-text whitespace-normal break-words">{{ title }}</h1>
+              <h1 class="title-text line-clamp-2 whitespace-normal wrap-anywhere" :title="title">{{ title }}</h1>
               <p v-if="subtitle" class="item-subtitle" :title="subtitle">{{ subtitle }}</p>
             </div>
             <div class="action-group">
