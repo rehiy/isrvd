@@ -173,6 +173,7 @@ class Upload extends Vue {
     @Ref readonly fileInput!: HTMLInputElement
 
     portal = usePortal()
+    private readonly session = this.portal.sessionVersion
 
     uploadNodes: UploadNode[] = []
     uploadVersion = 0
@@ -181,6 +182,16 @@ class Upload extends Vue {
     private clearTimer: ReturnType<typeof setTimeout> | null = null
 
     get hasNodes() { return this.uploadNodes.length > 0 }
+
+    private get sessionActive() {
+        return this.session === this.portal.sessionVersion
+    }
+
+    beforeUnmount() {
+        if (!this.sessionActive) {
+            this.uploadNodes.forEach(node => this.markNodeCancelled(node))
+        }
+    }
 
     // ─── 公开方法 ─────────────────────────────────────────────────────────────
 
@@ -194,11 +205,7 @@ class Upload extends Vue {
         if (entries.length === 0) {
             return
         }
-        const nodes = await buildUploadTree(entries, this.currentPath)
-        if (nodes.length === 0) {
-            return
-        }
-        this.startUpload(nodes)
+        this.startUpload(await buildUploadTree(entries, this.currentPath))
     }
 
     // ─── 文件选择处理 ─────────────────────────────────────────────────────────
@@ -227,7 +234,7 @@ class Upload extends Vue {
     // ─── 内部上传入口 ─────────────────────────────────────────────────────────
 
     private startUpload(nodes: UploadNode[]) {
-        if (nodes.length === 0) {
+        if (!this.sessionActive || nodes.length === 0) {
             return
         }
         if (this.clearTimer) {
@@ -284,6 +291,9 @@ class Upload extends Vue {
     }
 
     private isBatchCancelled(files: UploadFileNode[], nodesForDirs?: UploadNode[]): boolean {
+        if (!this.sessionActive) {
+            return true
+        }
         if (nodesForDirs?.length) {
             return nodesForDirs.every(node => this.isNodeCancelled(node))
         }
@@ -324,7 +334,7 @@ class Upload extends Vue {
 
     private finishBatch() {
         this.pendingBatches = Math.max(0, this.pendingBatches - 1)
-        if (this.pendingBatches !== 0) {
+        if (!this.sessionActive || this.pendingBatches !== 0) {
             return
         }
         const { allDone, hasFailed } = this.getUploadState()
@@ -337,6 +347,9 @@ class Upload extends Vue {
     }
 
     private retryFiles(files: UploadFileNode[]) {
+        if (!this.sessionActive) {
+            return
+        }
         const failed = files.filter(f => !!f.error)
         if (failed.length === 0) {
             return
@@ -398,7 +411,7 @@ class Upload extends Vue {
             try {
                 await this.adapter.mkdir(dir)
             } catch {
-                if (selectedDirs.has(dir)) {
+                if (this.sessionActive && selectedDirs.has(dir)) {
                     this.portal.showNotification('error', this.$t('无法创建目录 {0}', dir))
                 }
             }
@@ -421,13 +434,21 @@ class Upload extends Vue {
             fileNode.controller = controller
             try {
                 await this.adapter.upload(fileNode.destDir, fileNode.file, fileNode.name, (percent) => {
-                    fileNode.percent = percent
-                    this.uploadVersion++
+                    if (this.sessionActive) {
+                        fileNode.percent = percent
+                        this.uploadVersion++
+                    }
                 }, controller.signal)
+                if (!this.sessionActive) {
+                    return
+                }
                 fileNode.percent = 100
                 fileNode.done = true
                 this.$emit('refresh', fileNode.destDir)
             } catch (err: unknown) {
+                if (!this.sessionActive) {
+                    return
+                }
                 if (axios.isCancel(err) || controller.signal.aborted || fileNode.cancelled) {
                     fileNode.cancelled = true
                     cancelCount++
@@ -457,7 +478,7 @@ class Upload extends Vue {
         await Promise.all(Array.from({ length: concurrency }, worker))
 
         const total = files.length - cancelCount
-        if (total > 0) {
+        if (this.sessionActive && total > 0) {
             failCount === 0
                 ? this.portal.showNotification('success', this.$t('上传成功（{0} 个文件）', total))
                 : this.portal.showNotification('error', this.$t('{0} 个成功，{1} 个失败', total - failCount, failCount))
