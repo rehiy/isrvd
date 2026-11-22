@@ -108,6 +108,8 @@ isrvd_get "/system/config"
 
 > 返回完整系统配置（含基础设施地址等敏感拓扑信息），需要 `GET /api/system/config` 路由权限。前端启动所需的最小配置（如 `marketplaceUrl`）在 `GET /api/overview/bootstrap` 的 `config` 段。
 
+配置页的「重新加载」读取当前运行配置，有未保存修改时先确认再替换草稿。它不会触发服务重载。
+
 查看与修改为两项独立授权：
 
 | 路由权限 | 能力 |
