@@ -138,7 +138,7 @@ webview/src/
 
 - 桌面：`.card-table hidden md:block` + `<table>`（表格直接贴边，无内边距，`overflow-x-auto` 由 `.card-table` 提供）
 - 移动：`.card-body md:hidden space-y-3` + `.card-interactive` 卡片列表
-- loading / 空状态：`.card-body`（带内边距）包裹 `.empty-state`
+- loading / 空状态：`.card-body`（带内边距）包裹 `.empty-state`；视口高度不超过 `32rem` 时，主内容区自动缩小空状态的纵向留白
 - 列表有数据时用 `<template v-else>` 包裹桌面和移动两个分支，**不得用 `<div v-else>`**（减少无意义 DOM 层级）
 
 **标准列表页结构**：
@@ -506,7 +506,7 @@ try { await api.xxx() } catch { /* ... */ }
 
 | 类 | 用途 |
 | --- | --- |
-| `.empty-state` | 加载中 / 空状态块 `flex flex-col items-center justify-center py-20` |
+| `.empty-state` | 加载中 / 空状态块 `flex flex-col items-center justify-center py-20`；主内容区在矮窗口使用 `py-4` |
 | `.spinner` | 加载动画基础样式 `animate-spin rounded-full border-4 border-slate-200 border-t-primary-500` |
 | `.spinner-lg` / `.spinner-md` | 加载动画尺寸：`.spinner-lg` 为 `w-12 h-12 mb-3` + spinner 基础样式；`.spinner-md` 为 `w-8 h-8 mr-2` + spinner 基础样式 |
 

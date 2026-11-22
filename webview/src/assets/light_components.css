@@ -177,6 +177,12 @@
     @apply flex flex-col items-center justify-center py-20;
   }
 
+  @media (max-height: 32rem) {
+    :where(main) .empty-state {
+      @apply py-4;
+    }
+  }
+
   /* 加载动画尺寸 */
   .spinner-lg { @apply w-12 h-12 mb-3 animate-spin rounded-full border-4 border-slate-200 border-t-primary-500; }
   .spinner-md { @apply w-8 h-8 mr-2 animate-spin rounded-full border-4 border-slate-200 border-t-primary-500; }
