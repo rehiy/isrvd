@@ -713,6 +713,9 @@ Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似
 ```bash
 npm run lint                             # 类型检查 + ESLint
 npm run format:check                     # import 排序/格式检查（dry-run，需关注输出）
+node ../scripts/check-api-contract.mjs       # 前端 API 方法与路由契约核对
+node ../scripts/check-locales.mjs --strict    # 前端多语言词典与占位符核对
+node ../scripts/check-locales.mjs --go --strict # 后端多语言词典与占位符核对
 python3 scripts/review-style.py          # 前端样式一致性辅助检查
 npm run build                            # Vite 生产构建
 ```
