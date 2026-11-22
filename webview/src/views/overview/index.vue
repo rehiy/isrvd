@@ -78,7 +78,7 @@ export default toNative(Overview)
             <i class="fas fa-gauge-high text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">{{ $t('概览') }}</h1>
+            <h1 class="title-text">{{ $t('概览') }}</h1>
             <p class="text-xs text-slate-500">{{ $t('服务状态总览') }}</p>
           </div>
         </div>
@@ -114,7 +114,7 @@ export default toNative(Overview)
       <div v-if="portal.hasPerm('GET /api/apisix/routes')" class="p-6">
         <div class="flex items-center gap-2 mb-4">
           <i class="fas fa-route text-orange-500 text-lg"></i>
-          <h1 class="text-lg font-semibold text-slate-700">{{ $t('APISIX 网关') }}</h1>
+          <h2 class="text-lg font-semibold text-slate-700">{{ $t('APISIX 网关') }}</h2>
         </div>
         <ApisixOverview ref="apisixRef" />
       </div>
@@ -123,7 +123,7 @@ export default toNative(Overview)
       <div v-if="portal.hasPerm('GET /api/caddy/info')" class="p-6">
         <div class="flex items-center gap-2 mb-4">
           <i class="fas fa-shield text-indigo-500 text-lg"></i>
-          <h1 class="text-lg font-semibold text-slate-700">{{ $t('Caddy 网关') }}</h1>
+          <h2 class="text-lg font-semibold text-slate-700">{{ $t('Caddy 网关') }}</h2>
         </div>
         <CaddyOverview ref="caddyRef" />
       </div>
@@ -132,7 +132,7 @@ export default toNative(Overview)
       <div v-if="portal.hasPerm('GET /api/docker/containers')" class="p-6">
         <div class="flex items-center gap-2 mb-4">
           <i class="fab fa-docker text-blue-500 text-lg"></i>
-          <h1 class="text-lg font-semibold text-slate-700">{{ $t('Docker 服务') }}</h1>
+          <h2 class="text-lg font-semibold text-slate-700">{{ $t('Docker 服务') }}</h2>
         </div>
         <DockerOverview ref="dockerRef" />
       </div>
@@ -141,7 +141,7 @@ export default toNative(Overview)
       <div v-if="portal.hasPerm('GET /api/swarm/info')" class="p-6">
         <div class="flex items-center gap-2 mb-4">
           <i class="fas fa-circle-nodes text-cyan-600 text-lg"></i>
-          <h1 class="text-lg font-semibold text-slate-700">{{ $t('Swarm 集群') }}</h1>
+          <h2 class="text-lg font-semibold text-slate-700">{{ $t('Swarm 集群') }}</h2>
         </div>
         <SwarmOverview ref="swarmRef" />
       </div>
