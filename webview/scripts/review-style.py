@@ -56,6 +56,12 @@ def check_toolbar_layout(filepath, lines, tmpl, tmpl_line0):
         return
 
     # 既有页面可能仍使用原生 Tailwind，先报告以便分片治理。
+    # 文件管理器的操作区使用响应式按钮组，简洁工具栏则使用单行布局。
+    if "action-group-desktop" in tmpl and "action-group-sm md:hidden" in tmpl:
+        return
+    if "title-group-static" in tmpl and "flex items-center justify-between" in tmpl:
+        return
+
     if "toolbar-desktop" not in tmpl and "hidden md:flex" not in tmpl:
         report(filepath, tmpl_line0, "WARN", "page-toolbar 缺少桌面布局")
     if "toolbar-mobile" not in tmpl and "flex md:hidden" not in tmpl and "block md:hidden" not in tmpl:
@@ -63,43 +69,14 @@ def check_toolbar_layout(filepath, lines, tmpl, tmpl_line0):
 
 
 def check_toolbar_icon(filepath, lines, tmpl, tmpl_line0):
-    """6.6 toolbar 图标应为 w-9 h-9 rounded-lg"""
+    """仅检查 page-icon 元素，避免将页面其他大图标误判为 toolbar 图标。"""
     if not has_toolbar(tmpl):
         return
-    toolbar_start = tmpl.find('page-toolbar')
-    toolbar_snippet = tmpl[toolbar_start:toolbar_start + 300]
-    if '<h1' not in toolbar_snippet and 'font-semibold text-slate-800' not in toolbar_snippet:
-        return
-
-    # 找 toolbar 区域（到第一个 v-if= 为止）
-    toolbar_end = len(tmpl)
-    for marker in ['v-if="loading"', 'v-if="tasksLoading"', 'v-if="servicesLoading"',
-                   'v-if="nodesLoading"', 'v-if="membersLoading"', 'v-else-if=']:
-        pos = tmpl.find(marker, toolbar_start + 100)
-        if pos != -1 and pos < toolbar_end:
-            toolbar_end = pos
-    toolbar_section = tmpl[toolbar_start:toolbar_end]
-    base_lineno = tmpl_line0 + tmpl[:toolbar_start].count('\n')
-
-    for i, line in enumerate(toolbar_section.splitlines()):
-        stripped = line.strip()
-        if not (stripped.startswith('<div') and 'rounded-lg' in stripped
-                and 'flex items-center justify-center' in stripped):
-            continue
-        w_m = re.search(r'\bw-(\d+)\b', stripped)
-        h_m = re.search(r'\bh-(\d+)\b', stripped)
-        if not w_m or not h_m:
-            continue
-        w, h = w_m.group(1), h_m.group(1)
-        if w != h:
-            report(filepath, base_lineno + i + 1, "WARN",
-                   f"toolbar 图标宽高不一致 w-{w}/h-{h}: {stripped[:60]}")
-        elif w != '9':
-            report(filepath, base_lineno + i + 1, "WARN",
-                   f"toolbar 图标应为 w-9 h-9，当前为 w-{w} h-{h}: {stripped[:60]}")
-        if 'rounded-xl' in stripped:
-            report(filepath, base_lineno + i + 1, "WARN",
-                   f"toolbar 图标应用 rounded-lg 而非 rounded-xl: {stripped[:60]}")
+    for match in re.finditer(r'<div\\b[^>]*class="[^"]*\\bpage-icon\\b[^"]*"[^>]*>', tmpl):
+        tag = match.group(0)
+        if re.search(r'\\b(?:w|h)-\\d+\\b|\\brounded-xl\\b', tag):
+            line = tmpl_line0 + tmpl[:match.start()].count("\\n")
+            report(filepath, line, "WARN", "page-icon 不应覆盖公共尺寸或圆角")
 
 
 def check_empty_state(filepath, lines, tmpl, tmpl_line0):
