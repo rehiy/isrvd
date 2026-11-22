@@ -165,8 +165,8 @@ export const useConfigStore = defineStore('config', () => {
 
     let generation = 0
 
-    /** 读取当前运行配置并刷新草稿基线。 */
-    async function load() {
+    /** 读取已保存配置并刷新草稿基线。 */
+    async function load(afterSave = false) {
         if (loading.value) {
             return
         }
@@ -174,11 +174,22 @@ export const useConfigStore = defineStore('config', () => {
         loading.value = true
         error.value = ''
         try {
-            const res = await api.systemConfig()
+            let res = await api.systemConfig(afterSave)
+            if (afterSave && res.success === false && requestGeneration === generation) {
+                // 刚保存时服务可能正在重载，给这次回读一次重试机会。
+                await new Promise(resolve => setTimeout(resolve, 300))
+                if (requestGeneration === generation) {
+                    res = await api.systemConfig()
+                }
+            }
             if (requestGeneration !== generation) {
                 return
             }
-            applyPayload(res.payload as AllConfig)
+            const payload = res.payload
+            if (!payload || (afterSave && !('config' in payload))) {
+                throw new Error(useLocaleStore().t('加载系统配置失败'))
+            }
+            applyPayload('config' in payload ? payload.config : payload)
             baseline.value = clone(draft.value)
             loaded.value = true
         } catch (e) {
@@ -194,28 +205,36 @@ export const useConfigStore = defineStore('config', () => {
         }
     }
 
-    /** 一次保存各分组中有改动的配置分区。 */
+    /** 一次提交有改动的配置分区，返回持久化结果。 */
     async function saveAll() {
-        if (saving.value) {
-            return
+        if (!loaded.value || loading.value || saving.value) {
+            return false
         }
         const payload = changedPayload()
         if (Object.keys(payload).length === 0) {
-            return
+            return false
         }
         const requestGeneration = generation
         saving.value = true
         error.value = ''
+        let persisted = false
         try {
             await api.systemConfigUpdate(payload)
             if (requestGeneration !== generation) {
-                return
+                return false
             }
-            // 后端对密钥类字段返回空值，重新加载以刷新基线
-            await load()
+            persisted = true
+            // 已保存快照包含归一化结果，并已脱敏。
+            await load(true)
+            return requestGeneration === generation
         } catch (e) {
             if (requestGeneration !== generation) {
-                return
+                return false
+            }
+            if (persisted) {
+                // 保留草稿，等重新读取成功后再允许下一次保存。
+                loaded.value = false
+                return true
             }
             error.value = e instanceof Error ? e.message : useLocaleStore().t('保存系统配置失败')
             throw e

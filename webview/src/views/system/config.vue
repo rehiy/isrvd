@@ -79,11 +79,13 @@ class ConfigLayout extends Vue {
             return
         }
         const session = this.portal.sessionVersion
-        await this.config.saveAll()
-        if (session !== this.portal.sessionVersion) {
+        const saved = await this.config.saveAll()
+        if (!saved || session !== this.portal.sessionVersion) {
             return
         }
-        await this.portal.refresh()
+        if (this.config.loaded) {
+            await this.portal.refresh()
+        }
         if (session === this.portal.sessionVersion) {
             this.portal.showNotification('success', this.$t('配置已保存，部分设置需重启生效'))
         }
@@ -121,7 +123,7 @@ export default toNative(ConfigLayout)
           <button v-if="canView" type="button" class="btn btn-secondary" :disabled="config.loading || config.saving" :aria-busy="config.loading" @click="reloadConfig">
             <i :class="config.loading ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"></i>{{ $t('重新加载') }}
           </button>
-          <button v-if="canUpdate" type="submit" form="config-form" class="btn btn-indigo rounded-xl whitespace-nowrap" :disabled="config.saving || config.loading">
+          <button v-if="canUpdate" type="submit" form="config-form" class="btn btn-indigo rounded-xl whitespace-nowrap" :disabled="!config.loaded || config.saving || config.loading">
             <i v-if="config.saving" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-save"></i>
             <span>{{ $t('保存') }}</span>
@@ -143,7 +145,7 @@ export default toNative(ConfigLayout)
           <button v-if="canView" type="button" class="btn btn-secondary btn-square" :title="$t('重新加载')" :disabled="config.loading || config.saving" :aria-busy="config.loading" @click="reloadConfig">
             <i :class="config.loading ? 'fas fa-spinner fa-spin text-sm' : 'fas fa-rotate text-sm'"></i>
           </button>
-          <button v-if="canUpdate" type="submit" form="config-form" class="btn btn-indigo btn-square" :title="$t('保存')" :disabled="config.saving || config.loading">
+          <button v-if="canUpdate" type="submit" form="config-form" class="btn btn-indigo btn-square" :title="$t('保存')" :disabled="!config.loaded || config.saving || config.loading">
             <i v-if="config.saving" class="fas fa-spinner fa-spin text-sm"></i>
             <i v-else class="fas fa-save text-sm"></i>
           </button>

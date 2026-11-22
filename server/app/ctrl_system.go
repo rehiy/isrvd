@@ -16,7 +16,18 @@ func (app *App) defineSystemRoutes() []Route {
 	return []Route{
 		// 系统配置
 		{Method: "GET", Path: "/system/config", Handler: func(c *gin.Context) {
-			respondSuccess(c, "ok", app.configSvc.ConfigAll())
+			stored := c.Query("stored") == "true"
+			result, err := app.configSvc.ConfigAll(stored)
+			if stored && result != nil {
+				// 显式标记已保存的快照，便于前端识别忽略此参数的旧节点。
+				respondResultMsg(c, "ok", gin.H{"config": result}, err)
+				return
+			}
+			if stored && err == nil {
+				// 尚未保存配置时，以运行快照提供表单初值。
+				result, err = app.configSvc.ConfigAll(false)
+			}
+			respondResultMsg(c, "ok", result, err)
 		}, Module: "system", Label: "获取系统配置"},
 		{Method: "PUT", Path: "/system/config", Handler: app.systemConfigUpdate, Module: "system", Label: "保存系统配置"},
 		// 审计日志

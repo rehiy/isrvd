@@ -8264,12 +8264,37 @@
     "/system/config": {
       "get": {
         "operationId": "get_system_config",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "stored",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
+                      "type": "object"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
