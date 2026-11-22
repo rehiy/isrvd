@@ -43,7 +43,7 @@ func (s *Service) MetricsStatus(ctx context.Context) (bool, error) {
 func (s *Service) MetricsUpdate(ctx context.Context, enabled bool) error {
 	err := s.metricsMutate(ctx, enabled, enabled)
 	var upstream *caddy.HTTPError
-	if enabled && errors.As(err, &upstream) && upstream.Path == "/load" &&
+	if enabled && errors.As(err, &upstream) && upstream.Method == http.MethodPost &&
 		upstream.StatusCode == http.StatusBadRequest {
 		message := upstream.Body
 		var response struct {
