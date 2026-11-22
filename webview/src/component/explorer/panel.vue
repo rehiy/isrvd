@@ -81,6 +81,7 @@ class ExplorerPanel extends Vue {
     mkdirMode = false
     mkdirLoading = false
     private loadGeneration = 0
+    private requestedPath = ''
     private refreshDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
     formatFileSize = formatFileSize
@@ -137,6 +138,7 @@ class ExplorerPanel extends Vue {
     async loadFiles(path?: string) {
         const generation = ++this.loadGeneration
         const target = path ?? this.currentPath
+        this.requestedPath = target
         this.loading = true
         this.error = ''
         try {
@@ -145,6 +147,7 @@ class ExplorerPanel extends Vue {
                 return
             }
             this.currentPath = result.path
+            this.calculatedDirs.clear()
             this.files = [
                 ...result.files.filter(f => f.isDir).sort((a, b) => a.name.localeCompare(b.name)),
                 ...result.files.filter(f => !f.isDir).sort((a, b) => a.name.localeCompare(b.name)),
@@ -158,6 +161,7 @@ class ExplorerPanel extends Vue {
         } finally {
             if (generation === this.loadGeneration) {
                 this.loading = false
+                this.requestedPath = ''
             }
         }
     }
@@ -167,13 +171,21 @@ class ExplorerPanel extends Vue {
         this.loadFiles()
     }
 
-    debouncedLoadFiles() {
+    debouncedLoadFiles(destination: string) {
+        const visiblePath = this.currentPath
+        const path = visiblePath.replace(/\/+$/, '')
+        if (destination !== path && !destination.startsWith(path + '/')) {
+            return
+        }
+        const generation = this.loadGeneration
         if (this.refreshDebounceTimer) {
             clearTimeout(this.refreshDebounceTimer)
         }
         this.refreshDebounceTimer = setTimeout(() => {
             this.refreshDebounceTimer = null
-            this.loadFiles()
+            if (generation === this.loadGeneration && this.currentPath === visiblePath && (!this.loading || this.requestedPath === visiblePath)) {
+                this.loadFiles()
+            }
         }, 300)
     }
 
@@ -209,7 +221,7 @@ class ExplorerPanel extends Vue {
         this.calculatingDirs.add(openPath)
         try {
             const size = await this.adapter.dirSize(openPath)
-            if (size !== null) {
+            if (size !== null && this.files.includes(file)) {
                 file.size = size
                 this.calculatedDirs.add(openPath)
             }
@@ -411,7 +423,7 @@ export default toNative(ExplorerPanel)
       :adapter="adapter"
       :current-path="currentPath"
       @done="refresh()"
-      @refresh="debouncedLoadFiles()"
+      @refresh="debouncedLoadFiles"
     />
 
     <!-- ─── 内容区 ──────────────────────────────────────────────────────────── -->

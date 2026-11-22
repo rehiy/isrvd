@@ -175,43 +175,29 @@ func (s *Service) FileRead(absPath string) ([]byte, error) {
 }
 
 // FileWrite 写入文件内容（覆盖）
-func (s *Service) FileWrite(absPath string, content []byte) error {
-	return s.FileWriteFrom(absPath, bytes.NewReader(content))
+func (s *Service) FileWrite(ctx context.Context, absPath string, content []byte) error {
+	return s.FileWriteFrom(ctx, absPath, bytes.NewReader(content))
 }
 
 // FileWriteFrom 流式写入文件（覆盖），避免大文件整体读入内存
-func (s *Service) FileWriteFrom(absPath string, r io.Reader) error {
-	mode := os.FileMode(0644)
-	if info, err := os.Lstat(absPath); err == nil {
-		if info.Mode()&os.ModeSymlink != 0 {
-			absPath, err = filepath.EvalSymlinks(absPath)
-			if err != nil {
-				return err
-			}
-			info, err = os.Stat(absPath)
-			if err != nil {
-				return err
-			}
+func (s *Service) FileWriteFrom(ctx context.Context, absPath string, r io.Reader) error {
+	if info, err := os.Lstat(absPath); err == nil && info.Mode()&os.ModeSymlink != 0 {
+		absPath, err = filepath.EvalSymlinks(absPath)
+		if err != nil {
+			return err
 		}
-		if !info.Mode().IsRegular() {
-			return os.ErrInvalid
-		}
-		mode = info.Mode().Perm()
-	} else if !errors.Is(err, os.ErrNotExist) {
+	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
-	f, err := os.CreateTemp(filepath.Dir(absPath), ".upload-*")
+	root, err := os.OpenRoot(filepath.Dir(absPath))
 	if err != nil {
 		return err
 	}
-	defer os.Remove(f.Name())
-	if _, err := io.Copy(f, r); err != nil {
-		return errors.Join(err, f.Close())
-	}
-	if err := errors.Join(f.Chmod(mode), f.Close()); err != nil {
+	defer root.Close()
+	return helper.WriteRootFile(ctx, root, filepath.Base(absPath), false, func(out io.Writer) error {
+		_, err := io.Copy(out, helper.ContextReader{Context: ctx, Reader: r})
 		return err
-	}
-	return os.Rename(f.Name(), absPath)
+	})
 }
 
 // FileCreate 创建文件（使用 libgo/filer）

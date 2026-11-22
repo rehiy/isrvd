@@ -76,7 +76,8 @@ func (s *Service) SwarmInspect(ctx context.Context, name string, forceRuntime bo
 		return nil, err
 	}
 	installDir := filepath.Join(root, projectName)
-	return inspectComposeConfig(installDir, projectName, forceRuntime, func() (string, error) {
+	var standaloneID string
+	detail, err := inspectComposeConfig(installDir, projectName, forceRuntime, func() (string, error) {
 		raw, err := s.swarm.ServiceInspectRaw(ctx, name)
 		if err != nil && !client.IsErrNotFound(err) {
 			return "", fmt.Errorf("compose 文件不存在且读取运行态失败: %w", err)
@@ -84,6 +85,9 @@ func (s *Service) SwarmInspect(ctx context.Context, name string, forceRuntime bo
 		services := []swarm.Service{}
 		if err == nil && (raw.Spec.Labels[compose.ComposeProjectLabel] == "" || raw.Spec.Labels[compose.ComposeProjectLabel] == projectName) {
 			services = append(services, raw)
+			if raw.Spec.Labels[compose.ComposeProjectLabel] == "" {
+				standaloneID = raw.ID
+			}
 		}
 		if err != nil || (len(services) > 0 && raw.Spec.Labels[compose.ComposeProjectLabel] == projectName) || (err == nil && len(services) == 0) {
 			services, err = s.swarm.ServiceListByLabel(ctx, compose.ComposeProjectLabel, projectName)
@@ -114,6 +118,10 @@ func (s *Service) SwarmInspect(ctx context.Context, name string, forceRuntime bo
 		}
 		return withGeneratedHeader(string(data)), nil
 	})
+	if err == nil {
+		detail.standaloneID = standaloneID
+	}
+	return detail, err
 }
 
 // SwarmRedeploy 更新 Swarm Compose 项目。
@@ -152,7 +160,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 		return nil, err
 	}
 	oldContent, oldEnv := currentConfig.Content, currentConfig.EnvContent
-	content, _, err := s.prepareRedeployContent(ctx, name, installDir, oldContent, req)
+	content, project, err := s.prepareRedeployContent(ctx, name, installDir, oldContent, req)
 	if err != nil {
 		return nil, err
 	}
@@ -174,8 +182,8 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 			}
 			return nil, inspectErr
 		}
-		if owner := current.Spec.Labels[compose.ComposeProjectLabel]; owner != "" && owner != name {
-			return nil, fmt.Errorf("服务 %s 属于其他项目 %s", service.Name, owner)
+		if current.Spec.Labels[compose.ComposeProjectLabel] != name && (currentConfig.standaloneID == "" || current.ID != currentConfig.standaloneID) {
+			return nil, fmt.Errorf("无法确认服务 %s 属于项目 %s", service.Name, name)
 		}
 		oldServices[service.Name] = current
 	}
@@ -190,8 +198,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	if err := compose.EnvApply(installDir, req.EnvContent); err != nil {
 		return nil, rollback(err)
 	}
-	project, err := compose.ProjectLoad(ctx, name, content, installDir)
-	if err != nil {
+	if err := compose.ProjectSave(content, installDir); err != nil {
 		return nil, rollback(err)
 	}
 	items, err := s.swarmServicesReconcile(ctx, project, oldProject, oldServices, req.ForcePull)
@@ -235,8 +242,10 @@ func (s *Service) swarmProjectName(ctx context.Context, name, root string) (stri
 
 // swarmServicesCreate 批量创建 project 中的所有 Swarm 服务，失败时回滚已创建的服务。
 // 调用前须先通过 imagesEnsure 完成预拉取。
-func (s *Service) swarmServicesCreate(ctx context.Context, project *types.Project) ([]string, error) {
-	if err := s.swarmEnsureNetworks(ctx, project); err != nil {
+func (s *Service) swarmServicesCreate(ctx context.Context, project *types.Project) (_ []string, resultErr error) {
+	networks, err := s.ensureNetworks(ctx, project, "overlay")
+	defer s.rollbackNetworks(ctx, networks, &resultErr)
+	if err != nil {
 		return nil, err
 	}
 
@@ -286,7 +295,7 @@ func (s *Service) swarmServiceCreate(ctx context.Context, project *types.Project
 }
 
 // swarmServicesReconcile 原地更新已有服务，按旧项目范围删除移除的服务。
-func (s *Service) swarmServicesReconcile(ctx context.Context, project, original *types.Project, old map[string]swarm.Service, forcePull bool) ([]string, error) {
+func (s *Service) swarmServicesReconcile(ctx context.Context, project, original *types.Project, old map[string]swarm.Service, forcePull bool) (_ []string, resultErr error) {
 	names := make([]string, 0, len(project.Services))
 	specs := make(map[string]swarm.ServiceSpec, len(project.Services))
 	unchanged := make(map[string]bool, len(project.Services))
@@ -309,7 +318,9 @@ func (s *Service) swarmServicesReconcile(ctx context.Context, project, original 
 		unchanged[spec.Name] = !forcePull && swarmServiceSpecMatches(original, spec.Name, spec)
 	}
 	sort.Strings(names)
-	if err := s.swarmEnsureNetworks(ctx, project); err != nil {
+	networks, err := s.ensureNetworks(ctx, project, "overlay")
+	defer s.rollbackNetworks(ctx, networks, &resultErr)
+	if err != nil {
 		return nil, err
 	}
 	var created []string
@@ -459,29 +470,4 @@ func swarmPreviousSpecMatches(before swarm.ServiceSpec, previous *swarm.ServiceS
 	}
 	b, err := json.Marshal(previous)
 	return err == nil && string(a) == string(b)
-}
-
-// swarmEnsureNetworks 确保 project 中所有非 external 的网络以 overlay driver 存在
-func (s *Service) swarmEnsureNetworks(ctx context.Context, project *types.Project) error {
-	for key, netCfg := range project.Networks {
-		if bool(netCfg.External) {
-			continue
-		}
-		netName := netCfg.Name
-		if netName == "" {
-			netName = key
-		}
-		if _, err := s.docker.NetworkInspect(ctx, netName); err == nil {
-			continue
-		}
-		driver := netCfg.Driver
-		if driver == "" {
-			driver = "overlay"
-		}
-		if _, err := s.docker.NetworkCreate(ctx, netName, driver, ""); err != nil {
-			return fmt.Errorf("创建网络 %s 失败: %w", netName, err)
-		}
-		logman.Info("Swarm network created", "network", netName, "driver", driver)
-	}
-	return nil
 }

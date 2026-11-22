@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"sync"
@@ -16,7 +17,6 @@ import (
 	"time"
 
 	"github.com/rehiy/libgo/logman"
-	"github.com/rehiy/libgo/request"
 
 	"isrvd/server/config"
 )
@@ -100,7 +100,10 @@ func sendTo(hooks []*config.WebhookConfig, key string, evt *Event) {
 }
 
 // 单个请求的超时时间，避免接收方不可达时长时间占用
-const sendTimeout = 10 * time.Second
+var webhookClient = &http.Client{
+	Timeout:       10 * time.Second,
+	CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+}
 
 // sendOne 向单个 Webhook 发送；失败仅记录日志，不影响其他通道。
 // Webhook 地址由管理员在后台配置，属于可信输入，不做内网地址等 SSRF 校验。
@@ -117,15 +120,20 @@ func sendOne(hook *config.WebhookConfig, evt *Event) {
 		return
 	}
 
-	client := request.Client{
-		Method:  "POST",
-		Url:     target.String(),
-		Data:    string(body),
-		Headers: request.Header{"Content-Type": "application/json"},
-		Timeout: sendTimeout,
+	req, err := http.NewRequest(http.MethodPost, target.String(), bytes.NewReader(body))
+	if err != nil {
+		logman.Warn("发送告警失败", "webhook", hook.Name, "error", "invalid request")
+		return
 	}
-	if _, err := client.Request(); err != nil {
-		logman.Warn("发送告警失败", "webhook", hook.Name, "error", err)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := webhookClient.Do(req)
+	if err != nil {
+		logman.Warn("发送告警失败", "webhook", hook.Name, "error", err.(*url.Error).Err)
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		logman.Warn("发送告警失败", "webhook", hook.Name, "status", resp.StatusCode)
 	}
 }
 
