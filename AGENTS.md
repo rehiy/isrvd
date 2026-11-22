@@ -326,7 +326,7 @@ docs/
 - 计划任务：`/cron/jobs`；Compose：`/compose/marketplace`、`/compose/deploy`
 - 折叠子菜单展开状态跟随当前路由（`@Watch` immediate）
 - 侧边栏宽度 `w-16`（折叠）→ `w-64`（展开）
-- 桌面端导航与内容分隔线由 `main` 的 `lg:border-l` 提供，侧边栏自身不设置右边框；登录后的主布局容器使用 `pt-16 min-h-screen` 避让全局 header，`main` 使用 `min-h-[calc(100vh-4rem)]` 覆盖剩余视口，避免外边距折叠导致高度偏差
+- 桌面端导航与内容分隔线由 `main` 的 `lg:border-l` 提供，侧边栏自身不设置右边框；主布局以 `min-h-dvh` 跟随浏览器地址栏变化，`pt-16` 避让全局 header，`main` 在纵向 flex 布局中填满剩余空间并随内容增长。需要占满内容区的终端、编辑器和应用市场页面使用 `h-[calc(100dvh-4rem)]`
 - 移动端：遮罩 + 抽屉式（`-translate-x-full lg:translate-x-0`），`toggleMobileSidebar`/`closeMobileSidebar`/`openMobileSidebar`；窗口 ≥ 1024px 自动关闭
 
 ---

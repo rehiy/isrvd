@@ -105,7 +105,7 @@ export default toNative(CaddyRaw)
 </script>
 
 <template>
-  <div class="page flex flex-col h-[calc(100vh-4rem)]">
+  <div class="page flex flex-col h-[calc(100dvh-4rem)]">
     <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="toolbar-desktop">

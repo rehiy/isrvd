@@ -76,7 +76,7 @@ export default toNative(ContainerTerminal)
 </script>
 
 <template>
-  <div class="h-[calc(100vh-4rem)]">
+  <div class="h-[calc(100dvh-4rem)]">
     <div ref="containerRef" class="h-full page flex flex-col overflow-hidden">
       <!-- Toolbar -->
       <div class="page-toolbar page-toolbar-static">

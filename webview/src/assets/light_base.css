@@ -4,7 +4,7 @@
   }
 
   body {
-    @apply bg-slate-50 min-h-screen;
+    @apply bg-slate-50;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
