@@ -2385,8 +2385,8 @@ const messages: Record<string, string> = {
     '直接粘贴 compose.yml，或从左侧应用市场选择模板后回填': 'compose.yml を直接貼り付けるか、左側のアプリケーション マーケットからテンプレートを選択して埋め戻します。',
     // Paste compose.yml, or fill in from the marketplace
     '粘贴 compose.yml，或从应用市场回填': 'compose.yml を貼り付けるか、App Market からバックフィルします。',
-    // Standalone Deployment
-    '单机部署': 'スタンドアロンデプロイ',
+    // Standalone Containers
+    '单机容器': 'スタンドアロンコンテナ',
     // Swarm Service
     'Swarm 服务': 'スウォームサービス',
     // Additional Files

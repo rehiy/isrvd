@@ -449,7 +449,7 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': isActive('/compose/docker') }"
             >
               <i class="fab fa-docker"></i>
-              <span>{{ $t('单机部署') }}</span>
+              <span>{{ $t('单机容器') }}</span>
             </router-link>
             <router-link
               v-if="composeSwarmVisible"
