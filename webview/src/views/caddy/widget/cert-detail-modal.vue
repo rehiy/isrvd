@@ -3,6 +3,8 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import type { CaddyCert } from '@/service/types'
 
+import { formatLocalDateTime } from '@/helper/format'
+
 import { caddyCertExpireLabel, caddyCertSummary } from '@/helper/caddy'
 
 import BaseModal from '@/component/modal.vue'
@@ -35,7 +37,7 @@ class CertDetailModal extends Vue {
         if (Number.isNaN(date.getTime())) {
             return value
         }
-        return date.toLocaleString('zh-CN', { hour12: false })
+        return formatLocalDateTime(date, { hour12: false })
     }
 
     expireClass(notAfter?: string) {

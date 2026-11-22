@@ -9,6 +9,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { AuditLog } from '@/service/types'
 
+import { formatLocalDateTime } from '@/helper/format'
+
 import BaseModal from '@/component/modal.vue'
 import PageSearch from '@/component/page-search.vue'
 
@@ -104,7 +106,7 @@ class AuditLogs extends Vue {
     }
 
     formatTimestamp(timestamp: string): string {
-        return new Date(timestamp).toLocaleString('zh-CN')
+        return formatLocalDateTime(new Date(timestamp))
     }
 
     formatDuration(duration: number): string {

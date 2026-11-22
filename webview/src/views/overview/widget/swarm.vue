@@ -6,6 +6,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { SwarmInfo } from '@/service/types'
 
+import { displayLocale } from '@/helper/format'
+
 @Component
 class SwarmOverview extends Vue {
     portal = usePortal()
@@ -37,7 +39,7 @@ class SwarmOverview extends Vue {
             return this.swarmInfo.clusterID ? this.swarmInfo.clusterID.slice(0, 12) : '-'
         }
         if (key === 'createdAt') {
-            return this.swarmInfo.createdAt ? new Date(this.swarmInfo.createdAt).toLocaleDateString('zh-CN') : '-'
+            return this.swarmInfo.createdAt ? new Date(this.swarmInfo.createdAt).toLocaleDateString(displayLocale()) : '-'
         }
         return this.swarmInfo[key] as number
     }
