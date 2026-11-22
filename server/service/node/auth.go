@@ -95,15 +95,31 @@ func (l *rateLimiter) allow(key string) bool {
 
 // record 记录一次计数
 func (l *rateLimiter) record(key string) {
+	const maxSources = 4096
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	now := time.Now()
-	if len(l.hits) > 4096 {
-		for k := range l.hits {
-			l.prune(k, now)
+	previous := l.prune(key, now)
+	if len(previous) == 0 && len(l.hits) >= maxSources {
+		// 新来源达到容量时先清理过期来源，再回收最久未失败的来源。
+		cutoff := now.Add(-time.Minute)
+		var oldestKey string
+		var oldestTime time.Time
+		for source, hits := range l.hits {
+			last := hits[len(hits)-1]
+			if last.Before(cutoff) {
+				delete(l.hits, source)
+				continue
+			}
+			if oldestKey == "" || last.Before(oldestTime) {
+				oldestKey, oldestTime = source, last
+			}
+		}
+		if len(l.hits) >= maxSources && oldestKey != "" {
+			delete(l.hits, oldestKey)
 		}
 	}
-	l.hits[key] = append(l.prune(key, now), now)
+	l.hits[key] = append(previous, now)
 }
 
 func (l *rateLimiter) prune(key string, now time.Time) []time.Time {
