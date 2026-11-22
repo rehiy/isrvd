@@ -50,7 +50,7 @@ type Store struct {
 
 // NewStore 创建绑定指定根目录的计划任务存储。
 func NewStore(rootDir string) *Store {
-	ts, err := config.OpenData[[]*Job]("cron.yml")
+	ts, err := config.OpenDataAt[[]*Job]("cron.yml", rootDir)
 	if err != nil {
 		logger.Warn("Cron config store init failed", "dir", rootDir, "error", err)
 	}
