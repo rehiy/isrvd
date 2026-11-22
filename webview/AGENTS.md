@@ -627,7 +627,7 @@ try { await api.xxx() } catch { /* ... */ }
 
 #### 样式自检脚本
 
-`webview/scripts/review-style.py` 是本文件样式规范的辅助检查脚本：当前扫描 `webview/src/views/**/*.vue` 与 `webview/src/component/**/*.vue`；`ERROR` 会返回非零，`WARN` 需要人工处理。脚本不能替代完整人工 review，新增 CSS 组件类或强制规范时需同步更新该脚本。
+`webview/scripts/review-style.py` 是本文件样式规范的辅助检查脚本：扫描 `webview/src/**/*.vue`，并校验路由中显式引用的 Vue 页面文件；`ERROR` 会返回非零，`WARN` 需要人工处理。脚本不能替代完整人工 review，新增 CSS 组件类或强制规范时需同步更新该脚本。
 
 ---
 
@@ -713,6 +713,9 @@ Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似
 ```bash
 npm run lint                             # 类型检查 + ESLint
 npm run format:check                     # import 排序/格式检查（dry-run，需关注输出）
+node ../scripts/check-api-contract.mjs       # 前端 API 方法与路由契约核对
+node ../scripts/check-locales.mjs --strict    # 前端多语言词典与占位符核对
+node ../scripts/check-locales.mjs --go --strict # 后端多语言词典与占位符核对
 python3 scripts/review-style.py          # 前端样式一致性辅助检查
 npm run build                            # Vite 生产构建
 ```

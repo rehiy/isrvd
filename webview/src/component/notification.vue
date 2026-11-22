@@ -33,12 +33,12 @@ export default toNative(NotificationManager)
         leave-from-class="opacity-100 translate-x-0"
         leave-to-class="opacity-0 translate-x-4"
       >
-        <div v-for="item in portal.notifications" :key="item.id" :class="['flex items-center px-5 py-4 rounded-xl min-w-0 sm:min-w-80 animate-slide-down', notificationStyle(item.type)]">
+        <div v-for="item in portal.notifications" :key="item.id" :role="item.type === 'error' ? 'alert' : 'status'" :class="['flex items-center px-5 py-4 rounded-xl min-w-0 sm:min-w-80 animate-slide-down', notificationStyle(item.type)]">
           <div class="row-icon bg-white/20 mr-3">
             <i :class="['fas', notificationIcon(item.type)]"></i>
           </div>
           <span class="flex-1 min-w-0 break-words font-medium">{{ item.message }}</span>
-          <button type="button" class="btn-icon-sm text-white! hover:text-white! hover:bg-white/20!" @click="portal.clearNotification(item.id)">
+          <button type="button" :aria-label="$t('关闭')" class="btn-icon-sm text-white! hover:text-white! hover:bg-white/20!" @click="portal.clearNotification(item.id)">
             <i class="fas fa-times"></i>
           </button>
         </div>
