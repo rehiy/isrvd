@@ -125,7 +125,7 @@ export default toNative(App)
         :class="sidebarCollapsed ? 'lg:left-16' : 'lg:left-64'"
       >
         <!-- 移动端菜单切换按钮 -->
-        <button class="btn-icon lg:hidden" @click="toggleMobileMenu">
+        <button type="button" class="btn-icon lg:hidden" :aria-label="$t('展开菜单')" @click="toggleMobileMenu">
           <i class="fas fa-bars text-slate-600"></i>
         </button>
 
@@ -136,6 +136,7 @@ export default toNative(App)
         <div class="flex items-center gap-1">
           <button
             v-if="hasCopilot"
+            type="button"
             :title="$t('AI 助手')"
             :disabled="!copilotStore.sidebarReady"
             class="btn btn-ghost gap-2"

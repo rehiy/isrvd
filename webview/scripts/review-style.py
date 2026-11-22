@@ -11,7 +11,7 @@ from pathlib import Path
 from collections import defaultdict
 
 SRC_DIR = Path(__file__).parent.parent / "src"
-SCAN_DIRS = [SRC_DIR / "views", SRC_DIR / "component"]
+SCAN_DIRS = [SRC_DIR]
 
 RED    = "\033[31m"
 YELLOW = "\033[33m"
@@ -38,7 +38,7 @@ def find_line(lines: list[str], text: str) -> int:
     return 1
 
 def has_toolbar(tmpl: str) -> bool:
-    return 'card-toolbar' in tmpl or 'bg-slate-50 border-b border-slate-200 rounded-t-2xl' in tmpl
+    return bool(re.search(r'class="[^"]*\bpage-toolbar\b', tmpl))
 
 def has_card_list(tmpl: str) -> bool:
     """判断是否是有卡片列表的页面（移动端 space-y-3 + card-interactive 卡片）"""
@@ -51,39 +51,22 @@ def has_card_list(tmpl: str) -> bool:
 # ─── 检查函数 ────────
 
 def check_toolbar_layout(filepath, lines, tmpl, tmpl_line0):
-    """6.6 toolbar 必须有桌面/移动双布局，且有标题结构"""
+    """核对 page-toolbar 的桌面、移动双布局。"""
     if not has_toolbar(tmpl):
         return
-    # 排除面包屑导航页（没有 h1 标题）
-    toolbar_start = tmpl.find('bg-slate-50 border-b border-slate-200 rounded-t-2xl')
-    toolbar_snippet = tmpl[toolbar_start:toolbar_start + 300]
-    if '<h1' not in toolbar_snippet and 'font-semibold text-slate-800' not in toolbar_snippet:
-        return
 
-    if 'hidden md:flex' not in tmpl:
-        report(filepath, 0, "ERROR", "缺少桌面端 toolbar 布局 (hidden md:flex)")
-    if 'flex md:hidden' not in tmpl and 'block md:hidden' not in tmpl:
-        report(filepath, 0, "ERROR", "缺少移动端 toolbar 布局 (flex md:hidden)")
-
-    # 移动端 toolbar 标题应为 text-lg，不得用 text-base
-    mobile_start = tmpl.find('flex md:hidden')
-    if mobile_start == -1:
-        mobile_start = tmpl.find('block md:hidden')
-    if mobile_start != -1:
-        next_desktop = tmpl.find('hidden md:', mobile_start + 10)
-        mobile_snippet = tmpl[mobile_start: next_desktop if next_desktop != -1 else mobile_start + 2000]
-        for i, line in enumerate(mobile_snippet.splitlines()):
-            if 'font-semibold' in line and 'text-base' in line and 'text-lg' not in line:
-                lineno = tmpl_line0 + tmpl[:mobile_start].count('\n') + i + 1
-                report(filepath, lineno, "WARN",
-                       f"移动端 toolbar 标题用了 text-base，应为 text-lg: {line.strip()[:80]}")
+    # 既有页面可能仍使用原生 Tailwind，先报告以便分片治理。
+    if "toolbar-desktop" not in tmpl and "hidden md:flex" not in tmpl:
+        report(filepath, tmpl_line0, "WARN", "page-toolbar 缺少桌面布局")
+    if "toolbar-mobile" not in tmpl and "flex md:hidden" not in tmpl and "block md:hidden" not in tmpl:
+        report(filepath, tmpl_line0, "WARN", "page-toolbar 缺少移动端布局")
 
 
 def check_toolbar_icon(filepath, lines, tmpl, tmpl_line0):
     """6.6 toolbar 图标应为 w-9 h-9 rounded-lg"""
     if not has_toolbar(tmpl):
         return
-    toolbar_start = tmpl.find('bg-slate-50 border-b border-slate-200 rounded-t-2xl')
+    toolbar_start = tmpl.find('page-toolbar')
     toolbar_snippet = tmpl[toolbar_start:toolbar_start + 300]
     if '<h1' not in toolbar_snippet and 'font-semibold text-slate-800' not in toolbar_snippet:
         return
@@ -768,7 +751,15 @@ def check_form_help_layout(filepath, lines, tmpl, tmpl_line0):
     walk(parser.root)
 
 
+def check_dark_utility(filepath, lines, tmpl, tmpl_line0):
+    """组件暗色样式由 dark.css 统一管理。"""
+    for i, line in enumerate(tmpl.splitlines(), 1):
+        if re.search(r"(?<![\w-])dark:[\w-]+", line) and not line.lstrip().startswith("<!--"):
+            report(filepath, tmpl_line0 + i - 1, "ERROR", "组件模板禁止使用 dark: 工具类")
+
+
 CHECKS = [
+    check_dark_utility,
     check_form_help_layout,
     check_form_label_hints,
     check_code_editor_height,
@@ -821,8 +812,20 @@ def collect_files() -> list[Path]:
     return sorted(files)
 
 
+def check_route_components():
+    """确认路由中显式引用的页面文件均存在。"""
+    route_file = SRC_DIR / "router" / "index.ts"
+    content = route_file.read_text(encoding="utf-8")
+    for match in re.finditer(r"import\(['\"]@/(views/[^'\"]+\.vue)['\"]\)", content):
+        target = SRC_DIR / match.group(1)
+        if not target.is_file():
+            line = content[:match.start()].count("\n") + 1
+            report(str(route_file), line, "ERROR", f"路由引用不存在的页面: {match.group(1)}")
+
+
 def main():
     files = collect_files()
+    check_route_components()
     print(f"{BOLD}{CYAN}=== 前端样式 Review ==={RESET}")
     print("扫描目录：" + ", ".join(str(p) for p in SCAN_DIRS))
     print(f"文件数量：{len(files)}\n")

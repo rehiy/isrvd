@@ -113,7 +113,7 @@ export default toNative(BaseModal)
         @mousedown="handleBackdropMouseDown"
         @click="handleBackdropClick"
       >
-        <div class="w-full modal-card animate-scale-in flex flex-col overflow-hidden" :class="maxWidthClass" :aria-busy="loading">
+        <div class="w-full modal-card animate-scale-in flex flex-col overflow-hidden" :class="maxWidthClass" role="dialog" aria-modal="true" :aria-label="title || undefined" :aria-busy="loading">
           <!-- Header -->
           <div class="flex items-start justify-between gap-3 px-4 py-4 sm:px-6 border-b border-slate-200/50 flex-shrink-0">
             <div class="min-w-0 flex-1 self-center">

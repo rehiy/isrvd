@@ -627,7 +627,7 @@ try { await api.xxx() } catch { /* ... */ }
 
 #### 样式自检脚本
 
-`webview/scripts/review-style.py` 是本文件样式规范的辅助检查脚本：当前扫描 `webview/src/views/**/*.vue` 与 `webview/src/component/**/*.vue`；`ERROR` 会返回非零，`WARN` 需要人工处理。脚本不能替代完整人工 review，新增 CSS 组件类或强制规范时需同步更新该脚本。
+`webview/scripts/review-style.py` 是本文件样式规范的辅助检查脚本：扫描 `webview/src/**/*.vue`，并校验路由中显式引用的 Vue 页面文件；`ERROR` 会返回非零，`WARN` 需要人工处理。脚本不能替代完整人工 review，新增 CSS 组件类或强制规范时需同步更新该脚本。
 
 ---
 
