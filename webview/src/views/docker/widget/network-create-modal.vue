@@ -45,7 +45,7 @@ export default toNative(NetworkCreateModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="$t('新建网络')" :loading="modalLoading" confirm-class="btn-purple" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('新建网络')" :loading="modalLoading" confirm-class="btn-purple" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label class="form-label">{{ $t('网络名称') }}</label>
@@ -63,7 +63,7 @@ export default toNative(NetworkCreateModal)
       <div>
         <label class="form-label">{{ $t('子网 CIDR') }}</label>
         <input v-model="formData.subnet" type="text" :placeholder="$t('请输入子网 CIDR')" class="input" />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}</p>
+        <p class="form-help">{{ $t('可选') }}</p>
       </div>
     </form>
 

@@ -46,7 +46,7 @@ export default toNative(VolumeCreateModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="$t('新建数据卷')" :loading="modalLoading" show-footer confirm-class="btn-amber" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('新建数据卷')" :loading="modalLoading" confirm-class="btn-amber" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label class="form-label">{{ $t('卷名称') }}</label>

@@ -104,12 +104,8 @@ export default toNative(NodePortMapModal)
 <template>
   <BaseModal v-model="isOpen" :title="editing ? $t('编辑转发') : $t('添加转发')" :loading="modalLoading" :confirm-disabled="invalid" confirm-class="btn-orange" @confirm="handleConfirm">
     <form ref="formRef" class="space-y-4" @submit.prevent="handleConfirm">
-      <div class="space-y-2">
-        <p class="text-sm text-slate-600">
-          {{ $t('中控监听指定端口，经隧道连接到节点上的目标地址，支持 TCP 与 UDP。') }}
-          <span class="text-amber-600">{{ $t('转发的连接不经过 isrvd 认证，鉴权由目标应用负责；请勿转发无认证的服务。') }}</span>
-        </p>
-      </div>
+      <button type="submit" class="hidden"></button>
+      <p class="text-sm text-slate-600">{{ $t('中控监听指定端口，经隧道连接到节点上的目标地址，支持 TCP 与 UDP。') }}</p>
 
       <div>
         <label class="form-label">{{ $t('所属节点') }} <span class="text-red-500">*</span></label>
@@ -129,22 +125,25 @@ export default toNative(NodePortMapModal)
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="min-w-0">
           <label class="form-label">{{ $t('中控监听端口') }} <span class="text-red-500">*</span></label>
-          <input v-model.number="listen" type="number" min="1" max="65535" required class="input" placeholder="20022" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('须在中控配置 portmap.range 允许的范围内') }}</p>
+          <input v-model.number="listen" type="number" min="1" max="65535" required class="input" />
+          <p class="form-help">{{ $t('须在中控配置 portmap.range 允许的范围内') }} · {{ $t('例如：') }}<code>20022</code></p>
         </div>
 
         <div class="min-w-0">
           <label class="form-label">{{ $t('节点目标地址') }} <span class="text-red-500">*</span></label>
-          <input v-model="target" type="text" maxlength="200" required class="input font-mono" placeholder="127.0.0.1:22" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('host:port；只填端口时默认指向节点本机 127.0.0.1') }}</p>
+          <input v-model="target" type="text" maxlength="200" required class="input font-mono" />
+          <p class="form-help">{{ $t('host:port；只填端口时默认指向节点本机 127.0.0.1') }} · {{ $t('例如：') }}<code>127.0.0.1:22</code></p>
         </div>
       </div>
 
       <div>
         <label class="form-label">{{ $t('备注') }}</label>
-        <input v-model="name" type="text" maxlength="64" class="input" :placeholder="$t('如：SSH')" />
+        <input v-model="name" type="text" maxlength="64" class="input" />
+        <p class="form-help">{{ $t('如：SSH') }}</p>
       </div>
-      <button type="submit" class="hidden"></button>
+      <p class="modal-warning">
+        <i class="fas fa-triangle-exclamation mr-1" aria-hidden="true"></i>{{ $t('转发的连接不经过 isrvd 认证，鉴权由目标应用负责；请勿转发无认证的服务。') }}
+      </p>
     </form>
 
     <template #confirm-text>{{ editing ? $t('保存') : $t('添加') }}</template>

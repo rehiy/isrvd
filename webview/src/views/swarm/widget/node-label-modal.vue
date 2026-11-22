@@ -148,42 +148,42 @@ export default toNative(NodeLabelModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="$t('编辑节点标签')" :loading="loading" :confirm-disabled="confirmDisabled" confirm-class="btn-blue" max-width-class="max-w-2xl" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('编辑节点标签')" :loading="loading" :confirm-disabled="confirmDisabled" confirm-class="btn-blue" @confirm="handleConfirm">
     <template #confirm-text>{{ $t('保存') }}</template>
     <div v-if="!loaded" class="empty-state">
       <div class="spinner-lg"></div>
       <p class="text-slate-500">{{ $t('加载中...') }}</p>
     </div>
     <form v-else ref="formRef" class="space-y-4" @submit.prevent="handleConfirm">
+      <button type="submit" class="sr-only" tabindex="-1" :disabled="loading || confirmDisabled">{{ $t('保存') }}</button>
       <div class="space-y-4">
         <p v-if="rows.length === 0" class="empty-note">{{ hasChanges ? $t('保存后将清空节点标签。') : $t('暂无节点标签') }}</p>
         <div v-for="(row, index) in rows" :key="row.id" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div class="min-w-0">
             <label class="block">
               <span class="form-label">{{ $t('标签键') }} <span class="text-red-500">*</span></span>
-              <input v-model="row.key" type="text" class="input font-mono" placeholder="region" autocomplete="off" :spellcheck="false" required data-label-key :aria-invalid="!!rowErrors[index]" :aria-describedby="rowErrors[index] ? `node-label-error-${row.id}` : undefined" />
+              <input v-model="row.key" type="text" class="input font-mono" autocomplete="off" :spellcheck="false" required data-label-key :aria-invalid="!!rowErrors[index]" :aria-describedby="rowErrors[index] ? `node-label-error-${row.id}` : undefined" />
             </label>
             <p v-if="rowErrors[index]" :id="`node-label-error-${row.id}`" class="text-xs text-red-500 mt-1">{{ rowErrors[index] }}</p>
           </div>
           <div class="min-w-0">
             <label :for="`node-label-value-${row.id}`" class="form-label">{{ $t('标签值') }}</label>
             <div class="flex items-center gap-2">
-              <input :id="`node-label-value-${row.id}`" v-model="row.value" type="text" class="input min-w-0 font-mono" placeholder="guangzhou" autocomplete="off" :spellcheck="false" />
+              <input :id="`node-label-value-${row.id}`" v-model="row.value" type="text" class="input min-w-0 font-mono" autocomplete="off" :spellcheck="false" />
               <button type="button" class="btn-icon btn-icon-red shrink-0" :title="$t('删除标签')" :aria-label="$t('删除标签')" @click="removeLabel(row.id)"><i class="fas fa-trash"></i></button>
             </div>
           </div>
         </div>
-        <p v-if="rows.length > 0" class="text-xs text-slate-400 mt-1">{{ $t('标签值可留空。') }}</p>
+        <p v-if="rows.length > 0" class="form-help">{{ $t('标签值可留空。') }} {{ $t('例如：') }}<code>region=guangzhou</code></p>
         <button type="button" class="btn-add-row" @click="addLabel"><i class="fas fa-plus"></i>{{ $t('添加标签') }}</button>
       </div>
-      <div class="panel-frame border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+      <div class="modal-warning">
         <div class="flex items-start gap-2">
           <i class="fas fa-triangle-exclamation mt-0.5" aria-hidden="true"></i>
           <p aria-live="polite">{{ conflicted ? $t('节点已更新，当前修改尚未保存。重新加载将丢弃这些修改。') : $t('修改或删除标签可能触发服务重新调度，请确认服务的调度约束。') }}</p>
         </div>
         <button v-if="conflicted" type="button" class="btn btn-secondary mt-2" @click="loadLabels">{{ $t('放弃修改并重新加载') }}</button>
       </div>
-      <button type="submit" class="sr-only" tabindex="-1" :disabled="loading || confirmDisabled">{{ $t('保存') }}</button>
     </form>
   </BaseModal>
 </template>

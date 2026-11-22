@@ -442,6 +442,7 @@ export default toNative(CaddyBasicAuth)
     :loading="deleteLoading"
     :confirm-disabled="deleteDisabled"
     confirm-class="btn-danger"
+    max-width-class="max-w-lg"
     @confirm="confirmDeleteUser"
   >
     <div v-if="pendingDelete" class="space-y-4">

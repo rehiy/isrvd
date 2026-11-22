@@ -122,17 +122,18 @@ export default toNative(RenameModal)
             :disabled="loading"
             autofocus
             class="input pl-9"
-            :placeholder="files.length > 1 ? $t('目标目录，如：/backup/') : $t('如：new.txt、/backup/new.txt、/backup/')"
+            :placeholder="$t('请输入目标路径')"
           >
         </div>
-        <p class="text-xs text-slate-400 mt-1.5">
+        <p class="form-help">
           {{ $t('以') }} <code class="bg-slate-100 px-1 rounded">/</code> {{ $t('结尾 → 移入该目录并保持原名；否则 → 完整目标路径（仅单文件）') }}
+          {{ $t('例如：') }}<code>{{ files.length > 1 ? '/backup/' : 'new.txt, /backup/new.txt, /backup/' }}</code>
         </p>
       </div>
 
       <div>
         <p class="text-xs font-medium text-slate-500 mb-1.5">{{ $t('操作预览（共') }} {{ files.length }} {{ $t('项）') }}</p>
-        <div class="rounded-lg border border-slate-200 overflow-hidden">
+        <div class="panel-frame">
           <div class="grid grid-cols-[1fr_auto_1fr] bg-slate-100 border-b border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500">
             <span>{{ $t('原路径') }}</span><span></span><span>{{ $t('目标路径') }}</span>
           </div>

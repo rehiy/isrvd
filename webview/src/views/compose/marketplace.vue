@@ -145,7 +145,7 @@ export default toNative(ComposeMarketplace)
 </script>
 
 <template>
-  <div class="page flex flex-col h-[calc(100vh-4rem)]">
+  <div class="page flex flex-col h-[calc(100dvh-4rem)]">
     <!-- Toolbar -->
     <div class="page-toolbar">
       <!-- 桌面端 -->

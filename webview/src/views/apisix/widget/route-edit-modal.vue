@@ -339,30 +339,32 @@ export default toNative(RouteEditModal)
 
 <template>
   <BaseModal v-model="isOpen" :title="isEditMode ? $t('编辑路由') : $t('新建路由')" :loading="modalLoading" confirm-class="btn-indigo" @confirm="handleConfirm">
-    <div class="space-y-4 p-1">
-      <div class="grid grid-cols-2 gap-3">
+    <div class="space-y-4">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label class="form-label">{{ $t('名称') }} <span class="text-red-500">*</span></label>
           <input v-model="formData.name" type="text" class="input" :placeholder="$t('请输入路由名称')" />
         </div>
         <div>
           <label class="form-label">{{ $t('优先级') }}</label>
-          <input v-model.number="formData.priority" type="number" class="input" :placeholder="$t('请输入优先级（可选）')" min="0" />
+          <input v-model.number="formData.priority" type="number" class="input" min="0" />
+          <p class="form-help">{{ $t('可选') }}</p>
         </div>
       </div>
       <div>
         <label class="form-label">{{ $t('描述') }}</label>
-        <textarea v-model="formData.desc" rows="2" class="input" :placeholder="$t('请输入路由描述（可选）')"></textarea>
+        <textarea v-model="formData.desc" rows="2" class="input"></textarea>
+        <p class="form-help">{{ $t('可选') }}</p>
       </div>
       <div>
         <label class="form-label">{{ $t('URI') }}<span class="text-red-500">*</span></label>
         <textarea v-model="formData.uris" rows="3" class="input font-mono text-sm" :placeholder="$t('请输入 URI（支持通配符）')"></textarea>
-        <p class="text-xs text-slate-400 mt-1">{{ $t('每行一个，例如：/api/v1/* 或 /api/v2/*') }}</p>
+        <p class="form-help">{{ $t('每行一个，例如：/api/v1/* 或 /api/v2/*') }}</p>
       </div>
       <div>
         <label class="form-label">{{ $t('Host') }}</label>
-        <textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" :placeholder="$t('请输入 Host（可选）')"></textarea>
-        <p class="text-xs text-slate-400 mt-1">{{ $t('每行一个，留空匹配所有，例如：example.com 或 *.example.com') }}</p>
+        <textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm"></textarea>
+        <p class="form-help">{{ $t('每行一个，留空匹配所有，例如：example.com 或 *.example.com') }}</p>
       </div>
 
       <div class="border border-slate-200 rounded-xl p-4">
@@ -381,40 +383,34 @@ export default toNative(RouteEditModal)
             <div class="text-xs opacity-80 leading-5">{{ $t(item.desc) }}</div>
           </button>
         </div>
-        <p class="text-xs text-slate-400 mt-1 mb-4">{{ $t('支持直接输入单个上游、引用已有上游或暂不配置上游') }}</p>
+        <p class="form-help mb-4">{{ $t('支持直接输入单个上游、引用已有上游或暂不配置上游') }}</p>
 
-        <div v-if="formData.upstream_mode === 'nodes'" class="space-y-3">
-          <div>
-            <div class="grid grid-cols-[2fr_1fr] gap-2 items-center">
-              <ContainerSelect v-if="canLoadDockerContainers" :model-value="formData.upstream_nodes[0]?.host || ''" :containers="containers" :placeholder="$t('请输入 Host（IP 或容器名）')" @update:model-value="updateUpstreamNode(0, 'host', $event)" />
-              <input v-else :value="formData.upstream_nodes[0]?.host || ''" type="text" class="input" :placeholder="$t('请输入 Host（IP 或域名）')" @input="updateUpstreamNode(0, 'host', ($event.target as HTMLInputElement).value)" />
-              <ContainerPortSelect v-if="canLoadDockerContainers" :model-value="formData.upstream_nodes[0]?.port || ''" :ports="getPortsByHost(formData.upstream_nodes[0]?.host || '')" :placeholder="$t('请输入端口')" @update:model-value="updateUpstreamNode(0, 'port', $event)" />
-              <input v-else :value="formData.upstream_nodes[0]?.port || ''" type="text" class="input" :placeholder="$t('请输入端口')" @input="updateUpstreamNode(0, 'port', ($event.target as HTMLInputElement).value)" />
-            </div>
-            <p class="text-xs text-slate-400 mt-1">{{ $t('例如：Host 填写 127.0.0.1 或 nginx，Port 填写 8080') }}；{{ $t('直接输入模式仅提交一个上游节点；如需多节点负载均衡，请先在「上游管理」中创建后再引用。') }}</p>
+        <template v-if="formData.upstream_mode === 'nodes'">
+          <div class="grid grid-cols-[2fr_1fr] gap-2 items-center">
+            <ContainerSelect v-if="canLoadDockerContainers" :model-value="formData.upstream_nodes[0]?.host || ''" :containers="containers" :placeholder="$t('请输入 Host（IP 或容器名）')" @update:model-value="updateUpstreamNode(0, 'host', $event)" />
+            <input v-else :value="formData.upstream_nodes[0]?.host || ''" type="text" class="input" :placeholder="$t('请输入 Host（IP 或域名）')" @input="updateUpstreamNode(0, 'host', ($event.target as HTMLInputElement).value)" />
+            <ContainerPortSelect v-if="canLoadDockerContainers" :model-value="formData.upstream_nodes[0]?.port || ''" :ports="getPortsByHost(formData.upstream_nodes[0]?.host || '')" :placeholder="$t('请输入端口')" @update:model-value="updateUpstreamNode(0, 'port', $event)" />
+            <input v-else :value="formData.upstream_nodes[0]?.port || ''" type="text" class="input" :placeholder="$t('请输入端口')" @input="updateUpstreamNode(0, 'port', ($event.target as HTMLInputElement).value)" />
           </div>
+          <p class="form-help">{{ $t('例如：Host 填写 127.0.0.1 或 nginx，Port 填写 8080') }}；{{ $t('直接输入模式仅提交一个上游节点；如需多节点负载均衡，请先在「上游管理」中创建后再引用。') }}</p>
+        </template>
 
-          <div v-if="routeValidationMessage" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{{ routeValidationMessage }}</div>
-        </div>
-
-        <div v-else-if="formData.upstream_mode === 'upstream_id'" class="space-y-3">
-          <div>
-            <select v-model="formData.upstream_id" class="input">
-              <option value="">{{ $t('请选择已有上游') }}</option>
-              <option v-for="upstream in upstreams" :key="upstream.id" :value="upstream.id">{{ upstreamOptionLabel(upstream) }}</option>
-            </select>
-            <p class="text-xs text-slate-400 mt-1">{{ $t('回源协议、Host 传递和超时由引用的上游对象管理。') }}</p>
-          </div>
-          <div v-if="routeValidationMessage" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{{ routeValidationMessage }}</div>
-        </div>
+        <template v-else-if="formData.upstream_mode === 'upstream_id'">
+          <select v-model="formData.upstream_id" class="input">
+            <option value="">{{ $t('请选择已有上游') }}</option>
+            <option v-for="upstream in upstreams" :key="upstream.id" :value="upstream.id">{{ upstreamOptionLabel(upstream) }}</option>
+          </select>
+          <p class="form-help">{{ $t('回源协议、Host 传递和超时由引用的上游对象管理。') }}</p>
+        </template>
         <div v-else class="text-sm text-slate-500 leading-6">{{ $t('当前保存只会提交路由匹配规则、状态和插件配置，不会附带内联节点，也不会引用已有上游。') }}</div>
+        <p v-if="routeValidationMessage" class="modal-warning mt-3">{{ routeValidationMessage }}</p>
       </div>
-      <div class="border-t border-slate-200 pt-4">
+      <div class="border-t border-slate-200 pt-6">
         <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" :aria-expanded="showAdvanced" @click="showAdvanced = !showAdvanced">
           <i :class="['fas fa-chevron-down text-xs transition-transform', showAdvanced ? 'rotate-180' : '']" aria-hidden="true"></i>
           {{ $t('高级选项') }}
         </button>
-        <p v-if="!showAdvanced && advancedSummary" class="text-xs text-slate-400 mt-1 break-all">{{ advancedSummary }}</p>
+        <p v-if="!showAdvanced && advancedSummary" class="form-help break-all">{{ advancedSummary }}</p>
         <div v-if="showAdvanced" class="mt-4 space-y-4">
           <ToggleCard v-model="formData.enable_websocket" :label="$t('WebSocket 代理')" :desc="$t('启用后支持 WebSocket 协议升级（ws:// / wss://）')" />
           <template v-if="formData.upstream_mode === 'nodes'">
@@ -422,15 +418,24 @@ export default toNative(RouteEditModal)
 
             <UpstreamHostFields ref="upstreamHost" v-model:pass-host="formData.upstream_pass_host" v-model:upstream-host="formData.upstream_host" />
 
-            <div>
-              <label class="form-label">{{ $t('超时时间（秒）') }}</label>
+            <fieldset class="min-w-0">
+              <legend class="form-label">{{ $t('超时时间（秒）') }}</legend>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" :placeholder="$t('请输入连接超时（可选）')" />
-                <input v-model.number="formData.timeout_send" type="number" min="0" class="input" :placeholder="$t('请输入发送超时（可选）')" />
-                <input v-model.number="formData.timeout_read" type="number" min="0" class="input" :placeholder="$t('请输入读取超时（可选）')" />
+                <label class="block">
+                  <span class="form-label">{{ $t('连接超时') }}</span>
+                  <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" />
+                </label>
+                <label class="block">
+                  <span class="form-label">{{ $t('写入超时') }}</span>
+                  <input v-model.number="formData.timeout_send" type="number" min="0" class="input" />
+                </label>
+                <label class="block">
+                  <span class="form-label">{{ $t('读取超时') }}</span>
+                  <input v-model.number="formData.timeout_read" type="number" min="0" class="input" />
+                </label>
               </div>
-              <p class="text-xs text-slate-400 mt-1">{{ $t('留空或 0 表示使用 APISIX 默认超时（单位：秒）。') }}</p>
-            </div>
+              <p class="form-help">{{ $t('留空或 0 表示使用 APISIX 默认超时（单位：秒）。') }}</p>
+            </fieldset>
           </template>
         </div>
       </div>
@@ -441,10 +446,10 @@ export default toNative(RouteEditModal)
             <option value="">{{ $t('不使用') }}</option>
             <option v-for="pc in pluginConfigs" :key="pc.id" :value="pc.id">{{ pc.desc || pc.id }}</option>
           </select>
-          <p class="text-xs text-slate-400 mt-1">{{ $t('选择已有的插件配置对象，与独立插件配置合并生效') }}</p>
+          <p class="form-help">{{ $t('选择已有的插件配置对象，与独立插件配置合并生效') }}</p>
         </div>
 
-        <div class="pt-3 border-t border-slate-100">
+        <div class="border-t border-slate-200 pt-6">
           <PluginConfigPanel ref="pluginPanel" :plugins="formData.plugins" :available-plugins="availablePlugins" :show-import="true" :routes="routes" @update:plugins="onPluginsUpdate" />
         </div>
       </div>

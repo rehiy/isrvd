@@ -111,15 +111,16 @@ export default toNative(PluginConfigEditModal)
 
 <template>
   <BaseModal v-model="isOpen" :title="isEditMode ? $t('编辑插件配置') : $t('新建插件配置')" :loading="modalLoading" confirm-class="btn-rose" @confirm="handleConfirm">
-    <div class="space-y-4 p-1">
+    <div class="space-y-4">
       <div v-if="isEditMode">
         <label class="form-label">{{ $t('配置 ID') }}</label>
         <input v-model="formData.id" type="text" class="input" disabled />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('ID 由创建接口自动生成，编辑时不能修改。') }}</p>
+        <p class="form-help">{{ $t('ID 由创建接口自动生成，编辑时不能修改。') }}</p>
       </div>
       <div>
         <label class="form-label">{{ $t('描述') }}</label>
-        <textarea v-model="formData.desc" rows="2" class="input resize-none" :placeholder="$t('请输入插件配置描述（可选）')"></textarea>
+        <textarea v-model="formData.desc" rows="2" class="input resize-none"></textarea>
+        <p class="form-help">{{ $t('可选') }}</p>
       </div>
 
       <PluginConfigPanel ref="pluginPanel" :plugins="formData.plugins" :available-plugins="availablePlugins" :show-import="true" :routes="routes" @update:plugins="updatePlugins" />

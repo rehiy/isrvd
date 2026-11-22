@@ -72,7 +72,7 @@ export default toNative(NodeCreateModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="$t('接入节点')" :loading="modalLoading" :show-confirm="!token" :confirm-disabled="!name.trim()" confirm-class="btn-orange" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('接入节点')" :loading="modalLoading" :show-confirm="!token" :confirm-disabled="!name.trim()" confirm-class="btn-orange" @confirm="handleConfirm">
     <!-- 接入命令：仅在创建成功后展示 -->
     <div v-if="token" class="space-y-4">
       <p class="text-sm text-slate-600">{{ $t('token 仅在创建时显示，请妥善保存；长期有效，仅允许一个客户端在线。') }}</p>
@@ -100,13 +100,10 @@ export default toNative(NodeCreateModal)
     <form v-else class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label class="form-label">{{ $t('备注') }} <span class="text-red-500">*</span></label>
-        <input v-model="name" type="text" maxlength="64" required :placeholder="$t('如：杭州机房 web-01')" class="input" />
+        <input v-model="name" type="text" maxlength="64" required class="input" />
+        <p class="form-help">{{ $t('如：杭州机房 web-01') }}</p>
       </div>
     </form>
-
-    <template v-if="token" #footer>
-      <button type="button" class="btn btn-secondary" @click="isOpen = false">{{ $t('关闭') }}</button>
-    </template>
 
     <template #confirm-text>{{ $t('生成令牌') }}</template>
   </BaseModal>

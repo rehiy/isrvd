@@ -102,6 +102,13 @@
   /* 模态框卡片容器 */
   .modal-card {
     @apply bg-white rounded-xl shadow-2xl border border-slate-200;
+    max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
+  }
+
+  /* 模态框内独立的业务警告 */
+  .modal-warning {
+    @apply rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 break-words;
   }
 
   /* 代码编辑器 / 内容外层边框容器 */
@@ -168,6 +175,12 @@
   /* 加载中 / 空状态块 */
   .empty-state {
     @apply flex flex-col items-center justify-center py-20;
+  }
+
+  @media (max-height: 32rem) {
+    :where(main) .empty-state {
+      @apply py-4;
+    }
   }
 
   /* 加载动画尺寸 */
@@ -348,6 +361,8 @@
   .form-label {
     @apply block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1;
   }
+
+  .form-help { @apply mt-1 text-xs text-slate-400; }
 
   /* 详情页信息分组标题（h2） */
   .section-title {

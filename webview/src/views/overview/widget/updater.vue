@@ -269,7 +269,7 @@ export default toNative(SystemUpdater)
           />
         </div>
         <ToggleCard v-model="updaterAutoRemove" :label="$t('升级完成后自动销毁容器')" :desc="$t('关闭后可通过容器日志查看升级过程')" />
-        <p class="text-sm text-slate-600">
+        <p class="modal-warning">
           {{ $t('将通过') }} <code class="px-1 py-0.5 rounded bg-slate-100 font-mono text-xs">{{ version?.updaterImage || 'rehiy/docker-updater:latest' }}</code>
           {{ $t('临时容器拉取最新镜像并重启，升级期间服务会短暂中断。') }}
         </p>

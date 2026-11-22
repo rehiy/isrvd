@@ -41,7 +41,7 @@ class ComposeDeploy extends Vue {
 
     // ─── 计算属性 ───
     get deployTitle(): string {
-        return this.target === 'swarm' ? this.$t('Swarm 服务') : this.$t('单机部署')
+        return this.target === 'swarm' ? this.$t('Swarm 服务') : this.$t('单机容器')
     }
 
     get canSubmit(): boolean {

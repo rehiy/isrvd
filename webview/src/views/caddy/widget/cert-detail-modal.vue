@@ -80,19 +80,7 @@ export default toNative(CertDetailModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :show-footer="false" max-width-class="max-w-4xl" body-class="px-6 py-6 overflow-y-auto">
-    <template #title>
-      <div v-if="cert" class="title-group-static">
-        <div class="page-icon bg-cyan-500">
-          <i class="fas fa-certificate text-white"></i>
-        </div>
-        <div class="min-w-0">
-          <h1 class="title-text">{{ $t('SSL 证书详情') }}</h1>
-          <p class="text-xs text-slate-500 truncate">{{ certSummary(cert, $t) }}</p>
-        </div>
-      </div>
-    </template>
-
+  <BaseModal v-model="isOpen" :title="$t('SSL 证书详情')" :subtitle="cert ? certSummary(cert, $t) : ''" :show-confirm="false">
     <div v-if="cert" class="space-y-6 text-sm">
       <section>
         <h2 class="section-title">{{ $t('基本信息') }}</h2>

@@ -52,7 +52,7 @@ export default toNative(CreateModal)
     :confirm-disabled="!formData.name.trim()"
     @confirm="handleConfirm"
   >
-    <form class="space-y-5" @submit.prevent="handleConfirm">
+    <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label for="fmCreateName" class="form-label">{{ $t('文件名称') }}</label>
         <div class="relative">

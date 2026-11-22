@@ -138,16 +138,17 @@ export default toNative(JobEditModal)
   <BaseModal v-model="isOpen" :title="isEditMode ? $t('编辑计划任务') : $t('新建计划任务')" :loading="modalLoading" @confirm="handleConfirm">
     <template #confirm-text>{{ isEditMode ? $t('保存') : $t('新建') }}</template>
 
-    <div class="space-y-4 p-1">
+    <div class="space-y-4">
       <div>
         <label class="form-label">{{ $t('任务名称') }} <span class="text-red-500">*</span></label>
         <input v-model="formData.name" type="text" class="input" :placeholder="$t('请输入任务名称')" />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('例如：每日备份') }}</p>
+        <p class="form-help">{{ $t('例如：每日备份') }}</p>
       </div>
 
       <div>
         <label class="form-label">{{ $t('描述') }}</label>
-        <textarea v-model="formData.description" rows="2" class="input resize-none" :placeholder="$t('请输入描述（可选）')" />
+        <textarea v-model="formData.description" rows="2" class="input resize-none" />
+        <p class="form-help">{{ $t('可选') }}</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -156,8 +157,8 @@ export default toNative(JobEditModal)
             {{ $t('执行计划') }} <span class="text-red-500">*</span>
             <a href="https://crontab.guru" target="_blank" rel="noreferrer" class="ml-1 text-primary-500 hover:underline normal-case font-normal">{{ $t('格式参考') }}</a>
           </label>
-          <input v-model="formData.schedule" type="text" class="input font-mono" :placeholder="$t('请输入执行计划（cron 表达式）')" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('标准 cron 表达式，例如：每天 2 点可填 0 2 * * *') }}</p>
+          <input v-model="formData.schedule" type="text" class="input font-mono" />
+          <p class="form-help">{{ $t('标准 cron 表达式，例如：每天 2 点可填 0 2 * * *') }}</p>
         </div>
         <div>
           <label class="form-label">{{ $t('脚本类型') }} <span class="text-red-500">*</span></label>
@@ -171,13 +172,13 @@ export default toNative(JobEditModal)
       <div v-if="!isDockerType" class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="form-label">{{ $t('工作目录') }}</label>
-          <input v-model="formData.workDir" type="text" class="input font-mono" :placeholder="$t('请输入工作目录（可选）')" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('留空则使用当前目录') }}</p>
+          <input v-model="formData.workDir" type="text" class="input font-mono" />
+          <p class="form-help">{{ $t('留空则使用当前目录') }}</p>
         </div>
         <div>
           <label class="form-label">{{ $t('超时时间（秒）') }}</label>
-          <input v-model.number="formData.timeout" type="number" min="0" class="input" :placeholder="$t('请输入超时时间（可选）')" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('0 或留空表示不限制') }}</p>
+          <input v-model.number="formData.timeout" type="number" min="0" class="input" />
+          <p class="form-help">{{ $t('0 或留空表示不限制') }}</p>
         </div>
       </div>
 
@@ -187,17 +188,17 @@ export default toNative(JobEditModal)
           <label class="form-label">{{ $t('镜像名') }} <span class="text-red-500">*</span></label>
           <ImageSelect v-if="canLoadDockerImages" v-model="formData.image" :images="images" :placeholder="$t('请输入或选择镜像名')" />
           <input v-else v-model="formData.image" type="text" class="input" :placeholder="$t('请输入镜像名')" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('例如：python:3.12-slim、nginx:alpine') }}</p>
+          <p class="form-help">{{ $t('例如：python:3.12-slim、nginx:alpine') }}</p>
         </div>
         <div>
           <label class="form-label">{{ $t('额外挂载') }}</label>
-          <textarea v-model="formData.volumes" rows="2" class="input font-mono resize-none" :placeholder="$t('请输入挂载配置（可选）')" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('每行 /host:/container[:ro]，例如：/data/files:/data:ro') }}</p>
+          <textarea v-model="formData.volumes" rows="2" class="input font-mono resize-none" />
+          <p class="form-help">{{ $t('可选') }} · {{ $t('每行 /host:/container[:ro]，例如：/data/files:/data:ro') }}</p>
         </div>
         <div>
           <label class="form-label">{{ $t('超时时间（秒）') }}</label>
-          <input v-model.number="formData.timeout" type="number" min="0" class="input" :placeholder="$t('请输入超时时间（可选）')" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('0 或留空表示不限制') }}</p>
+          <input v-model.number="formData.timeout" type="number" min="0" class="input" />
+          <p class="form-help">{{ $t('0 或留空表示不限制') }}</p>
         </div>
       </template>
 
@@ -210,8 +211,8 @@ export default toNative(JobEditModal)
         </div>
         <div>
           <label class="form-label">{{ $t('超时时间（秒）') }}</label>
-          <input v-model.number="formData.timeout" type="number" min="0" class="input" :placeholder="$t('请输入超时时间（可选）')" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('0 或留空表示不限制') }}</p>
+          <input v-model.number="formData.timeout" type="number" min="0" class="input" />
+          <p class="form-help">{{ $t('0 或留空表示不限制') }}</p>
         </div>
       </template>
 

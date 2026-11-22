@@ -188,11 +188,11 @@ export default toNative(ContainerCreateModal)
 </script>
 
 <template>
-  <BaseModal ref="modalRef" v-model="isOpen" :title="$t('新建容器')" :loading="modalLoading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
+  <BaseModal ref="modalRef" v-model="isOpen" :title="$t('新建容器')" :loading="modalLoading" confirm-class="btn-emerald" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <!-- 基础设置 -->
-      <div class="grid grid-cols-2 gap-3">
-        <div class="col-span-2">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div class="sm:col-span-2">
           <label class="form-label">{{ $t('镜像') }} <span class="text-red-500">*</span></label>
           <ImageSelect v-model="formData.image" :images="images" :placeholder="$t('请输入或选择镜像名')" />
         </div>
@@ -212,27 +212,27 @@ export default toNative(ContainerCreateModal)
       <div>
         <label class="form-label">{{ $t('端口映射') }}</label>
         <textarea v-model="formData.portsStr" rows="2" :placeholder="$t('请输入端口映射')" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">{{ $t('格式：主机端口:容器端口，如 8080:80，每行一条') }}</p>
+        <p class="form-help">{{ $t('格式：主机端口:容器端口，如 8080:80，每行一条') }}</p>
       </div>
 
       <!-- 挂载映射 -->
       <div>
         <label class="form-label">{{ $t('挂载映射') }}</label>
         <textarea v-model="formData.volumesStr" rows="3" :placeholder="$t('请输入挂载映射')" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">{{ $t('格式：来源:容器路径[:ro]，如 ./data:/app/data:ro，每行一条') }}</p>
+        <p class="form-help">{{ $t('格式：来源:容器路径[:ro]，如 ./data:/app/data:ro，每行一条') }}</p>
       </div>
 
       <!-- 环境变量 -->
       <div>
         <label class="form-label">{{ $t('环境变量') }}</label>
         <textarea v-model="formData.envStr" rows="2" :placeholder="$t('请输入环境变量')" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">{{ $t('每行一条，支持 KEY=value 或 KEY: value 格式') }}</p>
+        <p class="form-help">{{ $t('每行一条，支持 KEY=value 或 KEY: value 格式') }}</p>
       </div>
 
       <!-- 高级选项 -->
-      <div class="border-t border-slate-200 pt-4">
-        <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" @click="showAdvanced = !showAdvanced">
-          <i :class="['fas fa-chevron-down text-xs transition-transform', showAdvanced ? 'rotate-180' : '']"></i>
+      <div class="border-t border-slate-200 pt-6">
+        <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" :aria-expanded="showAdvanced" @click="showAdvanced = !showAdvanced">
+          <i :class="['fas fa-chevron-down text-xs transition-transform', showAdvanced ? 'rotate-180' : '']" aria-hidden="true"></i>
           {{ $t('高级选项') }}
         </button>
         <div v-if="showAdvanced" class="mt-4 space-y-4">
@@ -240,7 +240,7 @@ export default toNative(ContainerCreateModal)
             <label class="form-label">{{ $t('启动命令') }}</label>
             <input v-model="formData.cmd" type="text" :placeholder="$t('请输入启动命令')" class="input font-mono text-sm" />
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label class="form-label">{{ $t('重启策略') }}</label>
               <select v-model="formData.restart" class="input">
@@ -252,7 +252,7 @@ export default toNative(ContainerCreateModal)
               <input v-model="formData.hostname" type="text" :placeholder="$t('请输入容器主机名')" class="input" />
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label class="form-label">{{ $t('内存限制 (MB)') }}</label>
               <input v-model="formData.memory" type="number" :placeholder="$t('请输入内存限制（MB）')" class="input" />
@@ -262,7 +262,7 @@ export default toNative(ContainerCreateModal)
               <input v-model="formData.cpus" type="number" step="0.1" :placeholder="$t('请输入 CPU 限制（核心数）')" class="input" />
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label class="form-label">{{ $t('工作目录') }}</label>
               <input v-model="formData.workdir" type="text" :placeholder="$t('请输入工作目录')" class="input" />
@@ -276,9 +276,9 @@ export default toNative(ContainerCreateModal)
       </div>
 
       <!-- 安全配置 -->
-      <div class="border-t border-slate-200 pt-4">
-        <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" @click="showSecurity = !showSecurity">
-          <i :class="['fas fa-chevron-down text-xs transition-transform', showSecurity ? 'rotate-180' : '']"></i>
+      <div class="border-t border-slate-200 pt-6">
+        <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" :aria-expanded="showSecurity" @click="showSecurity = !showSecurity">
+          <i :class="['fas fa-chevron-down text-xs transition-transform', showSecurity ? 'rotate-180' : '']" aria-hidden="true"></i>
           {{ $t('安全配置') }}
           <span v-if="formData.privileged || formData.capAdd?.length || formData.capDrop?.length" class="badge-xs bg-amber-100 text-amber-700">
             {{ [formData.privileged ? $t('特权') : '', formData.capAdd?.length ? `+${formData.capAdd.length}` : '', formData.capDrop?.length ? `-${formData.capDrop.length}` : ''].filter(Boolean).join(' ') }}

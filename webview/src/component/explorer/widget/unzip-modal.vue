@@ -47,15 +47,16 @@ export default toNative(UnzipModal)
     v-model="isOpen"
     :title="$t('解压确认')"
     :loading="loading"
+    max-width-class="max-w-lg"
     :confirm-disabled="!file"
     @confirm="handleConfirm"
   >
     <div v-if="file" class="space-y-4">
-      <div class="text-center py-6">
-        <div class="empty-state-icon bg-amber-400 mx-auto shadow-lg shadow-amber-500/30">
-          <i class="fas fa-expand-arrows-alt text-3xl text-white"></i>
+      <div class="text-center">
+        <div class="empty-state-icon bg-amber-100 mx-auto">
+          <i class="fas fa-expand-arrows-alt text-3xl text-amber-500" aria-hidden="true"></i>
         </div>
-        <p class="text-lg text-slate-700 mb-2">
+        <p class="text-lg text-slate-700 break-words">
           {{ $t('确定要解压') }} <strong class="text-slate-900">{{ file.name }}</strong> {{ $t('吗？') }}
         </p>
       </div>
@@ -72,10 +73,12 @@ export default toNative(UnzipModal)
               type="text"
               :disabled="loading"
               class="input pl-11"
-              :placeholder="$t('请输入目录名，如：output')"
             >
           </div>
-          <p class="text-xs text-slate-400 mt-1">{{ $t('目标目录留空时，文件将解压到当前目录；只能输入目录名，不允许包含 / 等路径分隔符') }}</p>
+          <p class="form-help">
+            {{ $t('目标目录留空时，文件将解压到当前目录；只能输入目录名，不允许包含 / 等路径分隔符') }}
+            {{ $t('例如：') }}<code>output</code>
+          </p>
         </div>
       </form>
     </div>

@@ -326,14 +326,7 @@ export default toNative(AuditLogs)
       </div>
     </template>
 
-    <!-- Body 详情 Modal -->
-    <BaseModal v-model="detailOpen" :show-footer="false">
-      <template #title>
-        <div class="flex items-center gap-2">
-          <span class="badge-sm font-mono" :class="methodClass(detailLog?.method || '')">{{ detailLog?.method }}</span>
-          <code class="text-sm text-slate-700 font-mono truncate">{{ detailLog?.uri }}</code>
-        </div>
-      </template>
+    <BaseModal v-model="detailOpen" :title="$t('详情')" :subtitle="detailLog ? `${detailLog.method} ${detailLog.uri}` : ''" :show-confirm="false">
       <div class="editor-container">
         <Codemirror :model-value="detailBody" :style="{ height: '50vh' }" :extensions="jsonExtensions" :disabled="true" />
       </div>

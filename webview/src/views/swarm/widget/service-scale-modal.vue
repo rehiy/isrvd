@@ -44,7 +44,7 @@ export default toNative(ServiceScaleModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="$t('服务扩缩容')" :loading="loading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('服务扩缩容')" :loading="loading" confirm-class="btn-emerald" @confirm="handleConfirm">
     <div v-if="service" class="space-y-4">
       <div>
         <label class="form-label">{{ $t('服务') }}</label>
@@ -53,7 +53,7 @@ export default toNative(ServiceScaleModal)
       <div>
         <label class="form-label">{{ $t('目标副本数') }}</label>
         <input v-model.number="replicas" type="number" min="0" max="100" class="input" />
-        <p class="mt-1 text-xs text-slate-400">{{ $t('当前运行中副本：') }} {{ service.runningTasks }}  /  {{ service.replicas }}</p>
+        <p class="form-help">{{ $t('当前运行中副本：') }} {{ service.runningTasks }}  /  {{ service.replicas }}</p>
       </div>
     </div>
 

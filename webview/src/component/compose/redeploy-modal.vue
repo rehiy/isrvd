@@ -291,7 +291,7 @@ export default toNative(RedeployModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="title" :loading="modalLoading || submitting" allow-close-while-loading :close-disabled="submitting" :confirm-disabled="!composeContent.trim() || !!pendingSwitch" max-width-class="max-w-6xl" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="title" :loading="modalLoading || submitting" allow-close-while-loading :close-disabled="submitting" :confirm-disabled="!composeContent.trim() || !!pendingSwitch" max-width-class="max-w-6xl" confirm-class="btn-emerald" @confirm="handleConfirm">
     <template #header-actions>
       <button type="button" class="btn-icon-sm" :disabled="modalLoading" :title="refreshTitle" @click="requestLoad(true)">
         <i :class="refreshing ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"></i>
@@ -315,11 +315,11 @@ export default toNative(RedeployModal)
       </select>
       <p v-if="historyLoading" class="text-xs text-slate-500 mt-1" role="status">{{ $t('正在加载部署记录...') }}</p>
       <p v-else-if="historyError" class="text-sm text-red-500 mt-1" role="alert">{{ $t('部署记录加载失败') }}</p>
-      <p v-else-if="history.length === 0" class="text-xs text-slate-400 mt-1">{{ $t('暂无部署记录') }}</p>
+      <p v-else-if="history.length === 0" class="form-help">{{ $t('暂无部署记录') }}</p>
       <p v-if="loadedRevision" class="text-sm text-amber-600 mt-1">{{ $t('历史配置将替换当前配置并重建实例；数据卷与数据库内容不会恢复。') }}</p>
     </div>
-    <div v-if="pendingSwitch" class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3" role="alert">
-      <p class="text-sm text-amber-700 mb-2">{{ $t('当前修改尚未提交，切换配置将丢弃这些修改。') }}</p>
+    <div v-if="pendingSwitch" class="modal-warning mb-3" role="alert">
+      <p class="mb-2">{{ $t('当前修改尚未提交，切换配置将丢弃这些修改。') }}</p>
       <div class="flex flex-wrap gap-2">
         <button type="button" class="btn btn-secondary" @click="pendingSwitch = null">{{ $t('保留编辑') }}</button>
         <button type="button" class="btn btn-amber" @click="discardAndLoad"><i class="fas fa-rotate-left"></i>{{ $t('放弃修改并切换') }}</button>
@@ -347,11 +347,9 @@ export default toNative(RedeployModal)
           </li>
         </ul>
       </div>
-      <div v-if="composeWarning" class="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:col-span-2">
-        <p class="text-sm text-amber-700">
-          <i class="fas fa-exclamation-triangle mr-1"></i>{{ composeWarning }}
-        </p>
-      </div>
+      <p v-if="composeWarning" class="modal-warning sm:col-span-2">
+        <i class="fas fa-triangle-exclamation mr-1" aria-hidden="true"></i>{{ composeWarning }}
+      </p>
     </div>
     <template #confirm-text>{{ confirmText }}</template>
   </BaseModal>

@@ -39,6 +39,7 @@ export default toNative(ConfirmModal)
     :title="$t(portal.confirm.title)"
     :loading="portal.confirm.loading"
     :confirm-class="portal.confirm.danger ? 'btn-danger' : 'btn-primary'"
+    max-width-class="max-w-lg"
     @cancel="portal.closeConfirm"
     @confirm="portal.handleConfirm"
     @update:model-value="!$event && portal.closeConfirm()"
@@ -50,8 +51,8 @@ export default toNative(ConfirmModal)
       <p class="text-lg text-slate-700 break-words">
         <template v-for="(part, index) in messageParts" :key="index"><strong v-if="part.strong" class="text-slate-900">{{ part.text }}</strong><template v-else>{{ part.text }}</template></template>
       </p>
-      <p v-if="portal.confirm.danger" class="text-sm text-red-600 flex items-center justify-center mt-3">
-        <i class="fas fa-exclamation-triangle mr-2"></i>
+      <p v-if="portal.confirm.danger" class="text-sm text-red-600 mt-3">
+        <i class="fas fa-triangle-exclamation mr-1" aria-hidden="true"></i>
         {{ $t('此操作不可恢复！') }}
       </p>
     </div>

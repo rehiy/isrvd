@@ -49,12 +49,12 @@ export default toNative(ImageBuildModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="$t('构建镜像')" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('构建镜像')" :loading="modalLoading" confirm-class="btn-blue" @confirm="handleConfirm">
     <div class="space-y-4">
       <div>
         <label class="form-label">{{ $t('镜像标签') }}</label>
         <input v-model="buildTag" type="text" :placeholder="$t('请输入镜像标签')" class="input" />
-        <p class="mt-1 text-xs text-slate-400">{{ $t('留空则使用 custom:latest') }}</p>
+        <p class="form-help">{{ $t('留空则使用 custom:latest') }}</p>
       </div>
       <div>
         <label class="form-label">Dockerfile</label>

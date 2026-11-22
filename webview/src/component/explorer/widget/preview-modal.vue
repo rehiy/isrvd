@@ -71,18 +71,18 @@ export default toNative(PreviewModal)
   <BaseModal
     v-model="isOpen"
     :title="$t('预览: ') + filename"
-    :show-footer="false"
-    max-width-class="max-w-5xl"
-    :body-class="previewType === 'pdf' ? 'p-0 overflow-hidden' : 'px-6 py-6 overflow-y-auto'"
+    :show-confirm="false"
+    max-width-class="max-w-6xl"
+    :body-class="previewType === 'pdf' ? 'flex flex-col p-0 overflow-hidden' : undefined"
     @cancel="close"
   >
-    <div v-if="loading" class="flex flex-col items-center gap-3 py-10">
-      <div class="w-12 h-12 spinner"></div>
+    <div v-if="loading" class="empty-state">
+      <div class="spinner-lg"></div>
       <span class="text-sm text-slate-500">{{ $t('加载中...') }}</span>
     </div>
 
-    <div v-if="error" class="flex flex-col items-center gap-3 py-10">
-      <div class="empty-state-icon bg-red-100 !mb-0">
+    <div v-if="error" class="empty-state">
+      <div class="empty-state-icon bg-red-100">
         <i class="fas fa-circle-exclamation text-4xl text-red-400"></i>
       </div>
       <span class="text-sm text-red-500">{{ error }}</span>
@@ -127,14 +127,14 @@ export default toNative(PreviewModal)
       v-else-if="previewUrl && previewType === 'pdf'"
       :data="previewUrl"
       type="application/pdf"
-      class="w-full border-0 h-[calc(100vh-10rem)]"
+      class="w-full min-h-0 border-0 h-[calc(100vh-10rem)]"
     >
-      <div class="flex flex-col items-center justify-center gap-3 py-20">
-        <div class="empty-state-icon !mb-0">
+      <div class="empty-state">
+        <div class="empty-state-icon">
           <i class="fas fa-file-pdf text-4xl text-slate-400"></i>
         </div>
         <span class="text-sm text-slate-500">{{ $t('浏览器不支持 PDF 预览') }}</span>
-        <a :href="previewUrl" target="_blank" class="text-sm text-blue-500 hover:underline">{{ $t('在新标签页打开') }}</a>
+        <a :href="previewUrl" target="_blank" class="text-sm text-blue-500 hover:underline mt-2">{{ $t('在新标签页打开') }}</a>
       </div>
     </object>
   </BaseModal>

@@ -295,7 +295,7 @@ const routes: RouteRecordRaw[] = [
     name: 'compose-docker',
     component: () => import('@/views/compose/deploy.vue'),
     props: { target: 'docker' },
-    meta: { title: '单机部署', permissions: ['POST /api/compose/docker'] }
+    meta: { title: '单机容器', permissions: ['POST /api/compose/docker'] }
   },
   {
     path: '/compose/swarm',

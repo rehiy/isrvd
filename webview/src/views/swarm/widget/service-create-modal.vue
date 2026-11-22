@@ -94,11 +94,11 @@ export default toNative(ServiceCreateModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="$t('新建服务')" :loading="loading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('新建服务')" :loading="loading" confirm-class="btn-emerald" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <!-- 基础设置 -->
-      <div class="grid grid-cols-2 gap-3">
-        <div class="col-span-2">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div class="sm:col-span-2">
           <label class="form-label">{{ $t('镜像') }} <span class="text-red-500">*</span></label>
           <ImageSelect v-model="form.image" :images="images" :placeholder="$t('请输入或选择镜像名')" />
         </div>
@@ -115,7 +115,7 @@ export default toNative(ServiceCreateModal)
             </option>
           </select>
         </div>
-        <div class="col-span-2">
+        <div class="sm:col-span-2">
           <label class="form-label">{{ $t('网络') }}</label>
           <select v-model="form.network" class="input">
             <option value="">{{ $t('不指定') }}</option>
@@ -129,32 +129,32 @@ export default toNative(ServiceCreateModal)
       <!-- 端口映射 -->
       <div>
         <label class="form-label">{{ $t('端口映射') }}</label>
-        <textarea v-model="form.ports" rows="2" :placeholder="$t('请输入端口映射（可选）')" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">{{ $t('每行一条，格式：宿主端口:容器端口/协议，例如：8080:80/tcp') }}</p>
+        <textarea v-model="form.ports" rows="2" class="input font-mono text-sm"></textarea>
+        <p class="form-help">{{ $t('可选') }} · {{ $t('每行一条，格式：宿主端口:容器端口/协议，例如：8080:80/tcp') }}</p>
       </div>
 
       <!-- 目录挂载 -->
       <div>
         <label class="form-label">{{ $t('目录挂载') }}</label>
-        <textarea v-model="form.mounts" rows="2" :placeholder="$t('请输入目录挂载（可选）')" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">{{ $t('每行一条，格式：宿主路径:容器路径，例如：/data:/app/data') }}</p>
+        <textarea v-model="form.mounts" rows="2" class="input font-mono text-sm"></textarea>
+        <p class="form-help">{{ $t('可选') }} · {{ $t('每行一条，格式：宿主路径:容器路径，例如：/data:/app/data') }}</p>
       </div>
 
       <!-- 环境变量 -->
       <div>
         <label class="form-label">{{ $t('环境变量') }}</label>
-        <textarea v-model="form.env" rows="2" :placeholder="$t('请输入环境变量（可选）')" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">{{ $t('每行一条，格式：KEY=value，例如：APP_ENV=production') }}</p>
+        <textarea v-model="form.env" rows="2" class="input font-mono text-sm"></textarea>
+        <p class="form-help">{{ $t('可选') }} · {{ $t('每行一条，格式：KEY=value，例如：APP_ENV=production') }}</p>
       </div>
 
       <!-- 高级选项 -->
-      <div class="border-t border-slate-200 pt-4">
-        <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" @click="showAdvanced = !showAdvanced">
-          <i :class="['fas fa-chevron-down text-xs transition-transform', showAdvanced ? 'rotate-180' : '']"></i>
+      <div class="border-t border-slate-200 pt-6">
+        <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" :aria-expanded="showAdvanced" @click="showAdvanced = !showAdvanced">
+          <i :class="['fas fa-chevron-down text-xs transition-transform', showAdvanced ? 'rotate-180' : '']" aria-hidden="true"></i>
           {{ $t('高级选项') }}
         </button>
         <div v-if="showAdvanced" class="mt-4 space-y-4">
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label class="form-label">{{ $t('模式') }}</label>
               <select v-model="form.mode" class="input">
@@ -169,7 +169,8 @@ export default toNative(ServiceCreateModal)
           </div>
           <div>
             <label class="form-label">{{ $t('启动参数') }}</label>
-            <input v-model="form.args" type="text" :placeholder="$t('请输入启动参数（可选）')" class="input font-mono text-sm" />
+            <input v-model="form.args" type="text" class="input font-mono text-sm" />
+            <p class="form-help">{{ $t('可选') }}</p>
           </div>
         </div>
       </div>

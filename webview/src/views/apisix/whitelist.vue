@@ -314,7 +314,7 @@ export default toNative(Whitelist)
         <div class="detail-value text-sm text-slate-700">
           {{ addUser.route.name || addUser.route.id }} - {{ getRouteUri(addUser.route) }}
         </div>
-        <p class="text-xs text-slate-400 mt-1">{{ $t('新建 Consumer 并加入当前路由访问授权') }}</p>
+        <p class="form-help">{{ $t('新建 Consumer 并加入当前路由访问授权') }}</p>
       </div>
 
       <div class="space-y-3">
@@ -325,7 +325,7 @@ export default toNative(Whitelist)
         <div>
           <label class="form-label">key-auth key <span class="text-red-500">*</span></label>
           <input v-model="addUser.newKey" type="text" class="input" :placeholder="$t('请输入 API Key')" />
-          <p class="mt-1 text-xs text-slate-400">{{ $t('提交后会先创建 Consumer 并配置 key-auth，再加入路由访问授权') }}</p>
+          <p class="form-help">{{ $t('提交后会先创建 Consumer 并配置 key-auth，再加入路由访问授权') }}</p>
         </div>
       </div>
     </div>
