@@ -216,7 +216,7 @@ export default toNative(MonitorPage)
             <i class="fas fa-desktop text-white text-sm"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">{{ $t('系统监控') }}</h1>
+            <h1 class="title-text">{{ $t('系统监控') }}</h1>
             <p class="text-xs text-slate-500">{{ $t('实时系统资源监控') }}</p>
           </div>
         </div>
