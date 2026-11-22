@@ -72,10 +72,10 @@ def check_toolbar_icon(filepath, lines, tmpl, tmpl_line0):
     """仅检查 page-icon 元素，避免将页面其他大图标误判为 toolbar 图标。"""
     if not has_toolbar(tmpl):
         return
-    for match in re.finditer(r'<div\\b[^>]*class="[^"]*\\bpage-icon\\b[^"]*"[^>]*>', tmpl):
+    for match in re.finditer(r'<div\b[^>]*class="[^"]*\bpage-icon\b[^"]*"[^>]*>', tmpl):
         tag = match.group(0)
-        if re.search(r'\\b(?:w|h)-\\d+\\b|\\brounded-xl\\b', tag):
-            line = tmpl_line0 + tmpl[:match.start()].count("\\n")
+        if re.search(r'\b(?:w|h)-\d+\b|\brounded-xl\b', tag):
+            line = tmpl_line0 + tmpl[:match.start()].count("\n")
             report(filepath, line, "WARN", "page-icon 不应覆盖公共尺寸或圆角")
 
 
