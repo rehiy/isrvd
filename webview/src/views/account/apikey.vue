@@ -114,7 +114,7 @@ export default toNative(AccountTokens)
           <button
             v-if="portal.hasPerm('POST /api/account/token') && newToken"
             type="button"
-            class="btn-icon-sm"
+            class="btn btn-secondary btn-square"
             :title="$t('复制令牌')"
             @click="copyToken(newToken.token)"
           >
@@ -125,7 +125,7 @@ export default toNative(AccountTokens)
             type="submit"
             form="apikey-form"
             :disabled="tokenLoading || !tokenForm.name.trim()"
-            class="btn-icon-sm"
+            class="btn btn-blue btn-square"
             :title="$t('生成令牌')"
           >
             <i v-if="!tokenLoading" class="fas fa-plus text-sm"></i>

@@ -167,7 +167,7 @@ export default toNative(AccountPasskeys)
     </div>
 
     <div v-if="canView" class="card-body">
-      <div v-if="passkeyLoading" class="card-body">
+      <div v-if="passkeyLoading">
         <div class="empty-state">
           <div class="spinner-lg"></div>
           <p class="text-slate-500">{{ $t('加载中...') }}</p>
