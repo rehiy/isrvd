@@ -4,6 +4,7 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import api from '@/service/api'
 import type { DockerContainerDetail, DockerVolumeMapping } from '@/service/types'
 
+import { containerStateTextClass } from '@/helper/docker'
 import { formatTime } from '@/helper/format'
 
 import ContainerTabs from '@/views/docker/widget/container-tabs.vue'
@@ -60,6 +61,7 @@ class ContainerDetail extends Vue {
     }
 
     formatTime = formatTime
+    containerStateTextClass = containerStateTextClass
 }
 
 export default toNative(ContainerDetail)
@@ -128,7 +130,7 @@ export default toNative(ContainerDetail)
           </div>
           <div>
             <label class="form-label">{{ $t('状态') }}</label>
-            <div :class="['detail-value font-medium', detail.state === 'running' ? 'text-emerald-600' : 'text-slate-500']">{{ detail.state }}</div>
+            <div class="detail-value" :class="containerStateTextClass(detail.state)">{{ detail.state }}</div>
           </div>
           <div>
             <label class="form-label">{{ $t('重启策略') }}</label>
