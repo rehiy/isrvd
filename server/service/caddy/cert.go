@@ -2,6 +2,7 @@ package caddy
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -29,6 +30,7 @@ import (
 //   - automate：automation.policies[].subjects，Subject 为域名
 //   - cached：运行时文件缓存（只读），Subject 为域名，含有效期字段
 type CertForm struct {
+	AlertKey    string   `json:"-"`
 	Key         string   `json:"key,omitempty"`         // 复合主键 <source>-<index>，cached 为 cached-<相对路径>；仅响应使用，请求中被忽略
 	Source      string   `json:"source"`                // file / pem / automate / cached
 	Subject     string   `json:"subject,omitempty"`     // automate/cached：目标域名；file/pem：解析自证书 CN
@@ -50,10 +52,29 @@ func (s *Service) CertList(ctx context.Context) ([]CertForm, error) {
 	if err != nil {
 		return nil, err
 	}
-	return s.certListFromConfig(cfg), nil
+	return s.certListFromConfig(ctx, cfg), ctx.Err()
 }
 
-func (s *Service) certListFromConfig(cfg *caddy.Config) []CertForm {
+func (s *Service) certListFromConfig(ctx context.Context, cfg *caddy.Config) []CertForm {
+	all, _ := s.collectCerts(ctx, cfg)
+	return slices.DeleteFunc(all, func(form CertForm) bool {
+		return form.Source == CertSourceCached && form.NotAfter == nil
+	})
+}
+
+// CertListForAlerts 保留存在但暂时不可解析的证书，并说明缓存扫描是否完整。
+func (s *Service) CertListForAlerts(ctx context.Context) ([]CertForm, bool, error) {
+	cfg, err := s.client.ConfigAll(ctx)
+	if err != nil {
+		return nil, false, err
+	}
+	all, complete := s.collectCerts(ctx, cfg)
+	return slices.DeleteFunc(all, func(form CertForm) bool {
+		return form.Source == CertSourceAutomate
+	}), complete, ctx.Err()
+}
+
+func (s *Service) collectCerts(ctx context.Context, cfg *caddy.Config) ([]CertForm, bool) {
 	out := make([]CertForm, 0)
 	if cfg.Apps != nil && cfg.Apps.TLS != nil {
 		tls := cfg.Apps.TLS
@@ -62,6 +83,7 @@ func (s *Service) certListFromConfig(cfg *caddy.Config) []CertForm {
 				form := CertForm{
 					Key:         buildCertKey(CertSourceFile, i),
 					Source:      CertSourceFile,
+					AlertKey:    "file:" + f.Certificate,
 					Certificate: f.Certificate,
 					Tags:        f.Tags,
 					Format:      f.Format,
@@ -76,7 +98,11 @@ func (s *Service) certListFromConfig(cfg *caddy.Config) []CertForm {
 					Certificate: p.Certificate,
 					Tags:        p.Tags,
 				}
-				fillCertInfo(&form, certify.PEMParse([]byte(p.Certificate)))
+				cert := certify.PEMParse([]byte(p.Certificate))
+				if cert != nil {
+					form.AlertKey = pemIdentity(cert)
+				}
+				fillCertInfo(&form, cert)
 				out = append(out, form)
 			}
 		}
@@ -96,9 +122,8 @@ func (s *Service) certListFromConfig(cfg *caddy.Config) []CertForm {
 	}
 
 	// 追加运行时证书缓存（忽略扫描错误，不影响主列表）
-	cached, _ := s.scanCertCache(cfg)
-	out = append(out, cached...)
-	return out
+	cached, complete := s.scanCertCache(ctx, cfg)
+	return append(out, cached...), complete
 }
 
 // CertCreate 创建证书
@@ -207,48 +232,55 @@ func (s *Service) CertDelete(ctx context.Context, key string) error {
 //
 // Caddy ACME 证书存储路径：<storage_root>/certificates/<acme_server_host>/<domain>/<domain>.crt
 // 文件格式：PEM，包含私钥 + 证书链（多个 block），与 certify.certToPEM 输出格式一致。
-func (s *Service) scanCertCache(cfg *caddy.Config) ([]CertForm, error) {
-	if cfg.Storage == nil {
-		return nil, nil
-	}
+func (s *Service) scanCertCache(ctx context.Context, cfg *caddy.Config) ([]CertForm, bool) {
 	storageRoot, _ := cfg.Storage["root"].(string)
 	if storageRoot == "" {
-		return nil, nil
+		return nil, true
 	}
-
 	certsDir := filepath.Join(storageRoot, "certificates")
 	var result []CertForm
-
+	complete := true
 	err := filepath.WalkDir(certsDir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d == nil || d.IsDir() {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		if err != nil {
+			if path != certsDir || !errors.Is(err, os.ErrNotExist) {
+				complete = false
+			}
 			return nil
 		}
-		if !strings.HasSuffix(path, ".crt") {
-			return nil
-		}
-		cert := parseCertFile(path)
-		if cert == nil {
+		if d.IsDir() || !strings.HasSuffix(path, ".crt") {
 			return nil
 		}
 		rel, _ := filepath.Rel(storageRoot, path)
-		form := CertForm{
-			Key:    "cached-" + rel,
-			Source: CertSourceCached,
-		}
-		fillCertInfo(&form, cert)
+		key := "cached-" + rel
+		form := CertForm{Key: key, AlertKey: key, Source: CertSourceCached}
+		fillCertInfo(&form, parseCertFile(path))
 		result = append(result, form)
 		return nil
 	})
-
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return nil, fmt.Errorf("扫描证书缓存失败: %w", err)
-	}
-	return result, nil
+	return result, complete && err == nil
 }
 
-// ─── 辅助函数 ───
-
-// ─── 辅助：证书 ───
+func pemIdentity(parsed *x509.Certificate) string {
+	names := make([]string, 0, len(parsed.DNSNames))
+	for _, name := range parsed.DNSNames {
+		names = append(names, "dns:"+name)
+	}
+	for _, ip := range parsed.IPAddresses {
+		names = append(names, "ip:"+ip.String())
+	}
+	for _, email := range parsed.EmailAddresses {
+		names = append(names, "email:"+email)
+	}
+	for _, uri := range parsed.URIs {
+		names = append(names, "uri:"+uri.String())
+	}
+	slices.Sort(names)
+	identity := parsed.Subject.String() + "\x00" + parsed.PublicKeyAlgorithm.String() + "\x00" + strings.Join(names, "\x00")
+	return fmt.Sprintf("pem:%x", sha256.Sum256([]byte(identity)))
+}
 
 func buildCertKey(source string, index int) string {
 	return fmt.Sprintf("%s-%d", source, index)

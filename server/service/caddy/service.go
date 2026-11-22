@@ -18,10 +18,6 @@ import (
 const DefaultServerName = "srv0"
 
 // CertSource 证书来源类型。
-//
-// 注意：file / pem / automate 三个取值在 server/service/notify/fault.go 中有同值副本
-// （caddyCertSourceFile / caddyCertSourcePEM / caddyCertSourceAutomate），用于证书到期告警。
-// 修改这里的取值时必须同步修改那里。
 const (
 	CertSourceFile     = "file"     // load_files：磁盘文件路径
 	CertSourcePEM      = "pem"      // load_pem：内联 PEM

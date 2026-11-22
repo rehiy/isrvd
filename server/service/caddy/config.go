@@ -33,7 +33,7 @@ func (s *Service) Info(ctx context.Context) (*Info, error) {
 	if cfg.Apps != nil && cfg.Apps.TLS != nil {
 		info.HasTLS = true
 	}
-	info.Certs = len(s.certListFromConfig(cfg))
+	info.Certs = len(s.certListFromConfig(ctx, cfg))
 	return info, nil
 }
 

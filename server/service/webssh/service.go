@@ -2,7 +2,9 @@
 package webssh
 
 import (
+	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/rehiy/libgo/logman"
@@ -15,8 +17,12 @@ import (
 // logger 为 webssh 包创建带名称的 logger
 var logger = logman.Named("webssh")
 
-// Service WebSSH 业务服务
+// ErrCredentialInUse 表示仍有主机绑定该凭据。
+var ErrCredentialInUse = errors.New("SSH 凭据仍被主机引用")
+
+// Service WebSSH 业务服务。
 type Service struct {
+	hostBindingsMu  sync.Mutex
 	hostStore       *hostStore       // 主机配置存储
 	credentialStore *credentialStore // 凭据存储
 }
@@ -81,6 +87,14 @@ func (s *Service) CredentialUpdate(id string, req *CredentialUpsertRequest) (*Cr
 
 // CredentialDelete 删除凭据
 func (s *Service) CredentialDelete(id string) error {
+	s.hostBindingsMu.Lock()
+	defer s.hostBindingsMu.Unlock()
+
+	for _, host := range s.hostStore.list() {
+		if host.CredentialID == id {
+			return fmt.Errorf("%w: %s", ErrCredentialInUse, host.Name)
+		}
+	}
 	if err := s.credentialStore.delete(id); err != nil {
 		return fmt.Errorf("删除凭据失败: %w", err)
 	}
@@ -130,6 +144,9 @@ type HostUpsertRequest struct {
 
 // HostCreate 新建主机配置
 func (s *Service) HostCreate(req *HostUpsertRequest) (*Host, error) {
+	s.hostBindingsMu.Lock()
+	defer s.hostBindingsMu.Unlock()
+
 	h, err := s.hostFromRequest(req)
 	if err != nil {
 		return nil, err
@@ -143,6 +160,9 @@ func (s *Service) HostCreate(req *HostUpsertRequest) (*Host, error) {
 
 // HostUpdate 更新主机配置
 func (s *Service) HostUpdate(id string, req *HostUpsertRequest) (*Host, error) {
+	s.hostBindingsMu.Lock()
+	defer s.hostBindingsMu.Unlock()
+
 	h, err := s.hostFromRequest(req)
 	if err != nil {
 		return nil, err
@@ -179,6 +199,9 @@ func (s *Service) hostFromRequest(req *HostUpsertRequest) (*Host, error) {
 
 // HostDelete 删除主机配置
 func (s *Service) HostDelete(id string) error {
+	s.hostBindingsMu.Lock()
+	defer s.hostBindingsMu.Unlock()
+
 	if err := s.hostStore.delete(id); err != nil {
 		return fmt.Errorf("删除主机失败: %w", err)
 	}

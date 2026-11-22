@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/docker/api/types/container"
 	"github.com/rehiy/libgo/jsonl"
 	"github.com/rehiy/libgo/logman"
 )
@@ -26,21 +27,27 @@ const (
 // ErrMonitorUnavailable 监控存储未就绪。
 var ErrMonitorUnavailable = errors.New("监控采集器未启动")
 
+type statsRecord struct {
+	Ts          int64                    `json:"ts"`
+	Data        *container.StatsResponse `json:"data"`
+	ContainerID string                   `json:"container_id"`
+}
+
 // recordIndex 聚合各容器最后保存记录，文件读取由 JSONL 游标负责。
 type recordIndex struct {
 	gate   chan struct{}
 	cursor jsonl.Cursor
-	latest map[string]Record
+	latest map[string]statsRecord
 }
 
 func newRecordIndex() *recordIndex {
 	return &recordIndex{
 		gate:   make(chan struct{}, 1),
-		latest: make(map[string]Record),
+		latest: make(map[string]statsRecord),
 	}
 }
 
-func (i *recordIndex) read(ctx context.Context, s *jsonl.Store) ([]Record, error) {
+func (i *recordIndex) read(ctx context.Context, s *jsonl.Store) ([]statsRecord, error) {
 	if s == nil {
 		return nil, ErrMonitorUnavailable
 	}
@@ -53,8 +60,8 @@ func (i *recordIndex) read(ctx context.Context, s *jsonl.Store) ([]Record, error
 
 	cutoff := historyCutoff(time.Now())
 	err := i.cursor.ScanSince(ctx, s, cutoff, "ts", nil, func(line []byte) bool {
-		var record Record
-		if json.Unmarshal(line, &record) == nil && record.ContainerID != "" && len(record.Data) > 0 && string(record.Data) != "null" {
+		var record statsRecord
+		if json.Unmarshal(line, &record) == nil && record.ContainerID != "" && record.Data != nil {
 			i.latest[record.ContainerID] = record
 		}
 		return true
@@ -63,7 +70,7 @@ func (i *recordIndex) read(ctx context.Context, s *jsonl.Store) ([]Record, error
 		return nil, err
 	}
 
-	records := make([]Record, 0, len(i.latest))
+	records := make([]statsRecord, 0, len(i.latest))
 	for id, record := range i.latest {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -74,7 +81,7 @@ func (i *recordIndex) read(ctx context.Context, s *jsonl.Store) ([]Record, error
 			records = append(records, record)
 		}
 	}
-	slices.SortFunc(records, func(a, b Record) int { return strings.Compare(a.ContainerID, b.ContainerID) })
+	slices.SortFunc(records, func(a, b statsRecord) int { return strings.Compare(a.ContainerID, b.ContainerID) })
 	return records, ctx.Err()
 }
 

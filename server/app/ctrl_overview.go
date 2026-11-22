@@ -58,7 +58,7 @@ func (app *App) overviewBootstrap(c *gin.Context) {
 			OpenAPIEnabled: snapshot.Server.OpenAPI,
 			Links:          snapshot.Links,
 		}
-		resp.Probe = app.overviewSvc.Probe(ctx, app.probes)
+		resp.Probe = app.overviewSvc.Probe(ctx, app.availability.Load().probes)
 	}
 
 	respondSuccess(c, "ok", resp)

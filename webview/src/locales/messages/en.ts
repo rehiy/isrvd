@@ -10,6 +10,7 @@ import type { LanguageModule } from '../types'
 const messages: Record<string, string> = {
 
     // ─── Caddy 可信代理 ───
+    '以下服务的路由加载失败': 'Routes could not be loaded for these servers',
     '可信代理 IP / CIDR': 'Trusted Proxy IPs / CIDRs',
     '仅填写实际反向代理的 IP 或网段，每行一个；留空表示不信任代理转发的客户端 IP。': 'Enter only real upstream proxy IPs or ranges, one per line. Leave blank to distrust forwarded client IPs.',
     '严格解析代理请求头': 'Strict Proxy Header Parsing',

@@ -23,14 +23,6 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-// composeFileCandidates 常见的 compose 文件名（按优先级）
-var composeFileCandidates = []string{
-	"compose.yaml",
-	"compose.yml",
-	"docker-compose.yaml",
-	"docker-compose.yml",
-}
-
 // ProjectToYAML 使用 compose-go 官方序列化器输出 YAML（不含文件头，由调用方按需添加）
 func ProjectToYAML(project *types.Project) ([]byte, error) {
 	if project == nil {
@@ -43,45 +35,19 @@ func ProjectToYAML(project *types.Project) ([]byte, error) {
 	return data, nil
 }
 
-// LoadOptions 加载配置
-type LoadOptions struct {
-	WorkingDir  string            // compose 文件所在目录（用于解析相对路径和 .env）
-	ConfigFiles []string          // 指定要加载的 compose 文件绝对路径；为空则在 WorkingDir 下自动查找
-	ProjectName string            // 项目名（影响生成的网络/容器默认前缀）
-	Environment map[string]string // 额外的环境变量（并入进程环境，优先级高于 .env）
-}
-
-// LoadProject 使用 compose-go 官方加载器解析 compose 文件，
-// 自动处理 .env、变量插值、schema 校验等一致性检查
-func LoadProject(ctx context.Context, opts LoadOptions) (*types.Project, error) {
-	if opts.WorkingDir == "" {
+// LoadProject 加载项目目录中由 isrvd 管理的 compose.yml。
+func LoadProject(ctx context.Context, workingDir, projectName string) (*types.Project, error) {
+	if workingDir == "" {
 		return nil, fmt.Errorf("缺少工作目录")
 	}
-
-	configFiles, err := resolveConfigFiles(opts.WorkingDir, opts.ConfigFiles)
+	content, err := os.ReadFile(filepath.Join(workingDir, ComposeFileName))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("读取 compose 文件失败: %w", err)
 	}
-	files, err := readConfigFiles(configFiles)
-	if err != nil {
-		return nil, err
-	}
-
-	projectName := opts.ProjectName
 	if projectName == "" {
-		projectName = filepath.Base(opts.WorkingDir)
+		projectName = filepath.Base(workingDir)
 	}
-
-	env, err := projectEnvironmentWithEnvFile(ctx, opts.Environment, nil, opts.WorkingDir)
-	if err != nil {
-		return nil, err
-	}
-
-	return loadProject(ctx, types.ConfigDetails{
-		WorkingDir:  opts.WorkingDir,
-		ConfigFiles: files,
-		Environment: env,
-	}, projectName, true, true)
+	return LoadProjectFromContentInDir(ctx, string(content), workingDir, projectName, nil)
 }
 
 // LoadProjectFromContentInDir 从 yaml 文本加载 compose 项目，并以 workingDir 作为项目目录解析相对路径。
@@ -98,8 +64,9 @@ func loadProjectContent(ctx context.Context, content, workingDir, projectName st
 	if content == "" {
 		return nil, fmt.Errorf("compose 内容为空")
 	}
-	if workingDir == "" {
-		workingDir = "."
+	workingDir, err := filepath.Abs(workingDir)
+	if err != nil {
+		return nil, err
 	}
 
 	env, err := projectEnvironmentWithEnvFile(ctx, nil, envContent, workingDir)
@@ -111,24 +78,66 @@ func loadProjectContent(ctx context.Context, content, workingDir, projectName st
 		WorkingDir: workingDir,
 		ConfigFiles: []types.ConfigFile{
 			{
-				Filename: "compose.yml",
+				Filename: filepath.Join(workingDir, ComposeFileName),
 				Content:  []byte(content),
 			},
 		},
 		Environment: env,
 	}
 
-	var configure func(*loader.Options)
-	if skipServiceEnvironmentResolution {
-		configure = func(o *loader.Options) {
-			o.SkipResolveEnvironment = true
-		}
+	project, err := loadProjectWithOptions(ctx, details, projectName, resolvePaths, projectName != "", func(o *loader.Options) {
+		o.SkipResolveEnvironment = skipServiceEnvironmentResolution || envContent != nil
+	})
+	if err != nil || envContent == nil || skipServiceEnvironmentResolution {
+		return project, err
 	}
-	return loadProjectWithOptions(ctx, details, projectName, resolvePaths, projectName != "", configure)
+	return resolveProjectEnv(ctx, project, *envContent)
 }
 
-func loadProject(ctx context.Context, details types.ConfigDetails, projectName string, resolvePaths bool, setProjectName bool) (*types.Project, error) {
-	return loadProjectWithOptions(ctx, details, projectName, resolvePaths, setProjectName, nil)
+// resolveProjectEnv 将项目 .env 引用暂时指向本次提交的内容，顺序、格式和优先级由 compose-go 解析。
+func resolveProjectEnv(ctx context.Context, project *types.Project, content string) (*types.Project, error) {
+	original := filepath.Join(project.WorkingDir, EnvFileName)
+	if !replaceProjectEnvPath(project, original, original) {
+		return project.WithServicesEnvironmentResolved(false)
+	}
+	staged, err := os.CreateTemp("", "isrvd-compose-env-*")
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(staged.Name())
+	_, err = staged.WriteString(content)
+	if err := errors.Join(err, staged.Close()); err != nil {
+		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	replaceProjectEnvPath(project, original, staged.Name())
+	resolved, err := project.WithServicesEnvironmentResolved(false)
+	if err != nil {
+		return nil, err
+	}
+	replaceProjectEnvPath(resolved, staged.Name(), original)
+	return resolved, ctx.Err()
+}
+
+func replaceProjectEnvPath(project *types.Project, from, to string) bool {
+	found := false
+	replace := func(files []types.EnvFile) {
+		for i := range files {
+			if filepath.Clean(files[i].Path) == from {
+				files[i].Path = to
+				found = true
+			}
+		}
+	}
+	for _, service := range project.Services {
+		replace(service.EnvFiles)
+		for _, hook := range service.PreStart {
+			replace(hook.EnvFiles)
+		}
+	}
+	return found
 }
 
 func loadProjectWithOptions(ctx context.Context, details types.ConfigDetails, projectName string, resolvePaths bool, setProjectName bool, configure func(*loader.Options)) (*types.Project, error) {
@@ -236,61 +245,6 @@ func projectEnvironmentWithEnvFile(ctx context.Context, extra map[string]string,
 func parseEnvContent(content string) (map[string]string, error) {
 	return dotenv.Parse(bytes.NewReader([]byte(content)))
 }
-func resolveConfigFiles(workingDir string, configFiles []string) ([]string, error) {
-	if len(configFiles) > 0 {
-		return configFiles, nil
-	}
-	found, err := locateComposeFile(workingDir)
-	if err != nil {
-		return nil, err
-	}
-	return []string{found}, nil
-}
-
-func readConfigFiles(paths []string) ([]types.ConfigFile, error) {
-	files := make([]types.ConfigFile, 0, len(paths))
-	for _, p := range paths {
-		data, err := os.ReadFile(p)
-		if err != nil {
-			return nil, fmt.Errorf("读取 compose 文件失败: %w", err)
-		}
-		files = append(files, types.ConfigFile{Filename: p, Content: data})
-	}
-	return files, nil
-}
-
-// locateComposeFile 在 dir 下查找 compose 文件，根目录找不到时尝试一级子目录。
-func locateComposeFile(dir string) (string, error) {
-	if p, ok := findComposeFile(dir); ok {
-		return p, nil
-	}
-
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return "", fmt.Errorf("读取目录失败: %w", err)
-	}
-	for _, e := range entries {
-		if !e.IsDir() {
-			continue
-		}
-		if p, ok := findComposeFile(filepath.Join(dir, e.Name())); ok {
-			return p, nil
-		}
-	}
-	return "", fmt.Errorf("目录中未找到 compose 文件")
-}
-
-func findComposeFile(dir string) (string, bool) {
-	for _, name := range composeFileCandidates {
-		p := filepath.Join(dir, name)
-		if st, err := os.Stat(p); err == nil && !st.IsDir() {
-			return p, true
-		}
-	}
-	return "", false
-}
-
-// ─── 辅助函数 ───
 
 // declaresProjectName 判断 compose 文本是否声明了顶层 name 键。
 func declaresProjectName(content string) bool {

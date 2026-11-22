@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/docker/api/types/container"
-
 	"isrvd/pkgs/docker"
 	"isrvd/server/config"
 )
@@ -163,10 +161,7 @@ func (c *Collector) containersMetricsText(ctx context.Context, stale int64) ([]b
 		if stale > 0 && now-record.Ts > stale {
 			continue
 		}
-		var v container.StatsResponse
-		if err := json.Unmarshal(record.Data, &v); err != nil {
-			return nil, err
-		}
+		v := record.Data
 		name := strings.TrimPrefix(v.Name, "/")
 		if name == "" {
 			name = docker.ShortID(record.ContainerID)

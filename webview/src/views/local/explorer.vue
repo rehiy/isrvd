@@ -58,7 +58,7 @@ function createFilerAdapter(): ExplorerAdapter {
         async writeFile(path, content): Promise<void> { await api.filerModify(path, content) },
         async chmod(path, mode): Promise<void> { await api.filerChmod(path, mode) },
         async dirSize(path): Promise<number | null> { return (await api.filerDirSize(path)).payload?.size ?? null },
-        async createFile(path, content = ''): Promise<void> { await api.filerCreate(path, content) },
+        async createFile(path, content = ''): Promise<void> { await api.filerCreate(path, content, true) },
         async zip(path): Promise<void> { await api.filerZip(path) },
         async unzip(path, targetDir): Promise<void> { await api.filerUnzip(path, targetDir) },
         previewUrl(path, token, inline = true): string { return api.filerDownloadURL(path, token, inline) },

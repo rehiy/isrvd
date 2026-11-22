@@ -95,25 +95,22 @@ func newUpstreamProxy(upstream *url.URL, userHeader string) *httputil.ReversePro
 	}
 }
 
-// nodeHandlers 节点管理接口，键为 service/node.PermissionRoutes 中的「方法 路径」。
-// 两者是否一一对应由测试保证；即使漏配，也因权限索引里没有该路由而被拒绝（见 app.GatewayAuthorize）。
-func (g *gateway) nodeHandlers() map[string]http.HandlerFunc {
-	return map[string]http.HandlerFunc{
-		"GET /api/node/nodes":       g.nodeList,
-		"POST /api/node":            g.nodeCreate,
-		"PUT /api/node/:id":         g.nodeUpdate,
-		"POST /api/node/:id/revoke": g.nodeRevoke,
-		"DELETE /api/node/:id":      g.nodeDelete,
-		"PUT /api/node/:id/portmap": g.nodePortMapUpdate,
-	}
-}
-
 func (g *gateway) routes() *http.ServeMux {
 	mux := http.NewServeMux()
-
-	for route, h := range g.nodeHandlers() {
-		method, path, _ := strings.Cut(route, " ")
-		mux.HandleFunc(helper.MuxPattern(method, path), g.authorized(h))
+	handlers := map[node.RouteAction]http.HandlerFunc{
+		node.RouteList:          g.nodeList,
+		node.RouteCreate:        g.nodeCreate,
+		node.RouteUpdate:        g.nodeUpdate,
+		node.RouteRevoke:        g.nodeRevoke,
+		node.RouteDelete:        g.nodeDelete,
+		node.RoutePortMapUpdate: g.nodePortMapUpdate,
+	}
+	for _, route := range node.PermissionRoutes() {
+		handler := handlers[route.Action]
+		if handler == nil {
+			panic("missing node handler: " + route.Method + " " + route.Path)
+		}
+		mux.HandleFunc(helper.MuxPattern(route.Method, route.Path), g.authorized(handler))
 	}
 
 	// 受管机接入：凭节点令牌连接，首次连接时待接入的令牌自动激活为节点

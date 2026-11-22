@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"mime"
 	"net/http"
+	"os"
 	"path/filepath"
 	"syscall"
 
@@ -76,7 +77,7 @@ func (app *App) filerDirSize(c *gin.Context) {
 		return
 	}
 
-	size, err := app.filerSvc.DirSize(absPath)
+	size, err := app.filerSvc.DirSize(c.Request.Context(), absPath)
 	if err != nil {
 		logman.Error("Calculate dir size failed", "path", absPath, "error", err)
 		respondError(c, http.StatusInternalServerError, "无法计算目录大小")
@@ -136,7 +137,17 @@ func (app *App) filerFileCreate(c *gin.Context) {
 		return
 	}
 
-	if err := app.filerSvc.FileCreate(absPath, content); err != nil {
+	var err error
+	if c.Query("createOnly") == "true" {
+		err = app.filerSvc.FileCreateOnly(c.Request.Context(), absPath, content)
+	} else {
+		err = app.filerSvc.FileCreate(absPath, content)
+	}
+	if errors.Is(err, os.ErrExist) {
+		respondError(c, http.StatusConflict, "文件已存在")
+		return
+	}
+	if err != nil {
 		respondError(c, http.StatusInternalServerError, "无法创建文件")
 		return
 	}
@@ -338,7 +349,7 @@ func (app *App) filerFileZip(c *gin.Context) {
 		return
 	}
 
-	if err := app.filerSvc.FileZip(absPath); err != nil {
+	if err := app.filerSvc.FileZip(c.Request.Context(), absPath); err != nil {
 		logman.Error("Create zip failed", "path", absPath, "error", err)
 		respondError(c, http.StatusInternalServerError, "无法创建压缩文件")
 		return

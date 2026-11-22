@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"strings"
 	"sync"
@@ -39,6 +40,7 @@ type DockerService struct {
 	client     *client.Client
 	config     *DockerConfig
 	registryMu sync.RWMutex // 保护 config.Registries 的并发读写
+	execScheme string       // SDK 封装 HTTP transport 前解析的协议
 
 	remote bool // daemon 是否位于当前进程所在主机之外，见 isRemoteHost
 
@@ -64,13 +66,20 @@ func NewDockerService(cfg *DockerConfig) (*DockerService, error) {
 		opts = append(opts, withTLSConfig(tlsConfig))
 	}
 
+	execScheme := "http"
+	opts = append(opts, func(c *client.Client) error {
+		if transport, ok := c.HTTPClient().Transport.(*http.Transport); ok && transport.TLSClientConfig != nil {
+			execScheme = "https"
+		}
+		return nil
+	})
 	cli, err := client.NewClientWithOpts(opts...)
 	if err != nil {
 		logman.Error("Docker client init failed", "error", err)
 		return nil, err
 	}
 
-	return &DockerService{client: cli, config: cfg, remote: isRemoteHost(cfg.Host)}, nil
+	return &DockerService{client: cli, config: cfg, execScheme: execScheme, remote: isRemoteHost(cfg.Host)}, nil
 }
 
 // Client 获取 Docker 客户端

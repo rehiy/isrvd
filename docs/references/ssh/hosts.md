@@ -74,6 +74,8 @@ isrvd_put "/ssh/credential/<ID>" '{
 isrvd_delete "/ssh/credential/<ID>"
 ```
 
+凭据仍被主机使用时返回 409。先解除主机绑定，再删除凭据。
+
 ---
 
 ## 主机管理

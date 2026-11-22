@@ -26,7 +26,12 @@ type ScriptRunOptions struct {
 // ContainerRunScript 创建临时容器运行脚本，完成后收集日志并删除容器。
 // 脚本内容通过 Docker Copy API 写入容器，兼容远程 daemon 和容器化部署。
 func (s *DockerService) ContainerRunScript(ctx context.Context, opts ScriptRunOptions) (string, error) {
-	image, script, timeout := opts.Image, opts.Script, opts.Timeout
+	image, script := opts.Image, opts.Script
+	if opts.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(opts.Timeout)*time.Second)
+		defer cancel()
+	}
 	if err := s.ImageEnsure(ctx, image, false); err != nil {
 		return "", fmt.Errorf("镜像 %s 不可用: %w", image, err)
 	}
@@ -81,14 +86,7 @@ func (s *DockerService) ContainerRunScript(ctx context.Context, opts ScriptRunOp
 	}
 
 	// 等待容器退出
-	waitCtx := ctx
-	var cancel context.CancelFunc
-	if timeout > 0 {
-		waitCtx, cancel = context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
-		defer cancel()
-	}
-
-	statusCh, errCh := s.client.ContainerWait(waitCtx, resp.ID, container.WaitConditionNotRunning)
+	statusCh, errCh := s.client.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
 	var exitCode int64
 	select {
 	case waitResult, ok := <-statusCh:

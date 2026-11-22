@@ -10,6 +10,7 @@ import type { LanguageModule } from '../types'
 const messages: Record<string, string> = {
 
     // ─── Caddy 可信代理 ───
+    '以下服务的路由加载失败': '以下服務的路由加載失敗',
     '可信代理 IP / CIDR': '可信代理 IP / CIDR',
     '仅填写实际反向代理的 IP 或网段，每行一个；留空表示不信任代理转发的客户端 IP。': '僅填寫實際反向代理的 IP 或網段，每行一個；留空表示不信任代理轉發的客戶端 IP。',
     '严格解析代理请求头': '嚴格解析代理請求頭',

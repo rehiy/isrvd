@@ -147,17 +147,12 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 		installDir = filepath.Join(root, name)
 	}
 
-	oldEnvState, err := compose.EnvStateRead(installDir)
+	currentConfig, err := s.SwarmInspect(ctx, name, false)
 	if err != nil {
 		return nil, err
 	}
-
-	currentConfig, contentErr := s.SwarmInspect(ctx, name, false)
-	oldContent := ""
-	if currentConfig != nil {
-		oldContent = currentConfig.Content
-	}
-	content, err := s.prepareRedeployContent(ctx, name, installDir, oldContent, contentErr, req)
+	oldContent, oldEnv := currentConfig.Content, currentConfig.EnvContent
+	content, _, err := s.prepareRedeployContent(ctx, name, installDir, oldContent, req)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +161,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	}
 	defer func() { s.historyFinish(ctx, "swarm", name, "redeploy", resultErr == nil) }()
 
-	oldProject, err := compose.LoadProjectFromContentInDir(ctx, oldContent, installDir, name, &oldEnvState.Content)
+	oldProject, err := compose.LoadProjectFromContentInDir(ctx, oldContent, installDir, name, &oldEnv)
 	if err != nil {
 		return nil, err
 	}
@@ -185,24 +180,23 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 		oldServices[service.Name] = current
 	}
 
-	composePath := filepath.Join(installDir, compose.ComposeFileName)
-	hadComposeFile := currentConfig != nil && currentConfig.Source == "file"
-	rollbackFiles := func() error {
-		return errors.Join(restoreComposeFile(composePath, oldContent, hadComposeFile), compose.EnvStateRestore(installDir, oldEnvState))
+	rollback := func(err error) error {
+		fileErr, envErr := currentConfig.restore(installDir)
+		return wrapRedeployError(ctx, err,
+			rollbackResult(ctx, compose.ComposeFileName, fileErr),
+			rollbackResult(ctx, compose.EnvFileName, envErr),
+		)
 	}
 	if err := compose.EnvApply(installDir, req.EnvContent); err != nil {
-		return nil, wrapRedeployError(err, formatRedeployRollbackSummary(rollbackFiles(), nil, "服务"))
+		return nil, rollback(err)
 	}
 	project, err := compose.ProjectLoad(ctx, name, content, installDir)
 	if err != nil {
-		return nil, wrapRedeployError(err, formatRedeployRollbackSummary(rollbackFiles(), nil, "服务"))
+		return nil, rollback(err)
 	}
 	items, err := s.swarmServicesReconcile(ctx, project, oldProject, oldServices, req.ForcePull)
 	if err != nil {
-		if restoreErr := rollbackFiles(); restoreErr != nil {
-			return nil, fmt.Errorf("%w; 恢复配置失败: %v", err, restoreErr)
-		}
-		return nil, err
+		return nil, rollback(err)
 	}
 
 	logman.Info("Swarm compose redeployed", "name", name)
@@ -235,17 +229,6 @@ func (s *Service) swarmProjectName(ctx context.Context, name, root string) (stri
 		return project, nil
 	}
 	return name, nil
-}
-
-// restoreComposeFile 保持操作前 compose.yml 的存在状态。
-func restoreComposeFile(path, content string, existed bool) error {
-	if existed {
-		return os.WriteFile(path, []byte(content), 0644)
-	}
-	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-	return nil
 }
 
 // ─── 内部方法 ───

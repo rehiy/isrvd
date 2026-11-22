@@ -94,26 +94,17 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		installDir = filepath.Join(root, name)
 	}
 
-	oldEnvState, err := compose.EnvStateRead(installDir)
+	currentConfig, err := s.DockerInspect(ctx, name, false)
 	if err != nil {
 		return nil, err
 	}
-
-	currentConfig, contentErr := s.DockerInspect(ctx, name, false)
-	oldContent := ""
-	if currentConfig != nil {
-		oldContent = currentConfig.Content
-	}
-	content, err := s.prepareRedeployContent(ctx, name, installDir, oldContent, contentErr, req)
+	oldContent, oldEnv := currentConfig.Content, currentConfig.EnvContent
+	content, newProject, err := s.prepareRedeployContent(ctx, name, installDir, oldContent, req)
 	if err != nil {
 		return nil, err
 	}
 	// 删除旧容器前验证新旧配置均可解析，新配置可生成所有待创建容器的 SDK 参数。
 	// 镜像已由 prepareRedeployContent 预拉取，此处不修改运行态或落盘文件。
-	newProject, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, req.EnvContent)
-	if err != nil {
-		return nil, fmt.Errorf("重部署预检失败: %w", err)
-	}
 	seenNames := make(map[string]bool, len(newProject.Services))
 	for _, svc := range newProject.Services {
 		spec, err := compose.ServiceToDockerCreateSpec(newProject, svc)
@@ -125,7 +116,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		}
 		seenNames[spec.Name] = true
 	}
-	if _, err := compose.LoadProjectFromContentInDir(ctx, oldContent, installDir, name, &oldEnvState.Content); err != nil {
+	if _, err := compose.LoadProjectFromContentInDir(ctx, oldContent, installDir, name, &oldEnv); err != nil {
 		return nil, fmt.Errorf("原配置无法用于回滚，已取消重部署: %w", err)
 	}
 
@@ -134,54 +125,53 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	}
 	defer func() { s.historyFinish(ctx, "docker", name, "redeploy", resultErr == nil) }()
 
-	if err := s.dockerContainersRemove(ctx, name, oldContent, installDir, oldEnvState.Content); err != nil {
+	if err := s.dockerContainersRemove(ctx, name, oldContent, installDir, oldEnv); err != nil {
 		cleanupCtx, cleanupCancel := cleanupContext(ctx)
-		cleanupErr := s.dockerContainersRemove(cleanupCtx, name, oldContent, installDir, oldEnvState.Content)
+		cleanupErr := s.dockerContainersRemove(cleanupCtx, name, oldContent, installDir, oldEnv)
 		cleanupCancel()
 		var rollbackErr error
 		if cleanupErr == nil {
 			rollbackCtx, rollbackCancel := cleanupContext(ctx)
-			rollbackErr = s.dockerRollback(rollbackCtx, name, oldContent, installDir, oldEnvState.Content)
+			rollbackErr = s.dockerRollback(rollbackCtx, name, oldContent, installDir, oldEnv)
 			rollbackCancel()
 		} else {
 			rollbackErr = fmt.Errorf("继续清理旧容器失败: %w", cleanupErr)
 		}
-		return nil, wrapRedeployError(fmt.Errorf("移除旧容器失败: %w", err), formatRedeployRollbackSummary(nil, rollbackErr, "容器"))
+		return nil, wrapRedeployError(ctx, fmt.Errorf("移除旧容器失败: %w", err), rollbackResult(ctx, "容器", rollbackErr))
 	}
 
-	rollback := func() string {
+	rollback := func(err error) error {
 		// 先恢复旧 .env 再回滚容器；.env 失败不阻断容器回滚
-		fileErr := restoreComposeFile(filepath.Join(installDir, compose.ComposeFileName), oldContent, currentConfig != nil && currentConfig.Source == "file")
-		envErr := compose.EnvStateRestore(installDir, oldEnvState)
+		fileErr, envErr := currentConfig.restore(installDir)
 		if envErr != nil {
 			logman.Warn("Restore compose env before rollback failed", "name", name, "error", envErr)
 		}
 		rollbackCtx, cancel := cleanupContext(ctx)
 		defer cancel()
-		runtimeErr := s.dockerRollback(rollbackCtx, name, oldContent, installDir, oldEnvState.Content)
+		runtimeErr := s.dockerRollback(rollbackCtx, name, oldContent, installDir, oldEnv)
 		if runtimeErr != nil {
 			logman.Warn("Rollback containers failed", "name", name, "error", runtimeErr)
 		}
-		summary := formatRedeployRollbackSummary(envErr, runtimeErr, "容器")
-		if fileErr != nil {
-			return fmt.Sprintf("compose.yml 回滚失败（%v），%s", fileErr, summary)
-		}
-		return summary + "，compose.yml 回滚成功"
+		return wrapRedeployError(ctx, err,
+			rollbackResult(ctx, compose.ComposeFileName, fileErr),
+			rollbackResult(ctx, compose.EnvFileName, envErr),
+			rollbackResult(ctx, "容器", runtimeErr),
+		)
 	}
 
 	// 先落盘新 .env，确保 ProjectLoad 插值读取到新值（与 Deploy 流程顺序一致）
 	if err := compose.EnvApply(installDir, req.EnvContent); err != nil {
-		return nil, wrapRedeployError(err, rollback())
+		return nil, rollback(err)
 	}
 
 	project, err := compose.ProjectLoad(ctx, name, content, installDir)
 	if err != nil {
-		return nil, wrapRedeployError(err, rollback())
+		return nil, rollback(err)
 	}
 
 	items, err := s.dockerServicesCreate(ctx, project)
 	if err != nil {
-		return nil, wrapRedeployError(err, rollback())
+		return nil, rollback(err)
 	}
 
 	logman.Info("Compose redeployed", "name", name)

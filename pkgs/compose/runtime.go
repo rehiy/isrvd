@@ -71,15 +71,7 @@ func ProjectLoad(ctx context.Context, name, content, installDir string) (*types.
 	if err := os.WriteFile(filepath.Join(installDir, ComposeFileName), []byte(content), 0644); err != nil {
 		return nil, fmt.Errorf("写入 compose 文件失败: %w", err)
 	}
-	return LoadProject(ctx, LoadOptions{WorkingDir: installDir, ProjectName: name})
-}
-
-// ProjectParse 解析 compose 内容（不写文件），相对路径基于 installDir 展开。
-func ProjectParse(ctx context.Context, name, content, installDir string) (*types.Project, error) {
-	if installDir == "" {
-		return nil, fmt.Errorf("缺少 compose 项目工作目录")
-	}
-	return LoadProjectFromContentInDir(ctx, content, installDir, name, nil)
+	return LoadProject(ctx, installDir, name)
 }
 
 // EnvSave 以 env 为准写入 .env，空串表示清空内容。
@@ -164,15 +156,6 @@ func EnvApply(installDir string, envContent *string) error {
 		return EnvSave(installDir, *envContent)
 	}
 	return EnvEnsure(installDir)
-}
-
-// EnvContentRead 读取项目 .env 内容；文件不存在时返回空串。读取失败（权限、IO 等）向上返回错误
-func EnvContentRead(installDir string) (string, error) {
-	state, err := EnvStateRead(installDir)
-	if err != nil {
-		return "", err
-	}
-	return state.Content, nil
 }
 
 // InitFilesHandle 下载或读取附加包，解压新增文件并返回失败时的清理函数。

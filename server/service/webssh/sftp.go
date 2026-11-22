@@ -102,7 +102,7 @@ func (s *Service) SFTPUpload(ctx context.Context, hostID, dirPath string, file i
 				return err
 			}
 		}
-		return s.sftpWrite(ctx, hostID, conn, dest, file, size)
+		return s.sftpWrite(ctx, hostID, conn, dest, file, size, false)
 	})
 }
 
@@ -155,8 +155,16 @@ func (s *Service) SFTPRead(ctx context.Context, hostID, filePath string) (string
 }
 
 func (s *Service) SFTPWrite(ctx context.Context, hostID, filePath, content string) error {
+	return s.writeSFTPText(ctx, hostID, filePath, content, false)
+}
+
+func (s *Service) SFTPCreateOnly(ctx context.Context, hostID, filePath, content string) error {
+	return s.writeSFTPText(ctx, hostID, filePath, content, true)
+}
+
+func (s *Service) writeSFTPText(ctx context.Context, hostID, filePath, content string, createOnly bool) error {
 	return s.withSFTP(ctx, hostID, func(conn *sftp.Client) error {
-		return s.sftpWrite(ctx, hostID, conn, filePath, strings.NewReader(content), int64(len(content)))
+		return s.sftpWrite(ctx, hostID, conn, filePath, strings.NewReader(content), int64(len(content)), createOnly)
 	})
 }
 
@@ -282,10 +290,13 @@ func (c *sftpTransport) Write(p []byte) (int, error) {
 	return c.Conn.Write(p)
 }
 
-func (s *Service) sftpWrite(ctx context.Context, hostID string, conn *sftp.Client, name string, source io.Reader, size int64) error {
+func (s *Service) sftpWrite(ctx context.Context, hostID string, conn *sftp.Client, name string, source io.Reader, size int64, createOnly bool) error {
 	existing, err := conn.Lstat(name)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
+	}
+	if createOnly && existing != nil {
+		return os.ErrExist
 	}
 	if existing != nil && existing.Mode()&os.ModeSymlink != 0 {
 		name, err = conn.RealPath(name)
@@ -366,6 +377,11 @@ func (s *Service) sftpWrite(ctx context.Context, hostID string, conn *sftp.Clien
 		err = conn.Rename(staged, name)
 	}
 	if err != nil {
+		if createOnly && ctx.Err() == nil {
+			if _, statErr := conn.Lstat(name); statErr == nil {
+				return os.ErrExist
+			}
+		}
 		return fmt.Errorf("重命名失败: %w", err)
 	}
 	committed = true

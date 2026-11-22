@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,14 +14,11 @@ import (
 	"github.com/rehiy/libgo/websocket"
 
 	"isrvd/server/service/account"
-	"isrvd/server/service/apisix"
-	"isrvd/server/service/caddy"
 	"isrvd/server/service/compose"
 	"isrvd/server/service/copilot"
 	"isrvd/server/service/cron"
 	"isrvd/server/service/docker"
 	"isrvd/server/service/filer"
-	"isrvd/server/service/metrics"
 	"isrvd/server/service/monitor"
 	"isrvd/server/service/notify"
 	"isrvd/server/service/overview"
@@ -52,6 +50,7 @@ const (
 type App struct {
 	*gin.Engine
 	servicesMu         sync.RWMutex
+	availability       atomic.Pointer[availableServices]
 	requestCtxMu       sync.RWMutex
 	cleanupWG          sync.WaitGroup
 	lifecycleCtx       context.Context
@@ -63,15 +62,12 @@ type App struct {
 	requestsCancel     context.CancelFunc
 	wsConfig           *websocket.ServerConfig
 	monitorCollector   *monitor.Collector
-	metricsSvc         *metrics.Service
 	faultWatcher       *notify.FaultWatcher
 	overviewSvc        *overview.Service
 	configSvc          *system.ConfigService
 	auditSvc           *system.AuditService
 	accountSvc         *account.Service
 	filerSvc           *filer.Service
-	apisixSvc          *apisix.Service
-	caddySvc           *caddy.Service
 	dockerSvc          *docker.Service
 	swarmSvc           *swarm.Service
 	composeSvc         *compose.Service
@@ -79,7 +75,6 @@ type App struct {
 	copilotSvc         *copilot.Service
 	shellSvc           *shell.Service
 	websshSvc          *webssh.Service
-	probes             map[string]func(context.Context) bool // 已就绪的外部依赖模块（key 为路由 Module）→ 探活函数
 	gatewayPermissions *http.ServeMux
 	gatewayRouteIndex  map[string]Route
 	routeIndex         map[string]Route // METHOD+完整路径 → 路由索引

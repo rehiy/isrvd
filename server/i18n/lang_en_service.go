@@ -4,17 +4,28 @@ package i18n
 
 func init() {
 	Register(langEN, map[string]string{
-		"SFTP 服务器不支持安全覆盖已有文件": "The SFTP server does not support replacing existing files safely",
+		"SFTP 服务器不支持安全覆盖已有文件":     "The SFTP server does not support replacing existing files safely",
+		"Caddy 配置已变化，请刷新后重试":      "The Caddy configuration changed. Refresh and try again",
+		"Caddy Admin API 未返回配置版本": "The Caddy Admin API did not return a configuration version",
+		"SSH 凭据仍被主机引用":            "The SSH credential is still used by a host",
+		"主机绑定的凭据 %s 不存在":          "The host's SSH credential %s does not exist",
+		"容器目录列表超过输出上限":            "The container directory listing exceeds the output limit",
+		"容器目录记录格式无效":              "Invalid container directory record",
+		"连接容器执行输出失败: HTTP %d":     "Failed to connect to container command output: HTTP %d",
+		"文件已存在":                   "The file already exists",
 
-		"非法 ZIP 路径: %s":           "Invalid ZIP path: %s",
-		"不支持的 ZIP 文件类型: %s":       "Unsupported ZIP entry type: %s",
-		"ZIP 解压大小超过限制":            "Extracted ZIP size exceeds the limit",
-		"ZIP 条目与源归档同名: %s":        "ZIP entry would overwrite the source archive: %s",
-		"附加文件大小超过限制":              "Attachment size exceeds the limit",
-		"无法确认授权状态，已保留消费者: %w":     "Could not confirm authorization status, so the consumer was kept: %w",
-		"回滚消费者失败: %w":             "Failed to roll back the consumer: %w",
-		"compose.yml 回滚失败（%v），%s": "compose.yml restoration failed (%v), %s",
-		"compose.yml 回滚成功":        "compose.yml restored",
+		"非法 ZIP 路径: %s":       "Invalid ZIP path: %s",
+		"不支持的 ZIP 文件类型: %s":   "Unsupported ZIP entry type: %s",
+		"ZIP 解压大小超过限制":        "Extracted ZIP size exceeds the limit",
+		"ZIP 条目与源归档同名: %s":    "ZIP entry would overwrite the source archive: %s",
+		"附加文件大小超过限制":          "Attachment size exceeds the limit",
+		"无法确认授权状态，已保留消费者: %w": "Could not confirm authorization status, so the consumer was kept: %w",
+		"回滚消费者失败: %w":         "Failed to roll back the consumer: %w",
+		"%s 回滚失败（%v）":         "%s restoration failed (%v)",
+		"%s 回滚成功":             "%s restored",
+		"容器":                  "containers",
+		"；回滚：":                "; rollback: ",
+		"，":                   ", ",
 
 		// ─── Compose 变更预览与重部署 ───
 		"预览 Docker Compose 变更":         "Preview Docker Compose changes",

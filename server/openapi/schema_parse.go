@@ -177,8 +177,12 @@ func (g *generator) collectAllTypesFromFile(filename string) {
 }
 
 func (g *generator) resolveStructSchema(typeName string, localTypes map[string]string, ctrlFile string) *SchemaInfo {
-	// 1. 检查本地类型别名（type X = pkg.Type）
+	// 1. 从类型的定义文件解析同包类型及其导入别名。
 	if localTypes != nil {
+		if filename := g.appTypeFiles[typeName]; filename != "" && filename != ctrlFile {
+			ctrlFile = filename
+			localTypes = g.collectLocalTypes(g.parseFile(filename))
+		}
 		if aliasTarget, ok := localTypes["__alias__"+typeName]; ok {
 			typeName = aliasTarget
 		}
@@ -212,6 +216,9 @@ func (g *generator) resolveStructSchema(typeName string, localTypes map[string]s
 	}
 
 	// 3. 检查是否为带包名的类型
+	if localTypes != nil {
+		typeName = g.resolveImportAlias(ctrlFile, typeName)
+	}
 	pkgAlias, structName, hasPkg := strings.Cut(typeName, ".")
 	if !hasPkg {
 		pkgAlias, structName = "", typeName

@@ -60,11 +60,8 @@ func (s *Service) PreviewRedeploy(ctx context.Context, target, name string, req 
 		name = s.dockerProjectName(ctx, name, root)
 	}
 	installDir := filepath.Join(root, name)
-	envState, err := compose.EnvStateRead(installDir)
-	if err != nil {
-		return nil, err
-	}
 	var current *ConfigDetail
+	var err error
 	if target == "swarm" {
 		current, err = s.SwarmInspect(ctx, name, false)
 	} else {
@@ -73,11 +70,11 @@ func (s *Service) PreviewRedeploy(ctx context.Context, target, name string, req 
 	if err != nil {
 		return nil, err
 	}
-	_, after, err := s.resolveRedeployContent(ctx, name, installDir, current.Content, nil, req)
+	_, after, err := s.resolveRedeployContent(ctx, name, installDir, current.Content, req)
 	if err != nil {
 		return nil, err
 	}
-	before, err := compose.LoadProjectFromContentInDir(ctx, current.Content, installDir, name, &envState.Content)
+	before, err := compose.LoadProjectFromContentInDir(ctx, current.Content, installDir, name, &current.EnvContent)
 	if err != nil {
 		return nil, fmt.Errorf("读取原配置失败: %w", err)
 	}

@@ -78,7 +78,7 @@ scrape_configs:
 | `isrvd_host_gpu_utilization_percent`、`_memory_used_bytes`、`_memory_total_bytes`、`_temperature_celsius` | `gpu` `name`（无 GPU 时不输出） |
 | `isrvd_go_goroutines`、`isrvd_go_memory_alloc_bytes`（堆已分配字节） | isrvd 进程自身，不属于主机 |
 
-`/api/metrics/containers` 从保留文件中取各完整容器 ID 最后保存的记录，不列举容器，也不请求 Docker Stats / Top。首次抓取恢复保留期内的记录，此后沿按日追加的文件只读取新增完整行，复用各容器最后落盘记录并清理过期记录；等待与读取均响应请求取消。尚无保存记录时返回 200 和空文本；Docker 暂时不可用不阻止读取已有记录。存储未就绪返回 503，读取或解析失败返回 502。超过 `max(3 × monitor.interval, 60)` 秒未更新的容器记录不输出，避免已停止或删除的容器以旧值被当作当前值；`monitor.interval` 不合法（后台采集未启动）时不过滤，请依据 `isrvd_container_last_collect_timestamp_seconds` 判断新鲜度。全部容器样本以 `name` 和完整 `id` 标识，避免重建、重名或短 ID 冲突产生重复序列；原监控记录不保存镜像信息，因此信息指标不含 `image` 标签：
+`/api/metrics/containers` 从保留文件中取各完整容器 ID 最后保存的记录，不列举容器，也不请求 Docker Stats / Top。首次抓取恢复保留期内的记录，此后沿按日追加的文件只读取新增完整行，复用各容器最后落盘记录并清理过期记录；等待与读取均响应请求取消。尚无保存记录时返回 200 和空文本；Docker 暂时不可用不阻止读取已有记录。存储未就绪返回 503，读取失败返回 502。无法解析的单条样本会跳过，各容器继续使用最近一条有效记录。超过 `max(3 × monitor.interval, 60)` 秒未更新的容器记录不输出，避免已停止或删除的容器以旧值被当作当前值；`monitor.interval` 不合法（后台采集未启动）时不过滤，请依据 `isrvd_container_last_collect_timestamp_seconds` 判断新鲜度。全部容器样本以 `name` 和完整 `id` 标识，避免重建、重名或短 ID 冲突产生重复序列；原监控记录不保存镜像信息，因此信息指标不含 `image` 标签：
 
 | 指标 | 标签 | 说明 |
 |------|------|------|

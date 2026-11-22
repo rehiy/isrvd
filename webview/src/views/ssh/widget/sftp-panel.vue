@@ -6,8 +6,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 
 import { ExplorerPanel } from '@/component/explorer'
-import { remoteFileInfo } from '@/component/explorer/helper'
-import type { ExplorerAdapter, ListResult } from '@/component/explorer/types'
+import { remoteListResult } from '@/component/explorer/helper'
+import type { ExplorerAdapter } from '@/component/explorer/types'
 
 function createSftpAdapter(hostId: string): ExplorerAdapter {
     const portal = usePortal()
@@ -29,13 +29,9 @@ function createSftpAdapter(hostId: string): ExplorerAdapter {
     }
     return {
         can,
-        async list(path: string): Promise<ListResult> {
+        async list(path: string) {
             const res = await api.sftpList(hostId, path)
-            const payload = res.payload ?? { path: '', files: [] }
-            return {
-                path: payload.path,
-                files: (payload.files || []).map(file => remoteFileInfo(path, file)),
-            }
+            return remoteListResult(res.payload)
         },
         async download(path, onProgress): Promise<Blob> {
             return await api.sftpDownload(hostId, path, onProgress)
@@ -55,7 +51,7 @@ function createSftpAdapter(hostId: string): ExplorerAdapter {
         async chmod(path, mode): Promise<void> { await api.sftpFileChmod(hostId, { path, mode }) },
         async dirSize(path): Promise<number | null> { return (await api.sftpDirSize(hostId, path)).payload?.size ?? null },
         previewUrl(path, token): string { return api.sftpDownloadURL(hostId, path, token) },
-        async createFile(path, content = ''): Promise<void> { await api.sftpWrite(hostId, { path, content }) },
+        async createFile(path, content = ''): Promise<void> { await api.sftpWrite(hostId, { path, content }, true) },
     }
 }
 

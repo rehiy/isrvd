@@ -8,73 +8,76 @@ import (
 	"strings"
 )
 
-// handlerAnalysisState 保存 handler 函数分析过程中的状态
+// handlerAnalysisState 保存当前函数的局部类型和本次路由分析的访问记录。
 type handlerAnalysisState struct {
 	varTypes   map[string]string // 变量名 → 类型名（如 "resp" → "account.LoginResponse"）
 	localTypes map[string]string // 本地类型别名
-	filename   string            // 当前分析的文件
-	helpers    map[string]bool   // 已跟进过的同文件辅助函数（防递归）
+	filename   string
+	visited    map[*ast.BlockStmt]bool // 防止辅助函数递归
 }
 
-type handlerDecl struct {
+type functionDecl struct {
 	filename string
 	body     *ast.BlockStmt
 }
 
-// indexHandlers 按控制器文件顺序登记 App 方法，重名时保留首个定义。
-func (g *generator) indexHandlers(filename string) {
+// indexAppFile 收集同包定义，让控制器可委托给其他文件里的方法和辅助函数。
+func (g *generator) indexAppFile(filename string) {
 	f := g.parseFile(filename)
 	if f == nil {
 		return
 	}
+	for name, obj := range f.Scope.Objects {
+		if obj.Kind == ast.Typ {
+			g.appTypeFiles[name] = filename
+		}
+	}
 	for _, decl := range f.Decls {
 		fd, ok := decl.(*ast.FuncDecl)
-		if !ok || fd.Body == nil || !isAppReceiver(fd) {
+		if !ok || fd.Body == nil {
 			continue
 		}
-		if _, exists := g.handlers[fd.Name.Name]; !exists {
-			g.handlers[fd.Name.Name] = handlerDecl{filename: filename, body: fd.Body}
+		fn := functionDecl{filename: filename, body: fd.Body}
+		switch {
+		case isAppReceiver(fd):
+			if _, exists := g.handlers[fd.Name.Name]; !exists {
+				g.handlers[fd.Name.Name] = fn
+			}
+		case fd.Recv == nil:
+			if _, exists := g.helpers[fd.Name.Name]; !exists {
+				g.helpers[fd.Name.Name] = fn
+			}
 		}
 	}
 }
 
 func (g *generator) analyzeHandler(r *RouteDef) {
-	// 内联 handler：直接从路由定义所在文件分析闭包体
-	if fn, ok := g.inlineFuncs[r.Handler]; ok {
-		f := g.parseFile(r.HandlerFile)
-		var localTypes map[string]string
-		if f != nil {
-			localTypes = g.collectLocalTypes(f)
-		}
-		g.analyzeFuncBody(r, fn.Body, localTypes, r.HandlerFile)
+	fn, ok := g.inlineFuncs[r.Handler]
+	visited := make(map[*ast.BlockStmt]bool)
+	if ok {
+		g.analyzeFuncBody(r, functionDecl{filename: r.HandlerFile, body: fn.Body}, visited)
 		return
 	}
 
-	// 找到 handler 对应的 ctrl_*.go 文件
 	_, funcName, ok := strings.Cut(r.Handler, ".")
 	if !ok {
 		return
 	}
-
-	handler, ok := g.handlers[funcName]
-	if !ok {
-		return
-	}
-	localTypes := g.collectLocalTypes(g.parseFile(handler.filename))
-	g.analyzeFuncBody(r, handler.body, localTypes, handler.filename)
+	g.analyzeFuncBody(r, g.handlers[funcName], visited)
 }
 
-// ─── 辅助函数 ───
-
-func (g *generator) analyzeFuncBody(r *RouteDef, body *ast.BlockStmt, localTypes map[string]string, filename string) {
+func (g *generator) analyzeFuncBody(r *RouteDef, fn functionDecl, visited map[*ast.BlockStmt]bool) {
+	if fn.body == nil || visited[fn.body] {
+		return
+	}
+	visited[fn.body] = true
 	state := &handlerAnalysisState{
 		varTypes:   make(map[string]string),
-		localTypes: localTypes,
-		filename:   filename,
-		helpers:    make(map[string]bool),
+		localTypes: g.collectLocalTypes(g.parseFile(fn.filename)),
+		filename:   fn.filename,
+		visited:    visited,
 	}
-
-	ast.Inspect(body, func(n ast.Node) bool {
+	ast.Inspect(fn.body, func(n ast.Node) bool {
 		g.analyzeNode(n, r, state)
 		return true
 	})
@@ -218,7 +221,9 @@ func (g *generator) analyzeCallExpr(stmt *ast.CallExpr, r *RouteDef, state *hand
 			// 错误处理，无需特殊处理
 			return
 		default:
-			g.analyzeHelperFunc(r, state, ident.Name)
+			if ident.Obj == nil || ident.Obj.Kind == ast.Fun {
+				g.analyzeFuncBody(r, g.helpers[ident.Name], state.visited)
+			}
 			return
 		}
 	}
@@ -251,14 +256,8 @@ func (g *generator) analyzeCallExpr(stmt *ast.CallExpr, r *RouteDef, state *hand
 		analyzeTextResponse(stmt, r)
 	}
 
-	if receiver, ok := sel.X.(*ast.Ident); ok && receiver.Name == "app" && !state.helpers[sel.Sel.Name] {
-		if method, ok := g.handlers[sel.Sel.Name]; ok && method.filename == state.filename {
-			state.helpers[sel.Sel.Name] = true
-			ast.Inspect(method.body, func(n ast.Node) bool {
-				g.analyzeNode(n, r, state)
-				return true
-			})
-		}
+	if receiver, ok := sel.X.(*ast.Ident); ok && receiver.Name == "app" {
+		g.analyzeFuncBody(r, g.handlers[sel.Sel.Name], state.visited)
 	}
 
 	// 检测 WebSocket：既支持直接的 wsConfig.Handler，也支持 serveWebSocket 封装
@@ -267,38 +266,6 @@ func (g *generator) analyzeCallExpr(stmt *ast.CallExpr, r *RouteDef, state *hand
 	}
 	if sel2, ok2 := sel.X.(*ast.SelectorExpr); ok2 && sel2.Sel.Name == "wsConfig" {
 		r.IsWS = true
-	}
-}
-
-// analyzeHelperFunc 跟进同文件辅助函数，分析其中的绑定与参数提取调用。
-// 例如 compose 部署把 JSON/multipart 绑定抽到了 bindComposeDeployRequest，
-// 不跟进会导致生成的 OpenAPI 缺失 requestBody。
-func (g *generator) analyzeHelperFunc(r *RouteDef, state *handlerAnalysisState, funcName string) {
-	if state.helpers[funcName] {
-		return
-	}
-	state.helpers[funcName] = true
-
-	f := g.parseFile(state.filename)
-	if f == nil {
-		return
-	}
-	for _, decl := range f.Decls {
-		fd, ok := decl.(*ast.FuncDecl)
-		if !ok || fd.Name.Name != funcName || fd.Body == nil {
-			continue
-		}
-		sub := &handlerAnalysisState{
-			varTypes:   make(map[string]string),
-			localTypes: state.localTypes,
-			filename:   state.filename,
-			helpers:    state.helpers,
-		}
-		ast.Inspect(fd.Body, func(n ast.Node) bool {
-			g.analyzeNode(n, r, sub)
-			return true
-		})
-		return
 	}
 }
 

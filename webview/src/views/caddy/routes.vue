@@ -44,6 +44,7 @@ class CaddyRoutes extends Vue {
     @Ref readonly editModalRef!: InstanceType<typeof RouteEditModal>
 
     routes: RouteWithServer[] = []
+    failedServers: string[] = []
     snapshots: Record<string, CaddyRouteSnapshot> = {}
     servers: CaddyServerInfo[] = []
     loading = false
@@ -124,6 +125,7 @@ class CaddyRoutes extends Vue {
         const requestID = ++this.loadRequestID
         this.loading = true
         this.routes = []
+        this.failedServers = []
         this.snapshots = {}
         this.collapsedHosts = []
         try {
@@ -143,13 +145,16 @@ class CaddyRoutes extends Vue {
             } else {
                 this.servers = []
             }
-            const routesByServer = await Promise.all(this.routeServerOptions.map(async server => {
+            const servers = this.routeServerOptions
+            const results = await Promise.allSettled(servers.map(async server => {
                 const snapshot = (await api.caddyRouteSnapshot(server.name)).payload || { routes: [], revision: '' }
                 return { server, snapshot }
             }))
             if (requestID !== this.loadRequestID) {
                 return
             }
+            this.failedServers = servers.filter((_, i) => results[i].status === 'rejected').map(server => server.name)
+            const routesByServer = results.flatMap(result => result.status === 'fulfilled' ? [result.value] : [])
             this.snapshots = Object.fromEntries(routesByServer.map(({ server, snapshot }) => [server.name, snapshot]))
             this.routes = routesByServer.flatMap(({ server, snapshot }) =>
                 snapshot.routes.map(route => ({ ...route, serverID: server.id, serverName: server.name }))
@@ -329,6 +334,7 @@ export default toNative(CaddyRoutes)
         </select>
       </div>
     </div>
+    <p v-if="failedServers.length" role="status" class="px-4 py-2 text-sm text-amber-700">{{ $t('以下服务的路由加载失败') }} · {{ failedServers.join(', ') }}</p>
     <div v-if="loading" class="card-body">
       <div class="empty-state"><div class="spinner-lg"></div><p class="text-slate-500">{{ $t('加载中...') }}</p></div>
     </div>

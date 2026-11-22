@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -14,7 +15,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rehiy/libgo/archive"
 	"github.com/rehiy/libgo/filer"
 	"github.com/rehiy/libgo/logman"
 
@@ -219,6 +219,23 @@ func (s *Service) FileCreate(absPath string, content []byte) error {
 	return filer.Write(absPath, content)
 }
 
+// FileCreateOnly 原子发布新文件。
+func (s *Service) FileCreateOnly(ctx context.Context, filename string, content []byte) error {
+	dir := filepath.Dir(filename)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	return helper.WriteRootFile(ctx, root, filepath.Base(filename), true, func(out io.Writer) error {
+		_, err := out.Write(content)
+		return err
+	})
+}
+
 // FileMkdir 创建目录
 func (s *Service) FileMkdir(absPath string) error {
 	return os.Mkdir(absPath, 0755)
@@ -249,13 +266,33 @@ func (s *Service) FileChmod(absPath string, modeStr string) error {
 }
 
 // DirSize 计算目录大小（包含所有子目录和文件）
-func (s *Service) DirSize(absPath string) (int64, error) {
-	return filer.DirSize(absPath)
+func (s *Service) DirSize(ctx context.Context, absPath string) (int64, error) {
+	if err := ctx.Err(); err != nil {
+		return 0, err
+	}
+	var size int64
+	err := filepath.WalkDir(absPath, func(_ string, entry fs.DirEntry, walkErr error) error {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if walkErr != nil || entry.IsDir() {
+			return walkErr
+		}
+		info, err := entry.Info()
+		if err == nil {
+			size += info.Size()
+		}
+		return err
+	})
+	if err != nil {
+		return 0, err
+	}
+	return size, ctx.Err()
 }
 
 // FileZip 压缩文件或目录
-func (s *Service) FileZip(absPath string) error {
-	return archive.NewZipper().Zip(absPath)
+func (s *Service) FileZip(ctx context.Context, absPath string) error {
+	return helper.CreateZIP(ctx, absPath)
 }
 
 // FileUnzip 解压 zip 文件

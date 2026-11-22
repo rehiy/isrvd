@@ -26,9 +26,10 @@ type portListener struct {
 	target atomic.Pointer[string]
 	closer interface{ Close() error }
 
-	mu     sync.Mutex
-	conns  map[net.Conn]struct{}
-	closed bool
+	mu       sync.Mutex
+	conns    map[net.Conn]struct{}
+	sessions map[string]*udpSession
+	closed   bool
 }
 
 func (l *portListener) targetAddr() string {
@@ -36,14 +37,14 @@ func (l *portListener) targetAddr() string {
 }
 
 // track 登记一条客户端连接；监听已关闭或并发达到上限时拒绝。
-func (l *portListener) track(c net.Conn) bool {
+func (l *portListener) track(c net.Conn) (*string, bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.closed || len(l.conns) >= portmapMaxConns {
-		return false
+		return nil, false
 	}
 	l.conns[c] = struct{}{}
-	return true
+	return l.target.Load(), true
 }
 
 func (l *portListener) untrack(c net.Conn) {
@@ -52,16 +53,37 @@ func (l *portListener) untrack(c net.Conn) {
 	l.mu.Unlock()
 }
 
+// replaceTarget 保留监听端口，并关闭旧目标的 TCP 连接与 UDP 会话。
+func (l *portListener) replaceTarget(target string) {
+	l.mu.Lock()
+	if l.targetAddr() == target {
+		l.mu.Unlock()
+		return
+	}
+	l.target.Store(new(target))
+	conns, sessions := l.conns, l.sessions
+	l.conns, l.sessions = map[net.Conn]struct{}{}, map[string]*udpSession{}
+	l.mu.Unlock()
+	closePortFlows(conns, sessions)
+}
+
 // close 停止监听并断开已建立的连接。
 func (l *portListener) close() {
 	l.mu.Lock()
 	l.closed = true
-	conns := l.conns
-	l.conns = nil
+	conns, sessions := l.conns, l.sessions
+	l.conns, l.sessions = nil, nil
 	l.mu.Unlock()
 	_ = l.closer.Close()
+	closePortFlows(conns, sessions)
+}
+
+func closePortFlows(conns map[net.Conn]struct{}, sessions map[string]*udpSession) {
 	for c := range conns {
 		_ = c.Close()
+	}
+	for _, u := range sessions {
+		u.close()
 	}
 }
 
@@ -143,7 +165,7 @@ func (s *Service) NodePortMapUpdate(id string, req *PortMapRequest) (*NodeInfo, 
 		}
 	}
 	for _, r := range rules {
-		s.listeners[portKey{r.Proto, r.Listen}].target.Store(new(r.Target))
+		s.listeners[portKey{r.Proto, r.Listen}].replaceTarget(r.Target)
 	}
 	logger.Info("端口转发已更新", "id", id, "count", len(rules))
 	return s.nodeInfo(updated), nil
@@ -188,7 +210,7 @@ func (s *Service) restorePortMaps(nodes []*Node) {
 // portmapStart 开始监听一条规则，调用方须持有 listenMu。
 func (s *Service) portmapStart(nodeID string, f PortMap) error {
 	addr := net.JoinHostPort(s.portmap.BindAddr(), strconv.Itoa(f.Listen))
-	l := &portListener{nodeID: nodeID, proto: f.Proto, port: f.Listen, conns: map[net.Conn]struct{}{}}
+	l := &portListener{nodeID: nodeID, proto: f.Proto, port: f.Listen, conns: map[net.Conn]struct{}{}, sessions: map[string]*udpSession{}}
 	l.target.Store(new(f.Target))
 	switch f.Proto {
 	case ProtoTCP:
@@ -223,7 +245,7 @@ func (s *Service) portmapStop(key portKey) {
 }
 
 // portmapOpen 在节点的隧道上开一条转发流并发送头部；节点离线或隧道不可用时返回错误。
-func (s *Service) portmapOpen(l *portListener) (net.Conn, error) {
+func (s *Service) portmapOpen(l *portListener, target string) (net.Conn, error) {
 	c, err := s.connFor(l.nodeID)
 	if err != nil {
 		return nil, err
@@ -232,7 +254,7 @@ func (s *Service) portmapOpen(l *portListener) (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := writePortMapHeader(stream, l.proto, l.targetAddr()); err != nil {
+	if err := writePortMapHeader(stream, l.proto, target); err != nil {
 		_ = stream.Close()
 		return nil, err
 	}
@@ -251,15 +273,20 @@ func (s *Service) acceptTCP(ln net.Listener, l *portListener) {
 			time.Sleep(100 * time.Millisecond) // 句柄耗尽等临时错误
 			continue
 		}
-		if !l.track(c) {
+		target, tracked := l.track(c)
+		if !tracked {
 			_ = c.Close()
 			continue
 		}
 		go func() {
 			defer l.untrack(c)
 			defer c.Close()
-			stream, err := s.portmapOpen(l)
+			stream, err := s.portmapOpen(l, *target)
 			if err != nil {
+				return
+			}
+			if target != l.target.Load() {
+				_ = stream.Close()
 				return
 			}
 			pipe(c, stream)
@@ -286,17 +313,8 @@ func (u *udpSession) close() {
 }
 
 func (s *Service) serveUDP(pc net.PacketConn, l *portListener) {
-	var mu sync.Mutex
-	sessions := map[string]*udpSession{}
 	stop := make(chan struct{})
-	defer func() {
-		close(stop)
-		mu.Lock()
-		for _, u := range sessions {
-			u.close()
-		}
-		mu.Unlock()
-	}()
+	defer close(stop)
 
 	go func() {
 		ticker := time.NewTicker(udpIdleTimeout / 2)
@@ -307,14 +325,14 @@ func (s *Service) serveUDP(pc net.PacketConn, l *portListener) {
 				return
 			case <-ticker.C:
 				cutoff := time.Now().Add(-udpIdleTimeout).UnixNano()
-				mu.Lock()
-				for key, u := range sessions {
+				l.mu.Lock()
+				for key, u := range l.sessions {
 					if u.last.Load() < cutoff {
 						u.close()
-						delete(sessions, key)
+						delete(l.sessions, key)
 					}
 				}
-				mu.Unlock()
+				l.mu.Unlock()
 			}
 		}
 	}()
@@ -330,29 +348,35 @@ func (s *Service) serveUDP(pc net.PacketConn, l *portListener) {
 			continue
 		}
 		key := addr.String()
-		mu.Lock()
-		u := sessions[key]
-		count := len(sessions)
-		mu.Unlock()
+		l.mu.Lock()
+		u := l.sessions[key]
+		count := len(l.sessions)
+		target := l.target.Load()
+		l.mu.Unlock()
 
 		if u == nil {
 			if count >= udpMaxSessions {
 				continue
 			}
-			stream, err := s.portmapOpen(l)
+			stream, err := s.portmapOpen(l, *target)
 			if err != nil {
 				continue
 			}
 			u = &udpSession{stream: stream, out: make(chan []byte, 128), done: make(chan struct{})}
-			mu.Lock()
-			sessions[key] = u
-			mu.Unlock()
+			l.mu.Lock()
+			if l.closed || l.target.Load() != target {
+				l.mu.Unlock()
+				u.close()
+				continue
+			}
+			l.sessions[key] = u
+			l.mu.Unlock()
 			go udpPump(pc, addr, u, func() {
-				mu.Lock()
-				if sessions[key] == u {
-					delete(sessions, key)
+				l.mu.Lock()
+				if l.sessions[key] == u {
+					delete(l.sessions, key)
 				}
-				mu.Unlock()
+				l.mu.Unlock()
 			})
 		}
 		u.last.Store(time.Now().UnixNano())

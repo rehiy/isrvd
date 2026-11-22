@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -93,6 +94,10 @@ func (app *App) websshCredentialUpdate(c *gin.Context) {
 func (app *App) websshCredentialDelete(c *gin.Context) {
 	id := c.Param("id")
 	if err := app.websshSvc.CredentialDelete(id); err != nil {
+		if errors.Is(err, webssh.ErrCredentialInUse) {
+			respondError(c, http.StatusConflict, err.Error())
+			return
+		}
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -324,7 +329,17 @@ func (app *App) websshSFTPWrite(c *gin.Context) {
 		return
 	}
 
-	if err := app.websshSvc.SFTPWrite(c.Request.Context(), id, req.Path, req.Content); err != nil {
+	var err error
+	if c.Query("createOnly") == "true" {
+		err = app.websshSvc.SFTPCreateOnly(c.Request.Context(), id, req.Path, req.Content)
+	} else {
+		err = app.websshSvc.SFTPWrite(c.Request.Context(), id, req.Path, req.Content)
+	}
+	if errors.Is(err, os.ErrExist) {
+		respondError(c, http.StatusConflict, "文件已存在")
+		return
+	}
+	if err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
