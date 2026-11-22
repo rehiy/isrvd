@@ -57,23 +57,24 @@ export default toNative(DeleteModal)
     :title="$t('确认删除')"
     :loading="loading"
     confirm-class="btn-danger"
+    max-width-class="max-w-lg"
     :confirm-disabled="files.length === 0"
     @confirm="handleConfirm"
   >
-    <div class="text-center py-6">
+    <div class="text-center">
       <div class="empty-state-icon bg-red-100 mx-auto">
-        <i class="fas fa-trash text-3xl text-red-500"></i>
+        <i class="fas fa-trash text-3xl text-red-500" aria-hidden="true"></i>
       </div>
-      <p class="text-lg text-slate-700 mb-2">
+      <p class="text-lg text-slate-700 break-words">
         {{ $t('确定要删除') }} <strong class="text-slate-900">{{ targetText }}</strong> {{ $t('吗？') }}
       </p>
-      <p class="text-sm text-red-600 flex items-center justify-center">
-        <i class="fas fa-exclamation-triangle mr-2"></i>
+      <p class="text-sm text-red-600 mt-3">
+        <i class="fas fa-triangle-exclamation mr-1" aria-hidden="true"></i>
         <span v-if="hasDir">{{ $t('包含目录，目录及其内容将被删除；') }}</span>
         {{ $t('此操作不可恢复！') }}
       </p>
     </div>
-    <p v-if="files.length > 1" class="detail-value-mono mb-4">{{ previewText }}</p>
+    <p v-if="files.length > 1" class="detail-value-mono mt-4">{{ previewText }}</p>
     <template #confirm-text>{{ $t('确认删除') }}</template>
   </BaseModal>
 </template>

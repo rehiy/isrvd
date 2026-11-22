@@ -107,7 +107,7 @@ export default toNative(SSLEditModal)
 
 <template>
   <BaseModal v-model="isOpen" :title="isEditMode ? $t('编辑证书') : $t('新建证书')" :loading="modalLoading" confirm-class="btn-cyan" @confirm="handleConfirm">
-    <div class="space-y-4 p-1">
+    <div class="space-y-4">
       <div>
         <label class="form-label">{{ $t('SNI 域名') }} <span class="text-red-500">*</span></label>
         <textarea v-model="formData.snisText" rows="3" class="input font-mono" :placeholder="$t('请输入 SNI（每行一个）')"></textarea>

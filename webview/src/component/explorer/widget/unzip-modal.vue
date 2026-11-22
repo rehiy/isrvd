@@ -47,15 +47,16 @@ export default toNative(UnzipModal)
     v-model="isOpen"
     :title="$t('解压确认')"
     :loading="loading"
+    max-width-class="max-w-lg"
     :confirm-disabled="!file"
     @confirm="handleConfirm"
   >
     <div v-if="file" class="space-y-4">
-      <div class="text-center py-6">
-        <div class="empty-state-icon bg-amber-400 mx-auto shadow-lg shadow-amber-500/30">
-          <i class="fas fa-expand-arrows-alt text-3xl text-white"></i>
+      <div class="text-center">
+        <div class="empty-state-icon bg-amber-100 mx-auto">
+          <i class="fas fa-expand-arrows-alt text-3xl text-amber-500" aria-hidden="true"></i>
         </div>
-        <p class="text-lg text-slate-700 mb-2">
+        <p class="text-lg text-slate-700 break-words">
           {{ $t('确定要解压') }} <strong class="text-slate-900">{{ file.name }}</strong> {{ $t('吗？') }}
         </p>
       </div>

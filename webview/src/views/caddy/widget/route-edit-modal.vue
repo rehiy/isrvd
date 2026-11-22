@@ -339,7 +339,7 @@ export default toNative(RouteEditModal)
 
 <template>
   <BaseModal v-model="isOpen" :title="isEditMode ? $t('编辑路由') : $t('新建路由')" :loading="modalLoading" :confirm-disabled="!isEditMode && (positionsLoading || !routeSnapshot?.revision)" confirm-class="btn-indigo" @confirm="handleConfirm">
-    <div class="space-y-6 p-1">
+    <div class="space-y-6">
       <div class="space-y-4">
         <div>
           <label class="form-label">{{ $t('服务') }} <span class="text-red-500">*</span></label>
@@ -370,7 +370,7 @@ export default toNative(RouteEditModal)
       <div v-if="formData.kind !== 'raw'" class="space-y-4">
         <p class="section-title">{{ $t('匹配条件') }}</p>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label class="form-label">Host</label>
             <textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm"></textarea>
@@ -383,7 +383,7 @@ export default toNative(RouteEditModal)
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label class="form-label">Method</label>
             <input v-model="formData.methods" type="text" class="input font-mono text-sm" />
@@ -456,7 +456,7 @@ export default toNative(RouteEditModal)
             <p class="text-xs text-slate-400 mt-1">{{ $t('每行一个 host:port，多个上游自动轮询，例如：backend1:8080') }}</p>
           </div>
           <div v-if="!formData.fastcgi">
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div>
                 <label class="form-label">{{ $t('连接超时') }}</label>
                 <input v-model="formData.dialTimeout" type="text" class="input font-mono text-sm" />
@@ -557,7 +557,7 @@ export default toNative(RouteEditModal)
             <input v-model="formData.rewriteUri" type="text" class="input font-mono text-sm" :placeholder="$t('请输入 URI 替换规则')" />
             <p class="text-xs text-slate-400 mt-1">{{ $t('完整替换请求 URI，支持 Caddy 占位符，例如：/new-path/{http.request.uri.path.1}') }}</p>
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label class="form-label">{{ $t('去掉路径前缀') }}</label>
               <input v-model="formData.stripPathPrefix" type="text" class="input font-mono text-sm" :placeholder="$t('请输入要去掉的前缀')" />
@@ -569,7 +569,7 @@ export default toNative(RouteEditModal)
               <p class="text-xs text-slate-400 mt-1">{{ $t('从路径末尾去掉指定后缀，例如：.php') }}</p>
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label class="form-label">{{ $t('子串查找') }}</label>
               <input v-model="formData.uriSubstringFind" type="text" class="input font-mono text-sm" :placeholder="$t('请输入要查找的子串')" />

@@ -102,6 +102,13 @@
   /* 模态框卡片容器 */
   .modal-card {
     @apply bg-white rounded-xl shadow-2xl border border-slate-200;
+    max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
+  }
+
+  /* 模态框内独立的业务警告 */
+  .modal-warning {
+    @apply rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 break-words;
   }
 
   /* 代码编辑器 / 内容外层边框容器 */

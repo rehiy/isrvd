@@ -97,8 +97,8 @@ export default toNative(ServiceCreateModal)
   <BaseModal v-model="isOpen" :title="$t('新建服务')" :loading="loading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <!-- 基础设置 -->
-      <div class="grid grid-cols-2 gap-3">
-        <div class="col-span-2">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div class="sm:col-span-2">
           <label class="form-label">{{ $t('镜像') }} <span class="text-red-500">*</span></label>
           <ImageSelect v-model="form.image" :images="images" :placeholder="$t('请输入或选择镜像名')" />
         </div>
@@ -115,7 +115,7 @@ export default toNative(ServiceCreateModal)
             </option>
           </select>
         </div>
-        <div class="col-span-2">
+        <div class="sm:col-span-2">
           <label class="form-label">{{ $t('网络') }}</label>
           <select v-model="form.network" class="input">
             <option value="">{{ $t('不指定') }}</option>
@@ -154,7 +154,7 @@ export default toNative(ServiceCreateModal)
           {{ $t('高级选项') }}
         </button>
         <div v-if="showAdvanced" class="mt-4 space-y-4">
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label class="form-label">{{ $t('模式') }}</label>
               <select v-model="form.mode" class="input">

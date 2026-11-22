@@ -104,12 +104,8 @@ export default toNative(NodePortMapModal)
 <template>
   <BaseModal v-model="isOpen" :title="editing ? $t('编辑转发') : $t('添加转发')" :loading="modalLoading" :confirm-disabled="invalid" confirm-class="btn-orange" @confirm="handleConfirm">
     <form ref="formRef" class="space-y-4" @submit.prevent="handleConfirm">
-      <div class="space-y-2">
-        <p class="text-sm text-slate-600">
-          {{ $t('中控监听指定端口，经隧道连接到节点上的目标地址，支持 TCP 与 UDP。') }}
-          <span class="text-amber-600">{{ $t('转发的连接不经过 isrvd 认证，鉴权由目标应用负责；请勿转发无认证的服务。') }}</span>
-        </p>
-      </div>
+      <button type="submit" class="hidden"></button>
+      <p class="text-sm text-slate-600">{{ $t('中控监听指定端口，经隧道连接到节点上的目标地址，支持 TCP 与 UDP。') }}</p>
 
       <div>
         <label class="form-label">{{ $t('所属节点') }} <span class="text-red-500">*</span></label>
@@ -144,7 +140,9 @@ export default toNative(NodePortMapModal)
         <label class="form-label">{{ $t('备注') }}</label>
         <input v-model="name" type="text" maxlength="64" class="input" :placeholder="$t('如：SSH')" />
       </div>
-      <button type="submit" class="hidden"></button>
+      <p class="modal-warning">
+        <i class="fas fa-triangle-exclamation mr-1" aria-hidden="true"></i>{{ $t('转发的连接不经过 isrvd 认证，鉴权由目标应用负责；请勿转发无认证的服务。') }}
+      </p>
     </form>
 
     <template #confirm-text>{{ editing ? $t('保存') : $t('添加') }}</template>

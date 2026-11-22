@@ -191,8 +191,8 @@ export default toNative(ContainerCreateModal)
   <BaseModal ref="modalRef" v-model="isOpen" :title="$t('新建容器')" :loading="modalLoading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <!-- 基础设置 -->
-      <div class="grid grid-cols-2 gap-3">
-        <div class="col-span-2">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div class="sm:col-span-2">
           <label class="form-label">{{ $t('镜像') }} <span class="text-red-500">*</span></label>
           <ImageSelect v-model="formData.image" :images="images" :placeholder="$t('请输入或选择镜像名')" />
         </div>
@@ -240,7 +240,7 @@ export default toNative(ContainerCreateModal)
             <label class="form-label">{{ $t('启动命令') }}</label>
             <input v-model="formData.cmd" type="text" :placeholder="$t('请输入启动命令')" class="input font-mono text-sm" />
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label class="form-label">{{ $t('重启策略') }}</label>
               <select v-model="formData.restart" class="input">
@@ -252,7 +252,7 @@ export default toNative(ContainerCreateModal)
               <input v-model="formData.hostname" type="text" :placeholder="$t('请输入容器主机名')" class="input" />
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label class="form-label">{{ $t('内存限制 (MB)') }}</label>
               <input v-model="formData.memory" type="number" :placeholder="$t('请输入内存限制（MB）')" class="input" />
@@ -262,7 +262,7 @@ export default toNative(ContainerCreateModal)
               <input v-model="formData.cpus" type="number" step="0.1" :placeholder="$t('请输入 CPU 限制（核心数）')" class="input" />
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label class="form-label">{{ $t('工作目录') }}</label>
               <input v-model="formData.workdir" type="text" :placeholder="$t('请输入工作目录')" class="input" />

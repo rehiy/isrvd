@@ -181,7 +181,7 @@ export default toNative(CertEditModal)
 
 <template>
   <BaseModal v-model="isOpen" :title="isEditMode ? $t('编辑证书') : $t('新建证书')" :loading="modalLoading" confirm-class="btn-cyan" @confirm="handleConfirm">
-    <div class="space-y-4 p-1">
+    <div class="space-y-4">
       <!-- 来源选择：mode cards，直接平铺 -->
       <div>
         <h2 class="section-title">{{ $t('证书来源') }}</h2>

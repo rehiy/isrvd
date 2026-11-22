@@ -73,7 +73,7 @@ export default toNative(PreviewModal)
     :title="$t('预览: ') + filename"
     :show-footer="false"
     max-width-class="max-w-5xl"
-    :body-class="previewType === 'pdf' ? 'p-0 overflow-hidden' : 'px-6 py-6 overflow-y-auto'"
+    :body-class="previewType === 'pdf' ? 'p-0 overflow-hidden' : undefined"
     @cancel="close"
   >
     <div v-if="loading" class="flex flex-col items-center gap-3 py-10">

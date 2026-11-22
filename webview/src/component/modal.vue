@@ -17,7 +17,7 @@ class BaseModal extends Vue {
     @Prop({ type: Boolean, default: true }) readonly showConfirm!: boolean
     @Prop({ type: String, default: 'max-w-3xl' }) readonly maxWidthClass!: string
     @Prop({ type: String, default: '' }) readonly cardClass!: string
-    @Prop({ type: String, default: 'px-6 py-6 overflow-y-auto' }) readonly bodyClass!: string
+    @Prop({ type: String, default: 'px-4 py-6 sm:px-6 overflow-y-auto' }) readonly bodyClass!: string
 
     // ─── Refs ───
     @Ref readonly modalRef!: HTMLDivElement
@@ -107,25 +107,25 @@ export default toNative(BaseModal)
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
-      <div 
-        v-if="isOpen" 
+      <div
+        v-if="isOpen"
         ref="modalRef"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
         @mousedown="handleBackdropMouseDown"
         @click="handleBackdropClick"
       >
-        <div :class="['w-full max-h-[calc(100vh-2rem)] modal-card animate-scale-in flex flex-col overflow-hidden', maxWidthClass, cardClass]" :aria-busy="loading">
+        <div :class="['w-full modal-card animate-scale-in flex flex-col overflow-hidden', maxWidthClass, cardClass]" :aria-busy="loading">
           <!-- Header -->
-          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200/50 flex-shrink-0">
-            <div class="min-w-0 flex-1 pr-4">
+          <div class="flex items-start justify-between gap-3 px-4 py-4 sm:px-6 border-b border-slate-200/50 flex-shrink-0">
+            <div class="min-w-0 flex-1 self-center">
               <slot name="title">
-                <h1 class="title-text">{{ title }}</h1>
+                <h1 class="title-text whitespace-normal break-words">{{ title }}</h1>
               </slot>
             </div>
             <div class="action-group">
               <slot name="header-actions"></slot>
-              <button type="button" class="btn-icon-sm" :disabled="closeDisabled || (loading && !allowCloseWhileLoading)" @click="handleCancel">
-                <i class="fas fa-times"></i>
+              <button type="button" class="btn-icon-sm" :aria-label="$t('关闭')" :disabled="closeDisabled || (loading && !allowCloseWhileLoading)" @click="handleCancel">
+                <i class="fas fa-times" aria-hidden="true"></i>
               </button>
             </div>
           </div>
@@ -136,10 +136,10 @@ export default toNative(BaseModal)
           </div>
 
           <!-- Footer -->
-          <div v-if="showFooter" class="flex justify-end gap-3 px-6 py-4 border-t border-slate-200/50 bg-slate-50/50 flex-shrink-0">
+          <div v-if="showFooter" class="flex flex-wrap justify-end gap-3 px-4 py-4 sm:px-6 border-t border-slate-200/50 bg-slate-50/50 flex-shrink-0">
             <slot name="footer">
               <button type="button" class="btn btn-secondary" :disabled="closeDisabled || (loading && !allowCloseWhileLoading)" @click="handleCancel">
-                <slot name="cancel-text">{{ $t('取消') }}</slot>
+                <slot name="cancel-text">{{ showConfirm ? $t('取消') : $t('关闭') }}</slot>
               </button>
               <button v-if="showConfirm" type="button" class="btn" :class="confirmClass" :disabled="loading || confirmDisabled" :aria-busy="loading" @click="handleConfirm">
                 <i v-if="loading" class="fas fa-spinner fa-spin"></i>

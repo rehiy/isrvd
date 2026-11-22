@@ -334,7 +334,7 @@ export default toNative(BasicAuthEditModal)
 
 <template>
   <BaseModal v-model="open" :title="title" :loading="loading" :confirm-disabled="confirmDisabled" :confirm-class="mode === 'addUser' ? 'btn-emerald' : 'btn-cyan'" @confirm="handleConfirm">
-    <div class="space-y-4 p-1">
+    <div class="space-y-4">
       <div v-if="mode === 'setup'">
         <label class="form-label">{{ $t('目标路由') }} <span class="text-red-500">*</span></label>
         <select v-model="form.routeIndex" class="input">

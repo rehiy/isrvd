@@ -177,7 +177,7 @@ export default toNative(NodeLabelModal)
         <p v-if="rows.length > 0" class="text-xs text-slate-400 mt-1">{{ $t('标签值可留空。') }}</p>
         <button type="button" class="btn-add-row" @click="addLabel"><i class="fas fa-plus"></i>{{ $t('添加标签') }}</button>
       </div>
-      <div class="panel-frame border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+      <div class="modal-warning">
         <div class="flex items-start gap-2">
           <i class="fas fa-triangle-exclamation mt-0.5" aria-hidden="true"></i>
           <p aria-live="polite">{{ conflicted ? $t('节点已更新，当前修改尚未保存。重新加载将丢弃这些修改。') : $t('修改或删除标签可能触发服务重新调度，请确认服务的调度约束。') }}</p>

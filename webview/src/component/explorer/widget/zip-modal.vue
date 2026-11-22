@@ -45,17 +45,18 @@ export default toNative(ZipModal)
     v-model="isOpen"
     :title="$t('压缩确认')"
     :loading="loading"
+    max-width-class="max-w-lg"
     :confirm-disabled="!file"
     @confirm="handleConfirm"
   >
-    <div v-if="file" class="text-center py-6">
-      <div class="empty-state-icon bg-amber-400 mx-auto shadow-lg shadow-amber-500/30">
-        <i class="fas fa-file-archive text-3xl text-white"></i>
+    <div v-if="file" class="text-center">
+      <div class="empty-state-icon bg-amber-100 mx-auto">
+        <i class="fas fa-file-archive text-3xl text-amber-500" aria-hidden="true"></i>
       </div>
-      <p class="text-lg text-slate-700 mb-2">
+      <p class="text-lg text-slate-700 break-words">
         {{ $t('确定要压缩') }} <strong class="text-slate-900">{{ file.name }}</strong> {{ $t('吗？') }}
       </p>
-      <p class="text-sm text-slate-500">{{ $t('压缩后的文件将保存在当前目录') }}</p>
+      <p class="text-sm text-slate-500 mt-3">{{ $t('压缩后的文件将保存在当前目录') }}</p>
     </div>
     <template #confirm-text>{{ $t('压缩') }}</template>
   </BaseModal>

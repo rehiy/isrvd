@@ -80,7 +80,7 @@ export default toNative(CertDetailModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :show-footer="false" max-width-class="max-w-4xl" body-class="px-6 py-6 overflow-y-auto">
+  <BaseModal v-model="isOpen" :show-footer="false" max-width-class="max-w-4xl">
     <template #title>
       <div v-if="cert" class="title-group-static">
         <div class="page-icon bg-cyan-500">

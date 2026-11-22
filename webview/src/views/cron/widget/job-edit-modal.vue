@@ -138,7 +138,7 @@ export default toNative(JobEditModal)
   <BaseModal v-model="isOpen" :title="isEditMode ? $t('编辑计划任务') : $t('新建计划任务')" :loading="modalLoading" @confirm="handleConfirm">
     <template #confirm-text>{{ isEditMode ? $t('保存') : $t('新建') }}</template>
 
-    <div class="space-y-4 p-1">
+    <div class="space-y-4">
       <div>
         <label class="form-label">{{ $t('任务名称') }} <span class="text-red-500">*</span></label>
         <input v-model="formData.name" type="text" class="input" :placeholder="$t('请输入任务名称')" />

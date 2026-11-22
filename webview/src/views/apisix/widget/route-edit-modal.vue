@@ -339,8 +339,8 @@ export default toNative(RouteEditModal)
 
 <template>
   <BaseModal v-model="isOpen" :title="isEditMode ? $t('编辑路由') : $t('新建路由')" :loading="modalLoading" confirm-class="btn-indigo" @confirm="handleConfirm">
-    <div class="space-y-4 p-1">
-      <div class="grid grid-cols-2 gap-3">
+    <div class="space-y-4">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label class="form-label">{{ $t('名称') }} <span class="text-red-500">*</span></label>
           <input v-model="formData.name" type="text" class="input" :placeholder="$t('请输入路由名称')" />
@@ -383,31 +383,25 @@ export default toNative(RouteEditModal)
         </div>
         <p class="text-xs text-slate-400 mt-1 mb-4">{{ $t('支持直接输入单个上游、引用已有上游或暂不配置上游') }}</p>
 
-        <div v-if="formData.upstream_mode === 'nodes'" class="space-y-3">
-          <div>
-            <div class="grid grid-cols-[2fr_1fr] gap-2 items-center">
-              <ContainerSelect v-if="canLoadDockerContainers" :model-value="formData.upstream_nodes[0]?.host || ''" :containers="containers" :placeholder="$t('请输入 Host（IP 或容器名）')" @update:model-value="updateUpstreamNode(0, 'host', $event)" />
-              <input v-else :value="formData.upstream_nodes[0]?.host || ''" type="text" class="input" :placeholder="$t('请输入 Host（IP 或域名）')" @input="updateUpstreamNode(0, 'host', ($event.target as HTMLInputElement).value)" />
-              <ContainerPortSelect v-if="canLoadDockerContainers" :model-value="formData.upstream_nodes[0]?.port || ''" :ports="getPortsByHost(formData.upstream_nodes[0]?.host || '')" :placeholder="$t('请输入端口')" @update:model-value="updateUpstreamNode(0, 'port', $event)" />
-              <input v-else :value="formData.upstream_nodes[0]?.port || ''" type="text" class="input" :placeholder="$t('请输入端口')" @input="updateUpstreamNode(0, 'port', ($event.target as HTMLInputElement).value)" />
-            </div>
-            <p class="text-xs text-slate-400 mt-1">{{ $t('例如：Host 填写 127.0.0.1 或 nginx，Port 填写 8080') }}；{{ $t('直接输入模式仅提交一个上游节点；如需多节点负载均衡，请先在「上游管理」中创建后再引用。') }}</p>
+        <template v-if="formData.upstream_mode === 'nodes'">
+          <div class="grid grid-cols-[2fr_1fr] gap-2 items-center">
+            <ContainerSelect v-if="canLoadDockerContainers" :model-value="formData.upstream_nodes[0]?.host || ''" :containers="containers" :placeholder="$t('请输入 Host（IP 或容器名）')" @update:model-value="updateUpstreamNode(0, 'host', $event)" />
+            <input v-else :value="formData.upstream_nodes[0]?.host || ''" type="text" class="input" :placeholder="$t('请输入 Host（IP 或域名）')" @input="updateUpstreamNode(0, 'host', ($event.target as HTMLInputElement).value)" />
+            <ContainerPortSelect v-if="canLoadDockerContainers" :model-value="formData.upstream_nodes[0]?.port || ''" :ports="getPortsByHost(formData.upstream_nodes[0]?.host || '')" :placeholder="$t('请输入端口')" @update:model-value="updateUpstreamNode(0, 'port', $event)" />
+            <input v-else :value="formData.upstream_nodes[0]?.port || ''" type="text" class="input" :placeholder="$t('请输入端口')" @input="updateUpstreamNode(0, 'port', ($event.target as HTMLInputElement).value)" />
           </div>
+          <p class="text-xs text-slate-400 mt-1">{{ $t('例如：Host 填写 127.0.0.1 或 nginx，Port 填写 8080') }}；{{ $t('直接输入模式仅提交一个上游节点；如需多节点负载均衡，请先在「上游管理」中创建后再引用。') }}</p>
+        </template>
 
-          <div v-if="routeValidationMessage" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{{ routeValidationMessage }}</div>
-        </div>
-
-        <div v-else-if="formData.upstream_mode === 'upstream_id'" class="space-y-3">
-          <div>
-            <select v-model="formData.upstream_id" class="input">
-              <option value="">{{ $t('请选择已有上游') }}</option>
-              <option v-for="upstream in upstreams" :key="upstream.id" :value="upstream.id">{{ upstreamOptionLabel(upstream) }}</option>
-            </select>
-            <p class="text-xs text-slate-400 mt-1">{{ $t('回源协议、Host 传递和超时由引用的上游对象管理。') }}</p>
-          </div>
-          <div v-if="routeValidationMessage" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{{ routeValidationMessage }}</div>
-        </div>
+        <template v-else-if="formData.upstream_mode === 'upstream_id'">
+          <select v-model="formData.upstream_id" class="input">
+            <option value="">{{ $t('请选择已有上游') }}</option>
+            <option v-for="upstream in upstreams" :key="upstream.id" :value="upstream.id">{{ upstreamOptionLabel(upstream) }}</option>
+          </select>
+          <p class="text-xs text-slate-400 mt-1">{{ $t('回源协议、Host 传递和超时由引用的上游对象管理。') }}</p>
+        </template>
         <div v-else class="text-sm text-slate-500 leading-6">{{ $t('当前保存只会提交路由匹配规则、状态和插件配置，不会附带内联节点，也不会引用已有上游。') }}</div>
+        <p v-if="routeValidationMessage" class="modal-warning mt-3">{{ routeValidationMessage }}</p>
       </div>
       <div class="border-t border-slate-200 pt-4">
         <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" :aria-expanded="showAdvanced" @click="showAdvanced = !showAdvanced">
