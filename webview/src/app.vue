@@ -4,6 +4,8 @@ import { Component, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { useCopilotStore, usePortal } from '@/stores'
 
+import { canAccessRoute } from '@/router'
+
 import api from '@/service/api'
 
 import ConfirmModal from '@/component/confirm.vue'
@@ -42,6 +44,17 @@ class App extends Vue {
 
     get hasCopilot() {
         return this.portal.serviceAvailability.copilot && this.portal.hasPerm('POST /api/copilot/agui')
+    }
+
+    get shouldRedirect() {
+        return this.portal.permissionsLoaded && !canAccessRoute(this.$route)
+    }
+
+    @Watch('shouldRedirect', { immediate: true })
+    async redirectIfForbidden(shouldRedirect: boolean) {
+        if (shouldRedirect) {
+            await this.$router.replace('/overview')
+        }
     }
 
     @Ref readonly navigationRef!: InstanceType<typeof NavigationBar>
@@ -96,7 +109,7 @@ export default toNative(App)
 <template>
   <div class="min-h-screen bg-white">
     <!-- 加载状态 -->
-    <div v-if="!portal.initialized" class="flex items-center justify-center min-h-screen">
+    <div v-if="!portal.initialized && !portal.permissionsLoaded" class="flex items-center justify-center min-h-screen">
       <div class="flex flex-col items-center gap-4">
         <div class="w-12 h-12 spinner"></div>
         <span class="text-slate-500 text-sm">{{ $t('加载中...') }}</span>
@@ -105,10 +118,10 @@ export default toNative(App)
 
     <!-- CopilotKit Provider 与页面布局分离，避免第三方样式影响页面 header 与内容间距；
          仅当 Copilot 启用时才注入，未启用时不挂载，否则会泄漏悬浮球等全局 UI -->
-    <Copilot v-else-if="portal.username && hasCopilot" />
+    <Copilot v-if="portal.username && portal.permissionsLoaded && hasCopilot" />
 
     <!-- 主内容 -->
-    <div v-if="portal.username" class="min-h-screen pt-16">
+    <div v-if="portal.username && (portal.initialized || portal.permissionsLoaded)" class="min-h-screen pt-16">
       <!-- 移动端顶部菜单栏 -->
       <header
         class="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 z-30 flex items-center justify-between px-4 transition-all duration-300"
@@ -148,12 +161,18 @@ export default toNative(App)
 
       <NavigationBar ref="navigationRef" v-model:collapsed="sidebarCollapsed" />
       <main class="min-w-0 min-h-[calc(100vh-4rem)] transition-all duration-300 lg:border-l lg:border-slate-200/50" :class="sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'">
-        <router-view />
+        <router-view v-if="portal.permissionsLoaded && !shouldRedirect" v-slot="{ Component, route }">
+          <component :is="Component" :key="Object.keys(route.params).length ? route.path : undefined" />
+        </router-view>
+        <div v-else-if="!portal.permissionsLoaded" class="empty-state">
+          <p class="text-slate-500">{{ $t('加载失败') }}</p>
+          <button type="button" class="btn btn-secondary" @click="portal.refresh()">{{ $t('重试') }}</button>
+        </div>
       </main>
     </div>
 
     <!-- 登录页面 -->
-    <AuthLogin v-else />
+    <AuthLogin v-else-if="portal.initialized" />
 
     <NotificationManager />
     <ConfirmModal />

@@ -21,6 +21,7 @@ class ContainerLogs extends Vue {
     // ─── 数据属性 ───
     container: DockerContainerInfo | null = null
     logs = new LogStream()
+    private destroyed = false
 
     get containerId() {
         return this.$route.params.id as string
@@ -28,8 +29,12 @@ class ContainerLogs extends Vue {
 
     // ─── 方法 ───
     async loadContainer() {
-        const res = await api.dockerContainerList(true, { id: [this.containerId] })
-        this.container = (res.payload || []).find((c: DockerContainerInfo) => c.id === this.containerId) ?? null
+        const id = this.containerId
+        const res = await api.dockerContainerList(true, { id: [id] })
+        if (this.destroyed || id !== this.containerId) {
+            return
+        }
+        this.container = (res.payload || []).find((c: DockerContainerInfo) => c.id === id) ?? null
         if (!this.container) {
             this.portal.showNotification('error', this.$t('容器不存在'))
             this.$router.push('/docker/containers')
@@ -66,7 +71,8 @@ class ContainerLogs extends Vue {
         this.loadContainer()
     }
 
-    unmounted() {
+    beforeUnmount() {
+        this.destroyed = true
         this.logs.stop()
     }
 }

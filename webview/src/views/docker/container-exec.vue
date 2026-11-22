@@ -24,6 +24,7 @@ class ContainerTerminal extends Vue {
     container: DockerContainerInfo | null = null
     adapter: TerminalAdapter | null = null
     shell = '/bin/sh'
+    private destroyed = false
 
     filePane = new SplitPane()
 
@@ -32,18 +33,26 @@ class ContainerTerminal extends Vue {
 
     async mounted() {
         await this.loadContainer()
-        this.$nextTick(() => this.filePane.initialize(this.contentRef?.clientHeight ?? 600))
+        await this.$nextTick()
+        if (!this.destroyed) {
+            this.filePane.initialize(this.contentRef?.clientHeight ?? 600)
+        }
     }
 
-    unmounted() {
+    beforeUnmount() {
+        this.destroyed = true
         this.handleDisconnect()
         this.filePane.stop()
     }
 
     async loadContainer() {
+        const id = this.containerId
         try {
-            const res = await api.dockerContainerList(true, { id: [this.containerId] })
-            this.container = (res.payload || []).find((c: DockerContainerInfo) => c.id === this.containerId) ?? null
+            const res = await api.dockerContainerList(true, { id: [id] })
+            if (this.destroyed || id !== this.containerId) {
+                return
+            }
+            this.container = (res.payload || []).find((c: DockerContainerInfo) => c.id === id) ?? null
             if (!this.container) {
                 this.portal.showNotification('error', this.$t('容器不存在'))
                 this.$router.push('/docker/containers')

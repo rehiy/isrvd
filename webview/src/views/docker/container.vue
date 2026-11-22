@@ -18,6 +18,7 @@ class ContainerDetail extends Vue {
     container: DockerContainerInfo | null = null
     detail: DockerContainerDetail | null = null
     loading = false
+    private destroyed = false
 
     get containerId() {
         return this.$route.params.id as string
@@ -50,15 +51,21 @@ class ContainerDetail extends Vue {
     }
 
     async loadContainer() {
+        const id = this.containerId
         try {
-            const res = await api.dockerContainerList(true, { id: [this.containerId] })
-            this.container = (res.payload || []).find((c: DockerContainerInfo) => c.id === this.containerId) ?? null
+            const res = await api.dockerContainerList(true, { id: [id] })
+            if (this.destroyed || id !== this.containerId) {
+                return
+            }
+            this.container = (res.payload || []).find((c: DockerContainerInfo) => c.id === id) ?? null
             if (!this.container) {
                 this.portal.showNotification('error', this.$t('容器不存在'))
                 this.$router.push('/docker/containers')
             }
         } catch {
-            this.$router.push('/docker/containers')
+            if (!this.destroyed && id === this.containerId) {
+                this.$router.push('/docker/containers')
+            }
         }
     }
 
@@ -75,6 +82,10 @@ class ContainerDetail extends Vue {
     mounted() {
         this.loadContainer()
         this.loadDetail()
+    }
+
+    beforeUnmount() {
+        this.destroyed = true
     }
 
     formatTime = formatTime
