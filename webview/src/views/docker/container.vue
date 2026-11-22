@@ -1,10 +1,8 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
-import { usePortal } from '@/stores'
-
 import api from '@/service/api'
-import type { DockerContainerDetail, DockerContainerInfo, DockerVolumeMapping } from '@/service/types'
+import type { DockerContainerDetail, DockerVolumeMapping } from '@/service/types'
 
 import { formatTime } from '@/helper/format'
 
@@ -14,11 +12,8 @@ import ContainerTabs from '@/views/docker/widget/container-tabs.vue'
     components: { ContainerTabs }
 })
 class ContainerDetail extends Vue {
-    portal = usePortal()
-    container: DockerContainerInfo | null = null
     detail: DockerContainerDetail | null = null
     loading = false
-    private destroyed = false
 
     get containerId() {
         return this.$route.params.id as string
@@ -50,25 +45,6 @@ class ContainerDetail extends Vue {
         return `${v.source || v.hostPath || '-'} → ${v.containerPath}${v.readOnly ? ' (ro)' : ''}`
     }
 
-    async loadContainer() {
-        const id = this.containerId
-        try {
-            const res = await api.dockerContainerList(true, { id: [id] })
-            if (this.destroyed || id !== this.containerId) {
-                return
-            }
-            this.container = (res.payload || []).find((c: DockerContainerInfo) => c.id === id) ?? null
-            if (!this.container) {
-                this.portal.showNotification('error', this.$t('容器不存在'))
-                this.$router.push('/docker/containers')
-            }
-        } catch {
-            if (!this.destroyed && id === this.containerId) {
-                this.$router.push('/docker/containers')
-            }
-        }
-    }
-
     async loadDetail() {
         this.loading = true
         try {
@@ -80,12 +56,7 @@ class ContainerDetail extends Vue {
     }
 
     mounted() {
-        this.loadContainer()
-        this.loadDetail()
-    }
-
-    beforeUnmount() {
-        this.destroyed = true
+        return this.loadDetail()
     }
 
     formatTime = formatTime
@@ -100,12 +71,12 @@ export default toNative(ContainerDetail)
       <!-- 桌面端 -->
       <div class="toolbar-desktop">
         <div class="title-group">
-          <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+          <div :class="['page-icon', detail?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
             <i class="fas fa-cube text-white text-sm"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">{{ container ? (container.name || container.id) : $t('加载中...') }}</h1>
-            <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
+            <h1 class="title-text">{{ detail ? (detail.name || detail.id) : $t('加载中...') }}</h1>
+            <p class="text-xs text-slate-600 font-mono truncate">{{ detail?.image }}</p>
           </div>
         </div>
         <div class="action-group">
@@ -119,12 +90,12 @@ export default toNative(ContainerDetail)
       <div class="block md:hidden">
         <div class="flex items-center justify-between mb-3">
           <div class="title-group">
-            <div :class="['page-icon flex-shrink-0', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+            <div :class="['page-icon flex-shrink-0', detail?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
               <i class="fas fa-cube text-white text-sm"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="title-text">{{ container ? (container.name || container.id) : $t('加载中...') }}</h1>
-              <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
+              <h1 class="title-text">{{ detail ? (detail.name || detail.id) : $t('加载中...') }}</h1>
+              <p class="text-xs text-slate-600 font-mono truncate">{{ detail?.image }}</p>
             </div>
           </div>
           <button class="btn btn-secondary btn-square" :title="$t('刷新')" :disabled="loading" @click="loadDetail">

@@ -141,6 +141,8 @@ isrvd_post "/docker/container/<CONTAINER_ID>/action" '{"action":"unpause"}'
 
 ## 容器日志
 
+Web 控制台分别按日志快照与实时日志的权限提供对应操作。查看日志无需容器列表权限。
+
 ```bash
 isrvd_get "/docker/container/<CONTAINER_ID>/logs?tail=100"
 ```

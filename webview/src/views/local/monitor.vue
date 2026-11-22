@@ -118,7 +118,7 @@ class MonitorPage extends Vue {
         if (this.polling) {
             return
         }
-        if (!this.portal.token) {
+        if (!this.portal.username) {
             this.stopPoll()
             return
         }

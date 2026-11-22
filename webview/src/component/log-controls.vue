@@ -6,6 +6,7 @@ import type { LogStream } from '@/helper/log'
 @Component({ emits: ['tail-change', 'refresh', 'start', 'stop'] })
 class LogControls extends Vue {
     @Prop({ type: Object, required: true }) readonly logs!: LogStream
+    @Prop({ type: Boolean, default: true }) readonly canRefresh!: boolean
     @Prop({ type: Boolean, default: false }) readonly canStream!: boolean
     @Prop({ type: Boolean, default: false }) readonly mobile!: boolean
 
@@ -35,7 +36,7 @@ export default toNative(LogControls)
       {{ $t(mobile ? item.short : item.label) }}
     </option>
   </select>
-  <button type="button" class="btn btn-secondary" :class="{ 'btn-square': mobile }" :title="mobile ? $t('刷新') : undefined" :disabled="logs.active" @click="$emit('refresh')">
+  <button v-if="canRefresh" type="button" class="btn btn-secondary" :class="{ 'btn-square': mobile }" :title="mobile ? $t('刷新') : undefined" :disabled="logs.active" @click="$emit('refresh')">
     <i class="fas fa-rotate" :class="{ 'text-sm': mobile }"></i>
     <template v-if="!mobile">{{ $t('刷新') }}</template>
   </button>
