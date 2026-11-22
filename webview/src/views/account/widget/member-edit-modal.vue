@@ -274,12 +274,12 @@ export default toNative(MemberEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="title" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="title" :loading="modalLoading" confirm-class="btn-blue" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label class="form-label">{{ $t('用户名') }} <span class="text-red-500">*</span></label>
         <input v-model="formData.username" type="text" :placeholder="$t('请输入用户名')" required :disabled="isEdit" class="input disabled:bg-slate-50 disabled:text-slate-500" autocomplete="off" />
-        <p v-if="isEdit" class="mt-1 text-xs text-slate-400">{{ $t('用户名不可修改') }}</p>
+        <p v-if="isEdit" class="form-help">{{ $t('用户名不可修改') }}</p>
       </div>
       <div>
         <label class="form-label">
@@ -287,17 +287,17 @@ export default toNative(MemberEditModal)
           <span v-if="!isEdit" class="text-red-500">*</span>
         </label>
         <input v-model="formData.password" type="password" :placeholder="isEdit ? $t('留空则保持不变') : $t('请输入登录密码')" class="input" autocomplete="new-password" />
-        <p v-if="isEdit" class="text-xs text-slate-400 mt-1">{{ $t('留空则保持不变') }}</p>
+        <p v-if="isEdit" class="form-help">{{ $t('留空则保持不变') }}</p>
       </div>
       <div>
         <label class="form-label">{{ $t('家目录') }}</label>
         <input v-model="formData.homeDirectory" type="text" :placeholder="$t('请输入家目录（可选）')" class="input" />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('可选，相对路径基于"基础目录"，留空则自动创建为 基础目录/用户名') }}</p>
+        <p class="form-help">{{ $t('可选，相对路径基于"基础目录"，留空则自动创建为 基础目录/用户名') }}</p>
       </div>
       <div>
         <label class="form-label">{{ $t('描述') }}</label>
         <input v-model="formData.description" type="text" :placeholder="$t('请输入成员描述（可选）')" class="input" maxlength="64" />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('可选，用于标识成员用途，最长 64 字符') }}</p>
+        <p class="form-help">{{ $t('可选，用于标识成员用途，最长 64 字符') }}</p>
       </div>
       <!-- 路由权限 -->
       <div>

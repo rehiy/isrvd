@@ -94,7 +94,7 @@ export default toNative(ServiceCreateModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="$t('新建服务')" :loading="loading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('新建服务')" :loading="loading" confirm-class="btn-emerald" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <!-- 基础设置 -->
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -130,21 +130,21 @@ export default toNative(ServiceCreateModal)
       <div>
         <label class="form-label">{{ $t('端口映射') }}</label>
         <textarea v-model="form.ports" rows="2" :placeholder="$t('请输入端口映射（可选）')" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">{{ $t('每行一条，格式：宿主端口:容器端口/协议，例如：8080:80/tcp') }}</p>
+        <p class="form-help">{{ $t('每行一条，格式：宿主端口:容器端口/协议，例如：8080:80/tcp') }}</p>
       </div>
 
       <!-- 目录挂载 -->
       <div>
         <label class="form-label">{{ $t('目录挂载') }}</label>
         <textarea v-model="form.mounts" rows="2" :placeholder="$t('请输入目录挂载（可选）')" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">{{ $t('每行一条，格式：宿主路径:容器路径，例如：/data:/app/data') }}</p>
+        <p class="form-help">{{ $t('每行一条，格式：宿主路径:容器路径，例如：/data:/app/data') }}</p>
       </div>
 
       <!-- 环境变量 -->
       <div>
         <label class="form-label">{{ $t('环境变量') }}</label>
         <textarea v-model="form.env" rows="2" :placeholder="$t('请输入环境变量（可选）')" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">{{ $t('每行一条，格式：KEY=value，例如：APP_ENV=production') }}</p>
+        <p class="form-help">{{ $t('每行一条，格式：KEY=value，例如：APP_ENV=production') }}</p>
       </div>
 
       <!-- 高级选项 -->

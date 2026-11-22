@@ -188,7 +188,7 @@ export default toNative(ContainerCreateModal)
 </script>
 
 <template>
-  <BaseModal ref="modalRef" v-model="isOpen" :title="$t('新建容器')" :loading="modalLoading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
+  <BaseModal ref="modalRef" v-model="isOpen" :title="$t('新建容器')" :loading="modalLoading" confirm-class="btn-emerald" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <!-- 基础设置 -->
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -212,21 +212,21 @@ export default toNative(ContainerCreateModal)
       <div>
         <label class="form-label">{{ $t('端口映射') }}</label>
         <textarea v-model="formData.portsStr" rows="2" :placeholder="$t('请输入端口映射')" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">{{ $t('格式：主机端口:容器端口，如 8080:80，每行一条') }}</p>
+        <p class="form-help">{{ $t('格式：主机端口:容器端口，如 8080:80，每行一条') }}</p>
       </div>
 
       <!-- 挂载映射 -->
       <div>
         <label class="form-label">{{ $t('挂载映射') }}</label>
         <textarea v-model="formData.volumesStr" rows="3" :placeholder="$t('请输入挂载映射')" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">{{ $t('格式：来源:容器路径[:ro]，如 ./data:/app/data:ro，每行一条') }}</p>
+        <p class="form-help">{{ $t('格式：来源:容器路径[:ro]，如 ./data:/app/data:ro，每行一条') }}</p>
       </div>
 
       <!-- 环境变量 -->
       <div>
         <label class="form-label">{{ $t('环境变量') }}</label>
         <textarea v-model="formData.envStr" rows="2" :placeholder="$t('请输入环境变量')" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">{{ $t('每行一条，支持 KEY=value 或 KEY: value 格式') }}</p>
+        <p class="form-help">{{ $t('每行一条，支持 KEY=value 或 KEY: value 格式') }}</p>
       </div>
 
       <!-- 高级选项 -->

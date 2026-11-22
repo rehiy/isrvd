@@ -125,7 +125,7 @@ export default toNative(RenameModal)
             :placeholder="files.length > 1 ? $t('目标目录，如：/backup/') : $t('如：new.txt、/backup/new.txt、/backup/')"
           >
         </div>
-        <p class="text-xs text-slate-400 mt-1">
+        <p class="form-help">
           {{ $t('以') }} <code class="bg-slate-100 px-1 rounded">/</code> {{ $t('结尾 → 移入该目录并保持原名；否则 → 完整目标路径（仅单文件）') }}
         </p>
       </div>

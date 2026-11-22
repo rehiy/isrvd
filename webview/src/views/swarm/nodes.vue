@@ -354,7 +354,7 @@ export default toNative(Nodes)
       <div>
         <label class="form-label">{{ $t('Manager 地址') }}</label>
         <input v-model="joinAddr" type="text" class="input" :placeholder="$t('请输入 Manager 地址')" />
-        <p class="mt-1 text-xs text-slate-400">{{ $t('留空则使用占位符，填写后命令可直接使用') }}</p>
+        <p class="form-help">{{ $t('留空则使用占位符，填写后命令可直接使用') }}</p>
       </div>
       <!-- 加入命令 -->
       <div>

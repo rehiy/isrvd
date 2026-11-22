@@ -115,7 +115,7 @@ export default toNative(PluginConfigEditModal)
       <div v-if="isEditMode">
         <label class="form-label">{{ $t('配置 ID') }}</label>
         <input v-model="formData.id" type="text" class="input" disabled />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('ID 由创建接口自动生成，编辑时不能修改。') }}</p>
+        <p class="form-help">{{ $t('ID 由创建接口自动生成，编辑时不能修改。') }}</p>
       </div>
       <div>
         <label class="form-label">{{ $t('描述') }}</label>

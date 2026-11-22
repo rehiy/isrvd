@@ -194,7 +194,7 @@ export default toNative(CertEditModal)
             <div class="text-xs opacity-80 leading-5">{{ $t(item.desc) }}</div>
           </button>
         </div>
-        <p v-if="isEditMode" class="text-xs text-slate-400 mt-1"><i class="fas fa-circle-info mr-1"></i>{{ $t('编辑时不允许切换证书来源类型') }}</p>
+        <p v-if="isEditMode" class="form-help"><i class="fas fa-circle-info mr-1"></i>{{ $t('编辑时不允许切换证书来源类型') }}</p>
       </div>
 
       <!-- file -->
@@ -202,24 +202,24 @@ export default toNative(CertEditModal)
         <div>
           <label class="form-label">{{ $t('证书路径') }} <span class="text-red-500">*</span></label>
           <input v-model="formData.certificate" type="text" class="input font-mono text-sm" :placeholder="$t('请输入证书路径')" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('证书文件绝对路径，例如：/etc/caddy/cert.pem') }}</p>
+          <p class="form-help">{{ $t('证书文件绝对路径，例如：/etc/caddy/cert.pem') }}</p>
         </div>
         <div>
           <label class="form-label">
             {{ $t('私钥路径') }} <span v-if="!isEditMode" class="text-red-500">*</span>
           </label>
           <input v-model="formData.keyContent" type="text" autocomplete="new-password" class="input font-mono text-sm" :placeholder="isEditMode ? $t('留空则保持不变') : $t('请输入私钥路径')" />
-          <p class="text-xs text-slate-400 mt-1">{{ isEditMode ? $t('响应不返回私钥；编辑时留空表示保持原值') : $t('私钥文件绝对路径，例如：/etc/caddy/key.pem') }}</p>
+          <p class="form-help">{{ isEditMode ? $t('响应不返回私钥；编辑时留空表示保持原值') : $t('私钥文件绝对路径，例如：/etc/caddy/key.pem') }}</p>
         </div>
         <div>
           <label class="form-label">{{ $t('格式') }}</label>
           <input v-model="formData.format" type="text" class="input" :placeholder="$t('请输入证书格式（可选）')" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('证书格式，留空使用默认 PEM') }}</p>
+          <p class="form-help">{{ $t('证书格式，留空使用默认 PEM') }}</p>
         </div>
         <div>
           <label class="form-label">{{ $t('标签') }}</label>
           <input v-model="formData.tags" type="text" class="input" :placeholder="$t('请输入标签（可选）')" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('多个标签用逗号分隔，例如：example,prod') }}</p>
+          <p class="form-help">{{ $t('多个标签用逗号分隔，例如：example,prod') }}</p>
         </div>
       </div>
 
@@ -228,7 +228,7 @@ export default toNative(CertEditModal)
         <div>
           <label class="form-label">{{ $t('证书 PEM') }} <span class="text-red-500">*</span></label>
           <textarea v-model="formData.certificate" rows="6" class="input font-mono text-xs leading-5" :placeholder="$t('请输入证书 PEM 内容')"></textarea>
-          <p class="text-xs text-slate-400 mt-1">{{ $t('格式：-----BEGIN CERTIFICATE----- ... -----END CERTIFICATE-----') }}</p>
+          <p class="form-help">{{ $t('格式：-----BEGIN CERTIFICATE----- ... -----END CERTIFICATE-----') }}</p>
         </div>
         <div>
           <div class="flex items-center justify-between gap-2 mb-1">
@@ -240,12 +240,12 @@ export default toNative(CertEditModal)
             </button>
           </div>
           <textarea v-model="formData.keyContent" rows="6" class="input font-mono text-xs leading-5" :class="{ 'caddy-cert-key-masked': !keyVisible }" autocomplete="new-password" autocapitalize="off" :spellcheck="false" :aria-label="$t('私钥 PEM')" :placeholder="isEditMode ? $t('留空则保持不变') : $t('请输入私钥 PEM 内容')"></textarea>
-          <p class="text-xs text-slate-400 mt-1">{{ isEditMode ? $t('响应不返回私钥；编辑时留空表示保持原值') : $t('格式：-----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----') }}</p>
+          <p class="form-help">{{ isEditMode ? $t('响应不返回私钥；编辑时留空表示保持原值') : $t('格式：-----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----') }}</p>
         </div>
         <div>
           <label class="form-label">{{ $t('标签') }}</label>
           <input v-model="formData.tags" type="text" class="input" :placeholder="$t('请输入标签（可选）')" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('多个标签用逗号分隔，例如：example,prod') }}</p>
+          <p class="form-help">{{ $t('多个标签用逗号分隔，例如：example,prod') }}</p>
         </div>
       </div>
 
@@ -254,7 +254,7 @@ export default toNative(CertEditModal)
         <div>
           <label class="form-label">{{ $t('主机名') }} <span class="text-red-500">*</span></label>
           <input v-model="formData.subject" type="text" class="input font-mono text-sm" :placeholder="$t('请输入主机名')" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('Caddy 将通过 ACME 自动为该主机申请并续期证书，例如：example.com') }}</p>
+          <p class="form-help">{{ $t('Caddy 将通过 ACME 自动为该主机申请并续期证书，例如：example.com') }}</p>
         </div>
       </div>
     </div>

@@ -174,13 +174,13 @@ export default toNative(ServerEditModal)
       <div>
         <label class="form-label">{{ $t('服务名称') }} <span class="text-red-500">*</span></label>
         <input v-model="formData.name" class="input font-mono" :disabled="isEditMode" :placeholder="$t('请输入服务名称')" />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('例如 srv0；名称创建后不可修改，并会原样保留。') }}</p>
+        <p class="form-help">{{ $t('例如 srv0；名称创建后不可修改，并会原样保留。') }}</p>
       </div>
 
       <div>
         <label class="form-label">{{ $t('监听地址') }} <span class="text-red-500">*</span></label>
         <textarea v-model="formData.listen" rows="3" class="input font-mono text-sm" placeholder=":80&#10;:443"></textarea>
-        <p class="text-xs text-slate-400 mt-1">{{ $t('每行一个地址，例如 :80、:443 或 127.0.0.1:8080。') }}</p>
+        <p class="form-help">{{ $t('每行一个地址，例如 :80、:443 或 127.0.0.1:8080。') }}</p>
       </div>
 
       <div>
@@ -194,14 +194,14 @@ export default toNative(ServerEditModal)
           :search-placeholder="$t('搜索协议')"
           :empty-text="$t('未找到匹配协议')"
         />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('支持多选；未选择时使用 Caddy 默认协议。H2 与 H2C 依赖 H1。') }}</p>
+        <p class="form-help">{{ $t('支持多选；未选择时使用 Caddy 默认协议。H2 与 H2C 依赖 H1。') }}</p>
       </div>
 
       <div class="border-t border-slate-200 pt-6 space-y-4">
         <div>
           <label class="form-label">{{ $t('可信代理 IP / CIDR') }}</label>
           <textarea v-model="formData.trustedProxyRanges" rows="3" class="input font-mono text-sm" :disabled="formData.trustedProxiesCustom" placeholder="192.0.2.10&#10;10.0.0.0/8&#10;2001:db8::/32"></textarea>
-          <p class="text-xs text-slate-400 mt-1">{{ $t('仅填写实际反向代理的 IP 或网段，每行一个；留空表示不信任代理转发的客户端 IP。') }}</p>
+          <p class="form-help">{{ $t('仅填写实际反向代理的 IP 或网段，每行一个；留空表示不信任代理转发的客户端 IP。') }}</p>
         </div>
         <ToggleCard
           v-model="formData.trustedProxiesStrict"
@@ -216,24 +216,24 @@ export default toNative(ServerEditModal)
         <div>
           <label class="form-label">{{ $t('空闲超时') }}</label>
           <input v-model="formData.idleTimeout" class="input" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('时间格式，例如 {0}；留空使用 Caddy 默认值。', '5m') }}</p>
+          <p class="form-help">{{ $t('时间格式，例如 {0}；留空使用 Caddy 默认值。', '5m') }}</p>
         </div>
         <div>
           <label class="form-label">{{ $t('读取超时') }}</label>
           <input v-model="formData.readTimeout" class="input" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('时间格式，例如 {0}；留空使用 Caddy 默认值。', '30s') }}</p>
+          <p class="form-help">{{ $t('时间格式，例如 {0}；留空使用 Caddy 默认值。', '30s') }}</p>
         </div>
         <div>
           <label class="form-label">{{ $t('写入超时') }}</label>
           <input v-model="formData.writeTimeout" class="input" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('时间格式，例如 {0}；留空使用 Caddy 默认值。', '30s') }}</p>
+          <p class="form-help">{{ $t('时间格式，例如 {0}；留空使用 Caddy 默认值。', '30s') }}</p>
         </div>
       </div>
 
       <div>
         <label class="form-label">{{ $t('最大请求头字节数') }}</label>
         <input v-model.number="formData.maxHeaderBytes" type="number" min="0" class="input" />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('0 表示使用默认值') }}</p>
+        <p class="form-help">{{ $t('0 表示使用默认值') }}</p>
       </div>
 
       <div class="border-t border-slate-200 pt-6 space-y-4">
@@ -244,7 +244,7 @@ export default toNative(ServerEditModal)
             <option value="enabled">{{ $t('启用') }}</option>
             <option value="disabled">{{ $t('禁用') }}</option>
           </select>
-          <p class="text-xs text-slate-400 mt-1">{{ $t('默认规则会在配置 TLS 客户端认证时自动启用严格校验。') }}</p>
+          <p class="form-help">{{ $t('默认规则会在配置 TLS 客户端认证时自动启用严格校验。') }}</p>
         </div>
         <ToggleCard v-model="formData.autoHTTPSDisabled" :label="$t('禁用自动 HTTPS')" :desc="$t('关闭该服务的自动证书和 HTTPS 配置。')" />
         <ToggleCard v-model="formData.redirectsDisabled" :label="$t('禁用 HTTPS 重定向')" :desc="$t('保留自动 HTTPS，但不将 HTTP 请求重定向到 HTTPS。')" />

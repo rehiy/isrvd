@@ -126,13 +126,13 @@ export default toNative(NodePortMapModal)
         <div class="min-w-0">
           <label class="form-label">{{ $t('中控监听端口') }} <span class="text-red-500">*</span></label>
           <input v-model.number="listen" type="number" min="1" max="65535" required class="input" placeholder="20022" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('须在中控配置 portmap.range 允许的范围内') }}</p>
+          <p class="form-help">{{ $t('须在中控配置 portmap.range 允许的范围内') }}</p>
         </div>
 
         <div class="min-w-0">
           <label class="form-label">{{ $t('节点目标地址') }} <span class="text-red-500">*</span></label>
           <input v-model="target" type="text" maxlength="200" required class="input font-mono" placeholder="127.0.0.1:22" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('host:port；只填端口时默认指向节点本机 127.0.0.1') }}</p>
+          <p class="form-help">{{ $t('host:port；只填端口时默认指向节点本机 127.0.0.1') }}</p>
         </div>
       </div>
 

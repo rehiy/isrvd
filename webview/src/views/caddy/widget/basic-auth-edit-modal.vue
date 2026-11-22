@@ -343,7 +343,7 @@ export default toNative(BasicAuthEditModal)
             {{ getRouteLabel(route) }}
           </option>
         </select>
-        <p v-if="unauthRoutes.length === 0" class="text-xs text-slate-400 mt-1">{{ $t('所有路由均已配置认证') }}</p>
+        <p v-if="unauthRoutes.length === 0" class="form-help">{{ $t('所有路由均已配置认证') }}</p>
       </div>
       <div v-else-if="editingRoute">
         <label class="form-label">{{ $t('路由') }}</label>
@@ -357,13 +357,13 @@ export default toNative(BasicAuthEditModal)
         <div>
           <label class="form-label">Realm</label>
           <input v-model="form.realm" type="text" class="input" :placeholder="realmPlaceholder" autocomplete="off" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('HTTP Basic 认证弹窗中显示的描述文字') }}</p>
+          <p class="form-help">{{ $t('HTTP Basic 认证弹窗中显示的描述文字') }}</p>
         </div>
         <ToggleCard v-model="form.forwardUser" :label="$t('将认证用户名传给后端')" :desc="$t('认证通过后，将登录用户名注入到指定请求头中转发给上游服务')">
           <div>
             <label class="form-label">{{ $t('请求头名称') }}</label>
             <input v-model="form.forwardHeader" type="text" class="input" placeholder="X-Remote-User" autocomplete="off" />
-            <p class="text-xs text-slate-400 mt-1">{{ $t('Caddy 变量') }} <code class="bg-slate-100 px-1 rounded-lg">&#123;http.auth.user.id&#125;</code> {{ $t('将被注入到此 Header') }}</p>
+            <p class="form-help">{{ $t('Caddy 变量') }} <code class="bg-slate-100 px-1 rounded-lg">&#123;http.auth.user.id&#125;</code> {{ $t('将被注入到此 Header') }}</p>
           </div>
         </ToggleCard>
       </template>
@@ -408,8 +408,8 @@ export default toNative(BasicAuthEditModal)
             <div class="py-8 text-center text-sm text-slate-400">{{ $t('已选择全部账号') }}</div>
           </template>
         </Combobox>
-        <p v-if="canDelete" class="text-xs text-slate-400 mt-1">{{ $t('点击账号标签上的 × 标记移除，保存后生效') }}</p>
-        <p v-else class="text-xs text-slate-400 mt-1">{{ $t('没有删除账号的权限') }}</p>
+        <p v-if="canDelete" class="form-help">{{ $t('点击账号标签上的 × 标记移除，保存后生效') }}</p>
+        <p v-else class="form-help">{{ $t('没有删除账号的权限') }}</p>
         <p class="text-xs text-amber-600 mt-1">{{ $t('最后一个账号不能在编辑配置中移除，请在列表中删除并确认解除认证') }}</p>
       </div>
 
@@ -422,7 +422,7 @@ export default toNative(BasicAuthEditModal)
         <div>
           <label class="form-label">{{ $t('密码') }} <span class="text-red-500">*</span></label>
           <input v-model="form.password" type="password" class="input" :placeholder="$t('请输入密码')" autocomplete="new-password" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('密码将以 bcrypt 形式存储在 Caddy 配置中') }}</p>
+          <p class="form-help">{{ $t('密码将以 bcrypt 形式存储在 Caddy 配置中') }}</p>
         </div>
       </div>
     </div>

@@ -105,7 +105,7 @@ export default toNative(ImagePullModal)
 </script>
 
 <template>
-  <BaseModal ref="modalRef" v-model="isOpen" :title="$t('拉取镜像')" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
+  <BaseModal ref="modalRef" v-model="isOpen" :title="$t('拉取镜像')" :loading="modalLoading" confirm-class="btn-blue" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <section>
         <div class="space-y-3">
@@ -176,7 +176,7 @@ export default toNative(ImagePullModal)
           <div>
             <label class="form-label">{{ $t('镜像引用') }}</label>
             <input v-model="formData.image" type="text" :placeholder="$t('请输入镜像引用')" required class="input font-mono" />
-            <p class="text-xs text-slate-400 mt-1">
+            <p class="form-help">
               {{ $t('未指定 tag 时默认拉取 latest；选择私有仓库时不需要重复填写仓库地址。') }}
             </p>
           </div>

@@ -315,7 +315,7 @@ export default toNative(RedeployModal)
       </select>
       <p v-if="historyLoading" class="text-xs text-slate-500 mt-1" role="status">{{ $t('正在加载部署记录...') }}</p>
       <p v-else-if="historyError" class="text-sm text-red-500 mt-1" role="alert">{{ $t('部署记录加载失败') }}</p>
-      <p v-else-if="history.length === 0" class="text-xs text-slate-400 mt-1">{{ $t('暂无部署记录') }}</p>
+      <p v-else-if="history.length === 0" class="form-help">{{ $t('暂无部署记录') }}</p>
       <p v-if="loadedRevision" class="text-sm text-amber-600 mt-1">{{ $t('历史配置将替换当前配置并重建实例；数据卷与数据库内容不会恢复。') }}</p>
     </div>
     <div v-if="pendingSwitch" class="modal-warning mb-3" role="alert">

@@ -49,7 +49,7 @@ export default toNative(ImageTagModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="$t('新建镜像标签')" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('新建镜像标签')" :loading="modalLoading" confirm-class="btn-blue" @confirm="handleConfirm">
     <div v-if="tagImage" class="space-y-4">
       <div>
         <label class="form-label">{{ $t('当前镜像') }}</label>
@@ -66,7 +66,7 @@ export default toNative(ImageTagModal)
       <div>
         <label class="form-label">{{ $t('新标签') }}</label>
         <input v-model="tagRepoTag" type="text" class="input" :placeholder="$t('请输入镜像标签')" />
-        <p class="mt-1 text-xs text-slate-400">{{ $t('格式: 仓库路径:标签，如 myapp:v1.0') }}</p>
+        <p class="form-help">{{ $t('格式: 仓库路径:标签，如 myapp:v1.0') }}</p>
       </div>
     </div>
 

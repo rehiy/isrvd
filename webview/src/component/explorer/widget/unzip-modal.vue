@@ -76,7 +76,7 @@ export default toNative(UnzipModal)
               :placeholder="$t('请输入目录名，如：output')"
             >
           </div>
-          <p class="text-xs text-slate-400 mt-1">{{ $t('目标目录留空时，文件将解压到当前目录；只能输入目录名，不允许包含 / 等路径分隔符') }}</p>
+          <p class="form-help">{{ $t('目标目录留空时，文件将解压到当前目录；只能输入目录名，不允许包含 / 等路径分隔符') }}</p>
         </div>
       </form>
     </div>

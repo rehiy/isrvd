@@ -148,7 +148,7 @@ export default toNative(NodeLabelModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="$t('编辑节点标签')" :loading="loading" :confirm-disabled="confirmDisabled" confirm-class="btn-blue" max-width-class="max-w-2xl" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('编辑节点标签')" :loading="loading" :confirm-disabled="confirmDisabled" confirm-class="btn-blue" @confirm="handleConfirm">
     <template #confirm-text>{{ $t('保存') }}</template>
     <div v-if="!loaded" class="empty-state">
       <div class="spinner-lg"></div>

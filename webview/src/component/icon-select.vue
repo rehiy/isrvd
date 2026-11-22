@@ -135,7 +135,7 @@ export default toNative(IconSelect)
     </div>
 
     <!-- 图标选择 Modal -->
-    <BaseModal v-model="isOpen" :title="$t('选择图标')" :show-footer="false">
+    <BaseModal v-model="isOpen" :title="$t('选择图标')" :show-confirm="false">
       <!-- 搜索框 -->
       <div class="mb-3">
         <div class="relative">

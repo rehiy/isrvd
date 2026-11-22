@@ -87,27 +87,27 @@ export default toNative(CredentialEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="title" :loading="modalLoading" confirm-class="btn-purple" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="title" :loading="modalLoading" confirm-class="btn-purple" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label class="form-label">{{ $t('凭据名称') }} <span class="text-red-500">*</span></label>
         <input v-model="formData.name" type="text" :placeholder="$t('请输入凭据名称')" required class="input" />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('便于识别的名称，如 "生产环境密钥"') }}</p>
+        <p class="form-help">{{ $t('便于识别的名称，如 "生产环境密钥"') }}</p>
       </div>
       <div>
         <label class="form-label">{{ $t('描述') }}</label>
         <input v-model="formData.description" type="text" :placeholder="$t('请输入凭据描述')" class="input" />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}</p>
+        <p class="form-help">{{ $t('可选') }}</p>
       </div>
       <div>
         <label class="form-label">{{ $t('用户名') }} <span class="text-red-500">*</span></label>
         <input v-model="formData.user" type="text" :placeholder="$t('请输入用户名')" required class="input" autocomplete="off" />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('SSH 登录用户名') }}</p>
+        <p class="form-help">{{ $t('SSH 登录用户名') }}</p>
       </div>
       <div>
         <label class="form-label">{{ $t('密码') }}</label>
         <input v-model="formData.password" type="password" :placeholder="isEdit ? $t('留空则保持不变') : $t('请输入登录密码')" class="input" autocomplete="new-password" />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('与私钥二选一') }}</p>
+        <p class="form-help">{{ $t('与私钥二选一') }}</p>
       </div>
       <div>
         <label class="form-label">{{ $t('SSH 私钥') }}</label>
@@ -117,7 +117,7 @@ export default toNative(CredentialEditModal)
           :placeholder="isEdit ? $t('留空则保持不变') : $t('请输入 SSH 私钥')"
           class="input font-mono text-xs"
         />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('PEM 格式私钥，设置后优先使用私钥认证') }}</p>
+        <p class="form-help">{{ $t('PEM 格式私钥，设置后优先使用私钥认证') }}</p>
       </div>
     </form>
 

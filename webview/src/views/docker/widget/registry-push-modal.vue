@@ -84,7 +84,7 @@ export default toNative(RegistryPushModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="$t('推送镜像到仓库')" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('推送镜像到仓库')" :loading="modalLoading" confirm-class="btn-blue" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label class="form-label">{{ $t('本地镜像') }}</label>
@@ -103,7 +103,7 @@ export default toNative(RegistryPushModal)
       <div>
         <label class="form-label">{{ $t('命名空间') }}</label>
         <input v-model="pushForm.namespace" type="text" :placeholder="$t('请输入命名空间（可选）')" class="input" />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('可选，镜像将被推送为：{0}', pushTargetPreview) }}</p>
+        <p class="form-help">{{ $t('可选，镜像将被推送为：{0}', pushTargetPreview) }}</p>
       </div>
     </form>
 

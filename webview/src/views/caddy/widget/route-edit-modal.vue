@@ -346,7 +346,7 @@ export default toNative(RouteEditModal)
           <select v-model="targetServer" class="input font-mono" :disabled="isEditMode || modalLoading" @change="loadRoutePositions">
             <option v-for="item in servers" :key="item.id" :value="item.name">{{ item.name }}</option>
           </select>
-          <p class="text-xs text-slate-400 mt-1">{{ isEditMode ? $t('路由所属服务不可修改') : $t('选择新路由所属的服务') }}</p>
+          <p class="form-help">{{ isEditMode ? $t('路由所属服务不可修改') : $t('选择新路由所属的服务') }}</p>
         </div>
 
         <div v-if="!isEditMode">
@@ -359,10 +359,10 @@ export default toNative(RouteEditModal)
             </select>
             <button type="button" class="btn btn-secondary" :disabled="positionsLoading || modalLoading" :title="$t('刷新路由位置')" @click="loadRoutePositions"><i class="fas fa-rotate"></i></button>
           </div>
-          <p v-if="positionsLoading" class="text-xs text-slate-400 mt-1">{{ $t('加载中...') }}</p>
+          <p v-if="positionsLoading" class="form-help">{{ $t('加载中...') }}</p>
           <p v-else-if="!routeSnapshot" class="text-xs text-amber-600 mt-1">{{ $t('请刷新路由位置后重试') }}</p>
           <p v-else-if="recommendedPosition !== undefined" class="text-xs mt-1" :class="selectedPosition > recommendedPosition ? 'text-amber-600' : 'text-slate-500'">{{ $t('第 {0} 条路由包含覆盖此域名的通配符或兜底规则，建议插入到它之前。', recommendedPosition + 1) }}</p>
-          <p v-else class="text-xs text-slate-400 mt-1">{{ $t('路由按顺序执行；涉及鉴权、重写或复杂匹配时，请手动选择合适的位置。') }}</p>
+          <p v-else class="form-help">{{ $t('路由按顺序执行；涉及鉴权、重写或复杂匹配时，请手动选择合适的位置。') }}</p>
         </div>
       </div>
 
@@ -374,12 +374,12 @@ export default toNative(RouteEditModal)
           <div>
             <label class="form-label">Host</label>
             <textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm"></textarea>
-            <p class="text-xs text-slate-400 mt-1">{{ $t('每行一个，留空匹配所有，例如：example.com 或 *.example.com') }}</p>
+            <p class="form-help">{{ $t('每行一个，留空匹配所有，例如：example.com 或 *.example.com') }}</p>
           </div>
           <div>
             <label class="form-label">Path</label>
             <textarea v-model="formData.paths" rows="2" class="input font-mono text-sm"></textarea>
-            <p class="text-xs text-slate-400 mt-1">{{ $t('每行一个，支持 * 通配符，例如：/api/* 或 /static/*') }}</p>
+            <p class="form-help">{{ $t('每行一个，支持 * 通配符，例如：/api/* 或 /static/*') }}</p>
           </div>
         </div>
 
@@ -387,7 +387,7 @@ export default toNative(RouteEditModal)
           <div>
             <label class="form-label">Method</label>
             <input v-model="formData.methods" type="text" class="input font-mono text-sm" />
-            <p class="text-xs text-slate-400 mt-1">{{ $t('空格分隔，留空匹配所有，例如：GET POST') }}</p>
+            <p class="form-help">{{ $t('空格分隔，留空匹配所有，例如：GET POST') }}</p>
           </div>
           <div>
             <label class="form-label">{{ $t('协议') }}</label>
@@ -402,7 +402,7 @@ export default toNative(RouteEditModal)
                 {{ proto === '' ? $t('不限') : proto.toUpperCase() }}
               </button>
             </div>
-            <p class="text-xs text-slate-400 mt-1">{{ $t('留空匹配所有') }}</p>
+            <p class="form-help">{{ $t('留空匹配所有') }}</p>
           </div>
         </div>
 
@@ -422,7 +422,7 @@ export default toNative(RouteEditModal)
               <i class="fas fa-plus text-xs"></i>{{ $t('添加匹配请求头') }}
             </button>
           </div>
-          <p class="text-xs text-slate-400 mt-1">{{ $t('请求头值留空表示存在即匹配') }}</p>
+          <p class="form-help">{{ $t('请求头值留空表示存在即匹配') }}</p>
         </ToggleCard>
       </div>
 
@@ -448,12 +448,12 @@ export default toNative(RouteEditModal)
               <ContainerSelect :model-value="formData.upstreamHost" :containers="containers" :placeholder="$t('请输入容器名')" @update:model-value="setUpstreamHost" />
               <ContainerPortSelect :model-value="formData.upstreamPort" :ports="getPortsByHost(formData.upstreamHost)" :placeholder="$t('请输入端口')" @update:model-value="setUpstreamPort" />
             </div>
-            <p class="text-xs text-slate-400 mt-1">{{ $t('可输入容器名或 IP 地址，选择后自动填充下方第一个上游，也可手动输入') }}</p>
+            <p class="form-help">{{ $t('可输入容器名或 IP 地址，选择后自动填充下方第一个上游，也可手动输入') }}</p>
           </div>
           <div>
             <label class="form-label">{{ $t('上游地址') }} <span class="text-red-500">*</span></label>
             <textarea v-model="formData.upstreams" rows="3" class="input font-mono text-sm" :placeholder="$t('请输入上游地址')" @input="syncSelectedFromText"></textarea>
-            <p class="text-xs text-slate-400 mt-1">{{ $t('每行一个 host:port，多个上游自动轮询，例如：backend1:8080') }}</p>
+            <p class="form-help">{{ $t('每行一个 host:port，多个上游自动轮询，例如：backend1:8080') }}</p>
           </div>
           <div v-if="!formData.fastcgi">
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -470,12 +470,12 @@ export default toNative(RouteEditModal)
                 <input v-model="formData.writeTimeout" type="text" class="input font-mono text-sm" />
               </div>
             </div>
-            <p class="text-xs text-slate-400 mt-1">{{ $t('如 10s、5m') }}{{ $t('，留空使用默认值') }}</p>
+            <p class="form-help">{{ $t('如 10s、5m') }}{{ $t('，留空使用默认值') }}</p>
           </div>
           <ToggleCard v-model="formData.fastcgi" :label="$t('FastCGI 协议')" :desc="$t('适用于 PHP-FPM 等 FastCGI 进程')">
             <label class="form-label">{{ $t('FastCGI 文档根目录') }}</label>
             <input v-model="formData.fastcgiRoot" type="text" class="input font-mono text-sm" />
-            <p class="text-xs text-slate-400 mt-1">{{ $t('设置') }} <code class="px-1 bg-slate-100 rounded">DOCUMENT_ROOT</code>{{ $t('，留空不传 root，例如：/var/www/html') }}</p>
+            <p class="form-help">{{ $t('设置') }} <code class="px-1 bg-slate-100 rounded">DOCUMENT_ROOT</code>{{ $t('，留空不传 root，例如：/var/www/html') }}</p>
           </ToggleCard>
           <ToggleCard v-model="formData.proxyRewriteEnabled" :label="$t('代理前 URI 重写')">
             <template #desc>{{ $t('写入') }} <code class="px-1 bg-slate-100 rounded">reverse_proxy.rewrite</code>{{ $t('，仅影响转发给上游的请求 URI') }}</template>
@@ -484,13 +484,13 @@ export default toNative(RouteEditModal)
               <div>
                 <label class="form-label">{{ $t('覆盖请求方法') }}</label>
                 <input v-model="formData.proxyRewriteMethod" type="text" class="input font-mono text-sm" />
-                <p class="text-xs text-slate-400 mt-1">{{ $t('如 GET、POST，留空不修改') }}</p>
+                <p class="form-help">{{ $t('如 GET、POST，留空不修改') }}</p>
               </div>
               <!-- URI 整体替换 -->
               <div>
                 <label class="form-label">{{ $t('URI 整体替换') }}</label>
                 <input v-model="formData.proxyRewriteUri" type="text" class="input font-mono text-sm" />
-                <p class="text-xs text-slate-400 mt-1">{{ $t('可选，完整替换转发给上游的 URI，留空不修改') }}{{ $t('例如：') }}<code class="px-1 bg-slate-100 rounded">/backend/{http.request.uri.path.1}</code></p>
+                <p class="form-help">{{ $t('可选，完整替换转发给上游的 URI，留空不修改') }}{{ $t('例如：') }}<code class="px-1 bg-slate-100 rounded">/backend/{http.request.uri.path.1}</code></p>
               </div>
               <!-- 路径前后缀裁剪 -->
               <div>
@@ -505,7 +505,7 @@ export default toNative(RouteEditModal)
                     <input v-model="formData.proxyStripPathSuffix" type="text" class="input font-mono text-sm" />
                   </div>
                 </div>
-                <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}{{ $t('例如：') }}<code class="px-1 bg-slate-100 rounded">/api</code> / <code class="px-1 bg-slate-100 rounded">.php</code></p>
+                <p class="form-help">{{ $t('可选') }}{{ $t('例如：') }}<code class="px-1 bg-slate-100 rounded">/api</code> / <code class="px-1 bg-slate-100 rounded">.php</code></p>
               </div>
               <!-- 子串查找替换 -->
               <div>
@@ -520,7 +520,7 @@ export default toNative(RouteEditModal)
                     <input v-model="formData.proxyUriSubstringReplace" type="text" class="input font-mono text-sm" />
                   </div>
                 </div>
-                <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}{{ $t('例如：') }}<code class="px-1 bg-slate-100 rounded">/old</code> → <code class="px-1 bg-slate-100 rounded">/new</code></p>
+                <p class="form-help">{{ $t('可选') }}{{ $t('例如：') }}<code class="px-1 bg-slate-100 rounded">/old</code> → <code class="px-1 bg-slate-100 rounded">/new</code></p>
               </div>
             </div>
           </ToggleCard>
@@ -531,7 +531,7 @@ export default toNative(RouteEditModal)
           <div>
             <label class="form-label">{{ $t('根目录') }} <span class="text-red-500">*</span></label>
             <input v-model="formData.root" type="text" class="input font-mono text-sm" :placeholder="$t('请输入根目录')" />
-            <p class="text-xs text-slate-400 mt-1">{{ $t('静态文件根目录，例如：/var/www/html') }}</p>
+            <p class="form-help">{{ $t('静态文件根目录，例如：/var/www/html') }}</p>
           </div>
           <ToggleCard v-model="formData.browse" :label="$t('启用目录浏览')" :desc="$t('允许访客浏览目录内文件列表')" />
         </div>
@@ -541,12 +541,12 @@ export default toNative(RouteEditModal)
           <div>
             <label class="form-label">{{ $t('状态码') }}</label>
             <input v-model.number="formData.statusCode" type="number" min="100" max="599" class="input" :placeholder="$t('请输入状态码')" />
-            <p class="text-xs text-slate-400 mt-1">{{ $t('HTTP 状态码，例如：200') }}</p>
+            <p class="form-help">{{ $t('HTTP 状态码，例如：200') }}</p>
           </div>
           <div>
             <label class="form-label">{{ $t('响应体') }}</label>
             <CodeEditor v-model="formData.body" :label="$t('响应体')" :disabled="modalLoading" :placeholder="$t('请输入响应体')" />
-            <p class="text-xs text-slate-400 mt-1">{{ $t('留空则返回默认响应，例如：OK') }}</p>
+            <p class="form-help">{{ $t('留空则返回默认响应，例如：OK') }}</p>
           </div>
         </div>
 
@@ -555,30 +555,30 @@ export default toNative(RouteEditModal)
           <div>
             <label class="form-label">{{ $t('URI 替换') }}</label>
             <input v-model="formData.rewriteUri" type="text" class="input font-mono text-sm" :placeholder="$t('请输入 URI 替换规则')" />
-            <p class="text-xs text-slate-400 mt-1">{{ $t('完整替换请求 URI，支持 Caddy 占位符，例如：/new-path/{http.request.uri.path.1}') }}</p>
+            <p class="form-help">{{ $t('完整替换请求 URI，支持 Caddy 占位符，例如：/new-path/{http.request.uri.path.1}') }}</p>
           </div>
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label class="form-label">{{ $t('去掉路径前缀') }}</label>
               <input v-model="formData.stripPathPrefix" type="text" class="input font-mono text-sm" :placeholder="$t('请输入要去掉的前缀')" />
-              <p class="text-xs text-slate-400 mt-1">{{ $t('例如：') }}<code class="px-1 bg-slate-100 rounded">/api</code>{{ $t('，效果：') }}<code class="px-1 bg-slate-100 rounded">/api/v1/foo</code> → <code class="px-1 bg-slate-100 rounded">/v1/foo</code></p>
+              <p class="form-help">{{ $t('例如：') }}<code class="px-1 bg-slate-100 rounded">/api</code>{{ $t('，效果：') }}<code class="px-1 bg-slate-100 rounded">/api/v1/foo</code> → <code class="px-1 bg-slate-100 rounded">/v1/foo</code></p>
             </div>
             <div>
               <label class="form-label">{{ $t('去掉路径后缀') }}</label>
               <input v-model="formData.stripPathSuffix" type="text" class="input font-mono text-sm" :placeholder="$t('请输入要去掉的后缀')" />
-              <p class="text-xs text-slate-400 mt-1">{{ $t('从路径末尾去掉指定后缀，例如：.php') }}</p>
+              <p class="form-help">{{ $t('从路径末尾去掉指定后缀，例如：.php') }}</p>
             </div>
           </div>
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label class="form-label">{{ $t('子串查找') }}</label>
               <input v-model="formData.uriSubstringFind" type="text" class="input font-mono text-sm" :placeholder="$t('请输入要查找的子串')" />
-              <p class="text-xs text-slate-400 mt-1">{{ $t('例如：/old') }}</p>
+              <p class="form-help">{{ $t('例如：/old') }}</p>
             </div>
             <div>
               <label class="form-label">{{ $t('子串替换') }}</label>
               <input v-model="formData.uriSubstringReplace" type="text" class="input font-mono text-sm" :placeholder="$t('请输入替换内容')" />
-              <p class="text-xs text-slate-400 mt-1">{{ $t('例如：/new') }}</p>
+              <p class="form-help">{{ $t('例如：/new') }}</p>
             </div>
           </div>
         </div>
@@ -587,8 +587,8 @@ export default toNative(RouteEditModal)
         <div v-else-if="formData.kind === 'raw'" class="space-y-2">
           <label class="form-label">{{ $t('路由 JSON') }} <span class="text-red-500">*</span></label>
           <CodeEditor v-model="rawJson" language="json" :label="$t('路由 JSON')" :disabled="modalLoading" placeholder='{ "match": [...], "handle": [...] }' @update:model-value="rawDirty = true" />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('直接编辑完整的 Caddy 路由 JSON，match 和 handle 字段可选') }}</p>
-          <p v-if="rawDirty" class="text-xs text-slate-400 mt-1">{{ $t('为避免丢失配置，已加载或修改的 JSON 仅支持在此模式编辑。') }}</p>
+          <p class="form-help">{{ $t('直接编辑完整的 Caddy 路由 JSON，match 和 handle 字段可选') }}</p>
+          <p v-if="rawDirty" class="form-help">{{ $t('为避免丢失配置，已加载或修改的 JSON 仅支持在此模式编辑。') }}</p>
         </div>
       </div>
 
@@ -615,7 +615,7 @@ export default toNative(RouteEditModal)
             <button type="button" class="btn-add-row" @click="addHeaderOp('request')">
               <i class="fas fa-plus text-xs"></i>{{ $t('添加请求头操作') }}
             </button>
-            <p class="text-xs text-slate-400 mt-1">{{ $t('例如：字段 X-Real-IP，值 {http.request.remote.host}') }}</p>
+            <p class="form-help">{{ $t('例如：字段 X-Real-IP，值 {http.request.remote.host}') }}</p>
           </div>
           <!-- 响应头 -->
           <div>
@@ -636,7 +636,7 @@ export default toNative(RouteEditModal)
             <button type="button" class="btn-add-row" @click="addHeaderOp('response')">
               <i class="fas fa-plus text-xs"></i>{{ $t('添加响应头操作') }}
             </button>
-            <p class="text-xs text-slate-400 mt-1">{{ $t('例如：字段 X-Frame-Options，值 SAMEORIGIN') }}</p>
+            <p class="form-help">{{ $t('例如：字段 X-Frame-Options，值 SAMEORIGIN') }}</p>
           </div>
         </div>
       </ToggleCard>

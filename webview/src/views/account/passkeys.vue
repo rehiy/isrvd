@@ -261,7 +261,7 @@ export default toNative(AccountPasskeys)
             maxlength="50"
             @keyup.enter="handleRegisterPasskey"
           />
-          <p class="text-xs text-slate-400 mt-1">{{ $t('可选') }}</p>
+          <p class="form-help">{{ $t('可选') }}</p>
         </div>
         <p class="text-sm text-slate-500">
           {{ $t('请确保您的设备支持 Passkey（如 Touch ID、Face ID 或安全密钥）。') }}

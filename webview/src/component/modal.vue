@@ -8,15 +8,14 @@ import { Component, Prop, Ref, Vue, Watch, toNative } from 'vue-facing-decorator
 class BaseModal extends Vue {
     @Prop({ type: Boolean, default: false }) readonly modelValue!: boolean
     @Prop({ type: String, default: '' }) readonly title!: string
+    @Prop({ type: String, default: '' }) readonly subtitle!: string
     @Prop({ type: Boolean, default: false }) readonly loading!: boolean
-    @Prop({ type: Boolean, default: true }) readonly showFooter!: boolean
     @Prop({ type: Boolean, default: false }) readonly confirmDisabled!: boolean
     @Prop({ type: Boolean, default: false }) readonly closeDisabled!: boolean
     @Prop({ type: Boolean, default: false }) readonly allowCloseWhileLoading!: boolean
     @Prop({ type: String, default: 'btn-primary' }) readonly confirmClass!: string
     @Prop({ type: Boolean, default: true }) readonly showConfirm!: boolean
     @Prop({ type: String, default: 'max-w-3xl' }) readonly maxWidthClass!: string
-    @Prop({ type: String, default: '' }) readonly cardClass!: string
     @Prop({ type: String, default: 'px-4 py-6 sm:px-6 overflow-y-auto' }) readonly bodyClass!: string
 
     // ─── Refs ───
@@ -114,13 +113,12 @@ export default toNative(BaseModal)
         @mousedown="handleBackdropMouseDown"
         @click="handleBackdropClick"
       >
-        <div :class="['w-full modal-card animate-scale-in flex flex-col overflow-hidden', maxWidthClass, cardClass]" :aria-busy="loading">
+        <div class="w-full modal-card animate-scale-in flex flex-col overflow-hidden" :class="maxWidthClass" :aria-busy="loading">
           <!-- Header -->
           <div class="flex items-start justify-between gap-3 px-4 py-4 sm:px-6 border-b border-slate-200/50 flex-shrink-0">
             <div class="min-w-0 flex-1 self-center">
-              <slot name="title">
-                <h1 class="title-text whitespace-normal break-words">{{ title }}</h1>
-              </slot>
+              <h1 class="title-text whitespace-normal break-words">{{ title }}</h1>
+              <p v-if="subtitle" class="item-subtitle" :title="subtitle">{{ subtitle }}</p>
             </div>
             <div class="action-group">
               <slot name="header-actions"></slot>
@@ -136,16 +134,14 @@ export default toNative(BaseModal)
           </div>
 
           <!-- Footer -->
-          <div v-if="showFooter" class="flex flex-wrap justify-end gap-3 px-4 py-4 sm:px-6 border-t border-slate-200/50 bg-slate-50/50 flex-shrink-0">
-            <slot name="footer">
-              <button type="button" class="btn btn-secondary" :disabled="closeDisabled || (loading && !allowCloseWhileLoading)" @click="handleCancel">
-                <slot name="cancel-text">{{ showConfirm ? $t('取消') : $t('关闭') }}</slot>
-              </button>
-              <button v-if="showConfirm" type="button" class="btn" :class="confirmClass" :disabled="loading || confirmDisabled" :aria-busy="loading" @click="handleConfirm">
-                <i v-if="loading" class="fas fa-spinner fa-spin"></i>
-                <slot name="confirm-text">{{ $t('确认') }}</slot>
-              </button>
-            </slot>
+          <div class="flex flex-wrap justify-end gap-3 px-4 py-4 sm:px-6 border-t border-slate-200/50 bg-slate-50/50 flex-shrink-0">
+            <button type="button" class="btn btn-secondary" :disabled="closeDisabled || (loading && !allowCloseWhileLoading)" @click="handleCancel">
+              {{ showConfirm ? $t('取消') : $t('关闭') }}
+            </button>
+            <button v-if="showConfirm" type="button" class="btn" :class="confirmClass" :disabled="loading || confirmDisabled" :aria-busy="loading" @click="handleConfirm">
+              <i v-if="loading" class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+              <slot name="confirm-text">{{ $t('确认') }}</slot>
+            </button>
           </div>
         </div>
       </div>

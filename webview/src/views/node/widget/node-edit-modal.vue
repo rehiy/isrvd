@@ -51,12 +51,12 @@ export default toNative(NodeEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="$t('重命名节点')" :loading="modalLoading" :confirm-disabled="!name.trim()" confirm-class="btn-orange" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('重命名节点')" :loading="modalLoading" :confirm-disabled="!name.trim()" confirm-class="btn-orange" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label class="form-label">{{ $t('节点名称') }} <span class="text-red-500">*</span></label>
         <input v-model="name" type="text" maxlength="64" :placeholder="$t('请输入节点名称')" required class="input" />
-        <p class="text-xs text-slate-400 mt-1">{{ $t('1–64 个字符，仅用于在界面中区分节点') }}</p>
+        <p class="form-help">{{ $t('1–64 个字符，仅用于在界面中区分节点') }}</p>
       </div>
     </form>
 
