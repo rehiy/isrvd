@@ -24,7 +24,7 @@ const routes: RouteRecordRaw[] = [
     path: '/local/monitor',
     name: 'local-monitor',
     component: () => import('@/views/local/monitor.vue'),
-    meta: { title: '系统监控' }
+    meta: { title: '系统监控', permissions: ['GET /api/overview/monitor'] }
   },
   {
     path: '/local/process',
@@ -36,7 +36,7 @@ const routes: RouteRecordRaw[] = [
     path: '/local/explorer',
     name: 'local-explorer',
     component: () => import('@/views/local/explorer.vue'),
-    meta: { title: '文件管理' }
+    meta: { title: '文件管理', permissions: ['GET /api/filer/files'] }
   },
   {
     path: '/local/shell',
@@ -181,7 +181,7 @@ const routes: RouteRecordRaw[] = [
     path: '/docker/container/:id',
     name: 'docker-container',
     component: () => import('@/views/docker/container.vue'),
-    meta: { title: '容器详情' }
+    meta: { title: '容器详情', permissions: ['GET /api/docker/container/:id'] }
   },
   {
     path: '/docker/container/:id/stats',
@@ -193,7 +193,7 @@ const routes: RouteRecordRaw[] = [
     path: '/docker/container/:id/logs',
     name: 'docker-container-logs',
     component: () => import('@/views/docker/container-logs.vue'),
-    meta: { title: '容器日志' }
+    meta: { title: '容器日志', permissions: ['GET /api/docker/container/:id/logs', 'GET /api/docker/container/:id/logs/stream'] }
   },
   {
     path: '/docker/container/:id/exec',

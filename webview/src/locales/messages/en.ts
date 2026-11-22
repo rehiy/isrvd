@@ -86,7 +86,8 @@ const messages: Record<string, string> = {
     '标签键重复，请使用不同的键': 'Duplicate label key. Use a different key',
     '修改或删除标签可能触发服务重新调度，请确认服务的调度约束。': 'Changing or deleting labels may reschedule services. Check their placement constraints.',
     '暂无节点标签，添加地域或存储标签供多个服务共用。': 'No node labels. Add region or storage labels for services to share.',
-    '标签值允许为空。删除全部行并保存将清空节点标签。': 'Label values can be empty. Remove all rows and save to clear node labels.',
+    '标签值可留空。': 'Label values can be left blank.',
+    '保存后将清空节点标签。': 'Saving will clear the node labels.',
     '多个服务可以共用节点标签，例如 region=guangzhou。': 'Services can share node labels, such as region=guangzhou.',
     '暂无节点标签': 'No node labels',
 

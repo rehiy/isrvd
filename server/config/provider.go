@@ -99,7 +99,7 @@ func PublishStored(force bool) (*Snapshot, error) {
 }
 
 func readStoredCandidate(force bool) (*Snapshot, error) {
-	snapshot, err := readSnapshot()
+	snapshot, err := readSnapshot(true)
 	if err != nil || snapshot == nil || !force && reflect.DeepEqual(snapshot, Current()) {
 		return nil, err
 	}
@@ -140,9 +140,17 @@ func UpdateStored(mutator func(*Snapshot) error) error {
 	return err
 }
 
+// Stored 读取持久化配置供配置页编辑，不写入迁移结果或发布运行时快照。
+func Stored() (*Snapshot, error) {
+	updateMu.Lock()
+	defer updateMu.Unlock()
+
+	return readSnapshot(false)
+}
+
 // ─── 辅助函数 ───
 
-func readSnapshot() (*Snapshot, error) {
+func readSnapshot(saveMigration bool) (*Snapshot, error) {
 	conf := &Config{}
 	raw, err := document.Read(func(data []byte) error {
 		if data == nil {
@@ -168,6 +176,9 @@ func readSnapshot() (*Snapshot, error) {
 	snapshot, err := buildSnapshot(conf)
 	if err != nil {
 		return nil, fmt.Errorf("构建配置快照失败: %w", err)
+	}
+	if !saveMigration {
+		return snapshot, nil
 	}
 	if conf.Server == nil || conf.Server.JWTSecret != snapshot.Server.JWTSecret {
 		if conf.Server == nil {
@@ -196,7 +207,7 @@ func readSnapshot() (*Snapshot, error) {
 // updateSnapshot 在调用方持有 updateMu 时校验基线、构建并保存候选，不发布快照。
 func updateSnapshot(mutator func(*Snapshot) error) (*Snapshot, error) {
 	runtimeSnapshot := Current()
-	base, err := readSnapshot()
+	base, err := readSnapshot(true)
 	if err != nil {
 		return nil, err
 	}

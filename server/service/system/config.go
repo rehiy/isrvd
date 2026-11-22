@@ -43,9 +43,16 @@ func NewConfigService() *ConfigService {
 	return &ConfigService{}
 }
 
-// ConfigAll 获取全部配置：深拷贝隔离当前快照后清空敏感字段
-func (s *ConfigService) ConfigAll() *AllConfig {
+// ConfigAll 读取指定的配置快照并清空敏感字段。
+func (s *ConfigService) ConfigAll(stored bool) (*AllConfig, error) {
 	snapshot := config.Current()
+	if stored {
+		var err error
+		snapshot, err = config.Stored()
+		if err != nil || snapshot == nil {
+			return nil, err
+		}
+	}
 	src := &AllConfig{
 		Server:      snapshot.Server,
 		Password:    snapshot.Password,
@@ -65,7 +72,7 @@ func (s *ConfigService) ConfigAll() *AllConfig {
 	}
 	dst, err := deepCopyJSON(src)
 	if err != nil || dst == nil {
-		return &AllConfig{}
+		return dst, err
 	}
 	if dst.Server != nil {
 		dst.Server.JWTSecret = ""
@@ -91,7 +98,7 @@ func (s *ConfigService) ConfigAll() *AllConfig {
 		}
 	}
 	dst.dropCenterManaged()
-	return dst
+	return dst, nil
 }
 
 // dropCenterManaged 受管机的登录认证由中控负责，本机不读取也不接受这些分区的修改。

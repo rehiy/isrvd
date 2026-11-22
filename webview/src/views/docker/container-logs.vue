@@ -27,6 +27,10 @@ class ContainerLogs extends Vue {
         return this.$route.params.id as string
     }
 
+    get canReadLogs() {
+        return this.portal.hasPerm('GET /api/docker/container/:id/logs')
+    }
+
     // ─── 方法 ───
     async loadContainer() {
         const id = this.containerId
@@ -35,25 +39,16 @@ class ContainerLogs extends Vue {
             return
         }
         this.container = (res.payload || []).find((c: DockerContainerInfo) => c.id === id) ?? null
-        if (!this.container) {
-            this.portal.showNotification('error', this.$t('容器不存在'))
-            this.$router.push('/docker/containers')
-            return
-        }
-        this.loadLogs()
     }
 
     async loadLogs() {
-        if (!this.container) {
+        if (!this.canReadLogs) {
             return
         }
         await this.logs.load(async signal => (await api.dockerContainerLogs(this.containerId, this.logs.tail, signal)).payload?.logs || [])
     }
 
     startStream() {
-        if (!this.container) {
-            return
-        }
         this.logs.start(
             `docker/container/${encodeURIComponent(this.containerId)}/logs/stream`,
             this.portal.token ?? '',
@@ -67,8 +62,11 @@ class ContainerLogs extends Vue {
     }
 
     // ─── 生命周期 ───
-    mounted() {
-        this.loadContainer()
+    async mounted() {
+        this.loadLogs()
+        if (this.portal.hasPerm('GET /api/docker/containers')) {
+            await this.loadContainer()
+        }
     }
 
     beforeUnmount() {
@@ -92,12 +90,12 @@ export default toNative(ContainerLogs)
           </div>
           <div class="min-w-0">
             <h1 class="title-text">{{ $t('容器日志') }}</h1>
-            <p class="text-xs text-slate-500 font-mono truncate max-w-xs">{{ container ? `${container.name || container.id} · ${container.image}` : $t('加载中...') }}</p>
+            <p class="text-xs text-slate-500 font-mono truncate max-w-xs">{{ container ? `${container.name || container.id} · ${container.image}` : containerId }}</p>
           </div>
         </div>
         <div class="action-group">
           <ContainerTabs :container-id="containerId" />
-          <LogControls :logs="logs" :can-stream="portal.hasPerm('GET /api/docker/container/:id/logs/stream')" @tail-change="handleTailChange" @refresh="loadLogs" @start="startStream" @stop="logs.stop()" />
+          <LogControls :logs="logs" :can-refresh="canReadLogs" :can-stream="portal.hasPerm('GET /api/docker/container/:id/logs/stream')" @tail-change="handleTailChange" @refresh="loadLogs" @start="startStream" @stop="logs.stop()" />
         </div>
       </div>
       <!-- 移动端 -->
@@ -109,11 +107,11 @@ export default toNative(ContainerLogs)
             </div>
             <div class="min-w-0">
               <h1 class="title-text">{{ $t('容器日志') }}</h1>
-              <p class="text-xs text-slate-500 font-mono truncate">{{ container ? `${container.name || container.id} · ${container.image}` : $t('加载中...') }}</p>
+              <p class="text-xs text-slate-500 font-mono truncate">{{ container ? `${container.name || container.id} · ${container.image}` : containerId }}</p>
             </div>
           </div>
           <div class="action-group-sm">
-            <LogControls :logs="logs" :can-stream="portal.hasPerm('GET /api/docker/container/:id/logs/stream')" mobile @tail-change="handleTailChange" @refresh="loadLogs" @start="startStream" @stop="logs.stop()" />
+            <LogControls :logs="logs" :can-refresh="canReadLogs" :can-stream="portal.hasPerm('GET /api/docker/container/:id/logs/stream')" mobile @tail-change="handleTailChange" @refresh="loadLogs" @start="startStream" @stop="logs.stop()" />
           </div>
         </div>
         <ContainerTabs :container-id="containerId" />

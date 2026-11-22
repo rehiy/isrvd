@@ -23,7 +23,6 @@ class NodeLabelModal extends Vue {
     loaded = false
     conflicted = false
     nodeId = ''
-    hostname = ''
     version = 0
     nextRowId = 0
     originalLabels: Record<string, string> = {}
@@ -40,10 +39,10 @@ class NodeLabelModal extends Vue {
             counts.set(row.key, (counts.get(row.key) || 0) + 1)
         }
         return this.rows.map(row => {
-            if (!row.key || row.key !== row.key.trim()) {
+            if (row.key !== row.key.trim()) {
                 return this.$t('标签键不能为空或包含首尾空白')
             }
-            if ((counts.get(row.key) || 0) > 1) {
+            if (row.key && (counts.get(row.key) || 0) > 1) {
                 return this.$t('标签键重复，请使用不同的键')
             }
             return ''
@@ -51,7 +50,8 @@ class NodeLabelModal extends Vue {
     }
 
     get confirmDisabled() {
-        return !this.loaded || this.conflicted || !this.canEdit || !this.hasChanges || this.rowErrors.some(Boolean)
+        return !this.loaded || this.conflicted || !this.canEdit || !this.hasChanges
+            || this.rows.some(row => !row.key) || this.rowErrors.some(Boolean)
     }
 
     get hasChanges() {
@@ -66,7 +66,6 @@ class NodeLabelModal extends Vue {
             return
         }
         this.nodeId = nodeId
-        this.hostname = ''
         this.version = 0
         this.originalLabels = {}
         this.rows = []
@@ -94,7 +93,6 @@ class NodeLabelModal extends Vue {
                 this.isOpen = false
                 return
             }
-            this.hostname = node.hostname
             this.version = node.version
             this.originalLabels = { ...node.labels }
             this.rows = Object.entries(node.labels || {}).sort(([a], [b]) => a.localeCompare(b)).map(([key, value]) => ({ id: this.nextRowId++, key, value }))
@@ -150,25 +148,16 @@ export default toNative(NodeLabelModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="$t('编辑节点标签')" :loading="loading" :confirm-disabled="confirmDisabled" confirm-class="btn-blue" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('编辑节点标签')" :loading="loading" :confirm-disabled="confirmDisabled" confirm-class="btn-blue" max-width-class="max-w-2xl" @confirm="handleConfirm">
     <template #confirm-text>{{ $t('保存') }}</template>
     <div v-if="!loaded" class="empty-state">
       <div class="spinner-lg"></div>
       <p class="text-slate-500">{{ $t('加载中...') }}</p>
     </div>
     <form v-else ref="formRef" class="space-y-4" @submit.prevent="handleConfirm">
-      <div>
-        <p class="text-sm font-medium text-slate-700 break-all">{{ hostname }}</p>
-        <p class="text-mono-muted break-all">{{ nodeId }}</p>
-      </div>
-      <p class="text-sm text-amber-600">{{ $t('修改或删除标签可能触发服务重新调度，请确认服务的调度约束。') }}</p>
-      <div v-if="conflicted" class="panel-frame p-4 space-y-3" role="status">
-        <p class="text-sm text-amber-600">{{ $t('节点已更新，当前修改尚未保存。重新加载将丢弃这些修改。') }}</p>
-        <button type="button" class="btn btn-secondary" @click="loadLabels">{{ $t('放弃修改并重新加载') }}</button>
-      </div>
       <div class="space-y-4">
-        <p v-if="rows.length === 0" class="empty-note">{{ $t('暂无节点标签') }}</p>
-        <div v-for="(row, index) in rows" :key="row.id" class="grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-start gap-3">
+        <p v-if="rows.length === 0" class="empty-note">{{ hasChanges ? $t('保存后将清空节点标签。') : $t('暂无节点标签') }}</p>
+        <div v-for="(row, index) in rows" :key="row.id" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div class="min-w-0">
             <label class="block">
               <span class="form-label">{{ $t('标签键') }} <span class="text-red-500">*</span></span>
@@ -176,16 +165,23 @@ export default toNative(NodeLabelModal)
             </label>
             <p v-if="rowErrors[index]" :id="`node-label-error-${row.id}`" class="text-xs text-red-500 mt-1">{{ rowErrors[index] }}</p>
           </div>
-          <label class="block min-w-0 col-span-2 row-start-2 sm:col-span-1 sm:row-start-1 sm:col-start-2">
-            <span class="form-label">{{ $t('标签值') }}</span>
-            <input v-model="row.value" type="text" class="input font-mono" placeholder="guangzhou" autocomplete="off" :spellcheck="false" />
-          </label>
-          <button type="button" class="btn-icon btn-icon-red mt-6 col-start-2 row-start-1 sm:col-start-3" :title="$t('删除标签')" :aria-label="$t('删除标签')" @click="removeLabel(row.id)"><i class="fas fa-trash"></i></button>
+          <div class="min-w-0">
+            <label :for="`node-label-value-${row.id}`" class="form-label">{{ $t('标签值') }}</label>
+            <div class="flex items-center gap-2">
+              <input :id="`node-label-value-${row.id}`" v-model="row.value" type="text" class="input min-w-0 font-mono" placeholder="guangzhou" autocomplete="off" :spellcheck="false" />
+              <button type="button" class="btn-icon btn-icon-red shrink-0" :title="$t('删除标签')" :aria-label="$t('删除标签')" @click="removeLabel(row.id)"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
         </div>
-        <div>
-          <button type="button" class="btn-add-row" @click="addLabel"><i class="fas fa-plus"></i>{{ $t('添加标签') }}</button>
-          <p class="text-xs text-slate-400 mt-1">{{ $t('标签值允许为空。删除全部行并保存将清空节点标签。') }}</p>
+        <p v-if="rows.length > 0" class="text-xs text-slate-400 mt-1">{{ $t('标签值可留空。') }}</p>
+        <button type="button" class="btn-add-row" @click="addLabel"><i class="fas fa-plus"></i>{{ $t('添加标签') }}</button>
+      </div>
+      <div class="panel-frame border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+        <div class="flex items-start gap-2">
+          <i class="fas fa-triangle-exclamation mt-0.5" aria-hidden="true"></i>
+          <p aria-live="polite">{{ conflicted ? $t('节点已更新，当前修改尚未保存。重新加载将丢弃这些修改。') : $t('修改或删除标签可能触发服务重新调度，请确认服务的调度约束。') }}</p>
         </div>
+        <button v-if="conflicted" type="button" class="btn btn-secondary mt-2" @click="loadLabels">{{ $t('放弃修改并重新加载') }}</button>
       </div>
       <button type="submit" class="sr-only" tabindex="-1" :disabled="loading || confirmDisabled">{{ $t('保存') }}</button>
     </form>

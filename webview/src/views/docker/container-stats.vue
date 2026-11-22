@@ -71,7 +71,7 @@ class ContainerStats extends Vue {
         return this.container?.id || this.$route.params.id as string
     }
 
-    @Watch('$route.fullPath')
+    @Watch('$route.query.name')
     onRouteChanged() {
         this.loadContainer()
     }

@@ -160,8 +160,11 @@ class ApiService {
 
     // ==================== System 系统相关 ====================
 
-    systemConfig() {
-        return http.get<AllConfig>('system/config')
+    systemConfig(acceptReload = false) {
+        return http.get<AllConfig | { config: AllConfig }>('system/config', {
+            params: { stored: true },
+            ...(acceptReload ? { validateStatus: (status: number) => status === 200 || status === 503 } : {}),
+        })
     }
 
     systemConfigUpdate(data: Partial<AllConfig>) {
