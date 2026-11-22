@@ -174,6 +174,7 @@ class Upload extends Vue {
 
     portal = usePortal()
     private readonly session = this.portal.sessionVersion
+    private disposed = false
 
     uploadNodes: UploadNode[] = []
     uploadVersion = 0
@@ -184,12 +185,15 @@ class Upload extends Vue {
     get hasNodes() { return this.uploadNodes.length > 0 }
 
     private get sessionActive() {
-        return this.session === this.portal.sessionVersion
+        return !this.disposed && this.session === this.portal.sessionVersion
     }
 
     beforeUnmount() {
-        if (!this.sessionActive) {
-            this.uploadNodes.forEach(node => this.markNodeCancelled(node))
+        this.disposed = true
+        this.uploadNodes.forEach(node => this.markNodeCancelled(node))
+        if (this.clearTimer) {
+            clearTimeout(this.clearTimer)
+            this.clearTimer = null
         }
     }
 
