@@ -5,10 +5,11 @@ import { Component, Prop, Vue, Watch, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import { MARKETPLACE_PICK_STORAGE_KEY } from '@/service/types'
 import type { ComposeDeployTarget, ComposeMarketplacePick } from '@/service/types'
 
 import ComposeEditor from '@/component/compose/compose-editor.vue'
+
+import { takeMarketplacePick } from './marketplace-pick'
 
 @Component({
     components: { ComposeEditor }
@@ -32,7 +33,10 @@ class ComposeDeploy extends Vue {
 
     // ─── 生命周期 ───
     mounted() {
-        this.consumeMarketplacePick()
+        const pick = takeMarketplacePick(this.target, this.portal.sessionVersion)
+        if (pick) {
+            this.onMarketplacePick(pick)
+        }
     }
 
     // ─── 计算属性 ───
@@ -68,30 +72,6 @@ class ComposeDeploy extends Vue {
     }
 
     // ─── 方法 ───
-    // 消费应用市场页跳转时暂存的选中模板（一次性），有则回填部署表单
-    consumeMarketplacePick() {
-        let raw: string | null
-        try {
-            raw = sessionStorage.getItem(MARKETPLACE_PICK_STORAGE_KEY)
-            if (raw) {
-                sessionStorage.removeItem(MARKETPLACE_PICK_STORAGE_KEY)
-            }
-        } catch {
-            return
-        }
-        if (!raw) {
-            return
-        }
-        try {
-            const pick = JSON.parse(raw) as ComposeMarketplacePick
-            if (pick && typeof pick.compose === 'string' && pick.compose) {
-                this.onMarketplacePick(pick)
-            }
-        } catch {
-            // 暂存数据损坏，忽略
-        }
-    }
-
     onMarketplacePick(payload: ComposeMarketplacePick) {
         let composeContent = payload.compose
         try {

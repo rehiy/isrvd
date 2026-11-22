@@ -3,8 +3,7 @@ import { Component, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
-import { MARKETPLACE_PICK_STORAGE_KEY } from '@/service/types'
-import type { ComposeMarketplacePick } from '@/service/types'
+import { holdMarketplacePick } from './marketplace-pick'
 
 // 应用市场 postMessage 协议：仅本页面使用，故就近定义
 interface MarketplaceInstallPayload {
@@ -118,7 +117,7 @@ class ComposeMarketplace extends Vue {
         }
     }
 
-    onMessage(e: MessageEvent) {
+    async onMessage(e: MessageEvent) {
         if (!this.portal.initialized || !this.canAccess) {
             return
         }
@@ -138,22 +137,15 @@ class ComposeMarketplace extends Vue {
             return
         }
 
-        const payload = e.data as MarketplaceInstallPayload
-        const pick: ComposeMarketplacePick = {
-            name: payload.name,
-            compose: payload.compose,
-            initURL: payload.initURL,
-        }
-
-        // 暂存选中模板，跳转到部署页后由其消费预填
-        try {
-            sessionStorage.setItem(MARKETPLACE_PICK_STORAGE_KEY, JSON.stringify(pick))
-        } catch {
-            this.portal.showNotification('error', this.$t('暂存模板失败，请重试'))
-            return
-        }
+        const { name, compose, initURL } = e.data
         const target = this.portal.hasPerm('POST /api/compose/docker') ? 'docker' : 'swarm'
-        this.$router.push(`/compose/${target}`)
+        const release = holdMarketplacePick({ name, compose, initURL }, target, this.portal.sessionVersion)
+        try {
+            await this.$router.push(`/compose/${target}`)
+            await this.$nextTick()
+        } finally {
+            release()
+        }
     }
 
     goConfig() {
