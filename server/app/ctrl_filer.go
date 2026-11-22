@@ -196,7 +196,7 @@ func (app *App) filerFileModify(c *gin.Context) {
 		return
 	}
 
-	if err := app.filerSvc.FileWrite(absPath, content); err != nil {
+	if err := app.filerSvc.FileWrite(c.Request.Context(), absPath, content); err != nil {
 		respondError(c, http.StatusInternalServerError, "无法保存文件")
 		return
 	}
@@ -287,7 +287,7 @@ func (app *App) filerFileUpload(c *gin.Context) {
 		return
 	}
 
-	if err := app.filerSvc.FileWriteFrom(absPath, helper.ContextReader{Context: c.Request.Context(), Reader: file}); err != nil {
+	if err := app.filerSvc.FileWriteFrom(c.Request.Context(), absPath, file); err != nil {
 		respondError(c, http.StatusInternalServerError, "无法写入文件")
 		return
 	}
