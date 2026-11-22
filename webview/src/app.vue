@@ -118,7 +118,7 @@ export default toNative(App)
     </div>
 
     <!-- 主内容 -->
-    <div v-else-if="portal.username" class="min-h-screen pt-16">
+    <div v-else-if="portal.username" :key="portal.sessionVersion" class="min-h-screen pt-16">
       <!-- 移动端顶部菜单栏 -->
       <header
         class="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 z-30 flex items-center justify-between px-4 transition-all duration-300"
@@ -171,7 +171,7 @@ export default toNative(App)
     <!-- 登录页面 -->
     <AuthLogin v-else />
 
-    <Copilot v-if="hasCopilot" />
+    <Copilot v-if="hasCopilot" :key="'copilot-' + portal.sessionVersion" />
     <NotificationManager />
     <ConfirmModal />
   </div>

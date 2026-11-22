@@ -42,7 +42,7 @@ const routes: RouteRecordRaw[] = [
     path: '/local/shell',
     name: 'local-shell',
     component: () => import('@/views/local/shell.vue'),
-    meta: { title: 'Shell 终端' }
+    meta: { title: 'Shell 终端', permissions: ['GET /api/shell'] }
   },
   {
     path: '/ssh',
@@ -325,7 +325,7 @@ const routes: RouteRecordRaw[] = [
     path: '/account/members',
     name: 'account-members',
     component: () => import('@/views/account/members.vue'),
-    meta: { title: '用户管理' }
+    meta: { title: '用户管理', permissions: ['GET /api/account/members'] }
   },
   {
     path: '/account/password',
