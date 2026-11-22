@@ -4,9 +4,8 @@ import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { CaddyHandler, CaddyHandlerFileServer, CaddyHandlerHeaders, CaddyHandlerReverseProxy, CaddyHandlerRewrite, CaddyHandlerStaticResponse, CaddyRoute, CaddyRouteSnapshot, CaddyRouteUpsert, DockerContainerInfo } from '@/service/types'
+import type { CaddyRoute, CaddyRouteSnapshot, CaddyRouteUpsert, DockerContainerInfo } from '@/service/types'
 
-import { caddyNativeRoute, caddyRouteFormMatches, caddyRouteInsertionIndex, caddyRouteJSONError, caddyRouteSupportsForm } from '@/helper/caddy'
 import { formatHostPort, parseHostPort } from '@/helper/format'
 
 import CodeEditor from '@/component/code-editor.vue'
@@ -15,15 +14,8 @@ import ContainerSelect from '@/component/docker/container-select.vue'
 import BaseModal from '@/component/modal.vue'
 import ToggleCard from '@/component/toggle-card.vue'
 
-// 前端表单内部使用的 handler 类型标识（不提交到后端）
-type CaddyHandlerKind = 'reverse_proxy' | 'file_server' | 'static_response' | 'rewrite' | 'raw'
-
-// 单条请求头/响应头操作（前端表单内部使用）
-interface CaddyHeaderOp {
-    op: 'set' | 'add' | 'delete'
-    field: string
-    value: string
-}
+import { buildRouteMatch, buildStructuredRoute, caddyNativeRoute, caddyRouteInsertionIndex, caddyRouteJSONError, defaultFormData, readStructuredRoute } from './route-form'
+import type { CaddyHandlerKind, MatchHeader } from './route-form'
 
 // handler kind 卡片
 interface CaddyHandlerKindCard {
@@ -58,41 +50,6 @@ interface RouteServerOption {
     id: string
     name: string
 }
-
-const defaultFormData = () => ({
-    kind: 'reverse_proxy' as CaddyHandlerKind,
-    hosts: '',
-    paths: '',
-    methods: '',
-    protocol: '',
-    upstreams: '',
-    upstreamHost: '',
-    upstreamPort: '',
-    fastcgi: false,
-    fastcgiRoot: '',
-    dialTimeout: '',
-    readTimeout: '',
-    writeTimeout: '',
-    proxyRewriteEnabled: false,
-    proxyRewriteMethod: '',
-    proxyRewriteUri: '',
-    proxyStripPathPrefix: '',
-    proxyStripPathSuffix: '',
-    proxyUriSubstringFind: '',
-    proxyUriSubstringReplace: '',
-    root: '',
-    browse: false,
-    statusCode: 200,
-    body: '',
-    rewriteUri: '',
-    stripPathPrefix: '',
-    stripPathSuffix: '',
-    uriSubstringFind: '',
-    uriSubstringReplace: '',
-    requestHeaders: [] as CaddyHeaderOp[],
-    responseHeaders: [] as CaddyHeaderOp[],
-    enableHeaders: false
-})
 
 @Component({
     expose: ['show'],
@@ -165,7 +122,7 @@ class RouteEditModal extends Vue {
     }
 
     // 匹配请求头多行编辑列表
-    matchHeaderList: { key: string; value: string }[] = []
+    matchHeaderList: MatchHeader[] = []
     enableMatchHeaders = false
 
     formData = defaultFormData()
@@ -202,199 +159,12 @@ class RouteEditModal extends Vue {
         this.formData.kind = kind
     }
 
+    get formMatch() {
+        return buildRouteMatch(this.formData, this.matchHeaderList)
+    }
+
     buildStructuredRoute(): CaddyRouteUpsert | null {
-        const raw = this.buildRawFromCurrent()
-        if (!raw) {
-            return null
-        }
-        const handle: CaddyHandler[] = JSON.parse(raw)
-        const match = this.formMatch
-        return match ? { match, handle } : { handle }
-    }
-
-    buildRawFromCurrent(): string {
-        const f = this.formData
-        let terminalHandler: Record<string, unknown> | null = null
-        switch (f.kind) {
-            case 'reverse_proxy': {
-                const upstreams = f.upstreams.split('\n').map(t => t.trim()).filter(Boolean)
-                if (upstreams.length) {
-                    terminalHandler = {
-                        handler: 'reverse_proxy',
-                        upstreams: upstreams.map(d => ({ dial: d }))
-                    }
-                    if (f.fastcgi) {
-                        const transport: Record<string, unknown> = { protocol: 'fastcgi' }
-                        if (f.fastcgiRoot.trim()) {
-                            transport.root = f.fastcgiRoot.trim()
-                        }
-                        terminalHandler.transport = transport
-                    } else if (f.dialTimeout.trim() || f.readTimeout.trim() || f.writeTimeout.trim()) {
-                        const transport: Record<string, unknown> = { protocol: 'http' }
-                        if (f.dialTimeout.trim()) {
-                            transport.dial_timeout = f.dialTimeout.trim()
-                        }
-                        if (f.readTimeout.trim()) {
-                            transport.response_header_timeout = f.readTimeout.trim()
-                        }
-                        if (f.writeTimeout.trim()) {
-                            transport.write_timeout = f.writeTimeout.trim()
-                        }
-                        terminalHandler.transport = transport
-                    }
-                    const rewrite = this.buildProxyRewriteRaw()
-                    if (rewrite) {
-                        terminalHandler.rewrite = rewrite
-                    }
-                }
-                break
-            }
-            case 'file_server': {
-                terminalHandler = { handler: 'file_server' }
-                if (f.root.trim()) {
-                    terminalHandler.root = f.root.trim()
-                }
-                if (f.browse) {
-                    terminalHandler.browse = {}
-                }
-                break
-            }
-            case 'static_response': {
-                terminalHandler = { handler: 'static_response' }
-                if (f.statusCode) {
-                    terminalHandler.status_code = f.statusCode
-                }
-                if (f.body) {
-                    terminalHandler.body = f.body
-                }
-                break
-            }
-            case 'rewrite': {
-                terminalHandler = { handler: 'rewrite' }
-                if (f.rewriteUri.trim()) {
-                    terminalHandler.uri = f.rewriteUri.trim()
-                }
-                if (f.stripPathPrefix.trim()) {
-                    terminalHandler.strip_path_prefix = f.stripPathPrefix.trim()
-                }
-                if (f.stripPathSuffix.trim()) {
-                    terminalHandler.strip_path_suffix = f.stripPathSuffix.trim()
-                }
-                if (f.uriSubstringFind.trim()) {
-                    terminalHandler.uri_substring = [{ find: f.uriSubstringFind.trim(), replace: f.uriSubstringReplace.trim() }]
-                }
-                break
-            }
-        }
-        if (!terminalHandler) {
-            return ''
-        }
-        const buildOps = (ops: CaddyHeaderOp[]) => {
-            const set: Record<string, string[]> = Object.create(null)
-            const add: Record<string, string[]> = Object.create(null)
-            const del: string[] = []
-            ops.forEach(op => {
-                if (op.op === 'set') {
-                    set[op.field] = [op.value]
-                } else if (op.op === 'add') {
-                    if (!Object.prototype.hasOwnProperty.call(add, op.field)) {
-                        add[op.field] = []
-                    }
-                    add[op.field].push(op.value)
-                } else if (op.op === 'delete') {
-                    del.push(op.field)
-                }
-            })
-            const out: Record<string, unknown> = {}
-            if (Object.keys(set).length) {
-                out.set = set
-            }
-            if (Object.keys(add).length) {
-                out.add = add
-            }
-            if (del.length) {
-                out.delete = del
-            }
-            return out
-        }
-        const handles: unknown[] = []
-        // 只有当启用header操作时才添加headers中间件
-        if (f.enableHeaders) {
-            const reqOps = f.requestHeaders.filter(op => op.field.trim())
-            const respOps = f.responseHeaders.filter(op => op.field.trim())
-            if (reqOps.length || respOps.length) {
-                const hh: Record<string, unknown> = { handler: 'headers' }
-                if (reqOps.length) {
-                    hh.request = buildOps(reqOps)
-                }
-                if (respOps.length) {
-                    hh.response = buildOps(respOps)
-                }
-                handles.push(hh)
-            }
-        }
-        handles.push(terminalHandler)
-        try {
-            return JSON.stringify(handles, null, 2)
-        } catch {
-            return ''
-        }
-    }
-
-    buildProxyRewriteRaw(): Record<string, unknown> | null {
-        const f = this.formData
-        if (!f.proxyRewriteEnabled) {
-            return null
-        }
-        const rewrite: Record<string, unknown> = {}
-        if (f.proxyRewriteMethod.trim()) {
-            rewrite.method = f.proxyRewriteMethod.trim().toUpperCase()
-        }
-        if (f.proxyRewriteUri.trim()) {
-            rewrite.uri = f.proxyRewriteUri.trim()
-        }
-        if (f.proxyStripPathPrefix.trim()) {
-            rewrite.strip_path_prefix = f.proxyStripPathPrefix.trim()
-        }
-        if (f.proxyStripPathSuffix.trim()) {
-            rewrite.strip_path_suffix = f.proxyStripPathSuffix.trim()
-        }
-        if (f.proxyUriSubstringFind.trim()) {
-            rewrite.uri_substring = [{ find: f.proxyUriSubstringFind.trim(), replace: f.proxyUriSubstringReplace.trim() }]
-        }
-        return Object.keys(rewrite).length ? rewrite : null
-    }
-
-    // ── 匹配请求头操作 ──
-    headersToList(headers: Record<string, string[]> | undefined): { key: string; value: string }[] {
-        const rows: { key: string; value: string }[] = []
-        for (const [k, vals] of Object.entries(headers || {})) {
-            if (vals.length === 0) {
-                rows.push({ key: k, value: '' })
-            } else {
-                for (const v of vals) {
-                    rows.push({ key: k, value: v })
-                }
-            }
-        }
-        return rows
-    }
-
-    listToHeaders(list: { key: string; value: string }[]): Record<string, string[]> | undefined {
-        const headers: Record<string, string[]> = Object.create(null)
-        for (const row of list) {
-            const k = row.key.trim()
-            if (!k) {
-                continue
-            }
-            if (!Object.prototype.hasOwnProperty.call(headers, k)) {
-                headers[k] = []
-            }
-            if (row.value.trim()) {
-                headers[k].push(row.value.trim())
-            }
-        }
-        return Object.keys(headers).length ? headers : undefined
+        return buildStructuredRoute(this.formData, this.formMatch)
     }
 
     addMatchHeaderRow() {
@@ -486,92 +256,15 @@ class RouteEditModal extends Vue {
             this.editingIndex = route.index
             const nativeRoute = caddyNativeRoute(route)
             this.rawJson = JSON.stringify(nativeRoute, null, 2)
-            if (!caddyRouteSupportsForm(nativeRoute)) {
-                this.formData.kind = 'raw'
-                this.rawDirty = true
-                this.isOpen = true
-                return
-            }
-            // 仅完整建模的单一 MatchSet 可进入表单模式。
-            const matchSet = route.match?.[0]
-            if (matchSet) {
-                this.formData.hosts = (matchSet.host || []).join('\n')
-                this.formData.paths = (matchSet.path || []).join('\n')
-                this.formData.methods = (matchSet.method || []).join(' ')
-                this.formData.protocol = matchSet.protocol || ''
-                this.matchHeaderList = this.headersToList(matchSet.header)
+            const structured = readStructuredRoute(nativeRoute)
+            if (structured) {
+                Object.assign(this.formData, structured.form)
+                this.matchHeaderList = structured.matchHeaders
                 this.enableMatchHeaders = this.matchHeaderList.length > 0
-            }
-            const handles = nativeRoute.handle || []
-            const headersHandler = handles.length === 2 ? handles[0] as CaddyHandlerHeaders : null
-            const h = handles[handles.length - 1]
-            switch (h.handler) {
-                case 'reverse_proxy': {
-                    this.formData.kind = 'reverse_proxy'
-                    const rph = h as CaddyHandlerReverseProxy
-                    this.formData.upstreams = (rph.upstreams || []).map(u => u.dial || '').filter(Boolean).join('\n')
+                if (this.formData.kind === 'reverse_proxy') {
                     this.syncSelectedFromText()
-                    const transport = rph.transport
-                    if (transport?.protocol === 'fastcgi') {
-                        this.formData.fastcgi = true
-                        this.formData.fastcgiRoot = transport.root || ''
-                    } else if (transport) {
-                        this.formData.dialTimeout = transport.dial_timeout || ''
-                        this.formData.readTimeout = transport.response_header_timeout || ''
-                        this.formData.writeTimeout = transport.write_timeout || ''
-                    }
-                    const rw = rph.rewrite
-                    if (rw) {
-                        this.formData.proxyRewriteEnabled = true
-                        this.formData.proxyRewriteMethod = rw.method || ''
-                        this.formData.proxyRewriteUri = rw.uri || ''
-                        this.formData.proxyStripPathPrefix = rw.strip_path_prefix || ''
-                        this.formData.proxyStripPathSuffix = rw.strip_path_suffix || ''
-                        if (rw.uri_substring?.[0]) {
-                            this.formData.proxyUriSubstringFind = rw.uri_substring[0].find || ''
-                            this.formData.proxyUriSubstringReplace = rw.uri_substring[0].replace || ''
-                        }
-                    }
-                    break
                 }
-                case 'file_server': {
-                    this.formData.kind = 'file_server'
-                    const fsh = h as CaddyHandlerFileServer
-                    this.formData.root = fsh.root || ''
-                    this.formData.browse = 'browse' in fsh
-                    break
-                }
-                case 'static_response': {
-                    this.formData.kind = 'static_response'
-                    const srh = h as CaddyHandlerStaticResponse
-                    const sc = srh.status_code
-                    this.formData.statusCode = typeof sc === 'number' ? sc : (typeof sc === 'string' ? parseInt(sc) : 200)
-                    this.formData.body = srh.body || ''
-                    break
-                }
-                case 'rewrite': {
-                    this.formData.kind = 'rewrite'
-                    const rwh = h as CaddyHandlerRewrite
-                    this.formData.rewriteUri = rwh.uri || ''
-                    this.formData.stripPathPrefix = rwh.strip_path_prefix || ''
-                    this.formData.stripPathSuffix = rwh.strip_path_suffix || ''
-                    if (rwh.uri_substring?.[0]) {
-                        this.formData.uriSubstringFind = rwh.uri_substring[0].find || ''
-                        this.formData.uriSubstringReplace = rwh.uri_substring[0].replace || ''
-                    }
-                    break
-                }
-            }
-            if (headersHandler) {
-                if (headersHandler.request) {
-                    this.formData.requestHeaders = this.parseHeadersOps(headersHandler.request)
-                }
-                if (headersHandler.response) {
-                    this.formData.responseHeaders = this.parseHeadersOps(headersHandler.response)
-                }
-                this.formData.enableHeaders = true
-            }
-            if (!caddyRouteFormMatches(nativeRoute, this.buildStructuredRoute())) {
+            } else {
                 this.formData.kind = 'raw'
                 this.rawDirty = true
             }
@@ -581,57 +274,6 @@ class RouteEditModal extends Vue {
             void this.loadRoutePositions()
         }
         this.isOpen = true
-    }
-
-    // parseHeadersOps 从 Caddy headers handler 的 set/add/delete 结构解析为 CaddyHeaderOp 列表
-    parseHeadersOps(m: Record<string, unknown>): CaddyHeaderOp[] {
-        const ops: CaddyHeaderOp[] = []
-        const setMap = m.set as Record<string, string[]> | undefined
-        const addMap = m.add as Record<string, string[]> | undefined
-        const delArr = m.delete as string[] | undefined
-        if (setMap) {
-            for (const [k, v] of Object.entries(setMap)) {
-                ops.push({ op: 'set', field: k, value: Array.isArray(v) ? v[0] || '' : String(v) })
-            }
-        }
-        if (addMap) {
-            for (const [k, v] of Object.entries(addMap)) {
-                for (const val of (Array.isArray(v) ? v : [v])) {
-                    ops.push({ op: 'add', field: k, value: String(val) })
-                }
-            }
-        }
-        if (delArr) {
-            for (const f of delArr) {
-                ops.push({ op: 'delete', field: f, value: '' })
-            }
-        }
-        return ops
-    }
-
-    get formMatch(): CaddyRouteUpsert['match'] {
-        const hosts = this.formData.hosts.split('\n').map(t => t.trim()).filter(Boolean)
-        const paths = this.formData.paths.split('\n').map(t => t.trim()).filter(Boolean)
-        const methods = this.formData.methods.split(/\s+/).map(t => t.trim().toUpperCase()).filter(Boolean)
-        const headers = this.listToHeaders(this.matchHeaderList)
-        const protocol = this.formData.protocol || undefined
-        const matchSet: Record<string, unknown> = {}
-        if (hosts.length) {
-            matchSet.host = hosts
-        }
-        if (paths.length) {
-            matchSet.path = paths
-        }
-        if (methods.length) {
-            matchSet.method = methods
-        }
-        if (headers) {
-            matchSet.header = headers
-        }
-        if (protocol) {
-            matchSet.protocol = protocol
-        }
-        return Object.keys(matchSet).length ? [matchSet] : undefined
     }
 
     buildPayload(): CaddyRouteUpsert | null {

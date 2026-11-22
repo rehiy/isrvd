@@ -5,6 +5,21 @@ import { configGroups, usePortal } from '@/stores'
 
 import { NODE_LIST_PERM } from '@/helper/node'
 
+const MENU_PREFIXES = {
+    local: '/local/',
+    apisix: '/apisix/',
+    caddy: '/caddy/',
+    docker: '/docker/',
+    swarm: '/swarm/',
+    compose: '/compose/',
+    ssh: '/ssh/',
+    node: '/node',
+    config: '/system/config'
+} as const
+
+type Menu = keyof typeof MENU_PREFIXES
+const menus = Object.keys(MENU_PREFIXES) as Menu[]
+
 @Component({
     expose: ['toggleMobileSidebar', 'closeMobileSidebar', 'openMobileSidebar'],
     emits: ['update:collapsed']
@@ -18,46 +33,8 @@ class NavigationBar extends Vue {
         return configGroups.filter(item => canViewConfig || item.id === 'metrics' && this.portal.hasPerm('metrics'))
     }
 
-    // ─── 数据属性 ───
     mobileSidebarVisible = false
-    localExpanded = false
-    apisixExpanded = false
-    caddyExpanded = false
-    dockerExpanded = false
-    swarmExpanded = false
-    composeExpanded = false
-    sshExpanded = false
-    nodeExpanded = false
-    configExpanded = false
-
-    // ─── 计算属性 ───
-    get isLocalActive() {
-        return this.isActive('/local/')
-    }
-
-    get isApisixActive() {
-        return this.isActive('/apisix/')
-    }
-
-    get isCaddyActive() {
-        return this.isActive('/caddy/')
-    }
-
-    get isDockerActive() {
-        return this.isActive('/docker/')
-    }
-
-    get isSwarmSubActive() {
-        return this.isActive('/swarm/')
-    }
-
-    get isSshActive() {
-        return this.isActive('/ssh/')
-    }
-
-    get isNodeActive() {
-        return this.isActive('/node')
-    }
+    expanded = new Set<Menu>()
 
     get canListNodes() {
         return this.portal.hasPerm(NODE_LIST_PERM)
@@ -65,14 +42,6 @@ class NavigationBar extends Vue {
 
     get nodeVisible() {
         return !this.portal.currentNodeId && this.canListNodes
-    }
-
-    get isConfigActive() {
-        return this.isActive('/system/config')
-    }
-
-    get isComposeActive() {
-        return this.isActive('/compose/')
     }
 
     get composeDeployVisible() {
@@ -87,153 +56,35 @@ class NavigationBar extends Vue {
         return this.composeDeployVisible || this.composeSwarmVisible
     }
 
-    // ─── 监听器 ───
-    @Watch('isLocalActive', { immediate: true })
-    onLocalActiveChange(isActive: boolean) {
-        if (isActive && !this.collapsed) {
-            this.localExpanded = true
+    @Watch('$route.path', { immediate: true })
+    onRoutePathChange(path: string, previousPath = '') {
+        if (this.collapsed) {
+            return
+        }
+        for (const menu of menus) {
+            const prefix = MENU_PREFIXES[menu]
+            if (path.startsWith(prefix) && !previousPath.startsWith(prefix)) {
+                this.expanded.add(menu)
+            }
         }
     }
 
-    @Watch('isApisixActive', { immediate: true })
-    onApisixActiveChange(isActive: boolean) {
-        if (isActive && !this.collapsed) {
-            this.apisixExpanded = true
-        }
-    }
-
-    @Watch('isCaddyActive', { immediate: true })
-    onCaddyActiveChange(isActive: boolean) {
-        if (isActive && !this.collapsed) {
-            this.caddyExpanded = true
-        }
-    }
-
-    @Watch('isDockerActive', { immediate: true })
-    onDockerActiveChange(isActive: boolean) {
-        if (isActive && !this.collapsed) {
-            this.dockerExpanded = true
-        }
-    }
-
-    @Watch('isSwarmSubActive', { immediate: true })
-    onSwarmActiveChange(isActive: boolean) {
-        if (isActive && !this.collapsed) {
-            this.swarmExpanded = true
-        }
-    }
-
-    @Watch('isComposeActive', { immediate: true })
-    onComposeActiveChange(isActive: boolean) {
-        if (isActive && !this.collapsed) {
-            this.composeExpanded = true
-        }
-    }
-
-    @Watch('isSshActive', { immediate: true })
-    onSshActiveChange(isActive: boolean) {
-        if (isActive && !this.collapsed) {
-            this.sshExpanded = true
-        }
-    }
-
-    @Watch('isNodeActive', { immediate: true })
-    onNodeActiveChange(isActive: boolean) {
-        if (isActive && !this.collapsed) {
-            this.nodeExpanded = true
-        }
-    }
-
-    @Watch('isConfigActive', { immediate: true })
-    onConfigActiveChange(isActive: boolean) {
-        if (isActive && !this.collapsed) {
-            this.configExpanded = true
-        }
-    }
-
-    // ─── 方法 ───
     isActive(prefix: string) {
         return this.$route.path.startsWith(prefix)
     }
 
-    toggleLocal() {
-        if (this.collapsed) {
-            this.$emit('update:collapsed', false)
-            this.localExpanded = true
-        } else {
-            this.localExpanded = !this.localExpanded
-        }
+    isMenuActive(menu: Menu) {
+        return this.isActive(MENU_PREFIXES[menu])
     }
 
-    toggleApisix() {
+    toggleMenu(menu: Menu) {
         if (this.collapsed) {
             this.$emit('update:collapsed', false)
-            this.apisixExpanded = true
+            this.expanded.add(menu)
+        } else if (this.expanded.has(menu)) {
+            this.expanded.delete(menu)
         } else {
-            this.apisixExpanded = !this.apisixExpanded
-        }
-    }
-
-    toggleCaddy() {
-        if (this.collapsed) {
-            this.$emit('update:collapsed', false)
-            this.caddyExpanded = true
-        } else {
-            this.caddyExpanded = !this.caddyExpanded
-        }
-    }
-
-    toggleDocker() {
-        if (this.collapsed) {
-            this.$emit('update:collapsed', false)
-            this.dockerExpanded = true
-        } else {
-            this.dockerExpanded = !this.dockerExpanded
-        }
-    }
-
-    toggleSwarm() {
-        if (this.collapsed) {
-            this.$emit('update:collapsed', false)
-            this.swarmExpanded = true
-        } else {
-            this.swarmExpanded = !this.swarmExpanded
-        }
-    }
-
-    toggleCompose() {
-        if (this.collapsed) {
-            this.$emit('update:collapsed', false)
-            this.composeExpanded = true
-        } else {
-            this.composeExpanded = !this.composeExpanded
-        }
-    }
-
-    toggleSsh() {
-        if (this.collapsed) {
-            this.$emit('update:collapsed', false)
-            this.sshExpanded = true
-        } else {
-            this.sshExpanded = !this.sshExpanded
-        }
-    }
-
-    toggleNode() {
-        if (this.collapsed) {
-            this.$emit('update:collapsed', false)
-            this.nodeExpanded = true
-        } else {
-            this.nodeExpanded = !this.nodeExpanded
-        }
-    }
-
-    toggleConfig() {
-        if (this.collapsed) {
-            this.$emit('update:collapsed', false)
-            this.configExpanded = true
-        } else {
-            this.configExpanded = !this.configExpanded
+            this.expanded.add(menu)
         }
     }
 
@@ -257,16 +108,12 @@ class NavigationBar extends Vue {
 
     // ─── 生命周期 ───
     mounted() {
-        // 根据当前路由初始化子菜单展开状态
-        this.localExpanded = this.$route.path.startsWith('/local/')
-        this.apisixExpanded = this.$route.path.startsWith('/apisix/')
-        this.caddyExpanded = this.$route.path.startsWith('/caddy/')
-        this.dockerExpanded = this.$route.path.startsWith('/docker/')
-        this.swarmExpanded = this.$route.path.startsWith('/swarm/')
-        this.composeExpanded = this.$route.path.startsWith('/compose/')
-        this.sshExpanded = this.$route.path.startsWith('/ssh/')
-        this.nodeExpanded = this.$route.path.startsWith('/node')
-        this.configExpanded = this.$route.path.startsWith('/system/config')
+        this.expanded.clear()
+        for (const menu of menus) {
+            if (this.isMenuActive(menu)) {
+                this.expanded.add(menu)
+            }
+        }
         window.addEventListener('resize', this.handleResize)
     }
 
@@ -311,17 +158,17 @@ export default toNative(NavigationBar)
       <!-- 本机管理折叠子菜单 -->
       <div v-if="portal.hasPerm('GET /api/overview/monitor') || portal.hasPerm('GET /api/filer/files') || portal.hasPerm('GET /api/local/processes') || portal.hasPerm('GET /api/shell')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isLocalActive }" :title="$t('本机管理')" @click.stop="toggleLocal">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('local') }" :title="$t('本机管理')" @click.stop="toggleMenu('local')">
           <i class="fas fa-computer"></i>
         </button>
         <!-- 展开状态：显示完整子菜单 -->
         <template v-else>
-          <button class="nav-link w-full" :class="{ 'nav-link-active': isLocalActive }" @click.stop="toggleLocal">
+          <button class="nav-link w-full" :class="{ 'nav-link-active': isMenuActive('local') }" @click.stop="toggleMenu('local')">
             <i class="fas fa-computer"></i>
             <span>{{ $t('本机管理') }}</span>
-            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': localExpanded }"></i>
+            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': expanded.has('local') }"></i>
           </button>
-          <div v-show="localExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+          <div v-show="expanded.has('local')" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
             <router-link v-if="portal.hasPerm('GET /api/overview/monitor')" to="/local/monitor" class="nav-link" :class="{ 'nav-link-active': isActive('/local/monitor') }">
               <i class="fas fa-desktop"></i>
               <span>{{ $t('系统监控') }}</span>
@@ -343,16 +190,16 @@ export default toNative(NavigationBar)
       </div>
       <!-- SSH/SFTP 折叠子菜单 -->
       <div v-if="portal.hasPerm('GET /api/ssh/hosts') || portal.hasPerm('GET /api/ssh/credentials')">
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isSshActive }" title="SSH / SFTP" @click.stop="toggleSsh">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('ssh') }" title="SSH / SFTP" @click.stop="toggleMenu('ssh')">
           <i class="fas fa-server"></i>
         </button>
         <template v-else>
-          <button class="nav-link w-full" :class="{ 'nav-link-active': isSshActive }" @click.stop="toggleSsh">
+          <button class="nav-link w-full" :class="{ 'nav-link-active': isMenuActive('ssh') }" @click.stop="toggleMenu('ssh')">
             <i class="fas fa-server"></i>
             <span>SSH / SFTP</span>
-            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': sshExpanded }"></i>
+            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': expanded.has('ssh') }"></i>
           </button>
-          <div v-show="sshExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+          <div v-show="expanded.has('ssh')" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
             <router-link v-if="portal.hasPerm('GET /api/ssh/hosts')" to="/ssh/hosts" class="nav-link" :class="{ 'nav-link-active': isActive('/ssh/hosts') || isActive('/ssh/host/') }">
               <i class="fas fa-server"></i>
               <span>{{ $t('主机连接') }}</span>
@@ -368,17 +215,17 @@ export default toNative(NavigationBar)
       <!-- APISIX 折叠子菜单 -->
       <div v-if="portal.hasPerm('apisix')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isApisixActive }" :title="$t('APISIX 网关')" @click.stop="toggleApisix">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('apisix') }" :title="$t('APISIX 网关')" @click.stop="toggleMenu('apisix')">
           <i class="fas fa-cloud"></i>
         </button>
         <!-- 有权限：展开状态显示完整子菜单 -->
         <template v-else>
-          <button class="nav-link w-full" :class="{ 'nav-link-active': isApisixActive }" @click.stop="toggleApisix">
+          <button class="nav-link w-full" :class="{ 'nav-link-active': isMenuActive('apisix') }" @click.stop="toggleMenu('apisix')">
             <i class="fas fa-cloud"></i>
             <span>{{ $t('APISIX 网关') }}</span>
-            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': apisixExpanded }"></i>
+            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': expanded.has('apisix') }"></i>
           </button>
-          <div v-show="apisixExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+          <div v-show="expanded.has('apisix')" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
             <router-link
               v-if="portal.hasPerm('GET /api/apisix/routes')"
               to="/apisix/routes"
@@ -434,16 +281,16 @@ export default toNative(NavigationBar)
 
       <!-- Caddy 折叠子菜单 -->
       <div v-if="portal.hasPerm('caddy')">
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isCaddyActive }" :title="$t('Caddy 网关')" @click.stop="toggleCaddy">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('caddy') }" :title="$t('Caddy 网关')" @click.stop="toggleMenu('caddy')">
           <i class="fas fa-shield"></i>
         </button>
         <template v-else>
-          <button class="nav-link w-full" :class="{ 'nav-link-active': isCaddyActive }" @click.stop="toggleCaddy">
+          <button class="nav-link w-full" :class="{ 'nav-link-active': isMenuActive('caddy') }" @click.stop="toggleMenu('caddy')">
             <i class="fas fa-shield"></i>
             <span>{{ $t('Caddy 网关') }}</span>
-            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': caddyExpanded }"></i>
+            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': expanded.has('caddy') }"></i>
           </button>
-          <div v-show="caddyExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+          <div v-show="expanded.has('caddy')" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
             <router-link
               v-if="portal.hasPerm('GET /api/caddy/routes')"
               to="/caddy/routes"
@@ -484,17 +331,17 @@ export default toNative(NavigationBar)
       <!-- Docker 折叠子菜单 -->
       <div v-if="portal.hasPerm('docker')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isDockerActive }" :title="$t('Docker 服务')" @click.stop="toggleDocker">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('docker') }" :title="$t('Docker 服务')" @click.stop="toggleMenu('docker')">
           <i class="fab fa-docker"></i>
         </button>
         <!-- 展开状态：显示完整子菜单 -->
         <template v-else>
-          <button class="nav-link w-full" :class="{ 'nav-link-active': isDockerActive }" @click.stop="toggleDocker">
+          <button class="nav-link w-full" :class="{ 'nav-link-active': isMenuActive('docker') }" @click.stop="toggleMenu('docker')">
             <i class="fab fa-docker"></i>
             <span>{{ $t('Docker 服务') }}</span>
-            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': dockerExpanded }"></i>
+            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': expanded.has('docker') }"></i>
           </button>
-          <div v-show="dockerExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+          <div v-show="expanded.has('docker')" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
             <router-link
               v-if="portal.hasPerm('GET /api/docker/containers')"
               to="/docker/containers"
@@ -547,17 +394,17 @@ export default toNative(NavigationBar)
       <!-- Swarm 折叠子菜单 -->
       <div v-if="portal.hasPerm('swarm')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isSwarmSubActive }" :title="$t('Swarm 集群')" @click.stop="toggleSwarm">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('swarm') }" :title="$t('Swarm 集群')" @click.stop="toggleMenu('swarm')">
           <i class="fas fa-circle-nodes"></i>
         </button>
         <!-- 有权限：展开状态显示完整子菜单 -->
         <template v-else>
-          <button class="nav-link w-full" :class="{ 'nav-link-active': isSwarmSubActive }" @click.stop="toggleSwarm">
+          <button class="nav-link w-full" :class="{ 'nav-link-active': isMenuActive('swarm') }" @click.stop="toggleMenu('swarm')">
             <i class="fas fa-circle-nodes"></i>
             <span>{{ $t('Swarm 集群') }}</span>
-            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': swarmExpanded }"></i>
+            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': expanded.has('swarm') }"></i>
           </button>
-          <div v-show="swarmExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+          <div v-show="expanded.has('swarm')" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
             <router-link v-if="portal.hasPerm('GET /api/swarm/nodes')" to="/swarm/nodes" class="nav-link" :class="{ 'nav-link-active': isActive('/swarm/node') }">
               <i class="fas fa-server"></i>
               <span>{{ $t('节点') }}</span>
@@ -585,16 +432,16 @@ export default toNative(NavigationBar)
       </div>
 
       <div v-if="composeVisible">
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isComposeActive }" :title="$t('Compose 部署')" @click.stop="toggleCompose">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('compose') }" :title="$t('Compose 部署')" @click.stop="toggleMenu('compose')">
           <i class="fas fa-file-code"></i>
         </button>
         <template v-else>
-          <button class="nav-link w-full" :class="{ 'nav-link-active': isComposeActive }" :aria-expanded="composeExpanded" @click.stop="toggleCompose">
+          <button class="nav-link w-full" :class="{ 'nav-link-active': isMenuActive('compose') }" :aria-expanded="expanded.has('compose')" @click.stop="toggleMenu('compose')">
             <i class="fas fa-file-code"></i>
             <span>{{ $t('Compose 部署') }}</span>
-            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': composeExpanded }"></i>
+            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': expanded.has('compose') }"></i>
           </button>
-          <div v-show="composeExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+          <div v-show="expanded.has('compose')" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
             <router-link
               v-if="composeDeployVisible"
               to="/compose/docker"
@@ -641,16 +488,16 @@ export default toNative(NavigationBar)
 
       <!-- 受管机折叠子菜单 -->
       <div v-if="nodeVisible">
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isNodeActive }" :title="$t('集中管控')" @click.stop="toggleNode">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('node') }" :title="$t('集中管控')" @click.stop="toggleMenu('node')">
           <i class="fas fa-sitemap"></i>
         </button>
         <template v-else>
-          <button class="nav-link w-full" :class="{ 'nav-link-active': isNodeActive }" @click.stop="toggleNode">
+          <button class="nav-link w-full" :class="{ 'nav-link-active': isMenuActive('node') }" @click.stop="toggleMenu('node')">
             <i class="fas fa-sitemap"></i>
             <span>{{ $t('集中管控') }}</span>
-            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': nodeExpanded }"></i>
+            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': expanded.has('node') }"></i>
           </button>
-          <div v-show="nodeExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+          <div v-show="expanded.has('node')" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
             <router-link v-if="canListNodes" to="/node/access" class="nav-link" :class="{ 'nav-link-active': isActive('/node/access') }">
               <i class="fas fa-server"></i>
               <span>{{ $t('节点管理') }}</span>
@@ -666,16 +513,16 @@ export default toNative(NavigationBar)
       <!-- 系统配置折叠子菜单 -->
       <div v-if="configGroups.length">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isConfigActive }" :title="$t('系统配置')" @click.stop="toggleConfig">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('config') }" :title="$t('系统配置')" @click.stop="toggleMenu('config')">
           <i class="fas fa-gear"></i>
         </button>
         <template v-else>
-          <button class="nav-link w-full" :class="{ 'nav-link-active': isConfigActive }" @click.stop="toggleConfig">
+          <button class="nav-link w-full" :class="{ 'nav-link-active': isMenuActive('config') }" @click.stop="toggleMenu('config')">
             <i class="fas fa-gear"></i>
             <span>{{ $t('系统配置') }}</span>
-            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': configExpanded }"></i>
+            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': expanded.has('config') }"></i>
           </button>
-          <div v-show="configExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+          <div v-show="expanded.has('config')" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
             <router-link
               v-for="item in configGroups"
               :key="item.id"
