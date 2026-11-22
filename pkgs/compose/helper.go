@@ -17,19 +17,22 @@ const (
 	SwarmUpdateTokenLabel       = "io.isrvd.compose.update-token"
 )
 
-// CollectNetworks 收集 project 中所有需要确保存在的网络名（去重）
-// 包含：自定义 network_mode + 各 service.networks 解析后的真实名称
-func CollectNetworks(project *types.Project) []string {
-	set := map[string]struct{}{}
+// ProjectNetworks 按实际名称保留项目网络的归属与驱动。具名 network_mode 引用现有网络。
+func ProjectNetworks(project *types.Project) map[string]types.NetworkConfig {
+	networks := make(map[string]types.NetworkConfig, len(project.Networks))
+	for key, config := range project.Networks {
+		name := resolveNetworkName(project, key)
+		config.External = config.External || networks[name].External
+		networks[name] = config
+	}
 	for _, svc := range project.Services {
 		if svc.NetworkMode != "" && !isBuiltinNetworkMode(svc.NetworkMode) {
-			set[svc.NetworkMode] = struct{}{}
-		}
-		for k := range svc.Networks {
-			set[resolveNetworkName(project, k)] = struct{}{}
+			if _, ok := networks[svc.NetworkMode]; !ok {
+				networks[svc.NetworkMode] = types.NetworkConfig{External: true}
+			}
 		}
 	}
-	return slices.AppendSeq(make([]string, 0, len(set)), maps.Keys(set))
+	return networks
 }
 
 // ─── 辅助函数 ───

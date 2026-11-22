@@ -4,6 +4,12 @@ package i18n
 
 func init() {
 	Register(langEN, map[string]string{
+		"容器名称 %s 已被占用":            "Container name %s is already in use",
+		"容器 inspect 数据不完整: %s":    "Incomplete container inspect data for %s",
+		"恢复容器 %s 失败: %w":          "Failed to restore container %s: %w",
+		"无法确认服务 %s 属于项目 %s":       "Could not confirm that service %s belongs to project %s",
+		"检查网络 %s 失败: %w":          "Failed to inspect network %s: %w",
+		"清理网络 %s 失败: %w":          "Failed to remove network %s: %w",
 		"SFTP 服务器不支持安全覆盖已有文件":     "The SFTP server does not support replacing existing files safely",
 		"Caddy 配置已变化，请刷新后重试":      "The Caddy configuration changed. Refresh and try again",
 		"Caddy Admin API 未返回配置版本": "The Caddy Admin API did not return a configuration version",

@@ -60,18 +60,18 @@ func ProjectNameFromProject(project *types.Project, content string) (string, err
 
 // ==================== Project loading and persistence ====================
 
-// ProjectLoad 写入 compose.yml 并以 installDir 为 WorkingDir 加载，确保相对路径正确展开。
-func ProjectLoad(ctx context.Context, name, content, installDir string) (*types.Project, error) {
+// ProjectSave 保存已预检的 compose.yml。
+func ProjectSave(content, installDir string) error {
 	if installDir == "" {
-		return nil, fmt.Errorf("缺少 compose 项目工作目录")
+		return fmt.Errorf("缺少 compose 项目工作目录")
 	}
 	if err := os.MkdirAll(installDir, 0755); err != nil {
-		return nil, fmt.Errorf("创建安装目录失败: %w", err)
+		return fmt.Errorf("创建安装目录失败: %w", err)
 	}
 	if err := os.WriteFile(filepath.Join(installDir, ComposeFileName), []byte(content), 0644); err != nil {
-		return nil, fmt.Errorf("写入 compose 文件失败: %w", err)
+		return fmt.Errorf("写入 compose 文件失败: %w", err)
 	}
-	return LoadProject(ctx, installDir, name)
+	return nil
 }
 
 // EnvSave 以 env 为准写入 .env，空串表示清空内容。
@@ -236,37 +236,6 @@ func ServiceImageUpdate(ctx context.Context, name, content, serviceName, image, 
 func ShortHash(content string) string {
 	h := sha256.Sum256([]byte(content))
 	return fmt.Sprintf("%x", h[:4])
-}
-
-func DockerContainerNameOf(svc types.ServiceConfig) string {
-	if svc.ContainerName != "" {
-		return svc.ContainerName
-	}
-	return svc.Name
-}
-
-func DockerContainerNameCandidates(projectName string, svc types.ServiceConfig) []string {
-	candidates := []string{DockerContainerNameOf(svc)}
-	if svc.ContainerName == "" {
-		candidates = append(candidates,
-			svc.Name,
-			fmt.Sprintf("%s-%s-1", projectName, svc.Name),
-			fmt.Sprintf("%s_%s_1", projectName, svc.Name),
-		)
-	}
-	result := make([]string, 0, len(candidates))
-	seen := map[string]struct{}{}
-	for _, name := range candidates {
-		if name == "" {
-			continue
-		}
-		if _, ok := seen[name]; ok {
-			continue
-		}
-		seen[name] = struct{}{}
-		result = append(result, name)
-	}
-	return result
 }
 
 func DockerComposeProjectName(info container.InspectResponse) string {

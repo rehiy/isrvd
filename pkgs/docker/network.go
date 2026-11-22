@@ -54,7 +54,7 @@ func (s *DockerService) NetworkCreate(ctx context.Context, name, driver, subnet 
 	}
 
 	logman.Info("Network created", "name", name, "id", ShortID(resp.ID))
-	return ShortID(resp.ID), nil
+	return resp.ID, nil
 }
 
 // NetworkInspect 获取网络原始详情。

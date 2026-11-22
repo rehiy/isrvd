@@ -1,14 +1,20 @@
 package compose
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/compose-spec/compose-go/v2/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/client"
 	"github.com/rehiy/libgo/logman"
 
 	"isrvd/pkgs/compose"
@@ -21,17 +27,23 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 		return nil, err
 	}
 	defer s.deploymentMu.Unlock()
-	result, err := s.projectDeploy(ctx, req, "Restore compose env after failed deploy", func(project *types.Project) ([]string, error) {
-		for _, svc := range project.Services {
-			cname := compose.DockerContainerNameOf(svc)
-			if _, err := s.docker.ContainerInspect(ctx, cname); err == nil {
-				return nil, fmt.Errorf("容器 %s 已存在，请使用重部署接口", cname)
-			}
+	result, err := s.projectDeploy(ctx, req, "Restore compose env after failed deploy", func(project *types.Project) (_ []string, resultErr error) {
+		specs, err := dockerCreateSpecs(project)
+		if err != nil {
+			return nil, err
+		}
+		if err := s.dockerCheckNames(ctx, specs, nil); err != nil {
+			return nil, err
 		}
 		if err := s.imagesEnsure(ctx, project, req.ForcePull); err != nil {
 			return nil, err
 		}
-		return s.dockerServicesCreate(ctx, project)
+		networks, err := s.ensureNetworks(ctx, project, "bridge")
+		defer s.rollbackNetworks(ctx, networks, &resultErr)
+		if err != nil {
+			return nil, err
+		}
+		return s.dockerServicesCreate(ctx, specs)
 	})
 	if err == nil {
 		logman.Info("Compose deployed", "name", result.ProjectName, "dir", result.InstallDir)
@@ -51,7 +63,8 @@ func (s *Service) DockerInspect(ctx context.Context, name string, forceRuntime b
 	}
 
 	projectName := s.dockerProjectName(ctx, name, root)
-	return inspectComposeConfig(filepath.Join(root, projectName), projectName, forceRuntime, func() (string, error) {
+	var standaloneID string
+	detail, err := inspectComposeConfig(filepath.Join(root, projectName), projectName, forceRuntime, func() (string, error) {
 		if content, ok, err := s.dockerProjectContentFromContainers(ctx, projectName, root); ok || err != nil {
 			return content, err
 		}
@@ -64,8 +77,15 @@ func (s *Service) DockerInspect(ctx context.Context, name string, forceRuntime b
 		if err != nil {
 			return "", err
 		}
+		if compose.DockerComposeProjectName(info) == "" {
+			standaloneID = info.ID
+		}
 		return withGeneratedHeader(content), nil
 	})
+	if err == nil {
+		detail.standaloneID = standaloneID
+	}
+	return detail, err
 }
 
 // DockerRedeploy 重建 Docker Compose 项目。
@@ -85,91 +105,62 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		return nil, err
 	}
 
-	root := s.docker.ContainerRoot()
-	if root != "" {
-		name = s.dockerProjectName(ctx, name, root)
-	}
-	installDir := ""
-	if root != "" {
-		installDir = filepath.Join(root, name)
-	}
-
-	currentConfig, err := s.DockerInspect(ctx, name, false)
+	current, err := s.DockerInspect(ctx, name, false)
 	if err != nil {
 		return nil, err
 	}
-	oldContent, oldEnv := currentConfig.Content, currentConfig.EnvContent
-	content, newProject, err := s.prepareRedeployContent(ctx, name, installDir, oldContent, req)
+	name = current.ProjectName
+	installDir := filepath.Join(s.docker.ContainerRoot(), name)
+	content, project, err := s.resolveRedeployContent(ctx, name, installDir, current.Content, req)
 	if err != nil {
 		return nil, err
 	}
-	// 删除旧容器前验证新旧配置均可解析，新配置可生成所有待创建容器的 SDK 参数。
-	// 镜像已由 prepareRedeployContent 预拉取，此处不修改运行态或落盘文件。
-	seenNames := make(map[string]bool, len(newProject.Services))
-	for _, svc := range newProject.Services {
-		spec, err := compose.ServiceToDockerCreateSpec(newProject, svc)
-		if err != nil {
-			return nil, fmt.Errorf("服务 %s 预检失败: %w", svc.Name, err)
-		}
-		if seenNames[spec.Name] {
-			return nil, fmt.Errorf("重部署预检失败: 容器名称 %s 重复", spec.Name)
-		}
-		seenNames[spec.Name] = true
+	specs, err := dockerCreateSpecs(project)
+	if err != nil {
+		return nil, err
 	}
-	if _, err := compose.LoadProjectFromContentInDir(ctx, oldContent, installDir, name, &oldEnv); err != nil {
-		return nil, fmt.Errorf("原配置无法用于回滚，已取消重部署: %w", err)
+	previous, err := s.dockerPreviousContainers(ctx, current)
+	if err != nil {
+		return nil, err
 	}
-
-	if err := s.historyBegin("docker", name, currentConfig); err != nil {
+	if err := s.dockerCheckNames(ctx, specs, previous); err != nil {
+		return nil, err
+	}
+	if err := s.imagesEnsure(ctx, project, req.ForcePull); err != nil {
+		return nil, err
+	}
+	if err := s.historyBegin("docker", name, current); err != nil {
 		return nil, err
 	}
 	defer func() { s.historyFinish(ctx, "docker", name, "redeploy", resultErr == nil) }()
 
-	if err := s.dockerContainersRemove(ctx, name, oldContent, installDir, oldEnv); err != nil {
-		cleanupCtx, cleanupCancel := cleanupContext(ctx)
-		cleanupErr := s.dockerContainersRemove(cleanupCtx, name, oldContent, installDir, oldEnv)
-		cleanupCancel()
-		var rollbackErr error
-		if cleanupErr == nil {
-			rollbackCtx, rollbackCancel := cleanupContext(ctx)
-			rollbackErr = s.dockerRollback(rollbackCtx, name, oldContent, installDir, oldEnv)
-			rollbackCancel()
-		} else {
-			rollbackErr = fmt.Errorf("继续清理旧容器失败: %w", cleanupErr)
-		}
-		return nil, wrapRedeployError(ctx, fmt.Errorf("移除旧容器失败: %w", err), rollbackResult(ctx, "容器", rollbackErr))
+	networks, err := s.ensureNetworks(ctx, project, "bridge")
+	defer s.rollbackNetworks(ctx, networks, &resultErr)
+	if err != nil {
+		return nil, err
+	}
+
+	removed, err := s.dockerRemovePrevious(ctx, previous)
+	if err != nil {
+		return nil, wrapRedeployError(ctx, err, rollbackResult(ctx, "容器", s.dockerRestore(ctx, removed)))
 	}
 
 	rollback := func(err error) error {
-		// 先恢复旧 .env 再回滚容器；.env 失败不阻断容器回滚
-		fileErr, envErr := currentConfig.restore(installDir)
-		if envErr != nil {
-			logman.Warn("Restore compose env before rollback failed", "name", name, "error", envErr)
-		}
-		rollbackCtx, cancel := cleanupContext(ctx)
-		defer cancel()
-		runtimeErr := s.dockerRollback(rollbackCtx, name, oldContent, installDir, oldEnv)
-		if runtimeErr != nil {
-			logman.Warn("Rollback containers failed", "name", name, "error", runtimeErr)
-		}
+		fileErr, envErr := current.restore(installDir)
+		runtimeErr := s.dockerRestore(ctx, removed)
 		return wrapRedeployError(ctx, err,
 			rollbackResult(ctx, compose.ComposeFileName, fileErr),
 			rollbackResult(ctx, compose.EnvFileName, envErr),
 			rollbackResult(ctx, "容器", runtimeErr),
 		)
 	}
-
-	// 先落盘新 .env，确保 ProjectLoad 插值读取到新值（与 Deploy 流程顺序一致）
 	if err := compose.EnvApply(installDir, req.EnvContent); err != nil {
 		return nil, rollback(err)
 	}
-
-	project, err := compose.ProjectLoad(ctx, name, content, installDir)
-	if err != nil {
+	if err := compose.ProjectSave(content, installDir); err != nil {
 		return nil, rollback(err)
 	}
-
-	items, err := s.dockerServicesCreate(ctx, project)
+	items, err := s.dockerServicesCreate(ctx, specs)
 	if err != nil {
 		return nil, rollback(err)
 	}
@@ -178,110 +169,175 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	return &DeployResult{ProjectName: name, Items: items, InstallDir: installDir}, nil
 }
 
-// ─── 内部方法 ───
+func dockerCreateSpecs(project *types.Project) ([]compose.DockerCreateSpec, error) {
+	seen := make(map[string]bool, len(project.Services))
+	specs := make([]compose.DockerCreateSpec, 0, len(project.Services))
+	for _, svc := range project.Services {
+		spec, err := compose.ServiceToDockerCreateSpec(project, svc)
+		if err != nil {
+			return nil, fmt.Errorf("服务 %s 预检失败: %w", svc.Name, err)
+		}
+		if seen[spec.Name] {
+			return nil, fmt.Errorf("重部署预检失败: 容器名称 %s 重复", spec.Name)
+		}
+		seen[spec.Name] = true
+		specs = append(specs, spec)
+	}
+	return specs, nil
+}
 
-// dockerServicesCreate 批量创建 project 中的所有容器，失败时回滚。
-func (s *Service) dockerServicesCreate(ctx context.Context, project *types.Project) ([]string, error) {
-	if err := s.dockerEnsureNetworks(ctx, project); err != nil {
+func (s *Service) dockerCheckNames(ctx context.Context, specs []compose.DockerCreateSpec, previous []container.InspectResponse) error {
+	owned := make(map[string]bool, len(previous))
+	for _, item := range previous {
+		owned[strings.TrimPrefix(item.Name, "/")] = true
+	}
+	for _, spec := range specs {
+		if owned[spec.Name] {
+			continue
+		}
+		_, err := s.docker.ContainerInspect(ctx, spec.Name)
+		if err == nil {
+			return fmt.Errorf("容器名称 %s 已被占用", spec.Name)
+		}
+		if !client.IsErrNotFound(err) {
+			return err
+		}
+	}
+	return nil
+}
+
+// dockerPreviousContainers 仅选择有项目标签的容器，以及反推配置时明确选中的单个容器。
+func (s *Service) dockerPreviousContainers(ctx context.Context, current *ConfigDetail) ([]container.InspectResponse, error) {
+	list, err := s.docker.ContainerListByLabel(ctx, compose.ComposeProjectLabel, current.ProjectName)
+	if err != nil {
 		return nil, err
 	}
-
-	var createdIDs []string
-	var items []string
-
-	rollback := func() {
-		cleanupCtx, cancel := cleanupContext(ctx)
-		defer cancel()
-		for _, id := range createdIDs {
-			if err := s.docker.ContainerAction(cleanupCtx, id, "remove"); err != nil {
-				logman.Warn("Rollback remove container failed", "id", docker.ShortID(id), "error", err)
-			}
-		}
-	}
-
-	for _, svc := range project.Services {
-		id, name, err := s.dockerServiceCreate(ctx, project, svc)
+	list = slices.DeleteFunc(list, func(info container.InspectResponse) bool {
+		return compose.DockerComposeProjectName(info) != current.ProjectName ||
+			strings.EqualFold(info.Config.Labels[compose.ComposeOneoffLabel], "true")
+	})
+	if current.standaloneID != "" {
+		info, err := s.docker.ContainerInspect(ctx, current.standaloneID)
 		if err != nil {
-			rollback()
 			return nil, err
 		}
-		createdIDs = append(createdIDs, id)
-		items = append(items, fmt.Sprintf("%s (%s)", name, docker.ShortID(id)))
-		logman.Info("Compose container deployed", "service", svc.Name, "container", name, "id", docker.ShortID(id))
+		list = append(list, info)
+	}
+	for _, info := range list {
+		if info.Config == nil || info.HostConfig == nil || info.State == nil || info.Image == "" {
+			return nil, fmt.Errorf("容器 inspect 数据不完整: %s", info.ID)
+		}
+	}
+	slices.SortFunc(list, func(a, b container.InspectResponse) int { return cmp.Compare(a.Created, b.Created) })
+	return list, nil
+}
+
+func (s *Service) dockerRemovePrevious(ctx context.Context, previous []container.InspectResponse) ([]container.InspectResponse, error) {
+	removed := make([]container.InspectResponse, 0, len(previous))
+	for _, item := range previous {
+		if err := s.docker.ContainerAction(ctx, item.ID, "remove"); err != nil {
+			check, cancel := cleanupContext(ctx)
+			_, inspectErr := s.docker.ContainerInspect(check, item.ID)
+			cancel()
+			if client.IsErrNotFound(inspectErr) {
+				removed = append(removed, item)
+			} else if inspectErr != nil {
+				err = errors.Join(err, inspectErr)
+			}
+			return removed, fmt.Errorf("移除容器 %s 失败: %w", docker.ShortID(item.ID), err)
+		}
+		removed = append(removed, item)
+	}
+	return removed, nil
+}
+
+// dockerServicesCreate 按已预检的规格创建与启动容器，失败时清理本批创建的容器。
+func (s *Service) dockerServicesCreate(ctx context.Context, specs []compose.DockerCreateSpec) (_ []string, resultErr error) {
+	var created, items []string
+	defer func() {
+		if resultErr == nil || len(created) == 0 {
+			return
+		}
+		cleanup, cancel := cleanupContext(ctx)
+		defer cancel()
+		for _, id := range slices.Backward(created) {
+			if err := s.docker.ContainerAction(cleanup, id, "remove"); err != nil && !client.IsErrNotFound(err) {
+				resultErr = errors.Join(resultErr, fmt.Errorf("移除容器 %s 失败: %w", docker.ShortID(id), err))
+			}
+		}
+	}()
+	for _, spec := range specs {
+		id, err := s.docker.ContainerCreate(ctx, spec.Name, spec.Config, spec.HostConfig, spec.NetworkingConfig)
+		if err != nil {
+			return nil, fmt.Errorf("创建容器 %s 失败: %w", spec.Name, err)
+		}
+		created = append(created, id)
+		if err := s.docker.ContainerStart(ctx, id); err != nil {
+			return nil, err
+		}
+		items = append(items, fmt.Sprintf("%s (%s)", spec.Name, docker.ShortID(id)))
 	}
 	return items, nil
 }
 
-// dockerServiceCreate 根据 compose service 创建对应 Docker 容器（不负责镜像拉取）。
-func (s *Service) dockerServiceCreate(ctx context.Context, project *types.Project, svc types.ServiceConfig) (string, string, error) {
-	spec, err := compose.ServiceToDockerCreateSpec(project, svc)
-	if err != nil {
-		return "", "", err
+// dockerRestore 只恢复本次已移除的容器，并使用其镜像 ID 与运行状态。
+func (s *Service) dockerRestore(ctx context.Context, removed []container.InspectResponse) error {
+	if len(removed) == 0 {
+		return nil
 	}
-	id, err := s.docker.ContainerCreateAndStart(ctx, spec.Name, spec.Config, spec.HostConfig, spec.NetworkingConfig)
-	if err != nil {
-		return "", "", fmt.Errorf("创建容器 %s 失败: %w", spec.Name, err)
-	}
-	return id, spec.Name, nil
-}
-
-// dockerContainersRemove 移除 project 中的所有 Docker 容器。
-// installDir 作为 compose 加载的工作目录（解析 env_file 等相对路径），envContent 用于叠加插值环境。
-func (s *Service) dockerContainersRemove(ctx context.Context, name, content, installDir, envContent string) error {
-	removed := map[string]struct{}{}
-	var removeErrors []error
-	removeByID := func(id string) {
-		if id == "" {
-			return
-		}
-		if _, ok := removed[id]; ok {
-			return
-		}
-		removed[id] = struct{}{}
-		if err := s.docker.ContainerAction(ctx, id, "remove"); err != nil {
-			removeErrors = append(removeErrors, fmt.Errorf("移除容器 %s 失败: %w", docker.ShortID(id), err))
-		}
-	}
-
-	// 优先通过标签精确查找（ID 级别，无误删风险）
-	if infos, err := s.docker.ContainerListByLabel(ctx, compose.ComposeProjectLabel, name); err == nil {
-		for _, info := range infos {
-			removeByID(info.ID)
-		}
-	} else {
-		return fmt.Errorf("查询项目容器失败: %w", err)
-	}
-
-	// 补充删除无标签的旧容器，inspect 确认归属后再删
-	if content != "" {
-		project, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, &envContent)
-		if err != nil {
-			// 旧配置解析失败只影响无标签容器的补充清理，标签路径已覆盖大部分场景，
-			// 因此不阻断重建，但必须留痕，避免残留容器被静默忽略
-			logman.Warn("Parse old compose content for container cleanup failed",
-				"name", name, "install_dir", installDir, "error", err)
-		} else {
-			for _, svc := range project.Services {
-				for _, cname := range compose.DockerContainerNameCandidates(name, svc) {
-					info, err := s.docker.ContainerInspect(ctx, cname)
-					if err != nil {
-						continue
+	cleanup, cancel := cleanupContext(ctx)
+	defer cancel()
+	var failures []error
+	for _, old := range removed {
+		config := *old.Config
+		config.Image = old.Image
+		name := strings.TrimPrefix(old.Name, "/")
+		networks := &network.NetworkingConfig{EndpointsConfig: map[string]*network.EndpointSettings{}}
+		if old.NetworkSettings != nil {
+			for key, endpoint := range old.NetworkSettings.Networks {
+				if endpoint != nil {
+					networks.EndpointsConfig[key] = &network.EndpointSettings{
+						IPAMConfig: endpoint.IPAMConfig, Aliases: endpoint.Aliases, Links: endpoint.Links,
+						DriverOpts: endpoint.DriverOpts, GwPriority: endpoint.GwPriority,
 					}
-					if _, ok := removed[info.ID]; ok {
-						continue
-					}
-					// 归属其他项目，拒绝删除
-					if p := compose.DockerComposeProjectName(info); p != "" && p != name {
-						logman.Warn("Skip removing container belonging to another project",
-							"container", cname, "container_project", p, "expected_project", name)
-						continue
-					}
-					removeByID(info.ID)
 				}
 			}
 		}
+		host := restoreDockerVolumes(old)
+		id, err := s.docker.ContainerCreate(cleanup, name, &config, &host, networks)
+		if err == nil && old.State.Running {
+			err = s.docker.ContainerStart(cleanup, id)
+			if err == nil && old.State.Paused {
+				err = s.docker.ContainerAction(cleanup, id, "pause")
+			}
+		}
+		if err != nil {
+			failures = append(failures, fmt.Errorf("恢复容器 %s 失败: %w", name, err))
+		}
 	}
-	return errors.Join(removeErrors...)
+	return errors.Join(failures...)
+}
+
+// restoreDockerVolumes 复用旧容器实际挂载的匿名卷，避免重建时分配空卷。
+func restoreDockerVolumes(old container.InspectResponse) container.HostConfig {
+	host := *old.HostConfig
+	host.Mounts, host.Binds = slices.Clone(host.Mounts), slices.Clone(host.Binds)
+	for _, volume := range old.Mounts {
+		if volume.Type != mount.TypeVolume || volume.Name == "" {
+			continue
+		}
+		if index := slices.IndexFunc(host.Mounts, func(m mount.Mount) bool { return m.Target == volume.Destination }); index >= 0 {
+			host.Mounts[index].Source = volume.Name
+			continue
+		}
+		bind := volume.Name + ":" + volume.Destination
+		if index := slices.Index(host.Binds, volume.Destination); index >= 0 {
+			host.Binds[index] = bind
+		} else if !slices.ContainsFunc(host.Binds, func(value string) bool { return value == bind || strings.HasPrefix(value, bind+":") }) {
+			host.Mounts = append(host.Mounts, mount.Mount{Type: mount.TypeVolume, Source: volume.Name, Target: volume.Destination, ReadOnly: !volume.RW})
+		}
+	}
+	return host
 }
 
 // dockerProjectName 将容器名/项目名解析为真实 project 名。
@@ -323,32 +379,4 @@ func (s *Service) dockerProjectContentFromContainers(ctx context.Context, projec
 		return "", true, err
 	}
 	return withGeneratedHeader(content), true, nil
-}
-
-// dockerRollback 用指定配置内容重建容器（回滚用）
-func (s *Service) dockerRollback(ctx context.Context, name, content, installDir, envContent string) error {
-	if content == "" {
-		return fmt.Errorf("无可回滚的 compose 内容")
-	}
-	project, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, &envContent)
-	if err != nil {
-		return fmt.Errorf("加载回滚配置失败: %w", err)
-	}
-	if _, err := s.dockerServicesCreate(ctx, project); err != nil {
-		return fmt.Errorf("重建容器失败: %w", err)
-	}
-	return nil
-}
-
-// dockerEnsureNetworks 确保 project 所需网络存在，不存在则创建 bridge 网络
-func (s *Service) dockerEnsureNetworks(ctx context.Context, project *types.Project) error {
-	for _, name := range compose.CollectNetworks(project) {
-		if _, err := s.docker.NetworkInspect(ctx, name); err == nil {
-			continue
-		}
-		if _, err := s.docker.NetworkCreate(ctx, name, "bridge", ""); err != nil {
-			return fmt.Errorf("网络 %s 不存在，创建失败: %w", name, err)
-		}
-	}
-	return nil
 }

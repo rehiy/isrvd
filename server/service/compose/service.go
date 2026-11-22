@@ -57,12 +57,13 @@ type DeployResult struct {
 
 // ConfigDetail Compose 配置详情。
 type ConfigDetail struct {
-	Content     string `json:"content"`               // compose.yml 文本
-	EnvContent  string `json:"envContent,omitempty"`  // .env 文本（KEY=VALUE）；无落盘文件时为空
-	ProjectName string `json:"projectName,omitempty"` // 实际解析到的项目名
-	FileModTime int64  `json:"fileModTime,omitempty"` // compose.yml 修改时间戳（Unix 秒）；无落盘文件时为空
-	Source      string `json:"source,omitempty"`      // 内容来源：file=落盘文件，runtime=运行态反推
-	envExists   bool   // 区分缺失和空文件，供回滚使用
+	Content      string `json:"content"`               // compose.yml 文本
+	EnvContent   string `json:"envContent,omitempty"`  // .env 文本（KEY=VALUE）；无落盘文件时为空
+	ProjectName  string `json:"projectName,omitempty"` // 实际解析到的项目名
+	FileModTime  int64  `json:"fileModTime,omitempty"` // compose.yml 修改时间戳（Unix 秒）；无落盘文件时为空
+	Source       string `json:"source,omitempty"`      // 内容来源：file=落盘文件，runtime=运行态反推
+	envExists    bool   // 区分缺失和空文件，供回滚使用
+	standaloneID string // 由单个容器或服务反推配置时明确选中的 ID
 }
 
 // RedeployRequest 重建请求

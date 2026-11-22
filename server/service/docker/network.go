@@ -122,7 +122,7 @@ func (s *Service) NetworkCreate(ctx context.Context, req NetworkSpec) (map[strin
 	if err != nil {
 		return nil, err
 	}
-	return map[string]string{"id": id, "name": req.Name}, nil
+	return map[string]string{"id": docker.ShortID(id), "name": req.Name}, nil
 }
 
 // NetworkInspect 获取网络详情
