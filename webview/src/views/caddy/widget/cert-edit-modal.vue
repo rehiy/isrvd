@@ -208,18 +208,18 @@ export default toNative(CertEditModal)
           <label class="form-label">
             {{ $t('私钥路径') }} <span v-if="!isEditMode" class="text-red-500">*</span>
           </label>
-          <input v-model="formData.keyContent" type="text" autocomplete="new-password" class="input font-mono text-sm" :placeholder="isEditMode ? $t('留空则保持不变') : $t('请输入私钥路径')" />
+          <input v-model="formData.keyContent" type="text" autocomplete="new-password" class="input font-mono text-sm" />
           <p class="form-help">{{ isEditMode ? $t('响应不返回私钥；编辑时留空表示保持原值') : $t('私钥文件绝对路径，例如：/etc/caddy/key.pem') }}</p>
         </div>
         <div>
           <label class="form-label">{{ $t('格式') }}</label>
-          <input v-model="formData.format" type="text" class="input" :placeholder="$t('请输入证书格式（可选）')" />
+          <input v-model="formData.format" type="text" class="input" />
           <p class="form-help">{{ $t('证书格式，留空使用默认 PEM') }}</p>
         </div>
         <div>
           <label class="form-label">{{ $t('标签') }}</label>
-          <input v-model="formData.tags" type="text" class="input" :placeholder="$t('请输入标签（可选）')" />
-          <p class="form-help">{{ $t('多个标签用逗号分隔，例如：example,prod') }}</p>
+          <input v-model="formData.tags" type="text" class="input" />
+          <p class="form-help">{{ $t('可选') }} · {{ $t('多个标签用逗号分隔，例如：example,prod') }}</p>
         </div>
       </div>
 
@@ -244,8 +244,8 @@ export default toNative(CertEditModal)
         </div>
         <div>
           <label class="form-label">{{ $t('标签') }}</label>
-          <input v-model="formData.tags" type="text" class="input" :placeholder="$t('请输入标签（可选）')" />
-          <p class="form-help">{{ $t('多个标签用逗号分隔，例如：example,prod') }}</p>
+          <input v-model="formData.tags" type="text" class="input" />
+          <p class="form-help">{{ $t('可选') }} · {{ $t('多个标签用逗号分隔，例如：example,prod') }}</p>
         </div>
       </div>
 

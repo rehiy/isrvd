@@ -230,9 +230,9 @@ export default toNative(ContainerCreateModal)
       </div>
 
       <!-- 高级选项 -->
-      <div class="border-t border-slate-200 pt-4">
-        <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" @click="showAdvanced = !showAdvanced">
-          <i :class="['fas fa-chevron-down text-xs transition-transform', showAdvanced ? 'rotate-180' : '']"></i>
+      <div class="border-t border-slate-200 pt-6">
+        <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" :aria-expanded="showAdvanced" @click="showAdvanced = !showAdvanced">
+          <i :class="['fas fa-chevron-down text-xs transition-transform', showAdvanced ? 'rotate-180' : '']" aria-hidden="true"></i>
           {{ $t('高级选项') }}
         </button>
         <div v-if="showAdvanced" class="mt-4 space-y-4">
@@ -276,9 +276,9 @@ export default toNative(ContainerCreateModal)
       </div>
 
       <!-- 安全配置 -->
-      <div class="border-t border-slate-200 pt-4">
-        <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" @click="showSecurity = !showSecurity">
-          <i :class="['fas fa-chevron-down text-xs transition-transform', showSecurity ? 'rotate-180' : '']"></i>
+      <div class="border-t border-slate-200 pt-6">
+        <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" :aria-expanded="showSecurity" @click="showSecurity = !showSecurity">
+          <i :class="['fas fa-chevron-down text-xs transition-transform', showSecurity ? 'rotate-180' : '']" aria-hidden="true"></i>
           {{ $t('安全配置') }}
           <span v-if="formData.privileged || formData.capAdd?.length || formData.capDrop?.length" class="badge-xs bg-amber-100 text-amber-700">
             {{ [formData.privileged ? $t('特权') : '', formData.capAdd?.length ? `+${formData.capAdd.length}` : '', formData.capDrop?.length ? `-${formData.capDrop.length}` : ''].filter(Boolean).join(' ') }}

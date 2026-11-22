@@ -138,7 +138,7 @@ export default toNative(HostEditModal)
       </div>
 
       <!-- 认证信息 -->
-      <div class="pt-2 border-t border-slate-100 space-y-3">
+      <div class="border-t border-slate-200 pt-6 space-y-4">
         <div>
           <label class="form-label">{{ $t('选择凭据') }}</label>
           <select v-model="formData.credentialId" class="input" :disabled="credentialsLoading" @change="onCredentialChange">
@@ -156,7 +156,7 @@ export default toNative(HostEditModal)
       </div>
 
       <!-- 手动输入认证信息 -->
-      <div v-if="!formData.credentialId" class="space-y-3">
+      <div v-if="!formData.credentialId" class="space-y-4">
         <div>
           <label class="form-label">{{ $t('用户名') }} <span class="text-red-500">*</span></label>
           <input v-model="formData.user" type="text" :placeholder="$t('请输入用户名')" required class="input" autocomplete="off" />

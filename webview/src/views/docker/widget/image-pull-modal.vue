@@ -108,7 +108,7 @@ export default toNative(ImagePullModal)
   <BaseModal ref="modalRef" v-model="isOpen" :title="$t('拉取镜像')" :loading="modalLoading" confirm-class="btn-blue" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <section>
-        <div class="space-y-3">
+        <div class="space-y-4">
           <div>
             <label class="form-label">{{ $t('镜像源') }}</label>
             <select v-model="formData.source" class="input">
@@ -138,9 +138,9 @@ export default toNative(ImagePullModal)
       </section>
 
       <section v-if="!isRegistryMode">
-        <div class="space-y-3">
+        <div class="space-y-4">
           <div class="flex gap-2">
-            <input v-model="searchKeyword" type="text" :placeholder="$t('请输入要搜索的镜像名称')" class="input flex-1" @keydown.enter.prevent="handleSearchImage" />
+            <input v-model="searchKeyword" type="text" :placeholder="$t('请输入要搜索的镜像名称')" class="input min-w-0 flex-1" @keydown.enter.prevent="handleSearchImage" />
             <button type="button" :disabled="searchLoading" class="btn btn-secondary" @click="handleSearchImage">
               <i :class="['fas', searchLoading ? 'fa-spinner fa-spin' : 'fa-search']"></i>
               {{ $t('搜索') }}

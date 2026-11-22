@@ -188,27 +188,25 @@ export default toNative(WhitelistEditModal)
         <p v-else class="form-help">{{ $t('仅展示尚未配置访问授权的路由') }}</p>
       </div>
 
-      <div class="space-y-3">
-        <div>
-          <label class="form-label">{{ $t('key-auth 插件配置') }}</label>
-        </div>
+      <div class="space-y-4">
+        <h2 class="section-title">{{ $t('key-auth 插件配置') }}</h2>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
             <label class="form-label">{{ $t('请求头名称') }} <span class="text-red-500">*</span></label>
-            <input v-model="formData.keyAuthHeader" type="text" class="input" :placeholder="$t('例如：token')" />
-            <p class="form-help">{{ $t('客户端通过该 Header 传递 Consumer API Key') }}</p>
+            <input v-model="formData.keyAuthHeader" type="text" class="input" />
+            <p class="form-help">{{ $t('客户端通过该 Header 传递 Consumer API Key') }} · {{ $t('例如：token') }}</p>
           </div>
           <div>
             <label class="form-label">{{ $t('查询参数名称') }}</label>
-            <input v-model="formData.keyAuthQuery" type="text" class="input" :placeholder="$t('例如：token（可选）')" />
-            <p class="form-help">{{ $t('留空表示不启用 Query 参数取 key') }}</p>
+            <input v-model="formData.keyAuthQuery" type="text" class="input" />
+            <p class="form-help">{{ $t('留空表示不启用 Query 参数取 key') }} · {{ $t('例如：token') }}</p>
           </div>
         </div>
         <ToggleCard v-model="formData.hideCredentials" :label="$t('隐藏认证凭据')" :desc="$t('开启后转发到上游前移除请求中的认证凭据')" />
         <p class="form-help">{{ $t('若路由的认证已由其他认证插件管理，key-auth 配置会被忽略') }}</p>
       </div>
 
-      <div class="space-y-3">
+      <div>
         <div>
           <label class="form-label">{{ $t('授权用户') }} <span class="text-red-500">*</span></label>
           <Combobox

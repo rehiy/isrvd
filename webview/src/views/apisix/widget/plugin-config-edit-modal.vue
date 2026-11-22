@@ -119,7 +119,8 @@ export default toNative(PluginConfigEditModal)
       </div>
       <div>
         <label class="form-label">{{ $t('描述') }}</label>
-        <textarea v-model="formData.desc" rows="2" class="input resize-none" :placeholder="$t('请输入插件配置描述（可选）')"></textarea>
+        <textarea v-model="formData.desc" rows="2" class="input resize-none"></textarea>
+        <p class="form-help">{{ $t('可选') }}</p>
       </div>
 
       <PluginConfigPanel ref="pluginPanel" :plugins="formData.plugins" :available-plugins="availablePlugins" :show-import="true" :routes="routes" @update:plugins="updatePlugins" />

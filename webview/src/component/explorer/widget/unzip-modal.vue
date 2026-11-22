@@ -73,10 +73,12 @@ export default toNative(UnzipModal)
               type="text"
               :disabled="loading"
               class="input pl-11"
-              :placeholder="$t('请输入目录名，如：output')"
             >
           </div>
-          <p class="form-help">{{ $t('目标目录留空时，文件将解压到当前目录；只能输入目录名，不允许包含 / 等路径分隔符') }}</p>
+          <p class="form-help">
+            {{ $t('目标目录留空时，文件将解压到当前目录；只能输入目录名，不允许包含 / 等路径分隔符') }}
+            {{ $t('例如：') }}<code>output</code>
+          </p>
         </div>
       </form>
     </div>

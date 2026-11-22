@@ -99,14 +99,15 @@ export default toNative(ConsumerEditModal)
 <template>
   <BaseModal v-model="isOpen" :title="isEditMode ? $t('编辑消费者') : $t('新建消费者')" :loading="modalLoading" confirm-class="btn-violet" @confirm="handleConfirm">
     <div class="space-y-4">
-      <div class="space-y-3">
+      <div class="space-y-4">
         <div>
           <label class="form-label">{{ $t('名称') }} <span class="text-red-500">*</span></label>
           <input v-model="formData.username" type="text" :disabled="isEditMode" class="input" :class="{ 'disabled:bg-slate-50 disabled:text-slate-500': isEditMode }" :placeholder="$t('请输入消费者名称')" />
         </div>
         <div>
           <label class="form-label">{{ $t('描述') }}</label>
-          <textarea v-model="formData.desc" rows="3" class="input" :placeholder="$t('请输入消费者描述（可选）')"></textarea>
+          <textarea v-model="formData.desc" rows="3" class="input"></textarea>
+          <p class="form-help">{{ $t('可选') }}</p>
         </div>
       </div>
 

@@ -347,12 +347,14 @@ export default toNative(RouteEditModal)
         </div>
         <div>
           <label class="form-label">{{ $t('优先级') }}</label>
-          <input v-model.number="formData.priority" type="number" class="input" :placeholder="$t('请输入优先级（可选）')" min="0" />
+          <input v-model.number="formData.priority" type="number" class="input" min="0" />
+          <p class="form-help">{{ $t('可选') }}</p>
         </div>
       </div>
       <div>
         <label class="form-label">{{ $t('描述') }}</label>
-        <textarea v-model="formData.desc" rows="2" class="input" :placeholder="$t('请输入路由描述（可选）')"></textarea>
+        <textarea v-model="formData.desc" rows="2" class="input"></textarea>
+        <p class="form-help">{{ $t('可选') }}</p>
       </div>
       <div>
         <label class="form-label">{{ $t('URI') }}<span class="text-red-500">*</span></label>
@@ -361,7 +363,7 @@ export default toNative(RouteEditModal)
       </div>
       <div>
         <label class="form-label">{{ $t('Host') }}</label>
-        <textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" :placeholder="$t('请输入 Host（可选）')"></textarea>
+        <textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm"></textarea>
         <p class="form-help">{{ $t('每行一个，留空匹配所有，例如：example.com 或 *.example.com') }}</p>
       </div>
 
@@ -403,7 +405,7 @@ export default toNative(RouteEditModal)
         <div v-else class="text-sm text-slate-500 leading-6">{{ $t('当前保存只会提交路由匹配规则、状态和插件配置，不会附带内联节点，也不会引用已有上游。') }}</div>
         <p v-if="routeValidationMessage" class="modal-warning mt-3">{{ routeValidationMessage }}</p>
       </div>
-      <div class="border-t border-slate-200 pt-4">
+      <div class="border-t border-slate-200 pt-6">
         <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" :aria-expanded="showAdvanced" @click="showAdvanced = !showAdvanced">
           <i :class="['fas fa-chevron-down text-xs transition-transform', showAdvanced ? 'rotate-180' : '']" aria-hidden="true"></i>
           {{ $t('高级选项') }}
@@ -416,15 +418,24 @@ export default toNative(RouteEditModal)
 
             <UpstreamHostFields ref="upstreamHost" v-model:pass-host="formData.upstream_pass_host" v-model:upstream-host="formData.upstream_host" />
 
-            <div>
-              <label class="form-label">{{ $t('超时时间（秒）') }}</label>
+            <fieldset class="min-w-0">
+              <legend class="form-label">{{ $t('超时时间（秒）') }}</legend>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" :placeholder="$t('请输入连接超时（可选）')" />
-                <input v-model.number="formData.timeout_send" type="number" min="0" class="input" :placeholder="$t('请输入发送超时（可选）')" />
-                <input v-model.number="formData.timeout_read" type="number" min="0" class="input" :placeholder="$t('请输入读取超时（可选）')" />
+                <label class="block">
+                  <span class="form-label">{{ $t('连接超时') }}</span>
+                  <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" />
+                </label>
+                <label class="block">
+                  <span class="form-label">{{ $t('写入超时') }}</span>
+                  <input v-model.number="formData.timeout_send" type="number" min="0" class="input" />
+                </label>
+                <label class="block">
+                  <span class="form-label">{{ $t('读取超时') }}</span>
+                  <input v-model.number="formData.timeout_read" type="number" min="0" class="input" />
+                </label>
               </div>
               <p class="form-help">{{ $t('留空或 0 表示使用 APISIX 默认超时（单位：秒）。') }}</p>
-            </div>
+            </fieldset>
           </template>
         </div>
       </div>
@@ -438,7 +449,7 @@ export default toNative(RouteEditModal)
           <p class="form-help">{{ $t('选择已有的插件配置对象，与独立插件配置合并生效') }}</p>
         </div>
 
-        <div class="pt-3 border-t border-slate-100">
+        <div class="border-t border-slate-200 pt-6">
           <PluginConfigPanel ref="pluginPanel" :plugins="formData.plugins" :available-plugins="availablePlugins" :show-import="true" :routes="routes" @update:plugins="onPluginsUpdate" />
         </div>
       </div>

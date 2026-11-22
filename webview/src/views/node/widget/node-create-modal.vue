@@ -100,7 +100,8 @@ export default toNative(NodeCreateModal)
     <form v-else class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label class="form-label">{{ $t('备注') }} <span class="text-red-500">*</span></label>
-        <input v-model="name" type="text" maxlength="64" required :placeholder="$t('如：杭州机房 web-01')" class="input" />
+        <input v-model="name" type="text" maxlength="64" required class="input" />
+        <p class="form-help">{{ $t('如：杭州机房 web-01') }}</p>
       </div>
     </form>
 

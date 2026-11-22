@@ -257,11 +257,10 @@ export default toNative(AccountPasskeys)
             v-model="registerDisplayName"
             type="text"
             class="input"
-            :placeholder="$t('如：MacBook Touch ID')"
             maxlength="50"
             @keyup.enter="handleRegisterPasskey"
           />
-          <p class="form-help">{{ $t('可选') }}</p>
+          <p class="form-help">{{ $t('可选') }} · {{ $t('如：MacBook Touch ID') }}</p>
         </div>
         <p class="text-sm text-slate-500">
           {{ $t('请确保您的设备支持 Passkey（如 Touch ID、Face ID 或安全密钥）。') }}

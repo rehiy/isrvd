@@ -255,7 +255,8 @@ export default toNative(UpstreamEditModal)
 
       <div>
         <label class="form-label">{{ $t('描述') }}</label>
-        <textarea v-model="formData.desc" rows="2" class="input" :placeholder="$t('请输入上游描述（可选）')"></textarea>
+        <textarea v-model="formData.desc" rows="2" class="input"></textarea>
+        <p class="form-help">{{ $t('可选') }}</p>
       </div>
 
 
@@ -312,7 +313,7 @@ export default toNative(UpstreamEditModal)
         </div>
         <p class="form-help px-3 pb-3">{{ $t('填写后端服务地址和权重') }}</p>
       </div>
-      <div class="border-t border-slate-200 pt-4">
+      <div class="border-t border-slate-200 pt-6">
         <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" :aria-expanded="showAdvanced" @click="showAdvanced = !showAdvanced">
           <i :class="['fas fa-chevron-down text-xs transition-transform', showAdvanced ? 'rotate-180' : '']" aria-hidden="true"></i>
           {{ $t('高级选项') }}
@@ -326,15 +327,24 @@ export default toNative(UpstreamEditModal)
             </select>
           </div>
           <UpstreamHostFields ref="upstreamHostRef" v-model:pass-host="formData.pass_host" v-model:upstream-host="formData.upstream_host" />
-          <div>
-            <label class="form-label">{{ $t('超时时间（秒）') }}</label>
+          <fieldset class="min-w-0">
+            <legend class="form-label">{{ $t('超时时间（秒）') }}</legend>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-              <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" :placeholder="$t('请输入连接超时（可选）')" />
-              <input v-model.number="formData.timeout_send" type="number" min="0" class="input" :placeholder="$t('请输入发送超时（可选）')" />
-              <input v-model.number="formData.timeout_read" type="number" min="0" class="input" :placeholder="$t('请输入读取超时（可选）')" />
+              <label class="block">
+                <span class="form-label">{{ $t('连接超时') }}</span>
+                <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" />
+              </label>
+              <label class="block">
+                <span class="form-label">{{ $t('写入超时') }}</span>
+                <input v-model.number="formData.timeout_send" type="number" min="0" class="input" />
+              </label>
+              <label class="block">
+                <span class="form-label">{{ $t('读取超时') }}</span>
+                <input v-model.number="formData.timeout_read" type="number" min="0" class="input" />
+              </label>
             </div>
             <p class="form-help">{{ $t('留空或 0 表示使用 APISIX 默认超时（单位：秒）。') }}</p>
-          </div>
+          </fieldset>
         </div>
       </div>
     </div>

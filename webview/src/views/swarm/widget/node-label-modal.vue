@@ -162,19 +162,19 @@ export default toNative(NodeLabelModal)
           <div class="min-w-0">
             <label class="block">
               <span class="form-label">{{ $t('标签键') }} <span class="text-red-500">*</span></span>
-              <input v-model="row.key" type="text" class="input font-mono" placeholder="region" autocomplete="off" :spellcheck="false" required data-label-key :aria-invalid="!!rowErrors[index]" :aria-describedby="rowErrors[index] ? `node-label-error-${row.id}` : undefined" />
+              <input v-model="row.key" type="text" class="input font-mono" autocomplete="off" :spellcheck="false" required data-label-key :aria-invalid="!!rowErrors[index]" :aria-describedby="rowErrors[index] ? `node-label-error-${row.id}` : undefined" />
             </label>
             <p v-if="rowErrors[index]" :id="`node-label-error-${row.id}`" class="text-xs text-red-500 mt-1">{{ rowErrors[index] }}</p>
           </div>
           <div class="min-w-0">
             <label :for="`node-label-value-${row.id}`" class="form-label">{{ $t('标签值') }}</label>
             <div class="flex items-center gap-2">
-              <input :id="`node-label-value-${row.id}`" v-model="row.value" type="text" class="input min-w-0 font-mono" placeholder="guangzhou" autocomplete="off" :spellcheck="false" />
+              <input :id="`node-label-value-${row.id}`" v-model="row.value" type="text" class="input min-w-0 font-mono" autocomplete="off" :spellcheck="false" />
               <button type="button" class="btn-icon btn-icon-red shrink-0" :title="$t('删除标签')" :aria-label="$t('删除标签')" @click="removeLabel(row.id)"><i class="fas fa-trash"></i></button>
             </div>
           </div>
         </div>
-        <p v-if="rows.length > 0" class="text-xs text-slate-400 mt-1">{{ $t('标签值可留空。') }}</p>
+        <p v-if="rows.length > 0" class="form-help">{{ $t('标签值可留空。') }} {{ $t('例如：') }}<code>region=guangzhou</code></p>
         <button type="button" class="btn-add-row" @click="addLabel"><i class="fas fa-plus"></i>{{ $t('添加标签') }}</button>
       </div>
       <div class="modal-warning">

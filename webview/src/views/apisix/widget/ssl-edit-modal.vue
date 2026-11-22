@@ -110,19 +110,19 @@ export default toNative(SSLEditModal)
     <div class="space-y-4">
       <div>
         <label class="form-label">{{ $t('SNI 域名') }} <span class="text-red-500">*</span></label>
-        <textarea v-model="formData.snisText" rows="3" class="input font-mono" :placeholder="$t('请输入 SNI（每行一个）')"></textarea>
+        <textarea v-model="formData.snisText" rows="3" class="input font-mono"></textarea>
         <p class="form-help">{{ $t('每行一个域名，也支持英文逗号分隔和通配符，例如：example.com 或 *.example.com') }}</p>
       </div>
 
       <div>
         <label class="form-label">{{ $t('证书内容') }} <span v-if="!isEditMode" class="text-red-500">*</span></label>
-        <textarea v-model="formData.cert" rows="8" class="input font-mono text-xs" :placeholder="isEditMode ? $t('留空则保持不变') : $t('请输入 PEM 格式证书内容')" autocomplete="new-password"></textarea>
+        <textarea v-model="formData.cert" rows="8" class="input font-mono text-xs" autocomplete="new-password"></textarea>
         <p class="form-help">{{ $t('PEM 格式证书，以 -----BEGIN CERTIFICATE----- 开头。编辑时留空表示不修改当前证书。') }}</p>
       </div>
 
       <div>
         <label class="form-label">{{ $t('私钥内容') }} <span v-if="!isEditMode" class="text-red-500">*</span></label>
-        <textarea v-model="formData.key" rows="8" class="input font-mono text-xs" :placeholder="isEditMode ? $t('留空则保持不变') : $t('请输入 PEM 格式私钥内容')" autocomplete="new-password"></textarea>
+        <textarea v-model="formData.key" rows="8" class="input font-mono text-xs" :placeholder="isEditMode ? $t('留空则保持不变') : undefined" autocomplete="new-password"></textarea>
         <p class="form-help">{{ $t('PEM 格式私钥，以 -----BEGIN PRIVATE KEY----- 开头。编辑时留空表示不修改当前私钥。') }}</p>
       </div>
 

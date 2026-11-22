@@ -200,8 +200,11 @@ export default toNative(ServerEditModal)
       <div class="border-t border-slate-200 pt-6 space-y-4">
         <div>
           <label class="form-label">{{ $t('可信代理 IP / CIDR') }}</label>
-          <textarea v-model="formData.trustedProxyRanges" rows="3" class="input font-mono text-sm" :disabled="formData.trustedProxiesCustom" placeholder="192.0.2.10&#10;10.0.0.0/8&#10;2001:db8::/32"></textarea>
-          <p class="form-help">{{ $t('仅填写实际反向代理的 IP 或网段，每行一个；留空表示不信任代理转发的客户端 IP。') }}</p>
+          <textarea v-model="formData.trustedProxyRanges" rows="3" class="input font-mono text-sm" :disabled="formData.trustedProxiesCustom"></textarea>
+          <p class="form-help">
+            {{ $t('仅填写实际反向代理的 IP 或网段，每行一个；留空表示不信任代理转发的客户端 IP。') }}
+            {{ $t('例如：') }}<code class="block whitespace-pre-line">192.0.2.10&#10;10.0.0.0/8&#10;2001:db8::/32</code>
+          </p>
         </div>
         <ToggleCard
           v-model="formData.trustedProxiesStrict"
@@ -209,7 +212,7 @@ export default toNative(ServerEditModal)
           :label="$t('严格解析代理请求头')"
           :desc="$t('从右向左解析 X-Forwarded-For，推荐与可信代理列表一起启用，防止伪造客户端 IP。')"
         />
-        <p v-if="formData.trustedProxiesCustom" class="text-xs text-amber-600">{{ $t('此服务使用自定义可信代理来源，请在原始配置中维护；保存其他选项不会覆盖它。') }}</p>
+        <p v-if="formData.trustedProxiesCustom" class="modal-warning">{{ $t('此服务使用自定义可信代理来源，请在原始配置中维护；保存其他选项不会覆盖它。') }}</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
