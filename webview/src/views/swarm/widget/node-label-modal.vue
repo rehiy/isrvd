@@ -23,7 +23,6 @@ class NodeLabelModal extends Vue {
     loaded = false
     conflicted = false
     nodeId = ''
-    hostname = ''
     version = 0
     nextRowId = 0
     originalLabels: Record<string, string> = {}
@@ -67,7 +66,6 @@ class NodeLabelModal extends Vue {
             return
         }
         this.nodeId = nodeId
-        this.hostname = ''
         this.version = 0
         this.originalLabels = {}
         this.rows = []
@@ -95,7 +93,6 @@ class NodeLabelModal extends Vue {
                 this.isOpen = false
                 return
             }
-            this.hostname = node.hostname
             this.version = node.version
             this.originalLabels = { ...node.labels }
             this.rows = Object.entries(node.labels || {}).sort(([a], [b]) => a.localeCompare(b)).map(([key, value]) => ({ id: this.nextRowId++, key, value }))
@@ -158,24 +155,6 @@ export default toNative(NodeLabelModal)
       <p class="text-slate-500">{{ $t('加载中...') }}</p>
     </div>
     <form v-else ref="formRef" class="space-y-4" @submit.prevent="handleConfirm">
-      <div class="panel-frame inline-info bg-slate-50 p-3">
-        <span class="row-icon bg-blue-400" aria-hidden="true">
-          <i class="fas fa-server text-white text-sm"></i>
-        </span>
-        <div class="min-w-0">
-          <p class="item-title-sm whitespace-normal break-words">{{ hostname || '-' }}</p>
-          <p class="text-xs text-slate-500 mt-0.5 break-all">
-            <span>{{ $t('节点 ID') }}</span> <code>{{ nodeId }}</code>
-          </p>
-        </div>
-      </div>
-      <div class="panel-frame border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-        <div class="flex items-start gap-2">
-          <i class="fas fa-triangle-exclamation mt-0.5" aria-hidden="true"></i>
-          <p aria-live="polite">{{ conflicted ? $t('节点已更新，当前修改尚未保存。重新加载将丢弃这些修改。') : $t('修改或删除标签可能触发服务重新调度，请确认服务的调度约束。') }}</p>
-        </div>
-        <button v-if="conflicted" type="button" class="btn btn-secondary mt-2" @click="loadLabels">{{ $t('放弃修改并重新加载') }}</button>
-      </div>
       <div class="space-y-4">
         <p v-if="rows.length === 0" class="empty-note">{{ hasChanges ? $t('保存后将清空节点标签。') : $t('暂无节点标签') }}</p>
         <div v-for="(row, index) in rows" :key="row.id" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -196,6 +175,13 @@ export default toNative(NodeLabelModal)
         </div>
         <p v-if="rows.length > 0" class="text-xs text-slate-400 mt-1">{{ $t('标签值可留空。') }}</p>
         <button type="button" class="btn-add-row" @click="addLabel"><i class="fas fa-plus"></i>{{ $t('添加标签') }}</button>
+      </div>
+      <div class="panel-frame border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+        <div class="flex items-start gap-2">
+          <i class="fas fa-triangle-exclamation mt-0.5" aria-hidden="true"></i>
+          <p aria-live="polite">{{ conflicted ? $t('节点已更新，当前修改尚未保存。重新加载将丢弃这些修改。') : $t('修改或删除标签可能触发服务重新调度，请确认服务的调度约束。') }}</p>
+        </div>
+        <button v-if="conflicted" type="button" class="btn btn-secondary mt-2" @click="loadLabels">{{ $t('放弃修改并重新加载') }}</button>
       </div>
       <button type="submit" class="sr-only" tabindex="-1" :disabled="loading || confirmDisabled">{{ $t('保存') }}</button>
     </form>
