@@ -112,6 +112,9 @@ function resolvePath(data: unknown, path: string): unknown {
             }
             cur = cur[i]
         } else {
+            if (typeof cur !== 'object' || Array.isArray(cur) || !Object.prototype.hasOwnProperty.call(cur, token)) {
+                return undefined
+            }
             cur = (cur as Record<string, unknown>)[token]
         }
     }
