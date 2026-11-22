@@ -23,12 +23,13 @@ export const useAuthStore = defineStore('auth', () => {
     // ─── 操作定义 ───
 
     function setAuth(data: { authMode: 'jwt' | 'header'; token: string; username: string }) {
-        if (authMode.value !== data.authMode || username.value !== data.username || token.value !== (data.token || '')) {
-            sessionVersion.value++
-        }
+        const changed = authMode.value !== data.authMode || username.value !== data.username || token.value !== (data.token || '')
         authMode.value = data.authMode
         username.value = data.username
         token.value = data.token || ''
+        if (changed) {
+            resetSession()
+        }
         if (data.authMode === 'jwt') {
             localStorage.setItem('app-token', data.token)
             localStorage.setItem('app-username', data.username)
@@ -36,15 +37,19 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     function clearAuth() {
-        sessionVersion.value++
         authMode.value = null
         token.value = null
         username.value = null
+        resetSession()
+        localStorage.removeItem('app-token')
+        localStorage.removeItem('app-username')
+    }
+
+    function resetSession() {
         permissionsLoaded.value = false
         founder.value = false
         permissions.value = []
-        localStorage.removeItem('app-token')
-        localStorage.removeItem('app-username')
+        sessionVersion.value++
     }
 
     function isAuthenticated() {
@@ -61,9 +66,9 @@ export const useAuthStore = defineStore('auth', () => {
             if (auth.mode === 'header') {
                 setAuth({ authMode: 'header', token: '', username: auth.username })
             }
-            permissionsLoaded.value = true
             founder.value = auth.member.founder || false
             permissions.value = auth.member.permissions || []
+            permissionsLoaded.value = true
         }
 
         // OIDC / Passkey / 密码登录 配置无论登录状态都更新（放在 clearAuth 之后）

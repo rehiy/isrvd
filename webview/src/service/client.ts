@@ -58,8 +58,8 @@ export const httpBlob = axiosBlobInstance as unknown as HttpBlobClient
 // 拦截器已向用户弹出提示的请求错误。页面无需再 catch，全局兜底（main.ts）据此静默，其余错误照常抛出。
 const notifiedErrors = new WeakSet<object>()
 
-export const isNotifiedError = (error: unknown): boolean =>
-    typeof error === 'object' && error !== null && notifiedErrors.has(error)
+export const isHandledRequestError = (error: unknown): boolean =>
+    axios.isCancel(error) || (typeof error === 'object' && error !== null && notifiedErrors.has(error))
 
 export const interceptors = (
     state: { token: string | null; sessionVersion: number },
@@ -69,6 +69,13 @@ export const interceptors = (
     const t = (key: string): string => useLocaleStore().t(key)
 
     const requestSessions = new WeakMap<InternalAxiosRequestConfig, number>()
+
+    const checkSession = (config?: InternalAxiosRequestConfig) => {
+        const session = config && requestSessions.get(config)
+        if (session !== undefined && session !== state.sessionVersion) {
+            throw new axios.CanceledError()
+        }
+    }
 
     const attachAuth = (config: InternalAxiosRequestConfig) => {
         requestSessions.set(config, state.sessionVersion)
@@ -91,6 +98,7 @@ export const interceptors = (
             actions.showNotification('error', t('发生未知错误'))
             return Promise.reject(error)
         }
+        checkSession(error.config)
         let message = ''
         const data = error.response?.data
         if (data instanceof Blob) {
@@ -99,6 +107,7 @@ export const interceptors = (
             } catch {
                 /* 非 JSON 下载错误使用状态码兜底 */
             }
+            checkSession(error.config)
         } else {
             message = data?.message || ''
         }
@@ -122,16 +131,20 @@ export const interceptors = (
     }
 
     for (const instance of [axiosInstance, axiosBlobInstance]) {
-        instance.interceptors.request.use(attachAuth, (error: unknown) => Promise.reject(error))
+        instance.interceptors.request.use(attachAuth, undefined, { synchronous: true })
     }
 
     axiosBlobInstance.interceptors.response.use(
-        (value: AxiosResponse) => value.data,
+        (value: AxiosResponse) => {
+            checkSession(value.config)
+            return value.data
+        },
         (error: unknown) => handleError(error, true)
     )
 
     axiosInstance.interceptors.response.use(
         (value: AxiosResponse) => {
+            checkSession(value.config)
             // 过滤逻辑：不显示 GET 请求和 HTTP 200 状态码的消息
             const isGetRequest = value.config?.method?.toLowerCase() === 'get'
             const isSuccessStatus = value.status === 200

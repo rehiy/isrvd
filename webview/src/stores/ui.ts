@@ -35,6 +35,7 @@ export const useUIStore = defineStore('ui', () => {
         loading: false,
         onConfirm: null as (() => void | Promise<void>) | null
     })
+    let confirmVersion = 0
 
     // ─── Notification 操作 ───
 
@@ -58,6 +59,7 @@ export const useUIStore = defineStore('ui', () => {
     // ─── Confirm 操作 ───
 
     function showConfirm(options: ConfirmOptions) {
+        confirmVersion++
         Object.assign(confirm, {
             show: true,
             title: options.title || '确认操作',
@@ -72,6 +74,7 @@ export const useUIStore = defineStore('ui', () => {
     }
 
     function closeConfirm() {
+        confirmVersion++
         confirm.show = false
         confirm.loading = false
         confirm.onConfirm = null
@@ -84,11 +87,14 @@ export const useUIStore = defineStore('ui', () => {
         if (!confirm.onConfirm) {
             return closeConfirm()
         }
+        const version = confirmVersion
         confirm.loading = true
         try {
             await confirm.onConfirm()
         } finally {
-            closeConfirm()
+            if (version === confirmVersion) {
+                closeConfirm()
+            }
         }
     }
 

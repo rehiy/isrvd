@@ -78,9 +78,15 @@ class ConfigLayout extends Vue {
         if (!this.canUpdate || this.config.saving || this.config.loading || !this.config.hasUnsaved()) {
             return
         }
+        const session = this.portal.sessionVersion
         await this.config.saveAll()
+        if (session !== this.portal.sessionVersion) {
+            return
+        }
         await this.portal.refresh()
-        this.portal.showNotification('success', this.$t('配置已保存，部分设置需重启生效'))
+        if (session === this.portal.sessionVersion) {
+            this.portal.showNotification('success', this.$t('配置已保存，部分设置需重启生效'))
+        }
     }
 
     // ─── 生命周期 ───
