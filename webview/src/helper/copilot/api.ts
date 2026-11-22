@@ -349,8 +349,24 @@ function parseBusinessArguments(source?: string): { value: BusinessArguments } |
 }
 
 function canonicalArguments(source?: string): string {
-    // ponytail: 原样字符串做失败去重键，模型重试通常逐字重放；如出现键序绕过 RETRY_LIMIT 再做规范化
-    return source?.trim() || '{}'
+    if (!source?.trim()) {
+        return '{}'
+    }
+    try {
+        const sorted = (value: unknown): unknown => {
+            if (Array.isArray(value)) {
+                return value.map(sorted)
+            }
+            if (isRecord(value)) {
+                return Object.fromEntries(Object.keys(value).sort().map(key => [key, sorted(value[key])]))
+            }
+            return value
+        }
+        return JSON.stringify(sorted(JSON.parse(source)))
+    } catch {
+        // 非法 JSON 仍按原文计数，让同一格式错误不会无限重试。
+        return source.trim()
+    }
 }
 
 function validateParameterGroup(values: Record<string, unknown>, parameters: OpenAPIParameter[], group: string): string {
