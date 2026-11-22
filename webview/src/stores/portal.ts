@@ -3,7 +3,6 @@ import { watch } from 'vue'
 
 import api from '@/service/api'
 import { interceptors } from '@/service/client'
-import type { BootstrapData } from '@/service/types'
 
 import { nodeLocation } from '@/helper/node'
 import { initTheme } from '@/helper/theme'
@@ -35,72 +34,43 @@ export const usePortalStore = defineStore('portal', () => {
     watch(() => authStore.sessionVersion, () => {
         nodeStore.reset()
         useConfigStore().reset()
+        uiStore.closeConfirm()
     }, { flush: 'sync' })
 
     // ─── 分发启动数据到子 store ───
 
-    function applyBootstrap(data: BootstrapData) {
-        authStore.apply(data)
-        systemStore.apply(data)
-        systemStore.initialized = true
-    }
-
-    // ─── 初始化（冷启动）───
-    // 恢复本地 token → 发起 bootstrap 请求 → 分发到 auth/system store
+    let bootstrapRequest = 0
 
     async function initialize() {
-        systemStore.initialized = false
-
         initTheme()
         localeStore.initLocale()
         authStore.restoreToken()
-
-        const sessionVersion = authStore.sessionVersion
-        try {
-            const res = await api.overviewBootstrap()
-            if (authStore.sessionVersion !== sessionVersion) {
-                return
-            }
-            if (!res?.payload) {
-                clearAuth()
-                systemStore.initialized = true
-                return
-            }
-            applyBootstrap(res.payload as BootstrapData)
-        } catch (e) {
-            if (authStore.sessionVersion !== sessionVersion) {
-                return
-            }
-            // 网络异常：保持现有登录状态，标记初始化完成
-            console.error('Portal initialize failed:', e)
-            systemStore.initialized = true
-        }
+        await loadBootstrap(true)
     }
 
-    // ─── 登录后刷新（token 已由调用方写入）───
-    // 重新获取 bootstrap（此时带新 token）→ 重新分发到 auth/system store
-
-    async function refresh() {
+    async function loadBootstrap(clearOnEmpty = false) {
         systemStore.initialized = false
-
+        const request = ++bootstrapRequest
         const sessionVersion = authStore.sessionVersion
+        const isCurrent = () => request === bootstrapRequest && authStore.sessionVersion === sessionVersion
         try {
             const res = await api.overviewBootstrap()
-            if (authStore.sessionVersion !== sessionVersion) {
+            if (!isCurrent()) {
                 return
             }
-            if (!res?.payload) {
-                systemStore.initialized = true
-                return
+            if (res?.payload) {
+                systemStore.apply(res.payload)
+                authStore.apply(res.payload)
+            } else if (clearOnEmpty) {
+                clearAuth()
             }
-            applyBootstrap(res.payload as BootstrapData)
         } catch (e) {
-            if (authStore.sessionVersion !== sessionVersion) {
+            if (!isCurrent()) {
                 return
             }
-            console.error('Portal refresh failed:', e)
-            systemStore.initialized = true
+            console.error('Portal bootstrap failed:', e)
         }
+        systemStore.initialized = true
     }
 
     // ─── 登出：清理认证并重置页面级配置草稿（避免残留未提交的密钥）───
@@ -135,11 +105,12 @@ export const usePortalStore = defineStore('portal', () => {
     return {
         // Portal 方法
         initialize,
-        refresh,
+        refresh: () => loadBootstrap(),
 
         // Auth Store 状态（响应式）
         authMode: authRefs.authMode,
         token: authRefs.token,
+        sessionVersion: authRefs.sessionVersion,
         username: authRefs.username,
         permissionsLoaded: authRefs.permissionsLoaded,
         founder: authRefs.founder,
@@ -153,7 +124,6 @@ export const usePortalStore = defineStore('portal', () => {
         // Auth Store 方法
         setAuth: authStore.setAuth,
         clearAuth,
-        isAuthenticated: authStore.isAuthenticated,
 
         // System Store 状态（响应式）
         initialized: systemRefs.initialized,

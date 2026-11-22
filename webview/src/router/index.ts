@@ -1,4 +1,5 @@
-import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
+import type { RouteLocationNormalized, RouteRecordRaw } from 'vue-router'
 
 import { isCenterPage, nodeLocation } from '@/helper/node'
 
@@ -41,7 +42,7 @@ const routes: RouteRecordRaw[] = [
     path: '/local/shell',
     name: 'local-shell',
     component: () => import('@/views/local/shell.vue'),
-    meta: { title: 'Shell 终端' }
+    meta: { title: 'Shell 终端', permissions: ['GET /api/shell'] }
   },
   {
     path: '/ssh',
@@ -324,7 +325,7 @@ const routes: RouteRecordRaw[] = [
     path: '/account/members',
     name: 'account-members',
     component: () => import('@/views/account/members.vue'),
-    meta: { title: '用户管理' }
+    meta: { title: '用户管理', permissions: ['GET /api/account/members'] }
   },
   {
     path: '/account/password',
@@ -401,49 +402,31 @@ const router = createRouter({
   routes
 })
 
-// 由 main.ts 在 Pinia 初始化后注入，避免循环依赖
-let _hasPerm: ((module: string) => boolean) | null = null
-let _permsLoaded: (() => boolean) | null = null
-let _isAuthenticated: (() => boolean) | null = null
-export const setRouterGuard = (
-    hasPerm: (module: string) => boolean,
-    permsLoaded: () => boolean,
-    isAuthenticated: () => boolean
-) => {
-    _hasPerm = hasPerm
-    _permsLoaded = permsLoaded
-    _isAuthenticated = isAuthenticated
+type HasPermission = (permission: string) => boolean
+
+export function setRouterGuard(hasPerm: HasPermission, ready: () => boolean) {
+  router.beforeEach(to => canAccessRoute(to, ready() ? hasPerm : undefined) || '/overview')
 }
 
-// 路由守卫：根据权限控制页面访问
-router.beforeEach((to) => {
+// 初始导航可能先于启动鉴权，权限返回后页面挂载前再使用同一规则检查。
+export function canAccessRoute(to: RouteLocationNormalized, hasPerm?: HasPermission): boolean {
   // 视角由页面路径决定，无需等待登录或 bootstrap，冷启动也不能挂载中控管理页面
   if (nodeLocation().id && isCenterPage(to.path)) {
-    return { path: '/overview' }
+    return false
   }
 
-  // 未登录时放行（由 app.vue 的 v-if 控制显示登录页）
-  if (!_isAuthenticated?.()) {
-    return true
-  }
-  // 权限尚未加载完成时放行（刷新页面场景，等 loadMe 完成后由导航菜单 v-if 控制）
-  if (!_permsLoaded?.()) {
+  if (!hasPerm) {
     return true
   }
 
   const permissions = to.meta.permissions as string[] | undefined
   if (permissions) {
-    return permissions.some(permission => _hasPerm?.(permission)) ? true : { path: '/overview' }
+    return permissions.some(hasPerm)
   }
 
   // 从前端路由路径提取模块名（/<module>/...）
   const module = to.path.match(/^\/([^/]+)/)?.[1]
-  if (module && !['overview', 'account', 'local'].includes(module)) {
-    if (!_hasPerm?.(module)) {
-      return { path: '/overview' }
-    }
-  }
-  return true
-})
+  return !module || ['overview', 'account', 'local'].includes(module) || hasPerm(module)
+}
 
 export default router

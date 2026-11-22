@@ -23,6 +23,7 @@ class SSHClientPage extends Vue {
 
     host: SSHHostInfo | null = null
     adapter: TerminalAdapter | null = null
+    private destroyed = false
 
     filePane = new SplitPane()
 
@@ -30,20 +31,19 @@ class SSHClientPage extends Vue {
     get connected() { return this.adapter?.connected ?? false }
 
     async mounted() {
-        await this.loadHost()
-        this.adapter = new WsTerminal(wsUrl(`ssh/to/${encodeURIComponent(this.hostId)}?token=${this.portal.token || ''}`))
-        this.$nextTick(() => this.filePane.initialize(this.contentRef?.clientHeight ?? 600))
-    }
-
-    unmounted() {
-        this.filePane.stop()
-    }
-
-    async loadHost() {
+        this.filePane.initialize(this.contentRef?.clientHeight ?? 600)
+        const id = this.hostId
         try {
-            const res = await api.sshHostInspect(this.hostId)
-            this.host = res.payload || null
+            this.host = (await api.sshHostInspect(id)).payload || null
         } catch {}
+        if (!this.destroyed && id === this.hostId) {
+            this.handleReconnect()
+        }
+    }
+
+    beforeUnmount() {
+        this.destroyed = true
+        this.filePane.stop()
     }
 
     handleDisconnect() {

@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Component, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { useConfigStore, usePortal } from '@/stores'
 
@@ -47,6 +47,14 @@ class ConfigLayout extends Vue {
         event.returnValue = ''
     }
 
+    @Watch('canView', { immediate: true })
+    async onCanViewChange(canView: boolean) {
+        // 切换节点后，启动接口可能在布局挂载后才返回权限。
+        if (canView && !this.config.loaded) {
+            await this.config.load()
+        }
+    }
+
     // ─── 方法 ───
 
     async reloadConfig() {
@@ -70,17 +78,19 @@ class ConfigLayout extends Vue {
         if (!this.canUpdate || this.config.saving || this.config.loading || !this.config.hasUnsaved()) {
             return
         }
+        const session = this.portal.sessionVersion
         await this.config.saveAll()
+        if (session !== this.portal.sessionVersion) {
+            return
+        }
         await this.portal.refresh()
-        this.portal.showNotification('success', this.$t('配置已保存，部分设置需重启生效'))
+        if (session === this.portal.sessionVersion) {
+            this.portal.showNotification('success', this.$t('配置已保存，部分设置需重启生效'))
+        }
     }
 
     // ─── 生命周期 ───
     mounted() {
-        // 草稿在 store 中常驻，仅在首次进入时加载，避免站内往返导致未保存改动被覆盖
-        if (this.canView && !this.config.loaded) {
-            this.config.load()
-        }
         window.addEventListener('beforeunload', this.onBeforeUnload)
     }
 
@@ -156,7 +166,7 @@ export default toNative(ConfigLayout)
         </div>
       </div>
 
-      <div v-else-if="config.loading && !config.loaded" class="card-body">
+      <div v-else-if="!config.loaded && !config.error" class="card-body">
         <div class="empty-state">
           <div class="spinner-lg"></div>
           <p class="text-slate-500">{{ $t('加载中...') }}</p>
