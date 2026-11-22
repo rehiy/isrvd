@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Component, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
@@ -27,13 +27,23 @@ class SSLEditModal extends Vue {
     isOpen = false
     modalLoading = false
     isEditMode = false
+    keyVisible = false
     formData = defaultFormData()
+
+    @Watch('isOpen')
+    onOpenChange(open: boolean) {
+        if (!open) {
+            this.formData.key = ''
+            this.keyVisible = false
+        }
+    }
 
     resetForm() {
         this.formData = defaultFormData()
     }
 
     async show(ssl: ApisixSSL | null = null) {
+        this.keyVisible = false
         if (ssl) {
             this.isEditMode = true
             this.formData = {
@@ -121,8 +131,13 @@ export default toNative(SSLEditModal)
       </div>
 
       <div>
-        <label class="form-label">{{ $t('私钥内容') }} <span v-if="!isEditMode" class="text-red-500">*</span></label>
-        <textarea v-model="formData.key" rows="8" class="input font-mono text-xs" :placeholder="isEditMode ? $t('留空则保持不变') : undefined" autocomplete="new-password"></textarea>
+        <div class="flex items-center justify-between gap-2 mb-1">
+          <label class="form-label !mb-0">{{ $t('私钥内容') }} <span v-if="!isEditMode" class="text-red-500">*</span></label>
+          <button type="button" class="btn-icon btn-icon-slate" :title="keyVisible ? $t('隐藏私钥') : $t('显示私钥')" :aria-label="keyVisible ? $t('隐藏私钥') : $t('显示私钥')" :aria-pressed="keyVisible" @click="keyVisible = !keyVisible">
+            <i class="fas" :class="keyVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
+          </button>
+        </div>
+        <textarea v-model="formData.key" rows="8" class="input font-mono text-xs" :class="{ 'secret-masked': !keyVisible }" :placeholder="isEditMode ? $t('留空则保持不变') : undefined" autocomplete="new-password" autocapitalize="off" :spellcheck="false" :aria-label="$t('私钥内容')"></textarea>
         <p class="form-help">{{ $t('PEM 格式私钥，以 -----BEGIN PRIVATE KEY----- 开头。编辑时留空表示不修改当前私钥。') }}</p>
       </div>
 

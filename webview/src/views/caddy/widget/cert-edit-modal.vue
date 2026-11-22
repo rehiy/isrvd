@@ -239,7 +239,7 @@ export default toNative(CertEditModal)
               <i class="fas" :class="keyVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
             </button>
           </div>
-          <textarea v-model="formData.keyContent" rows="6" class="input font-mono text-xs leading-5" :class="{ 'caddy-cert-key-masked': !keyVisible }" autocomplete="new-password" autocapitalize="off" :spellcheck="false" :aria-label="$t('私钥 PEM')" :placeholder="isEditMode ? $t('留空则保持不变') : $t('请输入私钥 PEM 内容')"></textarea>
+          <textarea v-model="formData.keyContent" rows="6" class="input font-mono text-xs leading-5" :class="{ 'secret-masked': !keyVisible }" autocomplete="new-password" autocapitalize="off" :spellcheck="false" :aria-label="$t('私钥 PEM')" :placeholder="isEditMode ? $t('留空则保持不变') : $t('请输入私钥 PEM 内容')"></textarea>
           <p class="form-help">{{ isEditMode ? $t('响应不返回私钥；编辑时留空表示保持原值') : $t('格式：-----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----') }}</p>
         </div>
         <div>

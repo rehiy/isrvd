@@ -380,17 +380,17 @@
     @apply hover:border-slate-300;
   }
 
-  .input.caddy-cert-key-masked {
+  .input.secret-masked {
     -webkit-text-security: disc;
   }
 
   @supports not (-webkit-text-security: disc) {
-    .input.caddy-cert-key-masked {
+    .input.secret-masked {
       color: transparent;
       caret-color: var(--color-slate-700);
     }
 
-    .input.caddy-cert-key-masked::selection {
+    .input.secret-masked::selection {
       color: transparent;
     }
   }
