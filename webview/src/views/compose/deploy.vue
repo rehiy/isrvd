@@ -1,6 +1,6 @@
 <script lang="ts">
 import * as yaml from 'js-yaml'
-import { Component, Prop, Vue, Watch, toNative } from 'vue-facing-decorator'
+import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
@@ -44,22 +44,9 @@ class ComposeDeploy extends Vue {
         return this.target === 'swarm' ? this.$t('Swarm 服务') : this.$t('单机部署')
     }
 
-    get canAccess(): boolean {
-        if (!this.portal.initialized) {
-            return true
-        }
-        return this.portal.hasPerm(`POST /api/compose/${this.target}`)
-    }
-
     get canSubmit(): boolean {
-        return this.portal.initialized && this.canAccess && !this.loading && !!this.content.trim()
-    }
-
-    @Watch('canAccess', { immediate: true })
-    onAccessChange(canAccess: boolean) {
-        if (!canAccess) {
-            this.$router.replace('/overview')
-        }
+        return this.portal.initialized && !this.loading && !!this.content.trim()
+            && this.portal.hasPerm(`POST /api/compose/${this.target}`)
     }
 
     /** 编辑器提示文案（整行展示） */

@@ -75,6 +75,7 @@ export const interceptors = (
         if (session !== undefined && session !== state.sessionVersion) {
             throw new axios.CanceledError()
         }
+        return session !== undefined
     }
 
     const attachAuth = (config: InternalAxiosRequestConfig) => {
@@ -89,16 +90,16 @@ export const interceptors = (
 
     const handleError = async (error: unknown, isBlob = false) => {
         if (axios.isCancel(error)) {
-            return Promise.reject(error)
+            throw error
         }
         if (typeof error === 'object' && error !== null) {
             notifiedErrors.add(error)
         }
         if (!axios.isAxiosError<APIResponse | Blob>(error)) {
             actions.showNotification('error', t('发生未知错误'))
-            return Promise.reject(error)
+            throw error
         }
-        checkSession(error.config)
+        const tracked = checkSession(error.config)
         let message = ''
         const data = error.response?.data
         if (data instanceof Blob) {
@@ -115,7 +116,7 @@ export const interceptors = (
         // 登录接口本身返回的 401（用户名/密码错误等）是登录失败，不是会话过期，走下方通用错误提示
         const isLoginRequest = error.config?.url?.includes('account/login')
         if (error.response?.status === 401 && !isLoginRequest) {
-            if (error.config && requestSessions.get(error.config) === state.sessionVersion) {
+            if (tracked) {
                 actions.showNotification('error', message || t('登录已过期，请重新登录'))
                 actions.clearAuth()
             }
@@ -127,32 +128,20 @@ export const interceptors = (
         } else {
             actions.showNotification('error', t('发生未知错误'))
         }
-        return Promise.reject(error)
+        throw error
     }
 
-    for (const instance of [axiosInstance, axiosBlobInstance]) {
+    for (const [instance, isBlob] of [[axiosInstance, false], [axiosBlobInstance, true]] as const) {
         instance.interceptors.request.use(attachAuth, undefined, { synchronous: true })
+        instance.interceptors.response.use(
+            ({ config, status, data }: AxiosResponse) => {
+                checkSession(config)
+                if (!isBlob && config.method?.toLowerCase() !== 'get' && status !== 200 && data?.message) {
+                    actions.showNotification(data.success ? 'success' : 'error', data.message)
+                }
+                return data
+            },
+            (error: unknown) => handleError(error, isBlob)
+        )
     }
-
-    axiosBlobInstance.interceptors.response.use(
-        (value: AxiosResponse) => {
-            checkSession(value.config)
-            return value.data
-        },
-        (error: unknown) => handleError(error, true)
-    )
-
-    axiosInstance.interceptors.response.use(
-        (value: AxiosResponse) => {
-            checkSession(value.config)
-            // 过滤逻辑：不显示 GET 请求和 HTTP 200 状态码的消息
-            const isGetRequest = value.config?.method?.toLowerCase() === 'get'
-            const isSuccessStatus = value.status === 200
-            if (!isGetRequest && !isSuccessStatus && value.data?.message) {
-                actions.showNotification(value.data.success ? 'success' : 'error', value.data.message)
-            }
-            return value.data
-        },
-        (error: unknown) => handleError(error)
-    )
 }

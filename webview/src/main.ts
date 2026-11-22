@@ -42,7 +42,7 @@ app.config.errorHandler = (error, instance, info) => {
 
 // 设置路由守卫（在 Pinia 初始化之后）
 const portal = usePortal()
-setRouterGuard(portal.hasPerm, () => portal.permissionsLoaded, portal.isAuthenticated)
+setRouterGuard(portal.hasPerm, () => !!portal.username && portal.permissionsLoaded)
 app.use(router)
 
 // 模板内统一用 $t('中文原文') 取文案，切换语言时自动重渲染

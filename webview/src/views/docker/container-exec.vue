@@ -31,12 +31,9 @@ class ContainerTerminal extends Vue {
     get containerId() { return this.$route.params.id as string }
     get connected() { return this.adapter?.connected ?? false }
 
-    async mounted() {
-        await this.loadContainer()
-        await this.$nextTick()
-        if (!this.destroyed) {
-            this.filePane.initialize(this.contentRef?.clientHeight ?? 600)
-        }
+    mounted() {
+        this.filePane.initialize(this.contentRef?.clientHeight ?? 600)
+        return this.loadContainer()
     }
 
     beforeUnmount() {

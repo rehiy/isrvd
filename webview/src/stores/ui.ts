@@ -74,7 +74,6 @@ export const useUIStore = defineStore('ui', () => {
     }
 
     function closeConfirm() {
-        confirmVersion++
         confirm.show = false
         confirm.loading = false
         confirm.onConfirm = null

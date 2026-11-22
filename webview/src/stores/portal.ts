@@ -3,7 +3,6 @@ import { watch } from 'vue'
 
 import api from '@/service/api'
 import { interceptors } from '@/service/client'
-import type { BootstrapData } from '@/service/types'
 
 import { nodeLocation } from '@/helper/node'
 import { initTheme } from '@/helper/theme'
@@ -49,10 +48,6 @@ export const usePortalStore = defineStore('portal', () => {
         await loadBootstrap(true)
     }
 
-    async function refresh() {
-        await loadBootstrap()
-    }
-
     async function loadBootstrap(clearOnEmpty = false) {
         systemStore.initialized = false
         const request = ++bootstrapRequest
@@ -64,19 +59,18 @@ export const usePortalStore = defineStore('portal', () => {
                 return
             }
             if (res?.payload) {
-                const data = res.payload as BootstrapData
-                systemStore.apply(data)
-                authStore.apply(data)
+                systemStore.apply(res.payload)
+                authStore.apply(res.payload)
             } else if (clearOnEmpty) {
                 clearAuth()
             }
-            systemStore.initialized = true
         } catch (e) {
-            if (isCurrent()) {
-                console.error('Portal bootstrap failed:', e)
-                systemStore.initialized = true
+            if (!isCurrent()) {
+                return
             }
+            console.error('Portal bootstrap failed:', e)
         }
+        systemStore.initialized = true
     }
 
     // ─── 登出：清理认证并重置页面级配置草稿（避免残留未提交的密钥）───
@@ -111,7 +105,7 @@ export const usePortalStore = defineStore('portal', () => {
     return {
         // Portal 方法
         initialize,
-        refresh,
+        refresh: () => loadBootstrap(),
 
         // Auth Store 状态（响应式）
         authMode: authRefs.authMode,
@@ -130,7 +124,6 @@ export const usePortalStore = defineStore('portal', () => {
         // Auth Store 方法
         setAuth: authStore.setAuth,
         clearAuth,
-        isAuthenticated: authStore.isAuthenticated,
 
         // System Store 状态（响应式）
         initialized: systemRefs.initialized,

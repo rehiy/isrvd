@@ -31,28 +31,19 @@ class SSHClientPage extends Vue {
     get connected() { return this.adapter?.connected ?? false }
 
     async mounted() {
+        this.filePane.initialize(this.contentRef?.clientHeight ?? 600)
         const id = this.hostId
-        await this.loadHost()
-        if (this.destroyed || id !== this.hostId) {
-            return
-        }
-        this.handleReconnect()
-        await this.$nextTick()
-        if (!this.destroyed) {
-            this.filePane.initialize(this.contentRef?.clientHeight ?? 600)
+        try {
+            this.host = (await api.sshHostInspect(id)).payload || null
+        } catch {}
+        if (!this.destroyed && id === this.hostId) {
+            this.handleReconnect()
         }
     }
 
     beforeUnmount() {
         this.destroyed = true
         this.filePane.stop()
-    }
-
-    async loadHost() {
-        try {
-            const res = await api.sshHostInspect(this.hostId)
-            this.host = res.payload || null
-        } catch {}
     }
 
     handleDisconnect() {

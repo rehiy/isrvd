@@ -402,46 +402,31 @@ const router = createRouter({
   routes
 })
 
-// 由 main.ts 在 Pinia 初始化后注入，避免循环依赖
-let _hasPerm: ((module: string) => boolean) | null = null
-let _permsLoaded: (() => boolean) | null = null
-let _isAuthenticated: (() => boolean) | null = null
-export const setRouterGuard = (
-    hasPerm: (module: string) => boolean,
-    permsLoaded: () => boolean,
-    isAuthenticated: () => boolean
-) => {
-    _hasPerm = hasPerm
-    _permsLoaded = permsLoaded
-    _isAuthenticated = isAuthenticated
+type HasPermission = (permission: string) => boolean
+
+export function setRouterGuard(hasPerm: HasPermission, ready: () => boolean) {
+  router.beforeEach(to => canAccessRoute(to, ready() ? hasPerm : undefined) || '/overview')
 }
 
 // 初始导航可能先于启动鉴权，权限返回后页面挂载前再使用同一规则检查。
-export function canAccessRoute(to: RouteLocationNormalized): boolean {
+export function canAccessRoute(to: RouteLocationNormalized, hasPerm?: HasPermission): boolean {
   // 视角由页面路径决定，无需等待登录或 bootstrap，冷启动也不能挂载中控管理页面
   if (nodeLocation().id && isCenterPage(to.path)) {
     return false
   }
 
-  if (!_isAuthenticated?.() || !_permsLoaded?.()) {
+  if (!hasPerm) {
     return true
   }
 
   const permissions = to.meta.permissions as string[] | undefined
   if (permissions) {
-    return permissions.some(permission => _hasPerm?.(permission))
+    return permissions.some(hasPerm)
   }
 
   // 从前端路由路径提取模块名（/<module>/...）
   const module = to.path.match(/^\/([^/]+)/)?.[1]
-  if (module && !['overview', 'account', 'local'].includes(module)) {
-    if (!_hasPerm?.(module)) {
-      return false
-    }
-  }
-  return true
+  return !module || ['overview', 'account', 'local'].includes(module) || hasPerm(module)
 }
-
-router.beforeEach(to => canAccessRoute(to) || { path: '/overview' })
 
 export default router

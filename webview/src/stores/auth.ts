@@ -52,10 +52,6 @@ export const useAuthStore = defineStore('auth', () => {
         sessionVersion.value++
     }
 
-    function isAuthenticated() {
-        return !!username.value
-    }
-
     // apply 将 bootstrap 响应中的 auth 字段写入 store
     function apply(data: BootstrapData) {
         const auth = data.auth
@@ -107,7 +103,6 @@ export const useAuthStore = defineStore('auth', () => {
         // 操作
         setAuth,
         clearAuth,
-        isAuthenticated,
         restoreToken,
         apply,
     }

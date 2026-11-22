@@ -43,11 +43,12 @@ class App extends Vue {
     }
 
     get hasCopilot() {
-        return this.portal.serviceAvailability.copilot && this.portal.hasPerm('POST /api/copilot/agui')
+        return !!this.portal.username && this.portal.permissionsLoaded
+            && this.portal.hasPerm('POST /api/copilot/agui')
     }
 
     get shouldRedirect() {
-        return this.portal.permissionsLoaded && !canAccessRoute(this.$route)
+        return this.portal.permissionsLoaded && !canAccessRoute(this.$route, this.portal.hasPerm)
     }
 
     @Watch('shouldRedirect', { immediate: true })
@@ -116,12 +117,8 @@ export default toNative(App)
       </div>
     </div>
 
-    <!-- CopilotKit Provider 与页面布局分离，避免第三方样式影响页面 header 与内容间距；
-         仅当 Copilot 启用时才注入，未启用时不挂载，否则会泄漏悬浮球等全局 UI -->
-    <Copilot v-if="portal.username && portal.permissionsLoaded && hasCopilot" />
-
     <!-- 主内容 -->
-    <div v-if="portal.username && (portal.initialized || portal.permissionsLoaded)" class="min-h-screen pt-16">
+    <div v-else-if="portal.username" class="min-h-screen pt-16">
       <!-- 移动端顶部菜单栏 -->
       <header
         class="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 z-30 flex items-center justify-between px-4 transition-all duration-300"
@@ -172,8 +169,9 @@ export default toNative(App)
     </div>
 
     <!-- 登录页面 -->
-    <AuthLogin v-else-if="portal.initialized" />
+    <AuthLogin v-else />
 
+    <Copilot v-if="hasCopilot" />
     <NotificationManager />
     <ConfirmModal />
   </div>
