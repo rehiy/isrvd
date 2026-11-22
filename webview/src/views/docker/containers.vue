@@ -7,6 +7,7 @@ import api from '@/service/api'
 import type { DockerContainerInfo } from '@/service/types'
 import { COMPOSE_PROJECT_LABEL, COMPOSE_SERVICE_LABEL } from '@/service/types/docker'
 
+import { containerStateTextClass } from '@/helper/docker'
 import { formatTime } from '@/helper/format'
 
 import PageSearch from '@/component/page-search.vue'
@@ -19,6 +20,7 @@ import ContainerEditModal from './widget/container-edit-modal.vue'
 })
 class Containers extends Vue {
     portal = usePortal()
+    containerStateTextClass = containerStateTextClass
 
     // ─── Refs ───
     @Ref readonly containerCreateModalRef!: InstanceType<typeof ContainerCreateModal>
@@ -115,10 +117,6 @@ class Containers extends Vue {
         }
         const service = container.labels?.[COMPOSE_SERVICE_LABEL]
         return `Compose: ${project}${service ? ` / ${service}` : ''}`
-    }
-
-    stateBadgeClass(state: string) {
-        return state === 'running' ? 'badge-success' : 'badge-muted'
     }
 
     composeEditTitle(container: DockerContainerInfo) {
@@ -244,7 +242,7 @@ export default toNative(Containers)
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex flex-wrap gap-1">
-                    <span :class="['badge', stateBadgeClass(ct.state)]" :title="ct.status">{{ ct.state }}</span>
+                    <span class="text-sm" :class="containerStateTextClass(ct.state)" :title="ct.status">{{ ct.state }}</span>
                     <span v-if="isCompose(ct)" class="badge badge-warning" :title="composeBadgeTitle(ct)">Compose</span>
                   </div>
                 </td>
@@ -308,7 +306,7 @@ export default toNative(Containers)
 
             <!-- 状态 -->
             <div class="flex items-center gap-1 flex-wrap mb-3">
-              <span :class="['badge', stateBadgeClass(ct.state)]" :title="ct.status">{{ ct.state }}</span>
+              <span class="text-sm" :class="containerStateTextClass(ct.state)" :title="ct.status">{{ ct.state }}</span>
               <span v-if="isCompose(ct)" class="badge badge-warning" :title="composeBadgeTitle(ct)">Compose</span>
             </div>
             <!-- 创建时间 -->
