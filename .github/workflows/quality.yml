@@ -49,8 +49,8 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: node ../scripts/check-api-contract.mjs
-      - run: npm run locales:check
-      - run: node ../scripts/check-locales.mjs --go
+      - run: node ../scripts/check-locales.mjs --strict
+      - run: node ../scripts/check-locales.mjs --go --strict
       - run: python3 scripts/review-style.py
       - run: npm run build
 
