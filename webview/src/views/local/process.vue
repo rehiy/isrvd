@@ -6,7 +6,7 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { SystemProcessInfo } from '@/service/types'
 
-import { formatFileSize, POLL_INTERVAL } from '@/helper/format'
+import { formatFileSize, formatLocalDateTime, POLL_INTERVAL } from '@/helper/format'
 
 import PageSearch from '@/component/page-search.vue'
 
@@ -120,7 +120,7 @@ class SystemProcessInfoView extends Vue {
         if (!ts) {
             return '-'
         }
-        return new Date(ts).toLocaleString('zh-CN', { hour12: false })
+        return formatLocalDateTime(new Date(ts), { hour12: false })
     }
 
     processIndent(depth: number) {

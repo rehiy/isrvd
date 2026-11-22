@@ -60,20 +60,27 @@ export const formatFileSize = (bytes: number): string => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
+/** 当前界面使用的语言标签，跟随语言切换器写入的 <html lang>。 */
+export const displayLocale = (): string =>
+    typeof document === 'undefined' ? 'zh-CN' : document.documentElement.lang || 'zh-CN'
+
+export const formatLocalDateTime = (date: Date, options?: Intl.DateTimeFormatOptions): string =>
+    date.toLocaleString(displayLocale(), options)
+
 export const formatTime = (timeString?: string): string => {
     if (!timeString) {
         return '-'
     }
     const date = new Date(timeString)
-    return date.toLocaleDateString('zh-CN') + ' ' + date.toLocaleTimeString('zh-CN', { hour12: false })
+    return date.toLocaleDateString(displayLocale()) + ' ' + date.toLocaleTimeString(displayLocale(), { hour12: false })
 }
 
 export const formatUnixTime = (ts: number): string => {
-    return new Date(ts * 1000).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+    return formatLocalDateTime(new Date(ts * 1000), { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
 export const formatUnixDateTime = (ts?: number): string => {
-    return ts ? new Date(ts * 1000).toLocaleString() : '-'
+    return ts ? formatLocalDateTime(new Date(ts * 1000)) : '-'
 }
 
 const STRING_COLORS = [
