@@ -1,7 +1,7 @@
 <script lang="ts">
 import { Component, Prop, Vue, Watch, toNative } from 'vue-facing-decorator'
 
-import { usePortal } from '@/stores'
+import { useLocaleStore, usePortal } from '@/stores'
 
 import api from '@/service/api'
 import type { ComposeDeployTarget, ComposeHistoryInfo, ComposeRedeployPreview } from '@/service/types'
@@ -23,6 +23,7 @@ class RedeployModal extends Vue {
     @Prop({ type: String, required: true }) readonly successMessage!: string
 
     portal = usePortal()
+    locale = useLocaleStore()
     isOpen = false
     modalLoading = false
     composeContent = ''
@@ -105,7 +106,7 @@ class RedeployModal extends Vue {
 
     historyLabel(record: ComposeHistoryInfo) {
         const actions = { snapshot: this.$t('变更前'), deploy: this.$t('部署'), redeploy: this.$t('重部署') }
-        return `${new Date(record.time).toLocaleString('zh-CN', { hour12: false })} · ${actions[record.action]} · ${record.success ? this.$t('成功') : this.$t('失败')}${record.hasSnapshot ? '' : this.$t(' · 无快照')}`
+        return `${new Date(record.time).toLocaleString(this.locale.meta.tag, { hour12: false })} · ${actions[record.action]} · ${record.success ? this.$t('成功') : this.$t('失败')}${record.hasSnapshot ? '' : this.$t(' · 无快照')}`
     }
 
     get composeWarning() {
@@ -114,7 +115,7 @@ class RedeployModal extends Vue {
             parts.push(this.$t('当前为运行态反推结果，建议核对后再提交'))
         }
         if (this.composeFileModTime) {
-            parts.push(this.$t('文件更新时间：{0}', new Date(this.composeFileModTime * 1000).toLocaleString('zh-CN', { hour12: false })))
+            parts.push(this.$t('文件更新时间：{0}', new Date(this.composeFileModTime * 1000).toLocaleString(this.locale.meta.tag, { hour12: false })))
         }
         return parts.join('；')
     }
