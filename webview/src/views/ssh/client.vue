@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Component, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
+import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
@@ -24,48 +24,25 @@ class SSHClientPage extends Vue {
     host: SSHHostInfo | null = null
     adapter: TerminalAdapter | null = null
     private destroyed = false
-    private hostLoadGeneration = 0
 
     filePane = new SplitPane()
 
     get hostId() { return this.$route.params.id as string }
     get connected() { return this.adapter?.connected ?? false }
 
-    mounted() {
+    async mounted() {
         this.filePane.initialize(this.contentRef?.clientHeight ?? 600)
-        this.loadHost(this.hostId)
-    }
-
-    @Watch('$route.params.id')
-    onHostIdChange(id: string, previousId: string) {
-        if (!id || id === previousId) {
-            return
-        }
-        this.handleDisconnect()
-        this.host = null
-        this.loadHost(id)
-    }
-
-    async loadHost(id: string) {
-        const generation = ++this.hostLoadGeneration
+        const id = this.hostId
         try {
-            const host = (await api.sshHostInspect(id)).payload || null
-            if (this.destroyed || generation !== this.hostLoadGeneration || id !== this.hostId) {
-                return
-            }
-            this.host = host
-        } catch {
-            if (this.destroyed || generation !== this.hostLoadGeneration || id !== this.hostId) {
-                return
-            }
+            this.host = (await api.sshHostInspect(id)).payload || null
+        } catch {}
+        if (!this.destroyed && id === this.hostId) {
+            this.handleReconnect()
         }
-        this.handleReconnect()
     }
 
     beforeUnmount() {
         this.destroyed = true
-        this.hostLoadGeneration++
-        this.handleDisconnect()
         this.filePane.stop()
     }
 
@@ -75,11 +52,7 @@ class SSHClientPage extends Vue {
     }
 
     handleReconnect() {
-        if (this.destroyed) {
-            return
-        }
-        this.adapter?.disconnect()
-        this.adapter = new WsTerminal(wsUrl(`ssh/to/${encodeURIComponent(this.hostId)}?token=${encodeURIComponent(this.portal.token || '')}`))
+        this.adapter = new WsTerminal(wsUrl(`ssh/to/${encodeURIComponent(this.hostId)}?token=${this.portal.token || ''}`))
     }
 }
 
@@ -130,7 +103,7 @@ export default toNative(SSHClientPage)
 
         <!-- 文件管理面板 -->
         <div class="flex-shrink-0 min-h-0 overflow-auto" :style="{ height: filePane.height + 'px' }">
-          <SftpPanel :key="hostId" :host-id="hostId" />
+          <SftpPanel :host-id="hostId" />
         </div>
       </div>
     </div>
