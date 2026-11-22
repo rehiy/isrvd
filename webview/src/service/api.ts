@@ -160,8 +160,8 @@ class ApiService {
 
     // ==================== System 系统相关 ====================
 
-    systemConfig(params?: Record<string, string>) {
-        return http.get<AllConfig>('system/config', { params })
+    systemConfig() {
+        return http.get<AllConfig>('system/config')
     }
 
     systemConfigUpdate(data: Partial<AllConfig>) {

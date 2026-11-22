@@ -53,12 +53,21 @@ class ConfigLayout extends Vue {
         if (!this.canView || this.config.loading || this.config.saving) {
             return
         }
-        await this.config.load(true)
-        this.portal.showNotification('success', this.$t('配置已重载'))
+        if (this.config.hasUnsaved()) {
+            this.portal.showConfirm({
+                title: this.$t('放弃修改并重新加载'),
+                message: this.$t('当前修改尚未保存，重新加载将丢弃这些修改。'),
+                confirmText: this.$t('重新加载'),
+                danger: true,
+                onConfirm: () => this.config.load()
+            })
+            return
+        }
+        await this.config.load()
     }
 
     async saveConfig() {
-        if (!this.canUpdate || !this.config.loaded || this.config.saving || this.config.loading) {
+        if (!this.canUpdate || this.config.saving || this.config.loading || !this.config.hasUnsaved()) {
             return
         }
         await this.config.saveAll()
@@ -100,7 +109,7 @@ export default toNative(ConfigLayout)
         </div>
         <div class="action-group">
           <button v-if="canView" type="button" class="btn btn-secondary" :disabled="config.loading || config.saving" :aria-busy="config.loading" @click="reloadConfig">
-            <i :class="config.loading ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"></i>{{ $t('重载') }}
+            <i :class="config.loading ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"></i>{{ $t('重新加载') }}
           </button>
           <button v-if="canUpdate" type="submit" form="config-form" class="btn btn-indigo rounded-xl whitespace-nowrap" :disabled="config.saving || config.loading">
             <i v-if="config.saving" class="fas fa-spinner fa-spin"></i>
@@ -121,7 +130,7 @@ export default toNative(ConfigLayout)
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <button v-if="canView" type="button" class="btn btn-secondary btn-square" :title="$t('重载')" :disabled="config.loading || config.saving" :aria-busy="config.loading" @click="reloadConfig">
+          <button v-if="canView" type="button" class="btn btn-secondary btn-square" :title="$t('重新加载')" :disabled="config.loading || config.saving" :aria-busy="config.loading" @click="reloadConfig">
             <i :class="config.loading ? 'fas fa-spinner fa-spin text-sm' : 'fas fa-rotate text-sm'"></i>
           </button>
           <button v-if="canUpdate" type="submit" form="config-form" class="btn btn-indigo btn-square" :title="$t('保存')" :disabled="config.saving || config.loading">

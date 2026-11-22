@@ -9,6 +9,7 @@ import (
 
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
 	"github.com/docker/go-units"
@@ -86,7 +87,7 @@ func ServiceToDockerCreateSpec(project *types.Project, svc types.ServiceConfig) 
 	applyDockerNetwork(project, svc, spec.HostConfig)
 	applyDockerExpose(svc, spec.Config)
 	applyDockerPorts(svc, spec.Config, spec.HostConfig)
-	applyDockerVolumes(svc, spec.HostConfig)
+	spec.HostConfig.Mounts = dockerMounts(svc.Volumes)
 	applyDockerResources(svc, spec.HostConfig)
 	applyDockerDeviceRequests(svc, spec.HostConfig)
 
@@ -166,8 +167,32 @@ func applyDockerPorts(svc types.ServiceConfig, containerConfig *container.Config
 	}
 }
 
-func applyDockerVolumes(svc types.ServiceConfig, hostConfig *container.HostConfig) {
-	hostConfig.Mounts = append(hostConfig.Mounts, serviceMounts(svc.Volumes)...)
+// dockerMounts 将 Compose 挂载统一转换为 Docker SDK 挂载配置。
+func dockerMounts(volumes []types.ServiceVolumeConfig) []mount.Mount {
+	result := make([]mount.Mount, 0, len(volumes))
+	for _, volume := range volumes {
+		if volume.Target == "" {
+			continue
+		}
+		mountType := volume.Type
+		if mountType == "" {
+			if strings.HasPrefix(volume.Source, "/") || strings.HasPrefix(volume.Source, ".") {
+				mountType = types.VolumeTypeBind
+			} else {
+				mountType = types.VolumeTypeVolume
+			}
+		}
+		if volume.Source == "" && mountType != types.VolumeTypeVolume {
+			continue
+		}
+		result = append(result, mount.Mount{
+			Type:     mount.Type(mountType),
+			Source:   volume.Source,
+			Target:   volume.Target,
+			ReadOnly: volume.ReadOnly,
+		})
+	}
+	return result
 }
 
 func applyDockerResources(svc types.ServiceConfig, hostConfig *container.HostConfig) {

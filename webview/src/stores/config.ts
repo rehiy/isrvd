@@ -165,8 +165,8 @@ export const useConfigStore = defineStore('config', () => {
 
     let generation = 0
 
-    /** 加载全量配置；force 为 true 时请求后端重载后返回 */
-    async function load(force = false) {
+    /** 读取当前运行配置并刷新草稿基线。 */
+    async function load() {
         if (loading.value) {
             return
         }
@@ -174,7 +174,7 @@ export const useConfigStore = defineStore('config', () => {
         loading.value = true
         error.value = ''
         try {
-            const res = await api.systemConfig(force ? { reload: 'true' } : undefined)
+            const res = await api.systemConfig()
             if (requestGeneration !== generation) {
                 return
             }

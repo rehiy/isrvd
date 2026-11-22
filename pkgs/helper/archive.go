@@ -3,7 +3,6 @@ package helper
 import (
 	"archive/zip"
 	"context"
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
@@ -11,18 +10,6 @@ import (
 	"os"
 	"path/filepath"
 )
-
-type ContextReader struct {
-	Context context.Context
-	Reader  io.Reader
-}
-
-func (r ContextReader) Read(p []byte) (int, error) {
-	if err := r.Context.Err(); err != nil {
-		return 0, err
-	}
-	return r.Reader.Read(p)
-}
 
 // ExtractZIP 解压普通文件及目录。禁止覆盖时，返回本次新增路径的清理函数。
 func ExtractZIP(ctx context.Context, source, destination string, overwrite bool, maximumBytes uint64) (func() error, error) {
@@ -129,42 +116,6 @@ func zipExtractFile(ctx context.Context, root *os.Root, file *zip.File, name str
 		*created = append(*created, name)
 	}
 	return err
-}
-
-// WriteRootFile 写完整后发布目标文件，createOnly 使用硬链接避免覆盖任何已存在的路径。
-func WriteRootFile(ctx context.Context, root *os.Root, name string, createOnly bool, write func(io.Writer) error) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	mode := os.FileMode(0644)
-	if info, err := root.Lstat(name); err == nil {
-		if createOnly {
-			return os.ErrExist
-		}
-		if !info.Mode().IsRegular() {
-			return os.ErrInvalid
-		}
-		mode = info.Mode().Perm()
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-	staged := filepath.Join(filepath.Dir(name), ".isrvd-write-"+rand.Text())
-	file, err := root.OpenFile(staged, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
-	if err != nil {
-		return err
-	}
-	defer root.Remove(staged)
-	err = write(file)
-	if err == nil {
-		err = file.Chmod(mode)
-	}
-	if err := errors.Join(err, file.Close(), ctx.Err()); err != nil {
-		return err
-	}
-	if createOnly {
-		return root.Link(staged, name)
-	}
-	return root.Rename(staged, name)
 }
 
 // CreateZIP 压缩文件或目录，生成同目录的 <source>.zip。
