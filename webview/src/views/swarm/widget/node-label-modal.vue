@@ -155,6 +155,7 @@ export default toNative(NodeLabelModal)
       <p class="text-slate-500">{{ $t('加载中...') }}</p>
     </div>
     <form v-else ref="formRef" class="space-y-4" @submit.prevent="handleConfirm">
+      <button type="submit" class="sr-only" tabindex="-1" :disabled="loading || confirmDisabled">{{ $t('保存') }}</button>
       <div class="space-y-4">
         <p v-if="rows.length === 0" class="empty-note">{{ hasChanges ? $t('保存后将清空节点标签。') : $t('暂无节点标签') }}</p>
         <div v-for="(row, index) in rows" :key="row.id" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -183,7 +184,6 @@ export default toNative(NodeLabelModal)
         </div>
         <button v-if="conflicted" type="button" class="btn btn-secondary mt-2" @click="loadLabels">{{ $t('放弃修改并重新加载') }}</button>
       </div>
-      <button type="submit" class="sr-only" tabindex="-1" :disabled="loading || confirmDisabled">{{ $t('保存') }}</button>
     </form>
   </BaseModal>
 </template>
