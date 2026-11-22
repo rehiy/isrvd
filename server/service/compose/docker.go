@@ -123,6 +123,9 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	if err := s.dockerCheckNames(ctx, specs, previous); err != nil {
 		return nil, err
 	}
+	if err := s.dockerReuseAnonymousVolumes(ctx, specs, previous); err != nil {
+		return nil, err
+	}
 	if err := s.imagesEnsure(ctx, project, req.ForcePull); err != nil {
 		return nil, err
 	}

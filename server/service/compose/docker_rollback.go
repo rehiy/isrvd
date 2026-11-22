@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 
@@ -98,26 +97,4 @@ func (s *Service) dockerRestore(ctx context.Context, removed []container.Inspect
 		}
 	}
 	return errors.Join(failures...)
-}
-
-// restoreDockerVolumes 复用旧容器实际挂载的匿名卷，避免重建时分配空卷。
-func restoreDockerVolumes(old container.InspectResponse) container.HostConfig {
-	host := *old.HostConfig
-	host.Mounts, host.Binds = slices.Clone(host.Mounts), slices.Clone(host.Binds)
-	for _, volume := range old.Mounts {
-		if volume.Type != mount.TypeVolume || volume.Name == "" {
-			continue
-		}
-		if index := slices.IndexFunc(host.Mounts, func(m mount.Mount) bool { return m.Target == volume.Destination }); index >= 0 {
-			host.Mounts[index].Source = volume.Name
-			continue
-		}
-		bind := volume.Name + ":" + volume.Destination
-		if index := slices.Index(host.Binds, volume.Destination); index >= 0 {
-			host.Binds[index] = bind
-		} else if !slices.ContainsFunc(host.Binds, func(value string) bool { return value == bind || strings.HasPrefix(value, bind+":") }) {
-			host.Mounts = append(host.Mounts, mount.Mount{Type: mount.TypeVolume, Source: volume.Name, Target: volume.Destination, ReadOnly: !volume.RW})
-		}
-	}
-	return host
 }
