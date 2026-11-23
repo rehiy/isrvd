@@ -136,13 +136,13 @@ func (s *Service) projectDeploy(ctx context.Context, req DeployRequest, rollback
 	if root == "" {
 		return nil, fmt.Errorf("未配置容器数据根目录")
 	}
-	// .env 尚未写盘，预检时跳过 env_file；项目名由插值后的 name 或内容短哈希确定。
+	// .env 尚未写盘，预检时跳过 env_file。
 	pre, err := compose.ProjectValidateWithoutEnvFiles(ctx, req.Content, req.EnvContent)
 	if err != nil {
 		return nil, err
 	}
-	projectName, err := compose.ProjectNameFromProject(pre, req.Content)
-	if err != nil {
+	projectName := pre.Name
+	if err := compose.ValidateProjectName(projectName); err != nil {
 		return nil, err
 	}
 	installDir := filepath.Join(root, projectName)
