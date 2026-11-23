@@ -224,6 +224,7 @@ func translate(ctx context.Context, enc *Encoder, body io.Reader, input RunAgent
 	messageID := input.RunID
 
 	scanner := bufio.NewScanner(body)
+	scanner.Split(splitSSEEvent)
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 
 	for scanner.Scan() {
@@ -233,11 +234,7 @@ func translate(ctx context.Context, enc *Encoder, body io.Reader, input RunAgent
 		default:
 		}
 
-		line := scanner.Text()
-		if !strings.HasPrefix(line, "data:") {
-			continue
-		}
-		payload := strings.TrimSpace(strings.TrimPrefix(line, "data:"))
+		payload := ssePayload(scanner.Text())
 		if payload == StreamDone {
 			finished = true
 			break
