@@ -86,7 +86,7 @@ class ContainerCreateModal extends Vue {
     }
 
     buildYamlFromForm(): string {
-        const svcName = this.formData.name || 'app'
+        const svcName = this.formData.name.trim()
         const svc: Record<string, unknown> = {
             image: this.formData.image,
             restart: this.formData.restart || 'always',
