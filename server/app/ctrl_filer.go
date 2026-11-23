@@ -93,7 +93,7 @@ func (app *App) filerFileDelete(c *gin.Context) {
 		return
 	}
 
-	absPath, ok := app.filerAbsPath(c, req.Path)
+	absPath, ok := app.filerNonRootPath(c, req.Path)
 	if !ok {
 		return
 	}
@@ -344,7 +344,7 @@ func (app *App) filerFileZip(c *gin.Context) {
 		return
 	}
 
-	absPath, ok := app.filerAbsPath(c, req.Path)
+	absPath, ok := app.filerNonRootPath(c, req.Path)
 	if !ok {
 		return
 	}
@@ -415,6 +415,28 @@ func bindFilerContent(c *gin.Context, app *App) (string, []byte, bool) {
 		return "", nil, false
 	}
 	return path, []byte(req.Content), true
+}
+
+// isFilerHomeRoot 防止把成员文件管理根目录作为可删除对象，或在其父目录生成 ZIP。
+func isFilerHomeRoot(absPath, home string) bool {
+	return filepath.Clean(absPath) == filepath.Clean(home)
+}
+
+func (app *App) filerNonRootPath(c *gin.Context, path string) (string, bool) {
+	absPath, ok := app.filerAbsPath(c, path)
+	if !ok {
+		return "", false
+	}
+	home, err := app.filerSvc.AbsPath(c.GetString("username"), ".")
+	if err != nil {
+		respondError(c, http.StatusForbidden, err.Error())
+		return "", false
+	}
+	if isFilerHomeRoot(absPath, home) {
+		respondError(c, http.StatusForbidden, "不允许删除或压缩文件管理根目录")
+		return "", false
+	}
+	return absPath, true
 }
 
 func (app *App) filerAbsPath(c *gin.Context, path string) (string, bool) {
