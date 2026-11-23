@@ -82,8 +82,29 @@ func EnvSave(installDir, env string) error {
 	if err := os.MkdirAll(installDir, 0755); err != nil {
 		return fmt.Errorf("创建环境文件目录失败: %w", err)
 	}
-	if err := os.WriteFile(filepath.Join(installDir, EnvFileName), []byte(env), 0644); err != nil {
+	path := filepath.Join(installDir, EnvFileName)
+	if info, err := os.Lstat(path); err == nil {
+		if !info.Mode().IsRegular() {
+			return fmt.Errorf(".env 必须是普通文件")
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("检查 .env 失败: %w", err)
+	}
+	// .env 可能包含凭据，使用 0600 临时文件完整落盘后再替换，避免继承旧文件的宽松权限。
+	temp, err := os.CreateTemp(installDir, ".isrvd-env-*")
+	if err != nil {
+		return fmt.Errorf("创建 .env 临时文件失败: %w", err)
+	}
+	defer os.Remove(temp.Name())
+	_, writeErr := io.WriteString(temp, env)
+	if writeErr == nil {
+		writeErr = temp.Sync()
+	}
+	if err := errors.Join(writeErr, temp.Close()); err != nil {
 		return fmt.Errorf("写入 .env 失败: %w", err)
+	}
+	if err := os.Rename(temp.Name(), path); err != nil {
+		return fmt.Errorf("发布 .env 失败: %w", err)
 	}
 	return nil
 }
@@ -97,15 +118,23 @@ func EnvEnsure(installDir string) error {
 		return fmt.Errorf("创建环境文件目录失败: %w", err)
 	}
 	envPath := filepath.Join(installDir, EnvFileName)
-	if _, err := os.Stat(envPath); err == nil {
-		return nil
+	if info, err := os.Lstat(envPath); err == nil {
+		if !info.Mode().IsRegular() {
+			return fmt.Errorf(".env 必须是普通文件")
+		}
+		// 既有 .env 可能以 0644 创建；不改内容，但收紧权限。
+		return os.Chmod(envPath, 0600)
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("检查 .env 失败: %w", err)
 	}
-	if err := os.WriteFile(envPath, []byte(""), 0644); err != nil {
+	file, err := os.OpenFile(envPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	if errors.Is(err, os.ErrExist) {
+		return EnvEnsure(installDir)
+	}
+	if err != nil {
 		return fmt.Errorf("创建 .env 失败: %w", err)
 	}
-	return nil
+	return file.Close()
 }
 
 // EnvState 记录 .env 的原始内容及是否存在，用于失败回滚。
@@ -141,13 +170,7 @@ func EnvStateRestore(installDir string, state EnvState) error {
 		}
 		return nil
 	}
-	if err := os.MkdirAll(installDir, 0755); err != nil {
-		return fmt.Errorf("创建环境文件目录失败: %w", err)
-	}
-	if err := os.WriteFile(path, []byte(state.Content), 0644); err != nil {
-		return fmt.Errorf("恢复 .env 失败: %w", err)
-	}
-	return nil
+	return EnvSave(installDir, state.Content)
 }
 
 // EnvApply 统一 .env 写盘/兜底：显式内容非 nil 则以其为准写盘（空串即清空），nil 则确保 .env 存在（兜底空文件）。
