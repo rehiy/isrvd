@@ -182,7 +182,7 @@ func ProjectValidateWithoutEnvFiles(ctx context.Context, content string, envCont
 		o.SkipResolveEnvironment = true
 	}
 
-	if !declaresProjectName(content) {
+	if !HasProjectName(content) {
 		return nil, fmt.Errorf("compose 项目必须指定非空 name")
 	}
 	return loadProjectWithOptions(ctx, details, "", false, false, skipEnvFiles)
@@ -235,8 +235,8 @@ func parseEnvContent(content string) (map[string]string, error) {
 	return dotenv.Parse(bytes.NewReader([]byte(content)))
 }
 
-// declaresProjectName 检查顶层 name 是否为非空字符串。
-func declaresProjectName(content string) bool {
+// HasProjectName 检查顶层 name 是否为非空字符串。
+func HasProjectName(content string) bool {
 	var doc struct {
 		Name *string `yaml:"name"`
 	}
