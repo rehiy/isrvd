@@ -21,12 +21,25 @@ import (
 	"isrvd/server/config"
 )
 
-var (
-	sendsMu     sync.Mutex
-	sendsWG     sync.WaitGroup
-	sendsClosed bool
-	sendTails   = map[[2]string]chan struct{}{}
+const (
+	maxWebhookSends = 128
+	webhookMaxAge   = 30 * time.Second
 )
+
+var (
+	sendsMu               sync.Mutex
+	sendsWG               = new(sync.WaitGroup)
+	sendsClosed           bool
+	sendsActive           int
+	sendQueues            = map[[2]string]chan webhookDelivery{}
+	sendsCtx, sendsCancel = context.WithCancel(context.Background())
+)
+
+type webhookDelivery struct {
+	hook     *config.WebhookConfig
+	event    Event
+	deadline time.Time
+}
 
 // Event 告警事件，同时作为通用 JSON 载荷与模板渲染的数据源
 type Event struct {
@@ -44,16 +57,19 @@ type Event struct {
 func Shutdown(ctx context.Context) bool {
 	sendsMu.Lock()
 	sendsClosed = true
+	wg := sendsWG
 	sendsMu.Unlock()
 	done := make(chan struct{})
 	go func() {
-		sendsWG.Wait()
+		wg.Wait()
 		close(done)
 	}()
 	select {
 	case <-done:
+		sendsCancel()
 		return true
 	case <-ctx.Done():
+		sendsCancel()
 		return false
 	}
 }
@@ -75,27 +91,54 @@ func sendTo(hooks []*config.WebhookConfig, key string, evt *Event) {
 		return
 	}
 	for _, hook := range hooks {
-		queue := [2]string{key, strings.TrimSpace(hook.URL)}
-		var previous, done chan struct{}
-		if key != "" {
-			previous = sendTails[queue]
-			done = make(chan struct{})
-			sendTails[queue] = done
+		if hook == nil {
+			continue
 		}
-		sendsWG.Go(func() {
-			if previous != nil {
-				<-previous
+		queue := [2]string{key, strings.TrimSpace(hook.URL)}
+		delivery := webhookDelivery{hook: hook, event: event, deadline: time.Now().Add(webhookMaxAge)}
+		if pending := sendQueues[queue]; pending != nil {
+			select {
+			case <-pending:
+				logman.Warn("webhook pending state replaced", "webhook", hook.Name, "key", key)
+			default:
 			}
-			sendOne(hook, &event)
-			if done != nil {
-				sendsMu.Lock()
-				if sendTails[queue] == done {
-					delete(sendTails, queue)
-				}
-				close(done)
+			pending <- delivery
+			continue
+		}
+		if sendsActive >= maxWebhookSends {
+			logman.Warn("webhook send capacity reached", "webhook", hook.Name, "key", key)
+			continue
+		}
+		var pending chan webhookDelivery
+		if key != "" {
+			pending = make(chan webhookDelivery, 1)
+			sendQueues[queue] = pending
+		}
+		sendsActive++
+		sendsWG.Go(func() { sendQueued(queue, pending, delivery) })
+	}
+}
+
+func sendQueued(queue [2]string, pending chan webhookDelivery, delivery webhookDelivery) {
+	for {
+		ctx, cancel := context.WithDeadline(sendsCtx, delivery.deadline)
+		if ctx.Err() == nil {
+			sendOne(ctx, delivery.hook, &delivery.event)
+		}
+		cancel()
+		sendsMu.Lock()
+		if sendsCtx.Err() == nil {
+			select {
+			case delivery = <-pending:
 				sendsMu.Unlock()
+				continue
+			default:
 			}
-		})
+		}
+		delete(sendQueues, queue)
+		sendsActive--
+		sendsMu.Unlock()
+		return
 	}
 }
 
@@ -107,7 +150,7 @@ var webhookClient = &http.Client{
 
 // sendOne 向单个 Webhook 发送；失败仅记录日志，不影响其他通道。
 // Webhook 地址由管理员在后台配置，属于可信输入，不做内网地址等 SSRF 校验。
-func sendOne(hook *config.WebhookConfig, evt *Event) {
+func sendOne(ctx context.Context, hook *config.WebhookConfig, evt *Event) {
 	target, err := validateWebhookURL(hook.URL)
 	if err != nil {
 		logman.Warn("告警 Webhook 地址无效", "webhook", hook.Name, "error", err)
@@ -120,7 +163,7 @@ func sendOne(hook *config.WebhookConfig, evt *Event) {
 		return
 	}
 
-	req, err := http.NewRequest(http.MethodPost, target.String(), bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, target.String(), bytes.NewReader(body))
 	if err != nil {
 		logman.Warn("发送告警失败", "webhook", hook.Name, "error", "invalid request")
 		return

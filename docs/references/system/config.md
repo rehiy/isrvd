@@ -175,6 +175,7 @@ isrvd_put "/system/config" '<CURRENT_CONFIG_WITH_CHANGES>'
 - 代理 Header 登录的 `tha.headerName` 默认 `X-Username`；该 Header 的值会作为登录用户名，且必须存在于 `members.username`。`tha.trustedCIDRs` 限制允许传入 Header 的代理来源 IP/CIDR（如 `["10.0.0.0/8"]`）；未配置时默认为本机回环地址（`127.0.0.1/32`、`::1/128`），代理不在本机时需显式配置。中控模式允许 THA，网关按连接对端 IP 校验，拒绝不可信身份头。
 - `monitor.interval` 合法值为 `5/15/30/60`（秒），未配置或其他值（含 `0`、负数）均禁用自动采集；禁用会停止资源阈值告警，不影响独立的应用故障检测。
 - `notify.webhooks` 的每项包含 `name`、`url`、`template`；`template` 留空时由后端生成标准事件 JSON。JSON 模板可使用 `json` 函数安全编码动态字段，例如 `{{.Title | json}}`（函数输出已包含 JSON 引号）。`notify.rules` 的每项包含 `metric`（`cpu`、`memory` 或 `disk`）、`threshold` 和 `duration`（连续超阈值的采集次数，≤0 按 1）；`threshold ≤ 0` 或未知 `metric` 的规则被忽略，不报 400。Webhook 地址视为管理员可信配置：保存时不校验，发送时无效地址（须为带主机名的 `http/https` 地址）被跳过并记录日志，不限制内网或回环目标，单次请求超时 10 秒，接收端返回非 2xx 时记录投递失败及状态码。
+- 通知最多同时处理 128 个发送任务；同事件键、同 URL 串行发送，仅保留一个最新待发状态，替换过时待发状态或达到总容量时记录日志，不阻塞监控采集。任务失败通知不按事件键串行，但同样受总容量限制。排队和发送共用 30 秒有效期；退出宽限期结束后取消在途与待发通知。这是尽力投递，不保证过载时保留所有状态转换。
 
 ## 浏览器标签页标题
 
