@@ -1119,7 +1119,7 @@ Install reads and persists exported environment variables:
   ISRVD_CENTER_URL    Required for agent
   ISRVD_NODE_TOKEN    Required for agent
   ISRVD_APISIX_ADMIN_KEY  Optional non-numeric-only 32-128 character key for systemd + APISIX; generated if unset
-                         Passed to the APISIX container and saved as apisix.adminKey in root-only config.yml (0600)
+                         Passed to the APISIX container and saved as apisix.adminKey in DATA/conf/isrvd.yml (0600)
 Installation failures roll back new service files and containers, preserving component data.
 Interrupted component updates block further updates; restore backups or use uninstall to remove owned backups.
 Updates preserve the installed component key, role and actual bind mounts; inconsistent data paths abort before stopping components.

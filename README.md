@@ -79,19 +79,19 @@ Two standalone scripts are provided; neither downloads or loads the other. Both 
 
 ```bash
 # System service only (default); no Docker required
-bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) install
 
 # System service + Caddy (custom data directory), or APISIX + etcd (default /srv/isrvd)
-bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --components caddy --data /mnt/isrvd-data
-bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --components apisix
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) install --components caddy --data /mnt/isrvd-data
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) install --components apisix
 
 # Fully containerized: select slim / caddy / apisix; --data works with every layout
-bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh) install --tag slim --data /mnt/isrvd-data
-bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh) install --tag caddy
-bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh) install --tag apisix
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-docker.sh) install --tag slim --data /mnt/isrvd-data
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-docker.sh) install --tag caddy
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-docker.sh) install --tag apisix
 
 # Replace YOUR_PUBLISHED_TAG with a tag already published in the selected registry
-bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh) install --tag YOUR_PUBLISHED_TAG --variant apisix
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-docker.sh) install --tag YOUR_PUBLISHED_TAG --variant apisix
 ```
 
 `isrvd-system.sh install --caddy` / `--apisix` now select separate components. For all-in-one containers, use `isrvd-docker.sh install --caddy` / `--apisix`. The `--systemd` and `--docker` flags are optional in their respective scripts. The main container is named `isrvd`; separate components are named `isrvd-caddy`, `isrvd-apisix` and `isrvd-etcd`.
@@ -208,14 +208,14 @@ networks:
 
 ```bash
 # one-line install (picks the CNB or GitHub source by IP; use --cn / --global to force)
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --cn
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) install
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) install --cn
 
 # update / uninstall / download only
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) update
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) update --global
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) uninstall
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) download
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) update
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) update --global
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) uninstall
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) download
 ```
 
 Binary updates unpack and validate the release before stopping the service. The installer keeps the previous executable and configuration until systemd reports a stable process, and restores them if the replacement fails. Docker updates keep the previous container until the replacement stays running through the initial startup check; on failure, the previous container is restored. If an interrupted update leaves `isrvd-update-backup`, resolve that container before retrying. Use `bash isrvd-system.sh --help` for available commands and options.

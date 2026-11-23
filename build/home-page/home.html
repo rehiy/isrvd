@@ -657,8 +657,8 @@
             link.addEventListener('click', function () { if (!desktopNav.matches) navMenu.open = false; });
         });
         // Command builder：所有选项实时生成一条可直接粘贴执行的命令
-        var SCRIPT_URL = 'https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh';
-        var DOCKER_SCRIPT_URL = 'https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh';
+        var SCRIPT_URL = 'https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh';
+        var DOCKER_SCRIPT_URL = 'https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-docker.sh';
         var buildState = { method: 'script-binary', role: 'server', variant: 'slim', source: 'auto', net: 'auto' };
 
         function byId(id) { return document.getElementById(id); }

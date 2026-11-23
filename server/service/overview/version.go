@@ -22,7 +22,7 @@ const (
 	// upgradeServer 升级服务；area=cn 时它会优先下发国内镜像的升级包
 	upgradeServer = "https://isrvd.rehiy.com/update/"
 
-	// countryCodeURL 国家代码探测服务，与 build/script 下的安装脚本保持一致
+	// countryCodeURL 国家代码探测服务，与 scripts 下的安装脚本保持一致
 	countryCodeURL = "https://ipip.rehi.org/country_code"
 
 	// updaterImageCN 中国大陆使用的 docker-updater 镜像（CNB 镜像源）

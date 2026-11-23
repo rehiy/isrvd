@@ -20,7 +20,7 @@
 
 const CONTENT_TYPE      = 'text/plain; charset=utf-8';
 const CACHE_TTL         = 3600; // 1 小时
-const DOWNLOAD_BASE_URL = 'https://raw.githubusercontent.com/rehiy/isrvd/refs/heads/master/build/script/';
+const DOWNLOAD_BASE_URL = 'https://raw.githubusercontent.com/rehiy/isrvd/refs/heads/master/scripts/';
 const DOWNLOAD_FILES    = [
     'isrvd-v4-systemd.sh' => 'isrvd-system.sh',
     'isrvd-v4-docker.sh'  => 'isrvd-docker.sh',

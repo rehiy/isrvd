@@ -79,19 +79,19 @@ Docker 版默认管理员账号为 `admin` / `admin`，首次登录成功后会�
 
 ```bash
 # 仅安装系统服务（默认），无需 Docker
-bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) install
 
 # 系统服务 + Caddy（自定义组件数据目录）；或 APISIX + etcd（默认 /srv/isrvd）
-bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --components caddy --data /mnt/isrvd-data
-bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --components apisix
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) install --components caddy --data /mnt/isrvd-data
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) install --components apisix
 
 # 全容器化：slim / caddy / apisix 按需选择
-bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh) install --tag slim
-bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh) install --tag caddy
-bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh) install --tag apisix
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-docker.sh) install --tag slim
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-docker.sh) install --tag caddy
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-docker.sh) install --tag apisix
 
 # 自定义 tag：将 YOUR_PUBLISHED_TAG 替换为所选仓库中已经发布的标签
-bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-docker.sh) install --tag YOUR_PUBLISHED_TAG --variant apisix
+bash <(curl -fsSL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-docker.sh) install --tag YOUR_PUBLISHED_TAG --variant apisix
 ```
 
 `isrvd-system.sh install --caddy` / `--apisix` 现在选择独立组件；需要一体化容器请使用 `isrvd-docker.sh install --caddy` / `--apisix`。`--systemd`、`--docker` 在各自脚本中可省略。Docker 版容器名为 `isrvd`，独立组件名为 `isrvd-caddy`、`isrvd-apisix`、`isrvd-etcd`。
@@ -208,14 +208,14 @@ networks:
 
 ```bash
 # 一键安装（默认自动按 IP 选择 CNB/GitHub 源，可用 --cn / --global 手动指定）
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) install --cn
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) install
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) install --cn
 
 # 更新/卸载/仅下载
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) update
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) update --global
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) uninstall
-bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd-system.sh) download
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) update
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) update --global
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) uninstall
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/scripts/isrvd-system.sh) download
 ```
 
 二进制更新先暂存并校验安装包，再停止服务。安装器保留上一版二进制与配置，直到 systemd 确认新进程持续运行。启动失败时恢复原版本。Docker 更新会保留旧容器，直到新容器通过启动检查；失败时恢复旧容器。Docker 中控会用目标镜像校验端口范围，再切换容器，请使用支持此检查的镜像。若更新中断后遗留 `isrvd-update-backup` 容器，需先处理该容器再重试。执行 `bash isrvd-system.sh --help` 查看可用命令与选项。

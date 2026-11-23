@@ -100,7 +100,7 @@ echo ""
 echo "==> 打包分发"
 
 cp config.yml dist/
-cp build/script/isrvd-system.sh build/script/isrvd-docker.sh dist/
+cp scripts/isrvd-system.sh scripts/isrvd-docker.sh dist/
 
 cd dist/
 for app in isrvd-linux-* isrvd-darwin-* isrvd-windows-*.exe; do
