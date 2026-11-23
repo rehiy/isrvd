@@ -3,6 +3,8 @@ import { Component, Prop, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { configGroups, usePortal } from '@/stores'
 
+import { canAccessRoute } from '@/router'
+
 import { NODE_LIST_PERM } from '@/helper/node'
 
 const MENU_PREFIXES = {
@@ -31,6 +33,18 @@ class NavigationBar extends Vue {
     get configGroups() {
         const canViewConfig = this.portal.hasPerm('GET /api/system/config') || this.portal.hasPerm('PUT /api/system/config')
         return configGroups.filter(item => canViewConfig || item.id === 'metrics' && this.portal.hasPerm('metrics'))
+    }
+
+    get apisixLinks() {
+        const links = [
+            { path: '/apisix/routes', label: '路由', icon: 'fa-route' },
+            { path: '/apisix/upstreams', label: '上游', icon: 'fa-server' },
+            { path: '/apisix/consumers', label: '消费者', icon: 'fa-users' },
+            { path: '/apisix/whitelist', label: '访问授权', icon: 'fa-shield-halved' },
+            { path: '/apisix/ssls', label: 'SSL 证书', icon: 'fa-certificate' },
+            { path: '/apisix/plugin-configs', label: '插件配置', icon: 'fa-puzzle-piece' },
+        ]
+        return links.filter(link => canAccessRoute(this.$router.resolve(link.path), this.portal.hasPerm))
     }
 
     mobileSidebarVisible = false
@@ -213,7 +227,7 @@ export default toNative(NavigationBar)
       </div>
 
       <!-- APISIX 折叠子菜单 -->
-      <div v-if="portal.hasPerm('apisix')">
+      <div v-if="apisixLinks.length">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
         <button v-if="collapsed" type="button" class="nav-link justify-center" :class="{ 'nav-link-active': isMenuActive('apisix') }" :title="$t('APISIX 网关')" @click.stop="toggleMenu('apisix')">
           <i class="fas fa-cloud"></i>
@@ -226,54 +240,9 @@ export default toNative(NavigationBar)
             <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': expanded.has('apisix') }"></i>
           </button>
           <div v-show="expanded.has('apisix')" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
-            <router-link
-              v-if="portal.hasPerm('GET /api/apisix/routes')"
-              to="/apisix/routes"
-              class="nav-link"
-              :class="{ 'nav-link-active': isActive('/apisix/route') }"
-            >
-              <i class="fas fa-route"></i>
-              <span>{{ $t('路由') }}</span>
-            </router-link>
-            <router-link
-              v-if="portal.hasPerm('GET /api/apisix/upstreams')"
-              to="/apisix/upstreams"
-              class="nav-link"
-              :class="{ 'nav-link-active': isActive('/apisix/upstream') }"
-            >
-              <i class="fas fa-diagram-project"></i>
-              <span>{{ $t('上游') }}</span>
-            </router-link>
-            <router-link
-              v-if="portal.hasPerm('GET /api/apisix/consumers')"
-              to="/apisix/consumers"
-              class="nav-link"
-              :class="{ 'nav-link-active': isActive('/apisix/consumer') }"
-            >
-              <i class="fas fa-users"></i>
-              <span>{{ $t('消费者') }}</span>
-            </router-link>
-            <router-link
-              v-if="portal.hasPerm('GET /api/apisix/whitelist')"
-              to="/apisix/whitelist"
-              class="nav-link"
-              :class="{ 'nav-link-active': isActive('/apisix/whitelist') }"
-            >
-              <i class="fas fa-shield-halved"></i>
-              <span>{{ $t('访问授权') }}</span>
-            </router-link>
-            <router-link v-if="portal.hasPerm('GET /api/apisix/ssls')" to="/apisix/ssls" class="nav-link" :class="{ 'nav-link-active': isActive('/apisix/ssl') }">
-              <i class="fas fa-certificate"></i>
-              <span>{{ $t('SSL 证书') }}</span>
-            </router-link>
-            <router-link
-              v-if="portal.hasPerm('GET /api/apisix/plugin-configs')"
-              to="/apisix/plugin-configs"
-              class="nav-link"
-              :class="{ 'nav-link-active': isActive('/apisix/plugin-config') }"
-            >
-              <i class="fas fa-puzzle-piece"></i>
-              <span>{{ $t('插件配置') }}</span>
+            <router-link v-for="link in apisixLinks" :key="link.path" :to="link.path" class="nav-link" :class="{ 'nav-link-active': isActive(link.path) }">
+              <i :class="['fas', link.icon]"></i>
+              <span>{{ $t(link.label) }}</span>
             </router-link>
           </div>
         </template>
