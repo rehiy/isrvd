@@ -109,14 +109,15 @@ func applyNodeBootstrap(cfg, probe, localProbe, remoteCfg, remoteProbe map[strin
 		}
 	}
 	for _, k := range []string{"apisix", "caddy", "docker", "swarm", "compose"} {
-		if v, ok := remoteProbe[k]; ok {
+		if v, ok := remoteProbe[k].(bool); ok {
 			probe[k] = v
 		}
 	}
-	for _, k := range []string{"title", "marketplaceUrl"} {
-		if v, ok := remoteCfg[k].(string); ok {
-			cfg[k] = v
-		}
+	if title, ok := remoteCfg["title"].(string); ok {
+		cfg["title"] = title
+	}
+	if marketplaceURL, ok := remoteCfg["marketplaceUrl"].(string); ok && (marketplaceURL == "" || validWebLink(marketplaceURL)) {
+		cfg["marketplaceUrl"] = marketplaceURL
 	}
 	for _, k := range []string{"maxUploadSize", "maxEditSize"} {
 		if v, ok := remoteCfg[k].(float64); ok {
@@ -127,6 +128,14 @@ func applyNodeBootstrap(cfg, probe, localProbe, remoteCfg, remoteProbe map[strin
 }
 
 // ─── 辅助函数 ───
+
+// validWebLink 确保节点返回的外链是无用户凭据的 HTTP(S) 绝对 URL。
+func validWebLink(raw string) bool {
+	parsed, err := url.Parse(raw)
+	return err == nil && (parsed.Scheme == "http" || parsed.Scheme == "https") &&
+		parsed.Host != "" && parsed.Hostname() != "" && parsed.User == nil && parsed.Opaque == "" &&
+		!strings.ContainsAny(raw, "\r\n\t")
+}
 
 // mergeLinks 合并快捷链接：中控在前、节点在后，按 url 去重。
 // 节点内容不可信：只接受 http(s) 链接，避免注入 javascript: 等链接；
@@ -141,8 +150,7 @@ func mergeLinks(center, remote any) []any {
 			label, _ := raw["label"].(string)
 			url, _ := raw["url"].(string)
 			icon, _ := raw["icon"].(string)
-			lower := strings.ToLower(url)
-			if seen[url] || !(strings.HasPrefix(lower, "https://") || strings.HasPrefix(lower, "http://")) {
+			if seen[url] || !validWebLink(url) {
 				continue
 			}
 			seen[url] = true
