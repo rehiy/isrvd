@@ -68,8 +68,8 @@ class ComposeDeploy extends Vue {
         let composeContent = payload.compose
         try {
             const doc = yaml.load(composeContent) as Record<string, unknown> | null
-            if (doc && typeof doc === 'object' && !doc.name && payload.name.trim()) {
-                const nameValue = payload.name.trim()
+            if (doc && typeof doc === 'object' && !Object.hasOwn(doc, 'name')) {
+                const nameValue = payload.name
                 // 移除 BOM 和开头的 ---
                 composeContent = composeContent.replace(/^\uFEFF/, '').replace(/^---\n?/, '')
                 // 在文件最前面添加 name 字段
