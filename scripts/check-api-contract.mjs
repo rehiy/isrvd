@@ -79,7 +79,7 @@ for (const match of calls) {
     }
 }
 console.log('已核验 ' + calls.length + ' 处 API 调用、' + checked + ' 个路径变体')
- 
+
 // 页面中声明的静态权限必须能对应到后端路由；动态拼接权限另行人工审阅。
 function* walkSources(dir) {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
