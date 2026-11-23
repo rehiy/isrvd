@@ -3,9 +3,8 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import type { CaddyCert } from '@/service/types'
 
-import { formatLocalDateTime } from '@/helper/format'
-
 import { caddyCertExpireLabel, caddyCertSummary } from '@/helper/caddy'
+import { formatLocalDateTime } from '@/helper/format'
 
 import BaseModal from '@/component/modal.vue'
 
