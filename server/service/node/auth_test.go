@@ -44,6 +44,8 @@ func TestRateLimiterSourceCapacity(t *testing.T) {
 	if len(limiter.hits) != maxSources {
 		t.Fatalf("initial capacity = %d, want %d", len(limiter.hits), maxSources)
 	}
+	// Make the eviction candidate unambiguous even on coarse monotonic clocks.
+	limiter.hits["source-0"] = []time.Time{time.Now().Add(-10 * time.Second)}
 	limiter.record("new-source")
 	if len(limiter.hits) != maxSources {
 		t.Fatalf("capacity increased to %d", len(limiter.hits))
