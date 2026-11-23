@@ -168,7 +168,7 @@ func (s *Service) FileRead(absPath string) ([]byte, error) {
 	if int64(len(data)) > helper.MaxEditableFileBytes {
 		return nil, helper.ErrTooLarge
 	}
-	if !filer.IsTextBytes(data) {
+	if !helper.IsEditableTextBytes(data) {
 		return nil, helper.ErrBinary
 	}
 	return data, nil
