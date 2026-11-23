@@ -2,9 +2,9 @@ package i18n
 
 // 繁體中文（臺灣）：中文原文 → 繁體译文。
 //
-// 本文件由 scripts/gen-zh-hant.mjs 从英文词典的 key 生成（术语表 + 字形转换），
-// 与前端 locales/messages/zh-Hant.ts 共用同一份规则；请勿手工编辑，
-// 需要调整用词时改生成脚本的 TERMS / RULES 后重新执行。
+// 本文件由 scripts/gen-zh-hant.py 从英文词典的 key 生成（术语表 + 字形转换），
+// 术语及上下文规则维护在 scripts/locale_utils.py 的 TERMS / RULES；请勿手工编辑，
+// 需要调整用词时改后端规则后通过 scripts/gen-zh-hant.py 重新生成后端词典。
 
 func init() {
 	Register(Language{Code: "zh-Hant", Tags: []string{"zh-hant", "zh-tw", "zh-hk", "zh-mo"}}, map[string]string{

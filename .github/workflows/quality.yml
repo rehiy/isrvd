@@ -23,6 +23,14 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+      - run: python3 -m pip install -r scripts/requirements.txt
+      - run: python3 scripts/check-go-locales.py --strict
+      - run: python3 scripts/gen-zh-hant.py --check
       - name: Compile all packages
         run: go test ./...
       - name: Static analysis
@@ -45,31 +53,45 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: webview/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: webview/scripts/requirements.txt
+      - run: python3 -m pip install -r scripts/requirements.txt
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
-      - run: node ../scripts/check-api-contract.mjs
-      - run: node ../scripts/check-locales.mjs --strict
-      - run: node ../scripts/check-locales.mjs --go --strict
+      - run: python3 scripts/check-api-contract.py
+      - run: python3 scripts/check-locales.py --strict
+      - run: python3 scripts/gen-zh-hant.py --check
       - run: python3 scripts/review-style.py
       - run: npm run build
 
   scripts:
-    name: Shell and whitespace
+    name: Scripts and locale contract
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify Python script syntax
+        run: python3 -c "import ast; from pathlib import Path; [ast.parse(p.read_text(encoding='utf-8'), filename=str(p)) for d in ('scripts', 'webview/scripts') for p in Path(d).glob('*.py')]"
+      - name: Verify independent locale tool semantics
+        run: python3 -B scripts/check-locale-contract.py
       - name: Check installation and container script syntax
         run: |
           sh -n build.sh
+          bash -n develop.sh
           while IFS= read -r -d '' script; do
             case "$(head -n 1 "$script")" in
               *bash*) bash -n "$script" ;;
               *) sh -n "$script" ;;
             esac
-          done < <(find build -type f '(' -name '*.sh' -o -name run -o -name finish ')' -print0)
+          done < <(find build scripts -type f '(' -name '*.sh' -o -name run -o -name finish ')' -print0)
       - name: Validate website PHP entrypoints
         run: |
           php --version

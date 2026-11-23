@@ -1,9 +1,9 @@
 package i18n
 
-// 日文：词条基本完整，未登记的文案回落中文原文。覆盖率以 node scripts/check-locales.mjs --go 为准。
+// 日文：词条基本完整，未登记的文案回落中文原文。覆盖率以 python3 scripts/check-go-locales.py 为准。
 //
-// 补齐时先导出未译清单：node scripts/check-locales.mjs --go --worklist ja
-// 填好译文后用 scripts/apply-translations.mjs 导入，可保持格式与 gofmt 一致。
+// 补齐时先导出未译清单：python3 scripts/check-go-locales.py --worklist ja
+// 填好译文后用 scripts/apply-translations.py 导入，可保持格式与 gofmt 一致。
 func init() {
 	Register(Language{Code: "ja", Tags: []string{"ja"}}, map[string]string{
 		"容器名称 %s 已被占用":            "コンテナ名 %s は使用中です",

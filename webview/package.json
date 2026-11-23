@@ -22,9 +22,10 @@
     "lint:fix": "vue-tsc --noEmit && eslint src --ext .ts,.vue --fix",
     "format": "python3 scripts/format.py",
     "format:check": "python3 scripts/format.py --dry-run",
-    "locales:check": "node ../scripts/check-locales.mjs",
-    "locales:worklist": "node ../scripts/check-locales.mjs --worklist",
-    "locales:gen": "node ../scripts/gen-zh-hant.mjs"
+    "locales:check": "python3 scripts/check-locales.py",
+    "locales:worklist": "python3 scripts/check-locales.py --worklist",
+    "locales:gen": "python3 scripts/gen-zh-hant.py",
+    "locales:apply": "python3 scripts/apply-translations.py"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
@@ -62,7 +63,6 @@
     "eslint": "^10.12.0",
     "eslint-plugin-vue": "^10.11.1",
     "globals": "^17.13.0",
-    "opencc-js": "^1.4.2",
     "tailwindcss": "^4.3.3",
     "typescript-eslint": "^8.71.1",
     "vite": "^8.3.4",

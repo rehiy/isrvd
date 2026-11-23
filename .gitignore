@@ -8,6 +8,9 @@ out/
 # Dependency directories
 node_modules/
 vendor/
+.venv/
+__pycache__/
+*.py[cod]
 
 # OS generated files
 .DS_Store

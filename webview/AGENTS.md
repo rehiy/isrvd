@@ -401,7 +401,7 @@ webview/src/
 
 1. 第三方库  2. `@/stores/...` / `@/stores`  3. `@/router`  4. `@/service/...`  5. `@/helper/...`  6. `@/component/...`  7. `@/views/...`  8. 其余 `@/`  9. 相对路径
 
-同模块普通导入在前、`type` 导入在后紧邻。批量整理：`cd webview && python3 scripts/sort-imports.py --dry-run`，或使用 `npm run format:check` 检查、`npm run format` 修复。
+同模块普通导入在前、`type` 导入在后紧邻。批量整理仅处理 Vue 首个 `<script>` 块，不处理普通 `.ts`；副作用导入保留原顺序。`cd webview && python3 scripts/sort-imports.py --check`（`--dry-run` 同义）有差异返回 1；`npm run format:check` 编排 Vue import、ESLint 和类型的只读检查，任一步失败都会非零退出；`npm run format` 会写入修复。
 
 #### 1.14.1 控制流语句与请求错误（强制）
 
@@ -695,9 +695,10 @@ Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似
 - **新增语言只需新建 `locales/messages/<code>.ts`**，默认导出 `LanguageModule`（`code` / `label` / `short` / `htmlLang` / `tags` / `messages`）：`locales/index.ts` 用 `import.meta.glob` 自动发现，切换入口、`Accept-Language`、`?lang=`、浏览器语言匹配都随之生效，不需要改其他代码；后端同时要新建 `server/i18n/lang_<code>.go`（见根 `AGENTS.md`）
 - 语言代码用 BCP 47（`zh-Hant`、`en`、`ja`），前端直接把它作为 `Accept-Language` / `?lang=` 的取值，后端按同一套标签解析
 - 首次访问按浏览器语言选择（`matchLocale`，逐级去掉末尾子标签匹配），用户主动切换后才写入 localStorage（`app-locale`）并从此固定
-- `locales/messages/zh-Hant.ts` 由仓库根目录 `scripts/gen-zh-hant.mjs` 生成（术语表 + OpenCC 字形转换），不要手工编辑；改术语或英文词典后重新执行脚本
+- 前端检查、导入、繁体生成和依赖均在 `webview/scripts/`，不导入或调用根目录后端工具，不提供 `--go` / `--target` 跨端参数；`locales/messages/zh-Hant.ts` 由 `webview/scripts/gen-zh-hant.py` 生成，不要手工编辑，术语与上下文规则维护在本地 `locale_utils.py` 的 TERMS / RULES；在 `webview` 目录创建并激活虚拟环境（`python3 -m venv .venv`、`source .venv/bin/activate`），执行 `python3 -m pip install -r scripts/requirements.txt`；前端生成和校验不需要 Go / `gofmt`，改前端规则或英文词典后执行 `npm run locales:gen`
+- 根目录 `scripts/check-locale-contract.py` 是独立的只读跨端基础语义门禁，核对两端辅助模块的空白、JSON 解码、导入协议及基础报告，不读取业务词典、不约束本端术语和语言例外，也不是前端工具的运行依赖
 - `locales/messages/ja.ts` 词条基本完整，缺失的回落中文原文（覆盖率以 `npm run locales:check` 为准）
-- 补全译文：先 `npm run locales:worklist -- ja > /tmp/ja.jsonl` 导出未译清单（每行 `{"key","en"}`），填入译文后再写回词典文件；`npm run locales:check` 报告各语言覆盖与多余/空值/占位符不一致的词条，不会自动改文件
+- 补全译文：先 `npm --silent run locales:worklist -- ja > /tmp/ja.jsonl` 导出未译清单（每行 `{"key","en"}`），填入 `key` 与 `translation`（缺少该字段时兼容旧 `ja`；显式空白值跳过且不回退，非法类型或换行报错）后通过 `npm run locales:apply -- --lang ja --file /tmp/ja.jsonl` 导入前端词典；`npm run locales:check` 报告各语言覆盖与多余/空值/占位符不一致的词条，不会自动改文件；空白语义与 ECMAScript 一致（含 `U+FEFF`），打印的导出、安装依赖及重新生成命令使用当前解释器和绝对路径，不依赖工作目录
 - 模板与类组件方法用 `$t('中文原文')`（`this.$t`），`.ts` 里用 `useLocaleStore().t('中文原文')`；未登记译文时回落中文原文，不会出现空白或 key 泄漏
 - 语言状态在 `stores/locale.ts`（`locale` / `meta` / `locales` / `t` / `setLocale`）；组件经 `usePortal()` 读取 `locale` / `localeMeta` / `locales` 并调用 `setLocale`
 - 类组件的字段初始化器在构造函数中执行，此时实例上还没有 `$t`：字段里只保留中文字面量，在渲染处（模板 `$t(x.label)` 或方法内 `this.$t(x)`）再翻译；需要翻译的派生值用 getter
@@ -712,14 +713,14 @@ Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似
 
 ```bash
 npm run lint                             # 类型检查 + ESLint
-npm run format:check                     # import 排序/格式检查（dry-run，需关注输出）
-node ../scripts/check-api-contract.mjs       # 前端 API 方法与路由契约核对
-node ../scripts/check-locales.mjs --strict    # 前端多语言词典与占位符核对
-node ../scripts/check-locales.mjs --go --strict # 后端多语言词典与占位符核对
+npm run format:check                     # Vue import / ESLint / 类型只读检查，失败非零退出
+python3 scripts/check-api-contract.py        # 前端 API 方法与路由契约核对
+python3 scripts/check-locales.py --strict     # 前端多语言词典与占位符核对
+python3 scripts/gen-zh-hant.py --check         # 繁体生成物只读校验
 python3 scripts/review-style.py          # 前端样式一致性辅助检查
 npm run build                            # Vite 生产构建
 ```
 
 提交前另需人工确认：新增的 `if` / `for` / `while` / `try` / `catch` / `finally` 符合 1.14.1（带 `{}`、不单行），页面 `catch` 中没有重复的请求失败提示。
 
-`npm run format` 会直接修复 import/ESLint；仅在需要改写文件时使用。`review-style.py` 只有 ERROR 阻断，WARN 需人工确认。
+`npm run format` 会直接修复 Vue import / ESLint，调用 `format.py` 再调用本地 Node 工具及 `sort-imports.py`；任一步失败非零退出。`format.py --check` 只选择类型检查，不能代替 `--dry-run` 的完整格式只读检查；`--check --eslint` 可组合，`--all` 不与选择参数混用；`--parallel` 只并行只读任务，修复仍按顺序执行。`review-style.py` 只有 ERROR 阻断，WARN 需人工确认，并核对静态路由组件文件存在性。`fix-vue-tags.py` 仅为手工模板排版工具，先用 `--check` / `--dry-run` 预览，再显式运行修复；它不属于自动格式化链。完整脚本清单和两端依赖边界见根 `AGENTS.md` 第 10 节。

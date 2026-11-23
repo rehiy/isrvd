@@ -3,8 +3,8 @@ import type { LanguageModule } from '../types'
 /**
  * 繁體中文（臺灣）譯文：以簡體中文原文為 key
  *
- * 由 scripts/gen-zh-hant.mjs 從英文詞典的 key 生成（術語表 + 字形轉換），請勿手工編輯；
- * 需要調整用詞時改生成腳本的 TERMS / RULES 後重新執行。
+ * 由 webview/scripts/gen-zh-hant.py 從英文詞典的 key 生成（術語表 + 字形轉換），請勿手工編輯；
+ * 需要調整用詞時改 webview/scripts/locale_utils.py 的 TERMS / RULES 後重新執行前端生成器。
  */
 
 const messages: Record<string, string> = {

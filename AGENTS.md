@@ -285,15 +285,18 @@ docs/
 ### 国际化（server/i18n）
 
 - 中文（简体，`zh-Hans`）是源语言：代码里统一用中文书写提示文案，也是所有语言词典共同的 key；每种语言登记「中文原文 → 译文」，未登记的文案回落中文原文
-- **新增语言只需新建 `server/i18n/lang_<code>.go`**，在 `init` 里调用 `i18n.Register(i18n.Language{Code, Tags}, map[string]string{...})`，不需要改动其他代码；`Tags` 是能匹配到它的 BCP 47 标签（小写），匹配时逐级去掉末尾子标签（`zh-hant-tw` → `zh-hant`）
-- 补全译文：`node scripts/check-locales.mjs [--go]` 报告各语言相对英文词典的缺口、多余词条、空译文与占位符不一致；`node scripts/check-locales.mjs [--go] --worklist ja` 导出未译清单（每行 `{"key","en"}`），交给人工或机翻
+- **新增语言只需新建 `server/i18n/lang_<code>.go`**，在 `init` 里调用 `i18n.Register(i18n.Language{Code, Tags}, map[string]string{...})`，运行时无需改动其他代码；为纳入脚本检查，还需将语言代码和文件名加入本端 `scripts/locale_utils.py` 的 `LANG_FILES` 映射；`Tags` 是能匹配到它的 BCP 47 标签（小写），匹配时逐级去掉末尾子标签（`zh-hant-tw` → `zh-hant`）
+- 前后端工具独立：后端检查、导入、繁体生成及依赖放在根目录 `scripts/`，前端对应工具及依赖放在 `webview/scripts/`；两端不互相导入模块、调用脚本或读写对方词典。后端规则维护在 `scripts/locale_utils.py`，前端规则维护在 `webview/scripts/locale_utils.py`，各自保留 ECMAScript 空白语义（含 `U+FEFF`）；运行时恢复命令使用当前解释器与绝对路径。以下直接命令均在仓库根目录执行
+- 两端 `locale_utils.py` 均为本地辅助模块，入口不反向依赖生成器；只读门禁 `python3 scripts/check-locale-contract.py` 核对空白、JSON 解码、导入协议、基础报告与退出码，是显式跨端契约检查，不是业务工具的运行依赖，也不读取业务词典；术语与语言例外允许本端独立演进
+- 补全后端译文：`python3 scripts/check-go-locales.py [--strict]` 检查后端词典完整性，`python3 scripts/check-go-locales.py --worklist ja` 导出未译 JSONL（每行 `{"key","en"}`）；前端使用 `python3 webview/scripts/check-locales.py` 和 `--worklist ja`，不再支持 `--go`
+- 导入后端译文：`python3 scripts/apply-translations.py --lang ja --file <jsonl>`；前端使用 `python3 webview/scripts/apply-translations.py --lang ja --file <jsonl>`。两端 JSONL 使用 `{"key":"中文原文","translation":"译文"}`，缺少 `translation` 字段时兼容旧 `ja`；显式空白译文跳过且不回退，非法类型或换行报错，只更新本端既有词典，不再提供 `--target`；后端 `gofmt` 失败时不写入且非零退出，前端保留英文注释与顺序
 - 现有语言：`lang_zh_hans.go`（源语言，只登记标签）、`lang_en.go` + `lang_en_service.go`（英文，是完整集：其他语言的 key 都应出现在其中）、`lang_ja.go`（日文，词条基本完整，缺失的回落中文）、`lang_zh_hant_messages.go`（繁體，生成物）
-- 繁體不手工翻译：`scripts/gen-zh-hant.mjs` 以英文词典的 key 为全集，经术语表 + 上下文规则 + OpenCC 字形转换，同时生成前端 `locales/messages/zh-Hant.ts` 与后端 `lang_zh_hant_messages.go`；改了英文词典或术语后重新执行（需先在 `webview` 目录 `npm install`，用到 devDependency `opencc-js`），`node scripts/gen-zh-hant.mjs --check` 校验生成物是否最新
+- 后端繁體不手工翻译：在仓库根目录创建并激活 Python 虚拟环境（`python3 -m venv .venv`、`source .venv/bin/activate`），执行 `python3 -m pip install -r scripts/requirements.txt`，并安装 Go（需要 `gofmt`）；后端术语与上下文规则维护在 `scripts/locale_utils.py` 的 TERMS / RULES，执行 `python3 scripts/gen-zh-hant.py` 仅生成 `server/i18n/lang_zh_hant_messages.go`，加 `--check` 只读校验后端。前端使用自己的虚拟环境、`webview/scripts/requirements.txt` 和 `webview/scripts/gen-zh-hant.py`，仅生成/检查前端 `zh-Hant.ts`，无需 Go。修改规则或英文词典后只重新生成受影响的一端
 - 语言协商顺序：`?lang=` 查询参数 → `Accept-Language` 请求头；由 `i18n.Middleware()` 写入请求 context，响应统一带 `Vary: Accept-Language`
 - `server/app` 的响应文案统一经 `server/app/response.go` 的 `i18n.T(c, message)` 翻译；网关是原生 `http.Handler`，用 `i18n.Translate(i18n.Parse(r.Header.Get("Accept-Language")), message)`
 - 匹配时 `i18n.Translate(lang, 中文)`：源语言原样返回；其他语言查该语言词典，未命中返回原文，不会丢信息
 - 通用提示在 `lang_en.go`，各模块返回给前端的提示在 `lang_en_service.go`；一次性文案可不登记（其他语言下保持中文）
-- 新增或修改词条后，用 `node scripts/gen-zh-hant.mjs --check` 校验繁體是否与英文词典同步，并运行 `node scripts/check-locales.mjs --strict` 和 `node scripts/check-locales.mjs --go --strict` 核对词条和占位符
+- 新增或修改后端词条后，用 `python3 scripts/gen-zh-hant.py --check` 校验后端繁體是否与后端英文词典同步，并运行 `python3 scripts/check-go-locales.py --strict` 和 `python3 webview/scripts/check-locales.py --strict` 核对词条和占位符
 - 匹配顺序：先按整条（含占位符模板）匹配，未命中再按 `": "` 分段逐段翻译，因此 `fmt.Errorf("...: %w")` 包装出的错误链与 `"xxx: %s"` 都能命中；登记时 `"xxx失败: %w"` 也可只写 `"xxx失败"`
 - 含占位符的条目按模板匹配，字面量越长的模板越具体、优先命中；动词只支持 `%s`/`%d`/`%v`/`%w`/`%q`/`%T`，且译文的动词序列必须与中文原文一致，不使用索引动词（`%[1]s`）
 - `server/gateway` 的 `success` / `fail`（原生 `http.Handler`）与 `server/app` 的 `respondSuccess` / `respondError` 是 JSON 响应的唯二出口，新增响应必须走它们，否则提示文案不会翻译
@@ -362,15 +365,52 @@ docs/
 
 ## 10) 质量门禁（提交前自检）
 
+### 脚本命名、职责与调用链
+
+命令入口使用动作名（`check-*`、`gen-*`、`apply-*`），辅助模块使用下划线（`locale_utils.py`）；成熟安装器 `isrvd-system.sh` / `isrvd-docker.sh` 保持名称与分发接口不变。Python 工具要求 3.10+，CI 使用 3.11。
+
+| 位置 | 职责与调用来源 | 写入及依赖 |
+| --- | --- | --- |
+| `scripts/check-go-locales.py` | 后端 `LANG_FILES` 映射词典检查；Go CI、手工导出 JSONL | 标准库；`--strict` 有问题非零退出；不扫描业务源码 |
+| `scripts/gen-zh-hant.py` | 后端繁体生成；Go CI 使用 `--check` | 默认写 Go 词典；`--check` 只读；本端 OpenCC、`gofmt` |
+| `scripts/apply-translations.py` | 后端 JSONL 导入，手工调用 | 仅写本端可编辑既有词典；`gofmt` 失败不写入 |
+| `scripts/locale_utils.py` | 上述入口的本地解析、协议、报告及规则 | 辅助模块，不是 CLI；生成器才需要 OpenCC |
+| `scripts/check-locale-contract.py` | scripts CI 核对独立实现的基础语义 | 显式跨端只读例外；标准库、内存数据，不读业务词典 |
+| `webview/scripts/check-locales.py` | 前端词典检查；npm `locales:check` / `locales:worklist`、前端 CI | 标准库；重定向 JSONL 必须用 `npm --silent run` 或直接 Python |
+| `webview/scripts/gen-zh-hant.py` | 前端繁体生成；npm `locales:gen`、前端 CI | 默认只写 TS；`--check` 只读；本端 OpenCC，无 Go 依赖 |
+| `webview/scripts/apply-translations.py` | 前端 JSONL 导入；npm `locales:apply` | 标准库；仅写本端可编辑既有词典 |
+| `webview/scripts/locale_utils.py` | 前端入口及 API 契约检查的本地辅助模块 | 无后端运行依赖，不是 CLI |
+| `webview/scripts/check-api-contract.py` | 前端 API 方法/路径及静态权限对照；前端 CI | 跨端只读例外，需要 OpenAPI 和 Go 路由源文件；不核验完整请求/响应 schema |
+| `webview/scripts/format.py` | npm `format` / `format:check` 编排 Vue import、ESLint、类型检查 | 默认修复；`--dry-run` 全部只读且任一步失败非零退出；本地 Node 工具 |
+| `webview/scripts/sort-imports.py` | `format.py` 调用的 Vue import 排序器 | 默认写入；`--check` / `--dry-run` 有差异返回 1；不处理普通 TS |
+| `webview/scripts/review-style.py` | Vue 样式辅助检查及静态路由组件存在性；前端 CI | 只读；ERROR 返回 1，WARN 返回 0 并需人工确认 |
+| `webview/scripts/fix-vue-tags.py` | 手工标签排版工具，不纳入自动格式化链 | 默认修改模板；`--check` / `--dry-run` 不写入，有差异返回 1 |
+| `scripts/isrvd-system.sh` / `scripts/isrvd-docker.sh` | 安装、更新、卸载；系统版另支持下载；发布包与首页调用 | Bash、真实部署操作；仅 `--help` / 语法检查不部署 |
+
+两份 `requirements.txt` 各供本端生成器安装依赖，不合并环境。Python 入口按自身文件定位工程，不依赖调用目录；`--file` 相对路径仍按调用者 cwd 解释。两端 CLI 不互调，只导入同目录 `locale_utils.py`；跨端契约检查按不同模块别名加载，禁止同名缓存串用。检查模式不改业务文件；要求连 Python 缓存也不落盘时使用 `python3 -B`。
+
+调用链：`npm format` → `format.py` → 本地 Node ESLint/类型工具 + `sort-imports.py`；词典检查/导入/生成分别 → 本端 `locale_utils.py`，不反向依赖生成入口。`build.sh` 编排前端构建、OpenAPI 和后端打包，但不执行 Python 质量门禁；`develop.sh` / `develop.bat` 仅启动开发服务。发布工作流和 `.cnb.yml` 未绑定本质量门禁，不能把发布成功当成检查通过。
+
+以下命令从仓库根目录执行；子 shell 避免连续 `cd webview` 改变后续命令目录：
+
 ```bash
 go test ./...                                          # Go 全包编译并运行测试
 go vet ./...                                           # Go 静态检查
-cd webview && npm run lint                             # 前端类型检查 + ESLint
-cd webview && npm run format:check                     # import 排序/格式检查（dry-run，需关注输出）
-cd webview && python3 scripts/review-style.py          # 前端样式一致性辅助检查
-cd webview && npm run build                            # 前端生产构建
-sh -n build.sh                                         # 构建脚本语法检查（修改 build.sh 时）
-git diff --check                                       # 空白与冲突标记检查
+python3 -B scripts/check-go-locales.py --strict
+python3 -B scripts/gen-zh-hant.py --check
+python3 -B scripts/check-locale-contract.py
+(cd webview && npm run lint)                           # 前端类型检查 + ESLint
+(cd webview && npm run format:check)                   # 只读，有差异或检查失败非零退出
+python3 -B webview/scripts/check-api-contract.py
+python3 -B webview/scripts/check-locales.py --strict
+python3 -B webview/scripts/gen-zh-hant.py --check
+python3 -B webview/scripts/review-style.py
+(cd webview && npm run build)                          # 前端生产构建
+sh -n build.sh
+bash -n develop.sh
+bash -n scripts/isrvd-system.sh
+bash -n scripts/isrvd-docker.sh
+git diff --check
 ```
 
 `npm run format` 会直接修复 import/ESLint；仅在需要改写文件时使用。`review-style.py` 只有 ERROR 阻断，WARN 需人工确认。

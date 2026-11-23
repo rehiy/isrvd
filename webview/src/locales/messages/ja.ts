@@ -4,12 +4,12 @@ import type { LanguageModule } from '../types'
  * 日本語訳：キーは中国語原文（簡体字）
  *
  * 英語辞書のキーをすべて翻訳しています。新しい文言を追加したときは
- * scripts/check-locales.mjs で訳し忘れを確認してください。
+ * webview/scripts/check-locales.py で訳し忘れを確認してください。
  *
  * 訳文を追加するときは、未訳リストを書き出して埋めるのが早い：
- *   node scripts/check-locales.mjs --worklist ja > tmp/ja-ui.jsonl
- * 登録後は node scripts/check-locales.mjs で取りこぼしを確認する。
- * このファイルは手書きでもよいが、scripts/apply-translations.mjs で取り込むと
+ *   python3 webview/scripts/check-locales.py --worklist ja > tmp/ja-ui.jsonl
+ * 登録後は python3 webview/scripts/check-locales.py で取りこぼしを確認する。
+ * このファイルは手書きでもよいが、webview/scripts/apply-translations.py で取り込むと
  * 英文コメントと並び順が保たれる。
  */
 
