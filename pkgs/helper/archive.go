@@ -116,26 +116,30 @@ func zipExtractFile(ctx context.Context, root *os.Root, file *zip.File, name str
 	defer in.Close()
 	var written int64
 	err = WriteRootFile(ctx, root, name, !overwrite, func(out io.Writer) error {
-		reader := io.Reader(ContextReader{Context: ctx, Reader: in})
-		// ZIP 声明的未压缩大小可能被伪造，必须限制实际读取的字节数。
-		// 检测多读的 1 字节；超出 int64 上限时该限制无法由单个文件触达。
-		if limited && remaining < math.MaxInt64 {
-			reader = io.LimitReader(reader, int64(remaining)+1)
-		}
 		var copyErr error
-		written, copyErr = io.Copy(out, reader)
-		if copyErr != nil {
-			return copyErr
-		}
-		if limited && uint64(written) > remaining {
-			return fmt.Errorf("ZIP 解压大小超过限制")
-		}
-		return nil
+		written, copyErr = copyZIPContent(out, ContextReader{Context: ctx, Reader: in}, remaining, limited)
+		return copyErr
 	})
 	if err == nil && !overwrite {
 		*created = append(*created, name)
 	}
 	return uint64(written), err
+}
+
+// copyZIPContent 在复制过程中按实际字节限流，避免依赖归档头部声明的大小。
+func copyZIPContent(out io.Writer, in io.Reader, remaining uint64, limited bool) (int64, error) {
+	// 多读 1 字节以识别越界；接近 int64 上限时不施加此读取包装。
+	if limited && remaining < math.MaxInt64 {
+		in = io.LimitReader(in, int64(remaining)+1)
+	}
+	written, err := io.Copy(out, in)
+	if err != nil {
+		return written, err
+	}
+	if limited && uint64(written) > remaining {
+		return written, fmt.Errorf("ZIP 解压大小超过限制")
+	}
+	return written, nil
 }
 
 // CreateZIP 压缩文件或目录，生成同目录的 <source>.zip。

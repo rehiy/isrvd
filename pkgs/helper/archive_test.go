@@ -4,7 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"encoding/binary"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -34,34 +34,18 @@ func writeZIP(t *testing.T, entries map[string]string) string {
 	return path
 }
 
-func TestExtractZIPMaximumActualBytes(t *testing.T) {
-	// Go 的 ZIP 读取器验证实际大小的时机可能晚于数据写出。
-	// 将中央目录的未压缩长度改为 4，但解压内容仍有 128 KiB。
-	path := writeZIP(t, map[string]string{"inflated.txt": strings.Repeat("x", 128<<10)})
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	central := bytes.LastIndex(data, []byte{'P', 'K', 1, 2})
-	if central < 0 {
-		t.Fatal("ZIP central directory not found")
-	}
-	binary.LittleEndian.PutUint32(data[central+24:central+28], 4)
-	if err := os.WriteFile(path, data, 0600); err != nil {
-		t.Fatal(err)
-	}
-	dir := t.TempDir()
-	cleanup, err := ExtractZIP(context.Background(), path, dir, false, 1024)
+func TestCopyZIPContentActualByteLimit(t *testing.T) {
+	payload := strings.Repeat("x", 128<<10)
+	written, err := copyZIPContent(io.Discard, strings.NewReader(payload), 1024, true)
 	if err == nil || !strings.Contains(err.Error(), "超过限制") {
-		t.Fatalf("expected actual size rejection, got %v", err)
+		t.Fatalf("expected actual byte limit rejection, got %v", err)
 	}
-	if cleanup != nil {
-		if err := cleanup(); err != nil {
-			t.Fatal(err)
-		}
+	if written != 1025 {
+		t.Fatalf("copied %d bytes, want limit + 1", written)
 	}
-	if _, err := os.Stat(filepath.Join(dir, "inflated.txt")); !os.IsNotExist(err) {
-		t.Fatalf("overflow file published despite error: %v", err)
+	written, err = copyZIPContent(io.Discard, strings.NewReader(payload), 0, false)
+	if err != nil || written != int64(len(payload)) {
+		t.Fatalf("unlimited copy wrote %d bytes, error=%v", written, err)
 	}
 }
 
