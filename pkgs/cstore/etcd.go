@@ -39,9 +39,12 @@ func newEtcdStore(uri string, opt options) (*EtcdStore, error) {
 	}
 
 	q := u.Query()
-	scheme := q.Get("scheme")
+	scheme := strings.ToLower(strings.TrimSpace(q.Get("scheme")))
 	if scheme == "" {
 		scheme = "http"
+	}
+	if scheme != "http" && scheme != "https" {
+		return nil, fmt.Errorf("cstore/etcd: scheme 只能为 http 或 https")
 	}
 
 	var endpoints []string
@@ -50,11 +53,17 @@ func newEtcdStore(uri string, opt options) (*EtcdStore, error) {
 			endpoints = append(endpoints, scheme+"://"+host)
 		}
 	}
+	if len(endpoints) == 0 {
+		return nil, fmt.Errorf("cstore/etcd: URI 缺少有效 endpoints")
+	}
 
 	timeout := 5 * time.Second
 	if raw := q.Get("timeout"); raw != "" {
 		if timeout, err = time.ParseDuration(raw); err != nil {
 			return nil, fmt.Errorf("cstore/etcd: timeout 无效: %w", err)
+		}
+		if timeout <= 0 {
+			return nil, fmt.Errorf("cstore/etcd: timeout 必须大于 0")
 		}
 	}
 
