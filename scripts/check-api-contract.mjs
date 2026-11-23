@@ -3,7 +3,7 @@
  * 校验前端 API 方法和路径是否存在于 OpenAPI 或中控节点网关权限路由中。
  * 参数名及编码表达式按占位路径段比较，Compose/指标网关按类型联合分别展开。
  */
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -79,6 +79,38 @@ for (const match of calls) {
     }
 }
 console.log('已核验 ' + calls.length + ' 处 API 调用、' + checked + ' 个路径变体')
+ 
+// 页面中声明的静态权限必须能对应到后端路由；动态拼接权限另行人工审阅。
+function* walkSources(dir) {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const file = resolve(dir, entry.name)
+        if (entry.isDirectory()) {
+            yield* walkSources(file)
+        } else if (entry.isFile() && /\.(vue|ts)$/.test(entry.name)) {
+            yield file
+        }
+    }
+}
+
+const permissionPattern = /\bhasPerm\s*\(\s*(['"])(GET|POST|PUT|PATCH|DELETE)\s+\/api\/([^'"\r\n]+)\1/g
+let permissionsChecked = 0
+for (const file of walkSources(resolve(root, 'webview/src'))) {
+    const source = readFileSync(file, 'utf8')
+    for (const match of source.matchAll(permissionPattern)) {
+        permissionsChecked++
+        const route = match[2].toLowerCase() + ' ' + canonical(match[3])
+        if (!documented.has(route)) {
+            const line = source.slice(0, match.index).split('\n').length
+            console.error(file.slice(root.length + 1) + ':' + line + ' 权限引用缺少 API 路由定义: ' + route)
+            errors++
+        }
+    }
+}
+console.log('已核验 ' + permissionsChecked + ' 处静态页面权限引用')
+if (permissionsChecked === 0) {
+    throw new Error('未发现任何静态权限引用，请检查扫描规则')
+}
+
 if (errors) {
     console.error('存在 ' + errors + ' 处接口路径/方法不一致')
     process.exit(1)
