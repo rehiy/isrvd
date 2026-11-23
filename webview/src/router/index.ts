@@ -93,37 +93,37 @@ const routes: RouteRecordRaw[] = [
     path: '/apisix/routes',
     name: 'apisix-routes',
     component: () => import('@/views/apisix/routes.vue'),
-    meta: { title: 'APISIX 路由' }
+    meta: { title: 'APISIX 路由', permissions: ['GET /api/apisix/routes'] }
   },
   {
     path: '/apisix/upstreams',
     name: 'apisix-upstreams',
     component: () => import('@/views/apisix/upstreams.vue'),
-    meta: { title: 'APISIX 上游' }
+    meta: { title: 'APISIX 上游', permissions: ['GET /api/apisix/upstreams'] }
   },
   {
     path: '/apisix/plugin-configs',
     name: 'apisix-plugin-configs',
     component: () => import('@/views/apisix/plugin-configs.vue'),
-    meta: { title: 'APISIX 插件配置' }
+    meta: { title: 'APISIX 插件配置', permissions: ['GET /api/apisix/plugin-configs'] }
   },
   {
     path: '/apisix/ssls',
     name: 'apisix-ssls',
     component: () => import('@/views/apisix/ssls.vue'),
-    meta: { title: 'APISIX SSL 证书' }
+    meta: { title: 'APISIX SSL 证书', permissions: ['GET /api/apisix/ssls'] }
   },
   {
     path: '/apisix/consumers',
     name: 'apisix-consumers',
     component: () => import('@/views/apisix/consumers.vue'),
-    meta: { title: 'APISIX 消费者' }
+    meta: { title: 'APISIX 消费者', permissions: ['GET /api/apisix/consumers'] }
   },
   {
     path: '/apisix/whitelist',
     name: 'apisix-whitelist',
     component: () => import('@/views/apisix/whitelist.vue'),
-    meta: { title: '访问授权' }
+    meta: { title: '访问授权', permissions: ['GET /api/apisix/whitelist'] }
   },
   {
     path: '/caddy',
@@ -409,7 +409,7 @@ export function setRouterGuard(hasPerm: HasPermission, ready: () => boolean) {
 }
 
 // 初始导航可能先于启动鉴权，权限返回后页面挂载前再使用同一规则检查。
-export function canAccessRoute(to: RouteLocationNormalized, hasPerm?: HasPermission): boolean {
+export function canAccessRoute(to: Pick<RouteLocationNormalized, 'path' | 'meta'>, hasPerm?: HasPermission): boolean {
   // 视角由页面路径决定，无需等待登录或 bootstrap，冷启动也不能挂载中控管理页面
   if (nodeLocation().id && isCenterPage(to.path)) {
     return false

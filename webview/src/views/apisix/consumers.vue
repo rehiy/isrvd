@@ -23,9 +23,11 @@ class Consumers extends Vue {
 
     // ─── 数据属性 ───
     consumers: ApisixConsumer[] = []
-    whitelist: ApisixRoute[] = []
+    whitelist: ApisixRoute[] | null = null
     loading = false
+    loadFailed = false
     searchText = ''
+    private loadVersion = 0
 
     // ─── 计算属性 ───
     get filteredConsumers() {
@@ -39,20 +41,36 @@ class Consumers extends Vue {
         )
     }
 
+    get showWhitelist() {
+        return this.whitelist !== null && this.portal.hasPerm('GET /api/apisix/whitelist')
+    }
+
     // ─── 方法 ───
     async loadConsumers() {
+        const version = ++this.loadVersion
         this.loading = true
-        try {
-            const [consRes, wlRes] = await Promise.all([api.apisixConsumerList(), api.apisixWhitelistInspect()])
-            this.consumers = consRes.payload || []
-            this.whitelist = wlRes.payload || []
-        } finally {
-            this.loading = false
+        this.loadFailed = false
+        this.whitelist = null
+
+        const whitelist = this.portal.hasPerm('GET /api/apisix/whitelist')
+            ? api.apisixWhitelistInspect().catch(() => null)
+            : null
+        const consumers = await api.apisixConsumerList().catch(() => null)
+        if (version !== this.loadVersion) {
+            return
+        }
+        this.consumers = consumers?.payload ?? []
+        this.loadFailed = consumers === null
+        this.loading = false
+
+        const result = await whitelist
+        if (version === this.loadVersion && result) {
+            this.whitelist = result.payload ?? []
         }
     }
 
     getConsumerRoutes(username: string) {
-        return this.whitelist.filter((r: ApisixRoute) => (r.consumers || []).includes(username)).map((r: ApisixRoute) => r.name || r.id)
+        return (this.whitelist ?? []).filter(r => r.consumers?.includes(username)).map(r => r.name || r.id)
     }
 
     formatTs = formatUnixDateTime
@@ -149,6 +167,12 @@ export default toNative(Consumers)
       </div>
     </div>
 
+    <div v-else-if="loadFailed" class="card-body">
+      <div class="empty-state">
+        <p class="text-sm text-slate-500">{{ $t('加载失败，请刷新重试') }}</p>
+      </div>
+    </div>
+
     <!-- 空状态 -->
     <div v-else-if="filteredConsumers.length === 0" class="card-body">
       <div class="empty-state">
@@ -156,7 +180,8 @@ export default toNative(Consumers)
           <i class="fas fa-users text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ consumers.length === 0 ? $t('暂无消费者') : $t('未找到匹配消费者') }}</p>
-        <p class="text-sm text-slate-400">{{ consumers.length === 0 ? $t('点击「新建消费者」开始创建') : $t('尝试更换关键词或清空搜索条件') }}</p>
+        <p v-if="consumers.length > 0" class="text-sm text-slate-400">{{ $t('尝试更换关键词或清空搜索条件') }}</p>
+        <p v-else-if="portal.hasPerm('POST /api/apisix/consumer')" class="text-sm text-slate-400">{{ $t('点击「新建消费者」开始创建') }}</p>
       </div>
     </div>
 
@@ -169,7 +194,7 @@ export default toNative(Consumers)
             <tr class="bg-slate-100 border-b border-slate-200">
               <th class="th">{{ $t('名称') }}</th>
               <th class="th">{{ $t('插件配置') }}</th>
-              <th class="th">{{ $t('授权路由') }}</th>
+              <th v-if="showWhitelist" class="th">{{ $t('授权路由') }}</th>
               <th class="th">{{ $t('创建时间') }}</th>
               <th class="w-32 th-right">{{ $t('操作') }}</th>
             </tr>
@@ -193,7 +218,7 @@ export default toNative(Consumers)
                 </div>
                 <span v-else class="text-xs text-slate-400">-</span>
               </td>
-              <td class="px-4 py-3">
+              <td v-if="showWhitelist" class="px-4 py-3">
                 <div v-if="getConsumerRoutes(consumer.username).length > 0" class="flex flex-wrap gap-1">
                   <span v-for="name in getConsumerRoutes(consumer.username)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded-lg text-xs">{{ name }}</span>
                 </div>
@@ -246,7 +271,7 @@ export default toNative(Consumers)
           </div>
 
           <!-- 授权路由 -->
-          <div class="card-prop-row-start">
+          <div v-if="showWhitelist" class="card-prop-row-start">
             <span class="prop-label-start">{{ $t('路由') }}</span>
             <div v-if="getConsumerRoutes(consumer.username).length > 0" class="flex flex-wrap gap-1">
               <span v-for="name in getConsumerRoutes(consumer.username)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded-lg text-xs">{{ name }}</span>
