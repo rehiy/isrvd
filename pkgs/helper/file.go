@@ -27,15 +27,14 @@ func WriteRootFile(ctx context.Context, root *os.Root, name string, createOnly b
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	mode := os.FileMode(0644)
-	if info, err := root.Lstat(name); err == nil {
+	previous, err := root.Lstat(name)
+	if err == nil {
 		if createOnly {
 			return os.ErrExist
 		}
-		if !info.Mode().IsRegular() {
+		if !previous.Mode().IsRegular() {
 			return os.ErrInvalid
 		}
-		mode = info.Mode().Perm()
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
@@ -46,8 +45,11 @@ func WriteRootFile(ctx context.Context, root *os.Root, name string, createOnly b
 	}
 	defer root.Remove(staged)
 	err = write(file)
-	if err == nil {
-		err = file.Chmod(mode)
+	if err == nil && previous != nil {
+		err = preserveFileOwner(file, previous)
+		if err == nil {
+			err = file.Chmod(previous.Mode().Perm())
+		}
 	}
 	if err := errors.Join(err, file.Close(), ctx.Err()); err != nil {
 		return err
