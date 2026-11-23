@@ -54,8 +54,9 @@ logs/
 go.work
 go.work.sum
 
-# Test files
+# Temporary test files
 *_test.*
+!*_test.go
 *.test.*
 *.spec.*
 

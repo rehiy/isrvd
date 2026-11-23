@@ -293,7 +293,7 @@ docs/
 - `server/app` 的响应文案统一经 `server/app/response.go` 的 `i18n.T(c, message)` 翻译；网关是原生 `http.Handler`，用 `i18n.Translate(i18n.Parse(r.Header.Get("Accept-Language")), message)`
 - 匹配时 `i18n.Translate(lang, 中文)`：源语言原样返回；其他语言查该语言词典，未命中返回原文，不会丢信息
 - 通用提示在 `lang_en.go`，各模块返回给前端的提示在 `lang_en_service.go`；一次性文案可不登记（其他语言下保持中文）
-- 新增或修改词条后，用 `node scripts/gen-zh-hant.mjs --check` 校验繁體是否与英文词典同步；仓库不提交 `*_test.*`（`.gitignore` 已忽略），其余自检（占位符序列一致、key 在英文词典里、扫描源码里未登记的文案）需要时在仓库外临时编写
+- 新增或修改词条后，用 `node scripts/gen-zh-hant.mjs --check` 校验繁體是否与英文词典同步，并运行 `node scripts/check-locales.mjs --strict` 和 `node scripts/check-locales.mjs --go --strict` 核对词条和占位符
 - 匹配顺序：先按整条（含占位符模板）匹配，未命中再按 `": "` 分段逐段翻译，因此 `fmt.Errorf("...: %w")` 包装出的错误链与 `"xxx: %s"` 都能命中；登记时 `"xxx失败: %w"` 也可只写 `"xxx失败"`
 - 含占位符的条目按模板匹配，字面量越长的模板越具体、优先命中；动词只支持 `%s`/`%d`/`%v`/`%w`/`%q`/`%T`，且译文的动词序列必须与中文原文一致，不使用索引动词（`%[1]s`）
 - `server/gateway` 的 `success` / `fail`（原生 `http.Handler`）与 `server/app` 的 `respondSuccess` / `respondError` 是 JSON 响应的唯二出口，新增响应必须走它们，否则提示文案不会翻译
@@ -363,7 +363,7 @@ docs/
 ## 10) 质量门禁（提交前自检）
 
 ```bash
-go test ./...                                          # 后端全包编译（仓库当前不提交测试文件）
+go test ./...                                          # Go 全包编译并运行测试
 go vet ./...                                           # Go 静态检查
 cd webview && npm run lint                             # 前端类型检查 + ESLint
 cd webview && npm run format:check                     # import 排序/格式检查（dry-run，需关注输出）
@@ -377,7 +377,7 @@ git diff --check                                       # 空白与冲突标记�
 
 - [ ] 编译通过；[ ] 无新增 lint 警告；[ ] 关键路径手动验证；[ ] 错误处理与日志符合规范；[ ] 未引入明文敏感信息；[ ] 相关文档已同步更新
 
-仓库策略是不提交 `*_test.*`、`*.test.*`、`*.spec.*` 测试文件；如需临时验证，应放在仓库外或在交付前清理。不能把“无测试文件”表述为行为测试已覆盖。
+Go 回归测试可随源码提交为 `*_test.go`，由 `go test ./...` 运行。临时验证脚本及其他 `*_test.*`、`*.test.*`、`*.spec.*` 文件放在仓库外，或在交付前清理。验证记录应区分编译检查与实际执行的行为测试。
 
 `build.sh` 会根据最近两个版本标签生成 `RELEASE.md`；生成时过滤 `release...` 以及 GitHub 默认的 `Merge pull request #<n> from ...` 标题，再执行前端构建、OpenAPI 生成、跨平台 Go 编译和分发打包。
 
