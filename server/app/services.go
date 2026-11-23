@@ -181,16 +181,16 @@ func (app *App) retryGateways(ctx context.Context) {
 	if !wantApisix && !wantCaddy {
 		return
 	}
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	probeCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	var apisixSvc *apisix.Service
 	var caddySvc *caddy.Service
 	var wg sync.WaitGroup
 	if wantApisix {
-		wg.Go(func() { apisixSvc, _ = apisix.NewService(ctx) })
+		wg.Go(func() { apisixSvc, _ = apisix.NewService(probeCtx) })
 	}
 	if wantCaddy {
-		wg.Go(func() { caddySvc, _ = caddy.NewService(ctx) })
+		wg.Go(func() { caddySvc, _ = caddy.NewService(probeCtx) })
 	}
 	wg.Wait()
 	if ctx.Err() != nil || apisixSvc == nil && caddySvc == nil {
