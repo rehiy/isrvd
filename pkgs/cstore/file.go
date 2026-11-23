@@ -137,7 +137,7 @@ func (f *FileStore) Close() error {
 
 func (f *FileStore) path(key string) (string, error) {
 	// FileStore 的 key 是目录中的文件名；不能越过目录或隐式写入子目录。
-	if key == "" || !filepath.IsLocal(key) || filepath.Base(key) != key || strings.Contains(key, "\\") {
+	if key == "" || key == "." || !filepath.IsLocal(key) || filepath.Base(key) != key || strings.Contains(key, "\\") {
 		return "", fmt.Errorf("cstore/file: 无效的文件 key %q", key)
 	}
 	return filepath.Join(f.baseDir, key), nil
