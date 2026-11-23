@@ -403,9 +403,8 @@ class Upload extends Vue {
     private async doUploadFiles(files: UploadFileNode[], nodesForDirs?: UploadNode[]) {
         let failCount = 0, cancelCount = 0
 
-        const selectedDirs = new Set(nodesForDirs ? this.collectDirs(nodesForDirs) : [])
         const dirsToCreate = new Set([
-            ...selectedDirs,
+            ...(nodesForDirs ? this.collectDirs(nodesForDirs) : []),
             ...files.map(f => f.destDir),
         ].filter(d => d !== '/'))
         for (const dir of dirsToCreate) {
@@ -415,9 +414,7 @@ class Upload extends Vue {
             try {
                 await this.adapter.mkdir(dir)
             } catch {
-                if (this.sessionActive && selectedDirs.has(dir)) {
-                    this.portal.showNotification('error', this.$t('无法创建目录 {0}', dir))
-                }
+                // 统一请求层已通知；目录可能已存在，继续尝试文件上传。
             }
         }
 

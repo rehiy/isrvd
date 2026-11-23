@@ -46,7 +46,7 @@ class CaddyRaw extends Vue {
         this.loaded = false
         try {
             const cfg = (await api.caddyConfigInspect()).payload
-            if (!cfg || typeof cfg !== 'object' || Array.isArray(cfg)) {
+            if (cfg !== null && (typeof cfg !== 'object' || Array.isArray(cfg))) {
                 this.portal.showNotification('error', this.$t('加载失败，请刷新重试'))
                 return
             }

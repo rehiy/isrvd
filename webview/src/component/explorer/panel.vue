@@ -422,7 +422,7 @@ export default toNative(ExplorerPanel)
       ref="uploadRef"
       :adapter="adapter"
       :current-path="currentPath"
-      @done="refresh()"
+      @done="debouncedLoadFiles(currentPath)"
       @refresh="debouncedLoadFiles"
     />
 

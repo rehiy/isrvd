@@ -67,7 +67,7 @@ isrvd_put "/caddy/metrics" '{"enabled":true}'
 isrvd_get "/caddy/config"
 ```
 
-返回值是 Caddy 完整 JSON 配置（结构与 `GET /config/` 返回一致），可作为整体替换的输入。
+返回值是 Caddy 完整 JSON 配置（结构与 `GET /config/` 返回一致），可作为整体替换的输入。尚未加载配置时可成功返回 `null`；原始配置页允许编辑该空状态，首次提交仍必须是 JSON 对象。
 
 > **`caddy` 镜像说明**：默认配置模板位于 `build/docker-caddy/caddy.json`，首次启动会复制并持久化到 `/data/caddy/caddy.json`；Caddy 运行数据（自动签发证书、autosave 等）持久化在 `/data/caddy/`。
 > 默认模板监听 `:80` 与 `:443`，并设置 `automatic_https.disable=true`、`disable_redirects=true`，避免首次启动时自动签发证书或跳转 HTTPS。
