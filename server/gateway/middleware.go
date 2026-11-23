@@ -54,11 +54,11 @@ func (g *gateway) audited(w http.ResponseWriter, r *http.Request, user string, h
 // allowQueryToken 与 isrvd 一样，根据 Upgrade 头或声明了 QueryToken 的 GET 路由读取 ?token=。
 // 这里不校验 WebSocket 握手；凭据与路由权限仍由中控统一验证。
 func (g *gateway) allowQueryToken(r *http.Request) bool {
-	if helper.IsWebSocket(r) {
-		return true
-	}
 	if r.Method != http.MethodGet {
 		return false
+	}
+	if helper.IsWebSocket(r) {
+		return true
 	}
 	segs := strings.Split(r.URL.Path, "/")
 	return slices.ContainsFunc(g.queryRoutes, func(pattern []string) bool {
