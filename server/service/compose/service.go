@@ -236,6 +236,9 @@ func (s *Service) resolveRedeployContent(ctx context.Context, name, installDir, 
 	content := oldContent
 	switch {
 	case req.ServiceName != "":
+		if !compose.HasProjectName(oldContent) {
+			return "", nil, fmt.Errorf("compose 项目必须指定非空 name")
+		}
 		var err error
 		content, err = compose.ServiceImageUpdate(ctx, name, oldContent, req.ServiceName, req.Image, installDir)
 		if err != nil {
@@ -246,6 +249,9 @@ func (s *Service) resolveRedeployContent(ctx context.Context, name, installDir, 
 		content = *req.Content
 	}
 
+	if !compose.HasProjectName(content) {
+		return "", nil, fmt.Errorf("compose 项目必须指定非空 name")
+	}
 	envContent := req.EnvContent
 	if envContent == nil {
 		// EnvApply 会为没有 .env 的项目创建空文件。
@@ -253,9 +259,12 @@ func (s *Service) resolveRedeployContent(ctx context.Context, name, installDir, 
 			envContent = new("")
 		}
 	}
-	project, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, envContent)
+	project, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, "", envContent)
 	if err != nil {
 		return "", nil, err
+	}
+	if project.Name != name {
+		return "", nil, fmt.Errorf("compose 项目名必须为 %s", name)
 	}
 	if len(project.Services) == 0 {
 		return "", nil, fmt.Errorf("compose 文件中没有定义服务")
