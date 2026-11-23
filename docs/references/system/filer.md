@@ -101,6 +101,8 @@ isrvd_put "/filer/chmod" '{"path":"<FILE>","mode":"0644"}'
 
 ## 上传文件
 
+在文件管理页面，可以把文件或文件夹拖到整个内容区，上传到当前目录。
+
 ```bash
 isrvd_upload "/filer/upload" "file" "<LOCAL_FILE>" "path=<FILER_DIR>"
 ```

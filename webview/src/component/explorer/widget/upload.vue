@@ -403,10 +403,16 @@ class Upload extends Vue {
     private async doUploadFiles(files: UploadFileNode[], nodesForDirs?: UploadNode[]) {
         let failCount = 0, cancelCount = 0
 
+        // 当前目录已经存在，重复创建会触发请求错误。
+        const normalizeDir = (path: string) => path.replace(/\/+$/, '') || '/'
+        const currentDir = normalizeDir(this.currentPath)
         const dirsToCreate = new Set([
             ...(nodesForDirs ? this.collectDirs(nodesForDirs) : []),
             ...files.map(f => f.destDir),
-        ].filter(d => d !== '/'))
+        ].filter(dir => {
+            const normalized = normalizeDir(dir)
+            return normalized !== '/' && normalized !== currentDir
+        }))
         for (const dir of dirsToCreate) {
             if (this.isBatchCancelled(files, nodesForDirs)) {
                 break
