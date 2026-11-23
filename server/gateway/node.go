@@ -3,6 +3,7 @@ package gateway
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"time"
 
@@ -84,15 +85,24 @@ func (g *gateway) nodeConnect() http.Handler {
 // decode 解析 JSON 请求体（上限 1 MiB）；失败时已写出 400
 func decode(w http.ResponseWriter, r *http.Request, v any) bool {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
-		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
-			fail(w, r, http.StatusRequestEntityTooLarge, "请求体过大")
-			return false
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(v)
+	if err == nil {
+		var extra json.RawMessage
+		err = decoder.Decode(&extra)
+		if errors.Is(err, io.EOF) {
+			return true
 		}
-		fail(w, r, http.StatusBadRequest, "请求体无效: "+err.Error())
+		if err == nil {
+			err = errors.New("请求体只能包含一个 JSON 值")
+		}
+	}
+	if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
+		fail(w, r, http.StatusRequestEntityTooLarge, "请求体过大")
 		return false
 	}
-	return true
+	fail(w, r, http.StatusBadRequest, "请求体无效: "+err.Error())
+	return false
 }
 
 // reply 把节点服务的结果写成统一响应：出错时映射状态码，成功时返回提示与数据
