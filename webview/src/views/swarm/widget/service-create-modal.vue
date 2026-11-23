@@ -55,6 +55,7 @@ class ServiceCreateModal extends Vue {
     }
 
     async handleConfirm() {
+        if (!this.form.name.trim()) return
         this.loading = true
         try {
             const parseLines = (s: string) => s.split('\n').map(l => l.trim()).filter(Boolean)
@@ -71,7 +72,7 @@ class ServiceCreateModal extends Vue {
             })
 
             await api.swarmServiceCreate({
-                name: this.form.name,
+                name: this.form.name.trim(),
                 image: this.form.image,
                 mode: this.form.mode,
                 replicas: this.form.replicas,
@@ -94,7 +95,7 @@ export default toNative(ServiceCreateModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="$t('新建服务')" :loading="loading" confirm-class="btn-emerald" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('新建服务')" :loading="loading" :confirm-disabled="!form.name.trim()" confirm-class="btn-emerald" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <!-- 基础设置 -->
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -104,7 +105,7 @@ export default toNative(ServiceCreateModal)
         </div>
         <div>
           <label class="form-label">{{ $t('服务名') }} <span class="text-red-500">*</span></label>
-          <input v-model="form.name" type="text" :placeholder="$t('请输入服务名')" class="input" />
+          <input v-model="form.name" type="text" :placeholder="$t('请输入服务名')" required class="input" />
         </div>
         <div>
           <label class="form-label">{{ $t('运行节点') }}</label>

@@ -153,7 +153,7 @@ func (s *Service) ServiceInspect(ctx context.Context, id string) (*ServiceDetail
 
 // ServiceCreate 创建服务。
 func (s *Service) ServiceCreate(ctx context.Context, req ServiceSpec) (string, error) {
-	if req.Name == "" {
+	if strings.TrimSpace(req.Name) == "" {
 		return "", fmt.Errorf("服务名称不能为空")
 	}
 	if req.Image == "" {

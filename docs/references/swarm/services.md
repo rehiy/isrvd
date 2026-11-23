@@ -45,7 +45,7 @@ isrvd_post "/swarm/service" '{
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| name | string | ✅ | 服务名 |
+| name | string | ✅ | 非空服务名，不接受纯空白 |
 | image | string | ✅ | 镜像 |
 | mode | string | | `replicated`（默认）/ `global`；非 `global` 的值一律按 `replicated` |
 | replicas | number | | 副本数；不传或传 `0` 均按 `1`（创建时不能建 0 副本服务） |
