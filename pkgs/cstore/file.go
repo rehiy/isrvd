@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 )
 
@@ -42,7 +43,11 @@ func (f *FileStore) Get(key string) ([]byte, error) {
 }
 
 func (f *FileStore) read(key string) ([]byte, error) {
-	data, err := os.ReadFile(f.path(key))
+	p, err := f.path(key)
+	if err != nil {
+		return nil, err
+	}
+	data, err := os.ReadFile(p)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, nil
@@ -75,7 +80,10 @@ func (f *FileStore) CheckAndSet(key string, expected, value []byte) error {
 }
 
 func (f *FileStore) write(key string, value []byte) error {
-	p := f.path(key)
+	p, err := f.path(key)
+	if err != nil {
+		return err
+	}
 	// 保留已有符号链接的写入目标，避免原子替换把链接本身覆盖掉。
 	if info, err := os.Lstat(p); err == nil && info.Mode()&os.ModeSymlink != 0 {
 		target, err := filepath.EvalSymlinks(p)
@@ -127,6 +135,10 @@ func (f *FileStore) Close() error {
 
 // ─── 辅助函数 ───
 
-func (f *FileStore) path(key string) string {
-	return filepath.Join(f.baseDir, key)
+func (f *FileStore) path(key string) (string, error) {
+	// FileStore 的 key 是目录中的文件名；不能越过目录或隐式写入子目录。
+	if key == "" || key == "." || !filepath.IsLocal(key) || filepath.Base(key) != key || strings.Contains(key, "\\") {
+		return "", fmt.Errorf("cstore/file: 无效的文件 key %q", key)
+	}
+	return filepath.Join(f.baseDir, key), nil
 }
