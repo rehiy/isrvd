@@ -265,7 +265,7 @@ func (s *Service) extractJWT(r *http.Request, allowQueryToken bool) string {
 		return tokenStr
 	}
 	// WebSocket 及标记了 QueryToken 的路由（SSE、文件预览下载）允许 query token
-	if allowQueryToken || helper.IsWebSocket(r) {
+	if r.Method == http.MethodGet && (allowQueryToken || helper.IsWebSocket(r)) {
 		return r.URL.Query().Get("token")
 	}
 	return ""
