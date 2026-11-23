@@ -10,6 +10,7 @@ func TestValidWebLink(t *testing.T) {
 		want  bool
 	}{
 		{"https://example.com/path?q=1#section", true},
+		{"HTTPS://example.com/page", true},
 		{"http://127.0.0.1:8080/dashboard", true},
 		{"http://", false},
 		{"https:///missing-host", false},

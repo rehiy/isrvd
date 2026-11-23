@@ -132,7 +132,7 @@ func applyNodeBootstrap(cfg, probe, localProbe, remoteCfg, remoteProbe map[strin
 // validWebLink 确保节点返回的外链是无用户凭据的 HTTP(S) 绝对 URL。
 func validWebLink(raw string) bool {
 	parsed, err := url.Parse(raw)
-	return err == nil && (parsed.Scheme == "http" || parsed.Scheme == "https") &&
+	return err == nil && (strings.EqualFold(parsed.Scheme, "http") || strings.EqualFold(parsed.Scheme, "https")) &&
 		parsed.Host != "" && parsed.Hostname() != "" && parsed.User == nil && parsed.Opaque == "" &&
 		!strings.ContainsAny(raw, "\r\n\t")
 }
