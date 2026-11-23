@@ -65,23 +65,26 @@ func (s *Service) SFTPOpen(ctx context.Context, hostID, filePath string) (io.Rea
 	}
 	info, err := file.Stat()
 	if err != nil || !info.Mode().IsRegular() || info.Size() < 0 {
+		_ = file.Close()
 		closeConn()
 		if err == nil {
 			err = os.ErrInvalid
 		}
 		return nil, 0, err
 	}
-	return &sftpFile{File: file, closeConn: closeConn}, info.Size(), nil
+	return &sftpFile{ReadCloser: file, closeConn: closeConn}, info.Size(), nil
 }
 
 type sftpFile struct {
-	*sftp.File
+	io.ReadCloser
 	closeConn func()
 }
 
 func (f *sftpFile) Close() error {
+	// 先发送 SFTP 文件句柄关闭请求，再断开承载它的 SSH 连接。
+	err := f.ReadCloser.Close()
 	f.closeConn()
-	return nil
+	return err
 }
 
 // SFTPUpload 上传单个文件；上传子目录时先创建远端父目录。
