@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/pkg/sftp"
-	"github.com/rehiy/libgo/filer"
 	"github.com/rehiy/libgo/webssh"
 
 	"isrvd/pkgs/helper"
@@ -142,10 +141,10 @@ func (s *Service) SFTPRead(ctx context.Context, hostID, filePath string) (string
 	if err != nil {
 		return "", err
 	}
-	if !filer.IsTextBytes(buf.Bytes()) {
+	if !helper.IsEditableTextBytes(buf.Bytes()) {
 		return "", helper.ErrBinary
 	}
-	return strings.ToValidUTF8(buf.String(), "\uFFFD"), nil
+	return buf.String(), nil
 }
 
 func (s *Service) SFTPWrite(ctx context.Context, hostID, filePath, content string) error {
