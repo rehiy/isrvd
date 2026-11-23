@@ -68,7 +68,7 @@ class ComposeDeploy extends Vue {
         let composeContent = payload.compose
         try {
             const doc = yaml.load(composeContent) as Record<string, unknown> | null
-            if (doc && typeof doc === 'object' && !Object.hasOwn(doc, 'name')) {
+            if (doc && typeof doc === 'object' && !Object.prototype.hasOwnProperty.call(doc, 'name')) {
                 const nameValue = payload.name
                 // 移除 BOM 和开头的 ---
                 composeContent = composeContent.replace(/^\uFEFF/, '').replace(/^---\n?/, '')
