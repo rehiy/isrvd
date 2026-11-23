@@ -70,6 +70,15 @@ function respond(string $content, int $status = 200, bool $cacheable = true): vo
 }
 
 /**
+ * 仅接收本项目安装器使用的 Bash 脚本格式，避免把上游 HTML/错误提示当作命令缓存。
+ */
+function isValidScript(string $content): bool
+{
+    $header = "#!/bin/bash\nset -euo pipefail\n";
+    return strncmp($content, $header, strlen($header)) === 0;
+}
+
+/**
  * 下载白名单文件，优先使用 CACHE_TTL 秒内的有效缓存。
  * 拉取失败或内容无效时回退到有效旧缓存；有效新内容通过临时文件原子写入。
  * 缓存写入失败不影响返回已下载的有效内容。
@@ -87,7 +96,7 @@ function fetchFile(string $file): ?string
 
     if (is_file($cacheFile)) {
         $cached = @file_get_contents($cacheFile);
-        if ($cached === false || $cached === '') {
+        if ($cached === false || !isValidScript($cached)) {
             $cached = null;
         }
         $mtime = @filemtime($cacheFile);
@@ -117,7 +126,7 @@ function fetchFile(string $file): ?string
         }
     }
 
-    if ($body === false || $status !== 200 || $body === '') {
+    if ($body === false || $status !== 200 || !isValidScript($body)) {
         return $cached;
     }
 
