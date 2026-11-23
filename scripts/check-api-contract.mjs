@@ -59,6 +59,12 @@ for (const match of nodeRoutes.matchAll(/\{\s*Route\w+\s*,\s*"(GET|POST|PUT|PATC
     documented.add(match[1].toLowerCase() + ' ' + canonical(match[2].replace(/^\/api/, '')))
 }
 
+// AG-UI 是单独声明的 SSE 流接口，不包含在生成的 OpenAPI 中。
+const copilotRoutes = read('server/app/ctrl_copilot.go')
+for (const match of copilotRoutes.matchAll(/\{\s*Method:\s*"(GET|POST|PUT|PATCH|DELETE)",\s*Path:\s*"([^"]+)",\s*Handler:\s*app\.copilotAGUI\b/g)) {
+    documented.add(match[1].toLowerCase() + ' ' + canonical(match[2]))
+}
+
 const requestPattern = /\b(?:http|httpBlob)\.(get|post|put|patch|delete)\s*(?:<[^(\n]*>)?\s*\(\s*(['"\x60])([^'"\x60]+)\2/g
 const calls = [...api.matchAll(requestPattern)]
 if (!calls.length) {
