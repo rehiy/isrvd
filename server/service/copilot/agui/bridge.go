@@ -323,6 +323,9 @@ func translate(ctx context.Context, enc *Encoder, body io.Reader, input RunAgent
 		if reason == nil || *reason == "" {
 			continue
 		}
+		if *reason != "stop" && *reason != "tool_calls" {
+			return fmt.Errorf("上游 LLM 未正常结束（finish_reason=%q）", *reason)
+		}
 		finished = true
 		break
 	}
