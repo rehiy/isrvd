@@ -141,7 +141,7 @@ func (app *App) filerFileCreate(c *gin.Context) {
 	if c.Query("createOnly") == "true" {
 		err = app.filerSvc.FileCreateOnly(c.Request.Context(), absPath, content)
 	} else {
-		err = app.filerSvc.FileCreate(absPath, content)
+		err = app.filerSvc.FileCreate(c.Request.Context(), absPath, content)
 	}
 	if errors.Is(err, os.ErrExist) {
 		respondError(c, http.StatusConflict, "文件已存在")

@@ -200,9 +200,12 @@ func (s *Service) FileWriteFrom(ctx context.Context, absPath string, r io.Reader
 	})
 }
 
-// FileCreate 创建文件（使用 libgo/filer）
-func (s *Service) FileCreate(absPath string, content []byte) error {
-	return filer.Write(absPath, content)
+// FileCreate 创建或覆盖文件；与在线保存共用原子发布，自动创建父目录。
+func (s *Service) FileCreate(ctx context.Context, absPath string, content []byte) error {
+	if err := os.MkdirAll(filepath.Dir(absPath), 0755); err != nil {
+		return err
+	}
+	return s.FileWrite(ctx, absPath, content)
 }
 
 // FileCreateOnly 原子发布新文件。
