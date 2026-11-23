@@ -318,7 +318,7 @@ export default toNative(ExplorerPanel)
   <UploadZone ref="uploadZoneRef" :enabled="!!can.upload" :upload-ref="uploadRef" />
 
   <div
-    class="relative flex flex-col h-full"
+    :class="['relative flex min-h-0 flex-col', stickyToolbar ? 'h-[calc(100dvh-4rem)] overflow-hidden' : 'h-full']"
     v-bind="uploadZoneRef?.dragAttrs"
   >
     <!-- 拖拽遮罩 -->
