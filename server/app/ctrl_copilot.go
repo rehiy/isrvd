@@ -42,11 +42,32 @@ func (app *App) copilotCatalog(c *gin.Context) {
 	respondSuccess(c, "", result)
 }
 
+// decodeAGUIInput 严格读取单个 JSON 请求，尺寸上限也覆盖 JSON 后的内容。
+func decodeAGUIInput(w http.ResponseWriter, r *http.Request, maxBytes int64, input *copilot.AGUIInput) error {
+	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxBytes))
+	if err := decoder.Decode(input); err != nil {
+		return err
+	}
+	var extra json.RawMessage
+	err := decoder.Decode(&extra)
+	if errors.Is(err, io.EOF) {
+		return nil
+	}
+	if err == nil {
+		return errors.New("请求体包含多个 JSON 值")
+	}
+	return err
+}
+
 // copilotAGUI 以 AG-UI 协议与前端 CopilotKit 交互，响应为 SSE 事件流。
 func (app *App) copilotAGUI(c *gin.Context) {
 	var input copilot.AGUIInput
-	if err := json.NewDecoder(io.LimitReader(c.Request.Body, config.Current().Server.MaxUploadSize)).Decode(&input); err != nil {
-		respondError(c, http.StatusBadRequest, "请求体格式错误")
+	if err := decodeAGUIInput(c.Writer, c.Request, config.Current().Server.MaxUploadSize, &input); err != nil {
+		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
+			respondError(c, http.StatusRequestEntityTooLarge, "请求体过大")
+		} else {
+			respondError(c, http.StatusBadRequest, "请求体格式错误")
+		}
 		return
 	}
 	if input.RunID == "" {
