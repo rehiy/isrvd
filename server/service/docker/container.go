@@ -179,6 +179,9 @@ type ContainerCreateResult struct {
 
 // ContainerCreate 创建并启动容器。
 func (s *Service) ContainerCreate(ctx context.Context, req ContainerSpec) (*ContainerCreateResult, error) {
+	if strings.TrimSpace(req.Name) == "" {
+		return nil, fmt.Errorf("容器名称不能为空")
+	}
 	if req.Image == "" {
 		return nil, fmt.Errorf("镜像名称不能为空")
 	}
