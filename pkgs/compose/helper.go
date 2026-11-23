@@ -19,12 +19,13 @@ const (
 // ProjectNetworks 按实际名称保留项目网络的归属与驱动。具名 network_mode 引用现有网络。
 func ProjectNetworks(project *types.Project) map[string]types.NetworkConfig {
 	networks := make(map[string]types.NetworkConfig, len(project.Networks))
-	for key, config := range project.Networks {
-		name := resolveNetworkName(project, key)
-		config.External = config.External || networks[name].External
-		networks[name] = config
-	}
 	for _, svc := range project.Services {
+		for key := range svc.Networks {
+			config := project.Networks[key]
+			name := resolveNetworkName(project, key)
+			config.External = config.External || networks[name].External
+			networks[name] = config
+		}
 		if svc.NetworkMode != "" && !isBuiltinNetworkMode(svc.NetworkMode) {
 			if _, ok := networks[svc.NetworkMode]; !ok {
 				networks[svc.NetworkMode] = types.NetworkConfig{External: true}

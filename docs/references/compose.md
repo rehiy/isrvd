@@ -41,7 +41,7 @@ Docker 不可用时 `/compose/*` 返回 `503`；未配置 `docker.containerRoot`
 
 附加 ZIP 的归档大小和解压总量分别限制为 512 MiB。附加文件与现有文件重名时拒绝部署，`compose.yml` 由请求中的 Compose 配置生成。请求取消会中止附加文件下载和解压。部署失败时清理本次新建的文件与空目录，并恢复原 `.env`。
 
-Docker 和 Swarm 会检查 `external: true` 的网络是否存在。部署失败后尝试清理本次确认新建的网络，网络仍有连接或清理失败时报告错误。
+Docker 和 Swarm 仅检查启用服务实际引用的网络及具名 `network_mode`；这些引用中的 `external: true` 网络必须已存在。未使用或仅禁用 profile 引用的顶层网络不检查、不创建。部署失败后尝试清理本次确认新建的网络，网络仍有连接或清理失败时报告错误。
 
 状态码：`400` 为 JSON/表单解析失败、`content` 为空、请求体超过 `server.maxUploadSize`、路径参数 `:name` 非法；其余错误（含项目名非法、冲突校验、重部署参数校验、部署忙碌）返回 `500`。
 
