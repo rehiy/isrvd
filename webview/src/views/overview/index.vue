@@ -24,14 +24,20 @@ class Overview extends Vue {
     @Ref readonly swarmRef!: InstanceType<typeof SwarmOverview>
 
     // ─── 计算属性 ───
+    get canViewApisix() {
+        return [
+            'GET /api/apisix/routes',
+            'GET /api/apisix/consumers',
+            'GET /api/apisix/upstreams',
+            'GET /api/apisix/plugin-configs',
+            'GET /api/apisix/ssls',
+            'GET /api/apisix/whitelist',
+        ].some(permission => this.portal.hasPerm(permission))
+    }
+
     get hasAnyBlock() {
         return (
-            this.portal.hasPerm('GET /api/apisix/routes') ||
-            this.portal.hasPerm('GET /api/apisix/consumers') ||
-            this.portal.hasPerm('GET /api/apisix/upstreams') ||
-            this.portal.hasPerm('GET /api/apisix/plugin-configs') ||
-            this.portal.hasPerm('GET /api/apisix/ssls') ||
-            this.portal.hasPerm('GET /api/apisix/whitelist') ||
+            this.canViewApisix ||
             this.portal.hasPerm('GET /api/caddy/info') ||
             this.portal.hasPerm('GET /api/docker/containers') ||
             this.portal.hasPerm('GET /api/swarm/info') ||
@@ -42,14 +48,7 @@ class Overview extends Vue {
     // ─── 方法 ───
     refreshAll() {
         this.systemRef?.load()
-        if (
-            this.portal.hasPerm('GET /api/apisix/routes') ||
-            this.portal.hasPerm('GET /api/apisix/consumers') ||
-            this.portal.hasPerm('GET /api/apisix/upstreams') ||
-            this.portal.hasPerm('GET /api/apisix/plugin-configs') ||
-            this.portal.hasPerm('GET /api/apisix/ssls') ||
-            this.portal.hasPerm('GET /api/apisix/whitelist')
-        ) {
+        if (this.canViewApisix) {
             this.apisixRef?.load()
         }
         if (this.portal.hasPerm('GET /api/caddy/info')) {
@@ -111,7 +110,7 @@ export default toNative(Overview)
       </div>
 
       <!-- APISIX 概览区块 -->
-      <div v-if="portal.hasPerm('GET /api/apisix/routes')" class="p-6">
+      <div v-if="canViewApisix" class="p-6">
         <div class="flex items-center gap-2 mb-4">
           <i class="fas fa-route text-orange-500 text-lg"></i>
           <h2 class="text-lg font-semibold text-slate-700">{{ $t('APISIX 网关') }}</h2>

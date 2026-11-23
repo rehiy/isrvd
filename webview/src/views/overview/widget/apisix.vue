@@ -15,17 +15,21 @@ class ApisixOverview extends Vue {
     loading = false
 
     readonly statCards = [
-        { key: 'routes',        label: '路由总数', icon: 'fa-route',              bgColor: 'bg-orange-500' },
-        { key: 'routesEnabled', label: '启用路由', icon: 'fa-toggle-on',          bgColor: 'bg-teal-500' },
-        { key: 'routesDisabled', label: '停用路由', icon: 'fa-toggle-off',        bgColor: 'bg-slate-500' },
-        { key: 'upstreams',     label: '上游总数', icon: 'fa-server',             bgColor: 'bg-emerald-500' },
-        { key: 'routesWithInlineUpstream', label: '直连上游', icon: 'fa-diagram-project', bgColor: 'bg-indigo-500' },
-        { key: 'ssl',           label: 'SSL 证书', icon: 'fa-lock',               bgColor: 'bg-cyan-500' },
-        { key: 'sslEnabled',    label: '启用 SSL', icon: 'fa-certificate',        bgColor: 'bg-cyan-600' },
-        { key: 'consumers',     label: '消费者总数', icon: 'fa-user-tag',         bgColor: 'bg-amber-500' },
-        { key: 'pluginConfigs', label: '插件配置', icon: 'fa-puzzle-piece',       bgColor: 'bg-rose-500' },
-        { key: 'whitelist',     label: '访问授权', icon: 'fa-shield-halved',      bgColor: 'bg-emerald-500' },
+        { key: 'routes', permission: 'GET /api/apisix/routes',        label: '路由总数', icon: 'fa-route',              bgColor: 'bg-orange-500' },
+        { key: 'routesEnabled', permission: 'GET /api/apisix/routes', label: '启用路由', icon: 'fa-toggle-on',          bgColor: 'bg-teal-500' },
+        { key: 'routesDisabled', permission: 'GET /api/apisix/routes', label: '停用路由', icon: 'fa-toggle-off',        bgColor: 'bg-slate-500' },
+        { key: 'upstreams', permission: 'GET /api/apisix/upstreams',     label: '上游总数', icon: 'fa-server',             bgColor: 'bg-emerald-500' },
+        { key: 'routesWithInlineUpstream', permission: 'GET /api/apisix/routes', label: '直连上游', icon: 'fa-diagram-project', bgColor: 'bg-indigo-500' },
+        { key: 'ssl', permission: 'GET /api/apisix/ssls',           label: 'SSL 证书', icon: 'fa-lock',               bgColor: 'bg-cyan-500' },
+        { key: 'sslEnabled', permission: 'GET /api/apisix/ssls',    label: '启用 SSL', icon: 'fa-certificate',        bgColor: 'bg-cyan-600' },
+        { key: 'consumers', permission: 'GET /api/apisix/consumers',     label: '消费者总数', icon: 'fa-user-tag',         bgColor: 'bg-amber-500' },
+        { key: 'pluginConfigs', permission: 'GET /api/apisix/plugin-configs', label: '插件配置', icon: 'fa-puzzle-piece',       bgColor: 'bg-rose-500' },
+        { key: 'whitelist', permission: 'GET /api/apisix/whitelist',     label: '访问授权', icon: 'fa-shield-halved',      bgColor: 'bg-emerald-500' },
     ]
+
+    get visibleStatCards() {
+        return this.statCards.filter(card => this.portal.hasPerm(card.permission))
+    }
 
     // ─── 方法 ───
     async load() {
@@ -103,7 +107,7 @@ export default toNative(ApisixOverview)
     </div>
 
     <div v-else-if="info" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-      <div v-for="card in statCards" :key="card.key" class="stat-card items-center">
+      <div v-for="card in visibleStatCards" :key="card.key" class="stat-card items-center">
         <div :class="['page-icon', card.bgColor]">
           <i :class="['fas', card.icon, 'text-white']"></i>
         </div>
