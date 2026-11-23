@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/rehiy/libgo/request"
 
