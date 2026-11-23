@@ -19,7 +19,7 @@ export interface ComposeConfigDetail {
 }
 
 // 统一的 compose 部署请求
-// 项目名（projectName）从 compose 文件中的 name: 字段自动获取，无需前端填写
+// Compose 文件必须包含非空顶层 name，作为项目名
 export interface ComposeDeploy {
     content: string         // 完整 compose yaml 文本
     envContent?: string     // 省略表示保留附加文件解压出的 .env；提交内容则以其为准

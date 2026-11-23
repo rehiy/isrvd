@@ -26,7 +26,7 @@ function isMarketplaceInstallPayload(data: unknown): data is MarketplaceInstallP
     if (d.source !== 'marketplace' || d.type !== 'install') {
         return false
     }
-    if (typeof d.name !== 'string' || !d.name) {
+    if (typeof d.name !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(d.name)) {
         return false
     }
     if (typeof d.compose !== 'string' || !d.compose) {

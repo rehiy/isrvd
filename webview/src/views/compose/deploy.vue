@@ -45,13 +45,18 @@ class ComposeDeploy extends Vue {
     }
 
     get canSubmit(): boolean {
-        return this.portal.initialized && !this.loading && !!this.content.trim()
-            && this.portal.hasPerm(`POST /api/compose/${this.target}`)
+        if (!this.portal.initialized || this.loading || !this.portal.hasPerm(`POST /api/compose/${this.target}`)) return false
+        try {
+            const doc = yaml.load(this.content) as Record<string, unknown> | null
+            return !!doc && typeof doc.name === 'string' && !!doc.name.trim()
+        } catch {
+            return false
+        }
     }
 
     /** 编辑器提示文案（整行展示） */
     get dynamicWarning(): string {
-        const parts = [this.$t('项目名来自 compose 文件的 name 字段；如 compose 中引用了环境变量，请在 .env 中填写对应变量')]
+        const parts = [this.$t('compose 文件顶层必须填写非空 name；如引用环境变量，请在 .env 中填写对应变量')]
         if (this.fromMarketplace) {
             parts.push(this.$t('已从应用市场预填模板，可在此基础上直接部署或调整后再部署'))
         }
@@ -63,8 +68,8 @@ class ComposeDeploy extends Vue {
         let composeContent = payload.compose
         try {
             const doc = yaml.load(composeContent) as Record<string, unknown> | null
-            if (doc && typeof doc === 'object' && !doc.name) {
-                const nameValue = payload.name || 'compose-project'
+            if (doc && typeof doc === 'object' && !Object.prototype.hasOwnProperty.call(doc, 'name')) {
+                const nameValue = payload.name
                 // 移除 BOM 和开头的 ---
                 composeContent = composeContent.replace(/^\uFEFF/, '').replace(/^---\n?/, '')
                 // 在文件最前面添加 name 字段

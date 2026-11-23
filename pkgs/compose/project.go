@@ -160,7 +160,7 @@ func loadProjectWithOptions(ctx context.Context, details types.ConfigDetails, pr
 }
 
 // ProjectValidateWithoutEnvFiles 在不读取 services.env_file 的前提下校验 Compose 结构，
-// 返回解析结果供调用方复用（如项目名，已插值+规范化；未声明 name 时用内容短哈希兜底）。
+// 要求显式指定非空项目名。
 // 用于部署落盘前预检；env_file 仅在文件就位后的正式加载阶段解析。
 func ProjectValidateWithoutEnvFiles(ctx context.Context, content string, envContent *string) (*types.Project, error) {
 	if content == "" {
@@ -182,21 +182,10 @@ func ProjectValidateWithoutEnvFiles(ctx context.Context, content string, envCont
 		o.SkipResolveEnvironment = true
 	}
 
-	project, err := loadProjectWithOptions(ctx, details, "", false, false, skipEnvFiles)
-	if err == nil {
-		return project, nil
+	if !HasProjectName(content) {
+		return nil, fmt.Errorf("compose 项目必须指定非空 name")
 	}
-
-	// 首次失败可能仅因未声明顶层 name，此时用内容短哈希兜底。
-	// 但若声明了 name 却解析为空，说明插值变量未提供，必须报错而非静默改名。
-	if declaresProjectName(content) {
-		return nil, err
-	}
-	project, hashErr := loadProjectWithOptions(ctx, details, ShortHash(content), false, true, skipEnvFiles)
-	if hashErr != nil {
-		return nil, err
-	}
-	return project, nil
+	return loadProjectWithOptions(ctx, details, "", false, false, skipEnvFiles)
 }
 
 func projectEnvironment(extra map[string]string) map[string]string {
@@ -246,13 +235,13 @@ func parseEnvContent(content string) (map[string]string, error) {
 	return dotenv.Parse(bytes.NewReader([]byte(content)))
 }
 
-// declaresProjectName 判断 compose 文本是否声明了顶层 name 键。
-func declaresProjectName(content string) bool {
+// HasProjectName 检查顶层 name 是否为非空字符串。
+func HasProjectName(content string) bool {
 	var doc struct {
 		Name *string `yaml:"name"`
 	}
 	if err := yaml.Unmarshal([]byte(content), &doc); err != nil {
 		return false
 	}
-	return doc.Name != nil
+	return doc.Name != nil && strings.TrimSpace(*doc.Name) != ""
 }

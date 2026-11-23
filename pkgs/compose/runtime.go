@@ -2,7 +2,6 @@ package compose
 
 import (
 	"context"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -12,7 +11,6 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/rehiy/libgo/request"
 
@@ -41,21 +39,6 @@ func ValidateProjectName(name string) error {
 		return fmt.Errorf("非法的项目名称: %s", name)
 	}
 	return nil
-}
-
-// ProjectNameFromProject 从 loader 结果和原始内容确定项目名。
-func ProjectNameFromProject(project *types.Project, content string) (string, error) {
-	if project == nil {
-		return "", fmt.Errorf("project 为空")
-	}
-	name := project.Name
-	if name == "" || name == "." {
-		name = ShortHash(content)
-	}
-	if err := ValidateProjectName(name); err != nil {
-		return "", err
-	}
-	return name, nil
 }
 
 // ==================== Project loading and persistence ====================
@@ -255,11 +238,6 @@ func ServiceImageUpdate(ctx context.Context, name, content, serviceName, image, 
 }
 
 // ==================== Runtime naming helpers ====================
-
-func ShortHash(content string) string {
-	h := sha256.Sum256([]byte(content))
-	return fmt.Sprintf("%x", h[:4])
-}
 
 func DockerComposeProjectName(info container.InspectResponse) string {
 	if info.Config == nil || info.Config.Labels == nil {
