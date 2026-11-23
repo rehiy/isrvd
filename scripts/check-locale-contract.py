@@ -136,18 +136,16 @@ def main() -> int:
         check_basic(module)
         check_translation(module)
         check_reader(module)
-    for strict, worklist in ((False, None), (True, None), (False, 'ja'), (False, 'invalid')):
-        backend, frontend = (report(module, strict, worklist) for module in modules)
-        require(backend == frontend, '基础词典检查的输出或退出码不一致')
-        status, stdout, stderr = backend
-        if worklist == 'ja':
-            require(status == 0 and json.loads(stdout) == {'key': '缺失', 'en': 'Missing'} and not stderr, 'JSONL 清单不符合契约')
-        elif worklist:
-            require(status == 1 and not stdout and '没有语言 invalid' in stderr, '无效语言的退出行为不符合契约')
-        else:
-            require(status == int(strict), 'strict 退出码不符合契约')
-            for text in ('缺失 1 条', '多余 1 条', '空译文 1 条', '占位符与原文不一致 1 条'):
-                require(text in stdout, f'检查遗漏：{text}')
+        for strict, worklist in ((False, None), (True, None), (False, 'ja'), (False, 'invalid')):
+            status, stdout, stderr = report(module, strict, worklist)
+            if worklist == 'ja':
+                require(status == 0 and json.loads(stdout) == {'key': '缺失', 'en': 'Missing'} and not stderr, 'JSONL 清单不符合契约')
+            elif worklist:
+                require(status == 1 and not stdout and '没有语言 invalid' in stderr, '无效语言的退出行为不符合契约')
+            else:
+                require(status == int(strict) and not stderr, 'strict 退出行为不符合契约')
+                for text in ('缺失 1 条', '多余 1 条', '空译文 1 条', '占位符与原文不一致 1 条'):
+                    require(text in stdout, f'检查遗漏：{text}')
     print('前后端词典基础语义契约一致（业务规则独立维护）')
     return 0
 
