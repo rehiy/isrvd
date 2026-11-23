@@ -97,7 +97,7 @@ isrvd_post "/docker/container" '{
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | image | string | ✅ | 镜像名 |
-| name | string | ✅ | 容器名 |
+| name | string | ✅ | 非空容器名，不接受纯空白 |
 | cmd | string[] | | 启动命令 |
 | env | string[] | | 环境变量（`KEY=VALUE`） |
 | ports | object | | `{"[宿主IP:]宿主端口[/协议]": "容器端口"}`，宿主 IP 默认 `0.0.0.0`，协议默认 `tcp`（以键为准） |
