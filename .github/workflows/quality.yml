@@ -70,6 +70,12 @@ jobs:
               *) sh -n "$script" ;;
             esac
           done < <(find build -type f '(' -name '*.sh' -o -name run -o -name finish ')' -print0)
+      - name: Validate website PHP entrypoints
+        run: |
+          php --version
+          while IFS= read -r -d '' file; do
+            php -l "$file"
+          done < <(find build/home-page -type f -name '*.php' -print0)
       - run: git diff --check HEAD^ HEAD
         if: github.event_name == 'push'
       - run: git diff --check origin/${{ github.base_ref }}...HEAD
