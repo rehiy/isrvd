@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 )
@@ -68,19 +69,24 @@ func ExtractZIP(ctx context.Context, source, destination string, overwrite bool,
 		if !file.Mode().IsRegular() {
 			return rollback, fmt.Errorf("不支持的 ZIP 文件类型: %s", file.Name)
 		}
-		if maximumBytes > 0 && file.UncompressedSize64 > maximumBytes-total {
-			return rollback, fmt.Errorf("ZIP 解压大小超过限制")
+		var remaining uint64
+		if maximumBytes > 0 {
+			remaining = maximumBytes - total
+			if file.UncompressedSize64 > remaining {
+				return rollback, fmt.Errorf("ZIP 解压大小超过限制")
+			}
 		}
-		total += file.UncompressedSize64
 		if err := zipMkdir(root, filepath.Dir(name), &created); err != nil {
 			return rollback, err
 		}
 		if existing, err := root.Stat(name); err == nil && os.SameFile(existing, sourceInfo) {
 			return rollback, fmt.Errorf("ZIP 条目与源归档同名: %s", file.Name)
 		}
-		if err := zipExtractFile(ctx, root, file, name, overwrite, &created); err != nil {
+		written, err := zipExtractFile(ctx, root, file, name, overwrite, &created, remaining, maximumBytes > 0)
+		if err != nil {
 			return rollback, err
 		}
+		total += written
 	}
 	return rollback, nil
 }
@@ -102,20 +108,34 @@ func zipMkdir(root *os.Root, name string, created *[]string) error {
 	return nil
 }
 
-func zipExtractFile(ctx context.Context, root *os.Root, file *zip.File, name string, overwrite bool, created *[]string) error {
+func zipExtractFile(ctx context.Context, root *os.Root, file *zip.File, name string, overwrite bool, created *[]string, remaining uint64, limited bool) (uint64, error) {
 	in, err := file.Open()
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer in.Close()
+	var written int64
 	err = WriteRootFile(ctx, root, name, !overwrite, func(out io.Writer) error {
-		_, err := io.Copy(out, ContextReader{Context: ctx, Reader: in})
-		return err
+		reader := io.Reader(ContextReader{Context: ctx, Reader: in})
+		// ZIP 声明的未压缩大小可能被伪造，必须限制实际读取的字节数。
+		// 检测多读的 1 字节；超出 int64 上限时该限制无法由单个文件触达。
+		if limited && remaining < math.MaxInt64 {
+			reader = io.LimitReader(reader, int64(remaining)+1)
+		}
+		var copyErr error
+		written, copyErr = io.Copy(out, reader)
+		if copyErr != nil {
+			return copyErr
+		}
+		if limited && uint64(written) > remaining {
+			return fmt.Errorf("ZIP 解压大小超过限制")
+		}
+		return nil
 	})
 	if err == nil && !overwrite {
 		*created = append(*created, name)
 	}
-	return err
+	return uint64(written), err
 }
 
 // CreateZIP 压缩文件或目录，生成同目录的 <source>.zip。
