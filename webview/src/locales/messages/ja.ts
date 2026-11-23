@@ -2376,8 +2376,8 @@ const messages: Record<string, string> = {
     '请前往「系统设置 → 应用市场」配置站点 URL': '「システム設定→App Market」に進み、サイトURLを設定してください。',
     // Go to Settings
     '前往配置': '設定に移動',
-    // The project name comes from the name field of the compose file; if the compose file references variables, fill them in .env
-    '项目名来自 compose 文件的 name 字段；如 compose 中引用了环境变量，请在 .env 中填写对应变量': 'プロジェクト名は、作成ファイルの名前フィールドから取得されます。 Compose で環境変数が参照されている場合は、.env に対応する変数を入力してください。',
+    // The compose file must define a non-empty top-level name; environment variables belong in .env
+    'compose 文件顶层必须填写非空 name；如引用环境变量，请在 .env 中填写对应变量': 'Compose ファイルのトップレベルに空でない name を指定してください。環境変数を参照する場合は、.env に定義してください。',
     // Template prefilled from the marketplace, deploy it directly or adjust it first
     '已从应用市场预填模板，可在此基础上直接部署或调整后再部署': 'テンプレートはアプリケーション マーケットから事前に入力されており、直接展開することも、展開前に調整することもできます。',
     // Unknown error

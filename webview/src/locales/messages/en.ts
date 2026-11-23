@@ -1259,7 +1259,7 @@ const messages: Record<string, string> = {
     '尚未配置应用市场': 'Marketplace is not configured yet',
     '请前往「系统设置 → 应用市场」配置站点 URL': 'Go to "System Settings → Marketplace" to configure the site URL',
     '前往配置': 'Go to Settings',
-    '项目名来自 compose 文件的 name 字段；如 compose 中引用了环境变量，请在 .env 中填写对应变量': 'The project name comes from the name field of the compose file; if the compose file references variables, fill them in .env',
+    'compose 文件顶层必须填写非空 name；如引用环境变量，请在 .env 中填写对应变量': 'The compose file must include a non-empty top-level name; if it references environment variables, define them in .env',
     '已从应用市场预填模板，可在此基础上直接部署或调整后再部署': 'Template prefilled from the marketplace, deploy it directly or adjust it first',
     '未知错误': 'Unknown error',
     '模板格式异常，已按原文加载：{0}': 'Unexpected template format, loaded as is: {0}',

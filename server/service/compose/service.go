@@ -136,13 +136,13 @@ func (s *Service) projectDeploy(ctx context.Context, req DeployRequest, rollback
 	if root == "" {
 		return nil, fmt.Errorf("未配置容器数据根目录")
 	}
-	// .env 尚未写盘，预检时跳过 env_file；项目名由插值后的 name 或内容短哈希确定。
+	// .env 尚未写盘，预检时跳过 env_file。
 	pre, err := compose.ProjectValidateWithoutEnvFiles(ctx, req.Content, req.EnvContent)
 	if err != nil {
 		return nil, err
 	}
-	projectName, err := compose.ProjectNameFromProject(pre, req.Content)
-	if err != nil {
+	projectName := pre.Name
+	if err := compose.ValidateProjectName(projectName); err != nil {
 		return nil, err
 	}
 	installDir := filepath.Join(root, projectName)
@@ -236,6 +236,9 @@ func (s *Service) resolveRedeployContent(ctx context.Context, name, installDir, 
 	content := oldContent
 	switch {
 	case req.ServiceName != "":
+		if !compose.HasProjectName(oldContent) {
+			return "", nil, fmt.Errorf("compose 项目必须指定非空 name")
+		}
 		var err error
 		content, err = compose.ServiceImageUpdate(ctx, name, oldContent, req.ServiceName, req.Image, installDir)
 		if err != nil {
@@ -246,6 +249,9 @@ func (s *Service) resolveRedeployContent(ctx context.Context, name, installDir, 
 		content = *req.Content
 	}
 
+	if !compose.HasProjectName(content) {
+		return "", nil, fmt.Errorf("compose 项目必须指定非空 name")
+	}
 	envContent := req.EnvContent
 	if envContent == nil {
 		// EnvApply 会为没有 .env 的项目创建空文件。
@@ -253,9 +259,12 @@ func (s *Service) resolveRedeployContent(ctx context.Context, name, installDir, 
 			envContent = new("")
 		}
 	}
-	project, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, envContent)
+	project, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, "", envContent)
 	if err != nil {
 		return "", nil, err
+	}
+	if project.Name != name {
+		return "", nil, fmt.Errorf("compose 项目名必须为 %s", name)
 	}
 	if len(project.Services) == 0 {
 		return "", nil, fmt.Errorf("compose 文件中没有定义服务")
