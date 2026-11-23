@@ -1,117 +1,131 @@
 #!/usr/bin/env python3
 """
-批量修复 Vue 模板标签：将多行属性标签合并为一行。
+手动整理 Vue 模板中的多行开始标签；不属于 format.py 的自动修复链。
 
-将这种格式：
-  <button
-    type="submit"
-    :disabled="loading"
-    class="btn btn-primary w-full"
-  >
-合并为：
-  <button type="submit" :disabled="loading" class="btn btn-primary w-full">
-
-规则：
-1. 只处理开始标签（<tag ... >）
-2. 合并后长度 < 180 字符才合并
-3. 跳过自闭合标签（<tag ... />）
+仅合并长度小于 180 的开始标签，跳过自闭合标签、注释和属性值跨行的标签。
+保留引号内的空格和表达式，脚本与样式区不处理。
+默认修改文件；--dry-run / --check 不修改，有差异返回 1，执行失败非零退出。
+用法（webview 目录）：python3 scripts/fix-vue-tags.py --check
+用法（仓库根目录）：python3 webview/scripts/fix-vue-tags.py --dry-run
 """
 
+import argparse
+from pathlib import Path
 import re
-import os
 import sys
 
+ROOT = Path(__file__).resolve().parent.parent
+TEMPLATE = re.compile(r'(^<template(?:\s[^>]*|)>[^\S\n]*\r?\n)([\s\S]*)(^</template>[^\S\n]*$)', re.MULTILINE)
 
-def fix_vue_file(filepath):
-    with open(filepath, 'r', encoding='utf-8') as f:
-        content = f.read()
 
-    lines = content.split('\n')
-    result = []
-    i = 0
-    changed = False
+def join_tag(lines: list[str]) -> str | None:
+    parts = []
+    for index, line in enumerate(lines):
+        text = line.strip()
+        quote = None
+        for position, char in enumerate(text):
+            if quote:
+                if char == quote:
+                    quote = None
+            elif char in ('"', "'"):
+                quote = char
+            elif char == '<' and (index != 0 or position != 0):
+                return None
+            elif char == '>':
+                if index != len(lines) - 1 or position != len(text) - 1 or text[:position].rstrip().endswith('/'):
+                    return None
+        if quote:
+            return None
+        parts.append(text)
+    merged = ' '.join(part for part in parts if part)
+    if not merged.endswith('>') or len(merged) >= 180:
+        return None
+    return merged
 
-    while i < len(lines):
-        line = lines[i]
 
-        # 检查是否是标签开始（<tagname 开头）
-        m = re.match(r'^(\s*)<([\w-]+)', line)
-        if not m:
-            result.append(line)
-            i += 1
+def format_template(template: str) -> str:
+    lines = template.splitlines(keepends=True)
+    output = []
+    index = 0
+    in_comment = False
+    while index < len(lines):
+        line = lines[index]
+        if in_comment or '<!--' in line:
+            in_comment = '-->' not in line
+            output.append(line)
+            index += 1
             continue
-
-        # 如果这一行已经有 > 且不是自闭合，跳过
-        if '>' in line and not line.strip().endswith('/>'):
-            result.append(line)
-            i += 1
+        start = re.match(r'^([ \t]*)<[A-Za-z][\w.-]*(?:\s|$)', line)
+        if not start:
+            output.append(line)
+            index += 1
             continue
-
-        # 如果这一行是自闭合标签
-        if line.strip().endswith('/>'):
-            result.append(line)
-            i += 1
-            continue
-
-        # 收集多行标签
-        indent = m.group(1)
-        tag_name = m.group(2)
-        parts = [line.strip()]
-        j = i + 1
-
-        while j < len(lines):
-            current = lines[j]
-            parts.append(current.strip())
-            if '>' in current:
+        quote = None
+        end = index
+        closed = False
+        while end < len(lines):
+            for char in lines[end]:
+                if quote:
+                    if char == quote:
+                        quote = None
+                elif char in ('"', "'"):
+                    quote = char
+                elif char == '>':
+                    closed = True
+                    break
+            if closed:
                 break
-            j += 1
-
-        # 合并所有部分
-        merged = ' '.join(p for p in parts if p)
-        merged = re.sub(r'\s+', ' ', merged)
-        # 去除 > 前的多余空格：将 " >" 替换为 ">"
-        merged = re.sub(r'\s+>', '>', merged)
-
-        if len(merged) < 180:
-            # 保持原始缩进
-            result.append(indent + merged.strip())
-            changed = True
+            end += 1
+        if not closed:
+            output.extend(lines[index:])
+            break
+        merged = join_tag(lines[index:end + 1]) if end > index else None
+        if merged:
+            newline = '\r\n' if lines[end].endswith('\r\n') else '\n' if lines[end].endswith('\n') else ''
+            output.append(start[1] + merged + newline)
         else:
-            result.extend(lines[i:j+1])
-
-        i = j + 1
-
-    if changed:
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write('\n'.join(result))
-        return True
-    return False
+            output.extend(lines[index:end + 1])
+        index = end + 1
+    return ''.join(output)
 
 
-def main():
-    vue_dir = '/home/rehiy-public/isrvd/webview/src'
-    fixed_files = []
+def fix_vue_file(filepath: Path, dry_run: bool = False) -> bool:
+    path = Path(filepath)
+    source = path.read_bytes().decode('utf-8')
+    match = TEMPLATE.search(source)
+    if not match:
+        return False
+    template = format_template(match[2])
+    result = source[:match.start(2)] + template + source[match.end(2):]
+    if result == source:
+        return False
+    if not dry_run:
+        path.write_bytes(result.encode('utf-8'))
+    return True
 
-    for root, dirs, files in os.walk(vue_dir):
-        dirs[:] = [d for d in dirs if d not in ['node_modules', 'dist', '.git']]
 
-        for file in files:
-            if file.endswith('.vue'):
-                filepath = os.path.join(root, file)
-                try:
-                    if fix_vue_file(filepath):
-                        relpath = os.path.relpath(filepath, vue_dir)
-                        fixed_files.append(relpath)
-                except Exception as e:
-                    print(f"Error processing {filepath}: {e}", file=sys.stderr)
-
-    if fixed_files:
-        print(f"Fixed {len(fixed_files)} files:")
-        for f in fixed_files:
-            print(f"  - {f}")
-    else:
-        print("No files needed fixing.")
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--dry-run', '--check', dest='dry_run', action='store_true', help='只检查，不写入；存在差异返回 1')
+    args = parser.parse_args()
+    directory = ROOT / 'src'
+    if not directory.is_dir():
+        raise ValueError(f'扫描目录不存在：{directory}')
+    files = sorted(directory.rglob('*.vue'))
+    if not files:
+        raise ValueError('未找到 Vue 文件，未执行修复')
+    changed = 0
+    for path in files:
+        if fix_vue_file(path, args.dry_run):
+            changed += 1
+            print(f"{'[dry]' if args.dry_run else '[fix]'} {path.relative_to(ROOT)}")
+    print(f"共处理 {len(files)} 个文件，{'需要' if args.dry_run else '已'}修改 {changed} 个。")
+    return 1 if args.dry_run and changed else 0
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        sys.exit(main())
+    except (OSError, ValueError) as error:
+        print(f'Vue 标签整理失败：{error}', file=sys.stderr)
+        sys.exit(1)

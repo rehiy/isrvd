@@ -14,9 +14,14 @@
   9. 相对路径导入 ./ 或 ../ 开头（排在最后）
 
 同一模块的普通导入与 type 导入合并为相邻两行（普通在前，type 在后），
-不跨组拆散。
+不跨组拆散。仅处理 .vue 首个 <script> 块，不处理普通 .ts 文件。
+副作用 import 保留原顺序；不完整 script 或 import 会报错，未修改对应文件。
+默认修改文件；--dry-run / --check 不修改，有差异返回 1。
+用法（webview 目录）：python3 scripts/sort-imports.py --check
+用法（仓库根目录）：python3 webview/scripts/sort-imports.py --dry-run
 """
 
+import argparse
 import re
 import sys
 from pathlib import Path
@@ -37,10 +42,10 @@ GROUP_PATTERNS = [
 
 def get_group(import_line: str) -> int:
     """从 import 语句中提取模块路径并返回分组编号。"""
-    m = re.search(r"from\s+('[^']+')", import_line)
+    m = re.search(r'''from\s+(['"])([^'"]+)\1''', import_line)
     if not m:
         return 99
-    path = m.group(1)
+    path = "'" + m.group(2) + "'"
     for idx, pattern in GROUP_PATTERNS:
         if pattern.match(path):
             return idx
@@ -50,8 +55,8 @@ def sort_key(import_line: str) -> tuple:
     """排序键：(分组, 模块路径, 是否 type import, 导入内容)"""
     group = get_group(import_line)
     is_type = 1 if re.match(r"import\s+type\s+", import_line) else 0
-    m = re.search(r"from\s+('[^']+')$", import_line.rstrip())
-    path = m.group(1) if m else ''
+    m = re.search(r'''from\s+(['"])([^'"]+)\1\s*;?$''', import_line.rstrip())
+    path = m.group(2) if m else ''
     return (group, path, is_type, import_line)
 
 def collect_full_import(lines: list[str], start_idx: int) -> tuple[str, int]:
@@ -88,8 +93,11 @@ def reorder_imports(lines: list[str]) -> list[str]:
         stripped = line.rstrip('\n')
         if in_import_zone:
             if re.match(r"^import\s+", stripped):
-                # 收集完整的 import 语句（可能跨多行）
+                if re.match(r"^import\s+['\"]", stripped):
+                    return lines
                 full_import, next_idx = collect_full_import(lines, i)
+                if not re.search(r"from\s+['\"][^'\"]+['\"]", full_import):
+                    raise ValueError('无法识别完整 import，未修改文件')
                 import_statements.append(full_import)
                 i = next_idx
             elif stripped == '':
@@ -163,6 +171,8 @@ def process_vue_file(path: Path, dry_run: bool = False) -> bool:
 
     if script_start == -1:
         return False
+    if script_end == -1:
+        raise ValueError(f'{path} 缺少 </script>，未修改文件')
 
     # script 块内容（不含 <script> 和 </script> 行本身）
     inner = lines[script_start + 1: script_end]
@@ -178,18 +188,28 @@ def process_vue_file(path: Path, dry_run: bool = False) -> bool:
         path.write_text(new_text, encoding='utf-8')
     return True
 
-def main():
-    src_dir = Path(__file__).parent.parent / 'src'
-    dry_run = '--dry-run' in sys.argv
-
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--dry-run', '--check', dest='dry_run', action='store_true', help='只检查，有差异返回 1')
+    args = parser.parse_args()
+    src_dir = Path(__file__).resolve().parent.parent / 'src'
+    if not src_dir.is_dir():
+        raise ValueError(f'扫描目录不存在：{src_dir}')
     vue_files = sorted(src_dir.rglob('*.vue'))
+    if not vue_files:
+        raise ValueError('未找到 Vue 文件，未执行排序')
     changed = []
-    for f in vue_files:
-        if process_vue_file(f, dry_run=dry_run):
-            changed.append(f)
-            print(f"{'[dry]' if dry_run else '[fix]'} {f.relative_to(src_dir.parent.parent)}")
+    for path in vue_files:
+        if process_vue_file(path, dry_run=args.dry_run):
+            changed.append(path)
+            print(f"{'[dry]' if args.dry_run else '[fix]'} {path.relative_to(src_dir.parent)}")
+    print(f"\n共处理 {len(vue_files)} 个文件，{'需要' if args.dry_run else '已'}修改 {len(changed)} 个。")
+    return 1 if args.dry_run and changed else 0
 
-    print(f"\n共处理 {len(vue_files)} 个文件，{'需要' if dry_run else '已'}修改 {len(changed)} 个。")
 
 if __name__ == '__main__':
-    main()
+    try:
+        sys.exit(main())
+    except (OSError, ValueError) as error:
+        print(f'import 排序失败：{error}', file=sys.stderr)
+        sys.exit(1)

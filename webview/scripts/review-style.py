@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """
-前端样式 Review 脚本 — 基于 webview/AGENTS.md 规范
-用法：cd webview && python3 scripts/review-style.py
+前端 Vue 样式辅助检查及静态路由组件文件存在性核对，基于 webview/AGENTS.md。
+仅检查、不修改文件；ERROR 返回 1，WARN 返回 0 并需人工确认。
+用法（webview 目录）：python3 scripts/review-style.py
+用法（仓库根目录）：python3 webview/scripts/review-style.py
 """
 
+import argparse
 import re
 import sys
 from html.parser import HTMLParser
@@ -801,7 +804,13 @@ def check_route_components():
 
 
 def main():
+    argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter).parse_args()
+    issues.clear()
+    if not SRC_DIR.is_dir():
+        raise ValueError(f'扫描目录不存在：{SRC_DIR}')
     files = collect_files()
+    if not files:
+        raise ValueError('未找到 Vue 文件，未执行样式检查')
     check_route_components()
     print(f"{BOLD}{CYAN}=== 前端样式 Review ==={RESET}")
     print("扫描目录：" + ", ".join(str(p) for p in SCAN_DIRS))
@@ -840,4 +849,8 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except (OSError, ValueError) as error:
+        print(f'样式检查失败：{error}', file=sys.stderr)
+        sys.exit(1)
