@@ -20,7 +20,7 @@ Docker 不可用时 `/compose/*` 返回 `503`；未配置 `docker.containerRoot`
 
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
-| `content` | string | 是 | 完整 compose yaml 文本 |
+| `content` | string | 是 | 完整 compose yaml 文本，顶层必须有非空 `name` |
 | `envContent` | string | 否 | `.env` 内容（`KEY=VALUE`）；省略则保留附加文件解压出的 `.env`（不存在时兜底创建空 `.env`，避免 `env_file` 因缺文件报错），提交则以其为准写盘并合并进变量插值环境 |
 | `initURL` | string | 否 | 附加运行文件 ZIP 下载地址，下载最多等待 5 分钟 |
 | `initFile` | file | 否 | 附加运行文件 zip（仅 multipart）；与 `initURL` 同时提交不会报错，此时只使用 `initFile`，`initURL` 被忽略 |
@@ -30,7 +30,7 @@ Docker 不可用时 `/compose/*` 返回 `503`；未配置 `docker.containerRoot`
 
 `.env` 提交约定：省略 `envContent` 保留附加文件或现有 `.env`；提交精确内容则覆盖；提交空字符串则清空。
 
-部署前先做不读取 `env_file` 的结构预检并从中取得项目名（已插值并按 compose-go 规则规范化为小写）；完全未声明 `name` 时用 compose 内容短哈希兜底；若声明了 `name` 但其插值变量未提供，部署直接报错而不会退回哈希。
+新建和重部署均要求 Compose 顶层显式提供非空 `name`，不接受缺失、`null`、空字符串或纯空白。项目名按 compose-go 规则插值并规范化；插值结果为空时拒绝。重部署时项目名必须与当前项目一致。
 
 部署前的冲突校验（任一命中即报错）：
 
@@ -51,7 +51,7 @@ Docker 配置中的 `volumes: [/data]` 会创建匿名卷。重部署同一服�
 
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
-| `content` | string | 按需 | 完整 compose yaml 文本；省略表示沿用现有 compose.yml，提交空字符串会被拒绝 |
+| `content` | string | 按需 | 完整 compose yaml 文本；省略表示沿用现有 compose.yml，提交空字符串会被拒绝；最终配置必须包含与当前项目一致的 `name` |
 | `envContent` | string | 按需 | `.env` 内容（`KEY=VALUE`）；省略表示保留现有 `.env`（不存在时兜底创建空 `.env`），提交空字符串表示清空，提交内容表示覆盖 |
 | `serviceName` | string | 按需 | 要更新镜像的 compose 服务名（按服务更新） |
 | `image` | string | 按需 | 新镜像名，`serviceName` 非空时必填 |
