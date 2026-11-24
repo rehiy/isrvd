@@ -1,5 +1,9 @@
 import type { AxiosRequestConfig } from 'axios'
+
+import { nodePath } from '@/helper/node'
+
 import { http, httpBlob, absUrl } from './client'
+import type { HttpRequestConfig } from './client'
 import type {
     // Overview
     BootstrapData,
@@ -142,12 +146,12 @@ class ApiService {
         return http.get<BootstrapData>('overview/bootstrap')
     }
 
-    overviewMonitor(params: { type?: 'host'; id?: string; since: 0 }): Promise<{ payload?: MonitorHostRecord | null }>
-    overviewMonitor(params: { type: 'container'; id: string; since: 0 }): Promise<{ payload?: MonitorContainerRecord | null }>
-    overviewMonitor(params?: { type?: 'host'; id?: string; since?: number }): Promise<{ payload?: MonitorHostRecord[] }>
-    overviewMonitor(params?: { type: 'container'; id: string; name?: string; since?: number }): Promise<{ payload?: MonitorContainerRecord[] }>
-    overviewMonitor(params?: { type?: 'host' | 'container'; id?: string; name?: string; since?: number }): Promise<{ payload?: MonitorHostRecord | MonitorContainerRecord | MonitorHostRecord[] | MonitorContainerRecord[] | null }> {
-        return http.get<MonitorHostRecord | MonitorContainerRecord | MonitorHostRecord[] | MonitorContainerRecord[] | null>('overview/monitor', { params })
+    overviewMonitor(params: { type?: 'host'; id?: string; since: 0 }, config?: HttpRequestConfig): Promise<{ payload?: MonitorHostRecord | null }>
+    overviewMonitor(params: { type: 'container'; id: string; since: 0 }, config?: HttpRequestConfig): Promise<{ payload?: MonitorContainerRecord | null }>
+    overviewMonitor(params?: { type?: 'host'; id?: string; since?: number }, config?: HttpRequestConfig): Promise<{ payload?: MonitorHostRecord[] }>
+    overviewMonitor(params?: { type: 'container'; id: string; name?: string; since?: number }, config?: HttpRequestConfig): Promise<{ payload?: MonitorContainerRecord[] }>
+    overviewMonitor(params?: { type?: 'host' | 'container'; id?: string; name?: string; since?: number }, config?: HttpRequestConfig): Promise<{ payload?: MonitorHostRecord | MonitorContainerRecord | MonitorHostRecord[] | MonitorContainerRecord[] | null }> {
+        return http.get<MonitorHostRecord | MonitorContainerRecord | MonitorHostRecord[] | MonitorContainerRecord[] | null>('overview/monitor', { ...config, params })
     }
 
     overviewVersion(config?: AxiosRequestConfig) {
@@ -579,8 +583,9 @@ class ApiService {
     }
 
     // 容器管理
-    dockerContainerList(all = false, filters?: { id?: string[]; name?: string[] }) {
+    dockerContainerList(all = false, filters?: { id?: string[]; name?: string[] }, config?: AxiosRequestConfig) {
         return http.get<DockerContainerInfo[]>('docker/containers', {
+            ...config,
             params: { all, filters: filters && JSON.stringify(filters) }
         })
     }
@@ -967,6 +972,15 @@ class ApiService {
     }
 
     // ==================== Node 节点管理 ====================
+
+    nodeHostSample(id: string, signal: AbortSignal) {
+        return this.overviewMonitor({ since: 0 }, {
+            baseURL: nodePath(id) + 'api/',
+            signal,
+            timeout: 5000,
+            inlineErrors: !!id
+        })
+    }
 
     nodeList() {
         return http.get<NodeInfo[]>('node/nodes')
