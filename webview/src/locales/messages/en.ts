@@ -771,7 +771,7 @@ const messages: Record<string, string> = {
     '未找到匹配的图标': 'No matching icon',
     '本机': 'Local',
     '切换节点': 'Switch Node',
-    '本机（中控）': 'Local (controller)',
+    '中控': 'Controller',
     '暂无已接入的节点': 'No connected nodes yet',
     '创建成功': 'Created',
     '松手上传到当前目录': 'Drop to upload into the current directory',

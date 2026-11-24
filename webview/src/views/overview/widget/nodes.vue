@@ -24,7 +24,7 @@ class NodeResources extends Vue {
         const system = this.reading('')?.data.system
         return [
             {
-                id: '', name: this.$t('本机（中控）'), online: true, status: 'active',
+                id: '', name: this.$t('中控'), online: true, status: 'active',
                 hostname: system?.hostName, os: system?.platform, arch: system?.kernelArch
             },
             ...this.portal.nodes.filter(node => node.status === 'active')

@@ -33,7 +33,7 @@ class NodeSwitcher extends Vue {
 
     get label() {
         if (!this.viewingNode) {
-            return this.$t('本机')
+            return this.$t('中控')
         }
         return this.portal.nodes.find(n => n.id === this.portal.currentNodeId)?.name || this.$t('节点')
     }
@@ -86,10 +86,10 @@ export default toNative(NodeSwitcher)
       </button>
     </template>
 
-    <!-- 本机（中控） -->
+    <!-- 中控 -->
     <button class="dropdown-item" :class="{ 'dropdown-item-active': !viewingNode }" @click="select('')">
       <i class="fas fa-circle text-[8px] text-emerald-500"></i>
-      <span>{{ $t('本机（中控）') }}</span>
+      <span>{{ $t('中控') }}</span>
       <i v-if="!viewingNode" class="fas fa-check text-xs ml-auto"></i>
     </button>
 
