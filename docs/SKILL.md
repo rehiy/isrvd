@@ -73,7 +73,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 | Compose | [references/compose.md](references/compose.md) | Docker Compose / Swarm Stack 部署、重部署、部署记录与历史配置 |
 | APISIX | [references/apisix/routes.md](references/apisix/routes.md) | 路由 CRUD、启用/禁用、指标开关 |
 | APISIX | [references/apisix/upstreams.md](references/apisix/upstreams.md) | 上游、负载均衡 |
-| APISIX | [references/apisix/consumers.md](references/apisix/consumers.md) | Consumer、访问授权 |
+| APISIX | [references/apisix/consumers.md](references/apisix/consumers.md) | Consumer、完整 Token 读取/签发、访问授权 |
 | APISIX | [references/apisix/ssl.md](references/apisix/ssl.md) | SSL 证书、PluginConfig、插件列表 |
 | Caddy | [references/caddy/routes.md](references/caddy/routes.md) | 路由 CRUD、插入位置与执行顺序（反向代理/静态文件） |
 | Caddy | [references/caddy/servers.md](references/caddy/servers.md) | 服务（srv0 等）增删改查 |
@@ -106,6 +106,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 │   ├── 集群服务(Stack)  → references/compose.md §Swarm Compose
 │   ├── 集群服务(单服务) → references/swarm/services.md
 │   ├── 配置 APISIX 路由 → references/apisix/routes.md
+│   ├── 读取/签发完整 Token → references/apisix/consumers.md（独立权限）
 │   ├── 配置 Caddy 路由  → references/caddy/routes.md
 │   └── 创建 Caddy 服务  → references/caddy/servers.md
 │

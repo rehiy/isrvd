@@ -19,6 +19,15 @@ type Client struct {
 	httpClient *http.Client
 }
 
+// APIError retains the status without logging or returning a body that may contain credentials.
+type APIError struct {
+	StatusCode int
+}
+
+func (e *APIError) Error() string {
+	return fmt.Sprintf("Apisix 返回错误状态码 %d", e.StatusCode)
+}
+
 // NewClient 创建 Apisix Admin API 客户端
 func NewClient(baseURL, adminKey string) *Client {
 	return &Client{
@@ -62,8 +71,8 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		logman.Error("Apisix request error", "method", method, "path", path, "status", resp.StatusCode, "body", string(respData))
-		return nil, fmt.Errorf("Apisix 返回错误状态码 %d: %s", resp.StatusCode, string(respData))
+		logman.Error("Apisix request error", "method", method, "path", path, "status", resp.StatusCode)
+		return nil, &APIError{StatusCode: resp.StatusCode}
 	}
 
 	return respData, nil

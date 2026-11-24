@@ -97,5 +97,12 @@ func GatewayAuthorize(r *http.Request, allowQueryToken bool) (string, bool, int,
 			return "", false, http.StatusForbidden, err
 		}
 	}
+	// Node requests run locally with the agent identity; enforce the additional
+	// read permission here against the original caller before forwarding a PUT.
+	if route.Method == http.MethodPut && route.Path == "/apisix/consumer/:username/key" {
+		if err := app.accountSvc.PermCheck(username, "读取 APISIX 消费者完整 Token", http.MethodGet, "/api/apisix/consumer/:username/key"); err != nil {
+			return "", false, http.StatusForbidden, err
+		}
+	}
 	return username, route.Audit.allows(r, helper.IsWebSocket(r)), http.StatusOK, nil
 }

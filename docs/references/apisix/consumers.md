@@ -18,6 +18,45 @@
 isrvd_get "/apisix/consumers"
 ```
 
+## 读取完整 key-auth Token
+
+```bash
+isrvd_get "/apisix/consumer/<USERNAME>/key"
+```
+
+独立权限 `GET /api/apisix/consumer/:username/key`，不能用列表权限替代。新增接口自动出现在「用户管理 → 成员权限 → APISIX」勾选列表中，名称为「读取 APISIX 消费者完整 Token」；普通成员不会自动获得此权限。返回 `success: true` 与 `payload`：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| username | string | 目标 Consumer 账号 |
+| key | string | 完整、未脱敏的 key-auth Token |
+| desc | string | Consumer 描述 |
+| create_time | number | 创建时间（只读，Unix 秒；上游未返回时为 0） |
+| update_time | number | 更新时间（只读，Unix 秒；上游未返回时为 0） |
+
+仅返回 key-auth 的密钥，不返回 JWT、Basic Auth 等其他插件秘密。响应为 `Cache-Control: private, no-store`。GET 强制审计，记录服务调用人、包含目标账号的 URI 和状态，不记录响应 Token；PUT 请求体中的 key 由既有审计机制脱敏。此权限覆盖网关内任意目标账号，应只授予 AppKey 等可信服务身份；业务系统必须根据登录身份确定可读取的账号，不能直接信任浏览器传入的 username。创始人沿用现有权限豁免。跨不可信网络使用 HTTPS。
+
+## 签发或更新 key-auth Token
+
+```bash
+isrvd_put "/apisix/consumer/<USERNAME>/key" '{"key":"<AUTH_KEY>","desc":"<DESC>","create_only":true}'
+```
+
+权限列表中的名称为「签发 APISIX 消费者 Token」。需要同时持有 `PUT /api/apisix/consumer/:username/key` 和上述 GET 权限，因为 create-only 可能返回已有 Token。中控向节点转发时，也对原始调用者校验两项权限。响应字段与读取接口一致，返回上游实际保存的 Token。
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| key | string | 必填、非空，最多 4096 字节，不接受控制字符或含 `******` 的脱敏值 |
+| desc | string | 可选；不传或 null 时保留已有描述；空字符串表示清空 |
+| create_only | boolean | 默认 false；AppKey 首次领取必须传 true |
+
+- `create_only: true`：Consumer 不存在时创建；已存在且有 Token 时返回原 Token，不修改描述、插件或密钥；已存在但没有 key-auth 时返回 409，不隐式添加认证方式。
+- `create_only: false`：创建或更新 key-auth.key，保留其他插件、key-auth 附加配置、标签、所属组和其他 Consumer 字段；只有显式提供 desc 时修改描述。
+- 只有确认 Consumer 不存在才新建，上游认证失败、连接失败、响应异常不会当作不存在。写入后回读返回实际 Token，写成功但响应丢失时可用 create-only 重试获取原 Token。
+- 同一 iSrvd 服务实例内，Token、普通 Consumer 编辑和白名单创建使用相同的按账号锁。APISIX PUT 本身是 upsert，不提供跨进程的原子 create-only；其他 iSrvd 实例或直接 Admin API 写入不受此锁保护，应统一签发入口。
+
+两个接口均限制账号为不超过 100 字节、无空白/控制字符或 `/`、`\`、`%`、`?`、`#`，不能为 `.` 或 `..`。错误状态：401 未认证、403 权限不足、400 参数无效、404 Consumer 不存在、409 已有 Consumer 无 key-auth Token、502 上游请求或响应异常；模块不可用沿用全局 503。接口尚未部署时也会返回 404（“接口不存在”），接入前应检查权限目录中是否已有这两个接口。
+
 ## 创建消费者
 
 ```bash

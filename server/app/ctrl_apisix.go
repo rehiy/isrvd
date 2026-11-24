@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,6 +24,8 @@ func (app *App) defineApisixRoutes() []Route {
 		{Method: "PUT", Path: "/apisix/metrics", Handler: app.apisixMetricsUpdate, Module: "apisix", Label: "开关 APISIX 指标"},
 		// Consumer 管理
 		{Method: "GET", Path: "/apisix/consumers", Handler: app.apisixConsumerList, Module: "apisix", Label: "查询 APISIX 消费者列表"},
+		{Method: "GET", Path: "/apisix/consumer/:username/key", Handler: app.apisixConsumerKeyInspect, Module: "apisix", Label: "读取 APISIX 消费者完整 Token", Audit: AuditAlways},
+		{Method: "PUT", Path: "/apisix/consumer/:username/key", Handler: app.apisixConsumerKeyUpdate, Module: "apisix", Label: "签发 APISIX 消费者 Token"},
 		{Method: "POST", Path: "/apisix/consumer", Handler: app.apisixConsumerCreate, Module: "apisix", Label: "创建 APISIX 消费者"},
 		{Method: "PUT", Path: "/apisix/consumer/:username", Handler: app.apisixConsumerUpdate, Module: "apisix", Label: "更新 APISIX 消费者"},
 		{Method: "DELETE", Path: "/apisix/consumer/:username", Handler: app.apisixConsumerDelete, Module: "apisix", Label: "删除 APISIX 消费者"},
@@ -128,6 +131,50 @@ func (app *App) apisixConsumerCreate(c *gin.Context) {
 	}
 	result, err := app.availability.Load().apisixSvc.ConsumerCreate(c.Request.Context(), req.Username, req.Desc, req.Plugins)
 	respondResultMsg(c, "消费者创建成功", result, err)
+}
+
+func (app *App) apisixConsumerKeyInspect(c *gin.Context) {
+	c.Header("Cache-Control", "private, no-store")
+	result, err := app.availability.Load().apisixSvc.ConsumerKeyInspect(c.Request.Context(), c.Param("username"))
+	if err != nil {
+		respondError(c, consumerKeyErrorStatus(err), err.Error())
+		return
+	}
+	respondSuccess(c, "", result)
+}
+
+func (app *App) apisixConsumerKeyUpdate(c *gin.Context) {
+	c.Header("Cache-Control", "private, no-store")
+	// A create-only response can reveal an existing key, so read permission is required too.
+	if err := app.accountSvc.PermCheck(c.GetString("username"), "读取 APISIX 消费者完整 Token", http.MethodGet, "/api/apisix/consumer/:username/key"); err != nil {
+		respondError(c, http.StatusForbidden, err.Error())
+		return
+	}
+	var req apisix.ConsumerKeyUpdateRequest
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 64<<10)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondBindError(c, err)
+		return
+	}
+	result, err := app.availability.Load().apisixSvc.ConsumerKeyUpdate(c.Request.Context(), c.Param("username"), req)
+	if err != nil {
+		respondError(c, consumerKeyErrorStatus(err), err.Error())
+		return
+	}
+	respondSuccess(c, "", result)
+}
+
+func consumerKeyErrorStatus(err error) int {
+	switch {
+	case errors.Is(err, pkgApisix.ErrConsumerNotFound):
+		return http.StatusNotFound
+	case errors.Is(err, pkgApisix.ErrConsumerKeyMissing):
+		return http.StatusConflict
+	case errors.Is(err, pkgApisix.ErrConsumerKeyInvalid):
+		return http.StatusBadRequest
+	default:
+		return http.StatusBadGateway
+	}
 }
 
 func (app *App) apisixConsumerUpdate(c *gin.Context) {

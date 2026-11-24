@@ -140,6 +140,8 @@ func (s *Service) WhitelistUserCreate(ctx context.Context, req WhitelistUserCrea
 	routeID := strings.TrimSpace(req.RouteID)
 	username := strings.TrimSpace(req.Username)
 	key := strings.TrimSpace(req.Key)
+	unlock := s.lockConsumer(username)
+	defer unlock()
 
 	if routeID == "" {
 		return nil, fmt.Errorf("路由 ID 不能为空")

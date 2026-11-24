@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"hash/fnv"
 	"slices"
 	"strings"
 
@@ -21,6 +22,8 @@ func (s *Service) ConsumerList(ctx context.Context) ([]apisix.Consumer, error) {
 
 // ConsumerCreate 创建 Consumer，支持传入完整 plugins
 func (s *Service) ConsumerCreate(ctx context.Context, username, desc string, plugins map[string]any) (*apisix.Consumer, error) {
+	unlock := s.lockConsumer(username)
+	defer unlock()
 	if username == "" {
 		return nil, fmt.Errorf("用户名不能为空")
 	}
@@ -33,6 +36,8 @@ func (s *Service) ConsumerCreate(ctx context.Context, username, desc string, plu
 
 // ConsumerUpdate 更新 Consumer（支持 plugins，自动替换脱敏值）
 func (s *Service) ConsumerUpdate(ctx context.Context, username, desc string, plugins map[string]any) error {
+	unlock := s.lockConsumer(username)
+	defer unlock()
 	if username == "" {
 		return fmt.Errorf("用户名不能为空")
 	}
@@ -45,6 +50,8 @@ func (s *Service) ConsumerUpdate(ctx context.Context, username, desc string, plu
 // ConsumerDelete 删除 Consumer；仍被路由访问授权引用时拒绝删除，
 // 避免白名单中残留用户名，日后同名 Consumer 被重建时自动获得访问权限
 func (s *Service) ConsumerDelete(ctx context.Context, username string) error {
+	unlock := s.lockConsumer(username)
+	defer unlock()
 	if username == "" {
 		return fmt.Errorf("用户名不能为空")
 	}
@@ -65,4 +72,32 @@ func (s *Service) ConsumerDelete(ctx context.Context, username string) error {
 		return fmt.Errorf("删除消费者失败: %w", err)
 	}
 	return nil
+}
+
+func (s *Service) ConsumerKeyInspect(ctx context.Context, username string) (*apisix.ConsumerKey, error) {
+	unlock := s.lockConsumer(username)
+	defer unlock()
+	return s.client.ConsumerKeyInspect(ctx, username)
+}
+
+// ConsumerKeyUpdateRequest keeps credential issuance separate from general plugin editing.
+type ConsumerKeyUpdateRequest struct {
+	Key        string  `json:"key"`         // 待签发的完整 key-auth Token
+	Desc       *string `json:"desc"`        // 不传时保留已有描述
+	CreateOnly bool    `json:"create_only"` // true 时只新建，已存在则返回原 Token
+}
+
+func (s *Service) ConsumerKeyUpdate(ctx context.Context, username string, req ConsumerKeyUpdateRequest) (*apisix.ConsumerKey, error) {
+	unlock := s.lockConsumer(username)
+	defer unlock()
+	return s.client.ConsumerKeyUpdate(ctx, username, req.Key, req.Desc, req.CreateOnly)
+}
+
+// lockConsumer covers all writers in this service, including whitelist provisioning.
+func (s *Service) lockConsumer(username string) func() {
+	h := fnv.New32a()
+	_, _ = h.Write([]byte(username))
+	lock := &s.consumerLocks[h.Sum32()%uint32(len(s.consumerLocks))]
+	lock.Lock()
+	return lock.Unlock
 }
