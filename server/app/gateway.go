@@ -92,10 +92,8 @@ func GatewayAuthorize(r *http.Request, allowQueryToken bool) (string, bool, int,
 	if !ok || (route.Method != "ANY" && route.Method != r.Method) {
 		return "", false, http.StatusForbidden, errForbiddenPath
 	}
-	if route.Access == AccessPerm && route.Module != "" {
-		if err := app.accountSvc.PermCheck(username, route.Label, r.Method, APINamespace+route.Path); err != nil {
-			return "", false, http.StatusForbidden, err
-		}
+	if err := app.checkRoutePerm(username, r.Method, route); err != nil {
+		return "", false, http.StatusForbidden, err
 	}
 	return username, route.Audit.allows(r, helper.IsWebSocket(r)), http.StatusOK, nil
 }

@@ -904,6 +904,102 @@
         ]
       }
     },
+    "/apisix/consumer/{username}/key": {
+      "get": {
+        "operationId": "get_apisix_consumer_username_key",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "$ref": "#/components/schemas/apisix.ConsumerKey"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "读取 APISIX 消费者完整 Token",
+        "tags": [
+          "apisix"
+        ]
+      },
+      "put": {
+        "operationId": "put_apisix_consumer_username_key",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apisix.ConsumerKeyUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "$ref": "#/components/schemas/apisix.ConsumerKey"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "签发 APISIX 消费者 Token",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
     "/apisix/consumers": {
       "get": {
         "operationId": "get_apisix_consumers",
@@ -8664,6 +8760,48 @@
           },
           "username": {
             "description": "Consumer 用户名（唯一标识）",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "apisix.ConsumerKey": {
+        "properties": {
+          "create_time": {
+            "description": "创建时间（Unix 时间戳，只读）",
+            "type": "integer"
+          },
+          "desc": {
+            "description": "Consumer 描述",
+            "type": "string"
+          },
+          "key": {
+            "description": "完整未脱敏的 key-auth Token",
+            "type": "string"
+          },
+          "update_time": {
+            "description": "更新时间（Unix 时间戳，只读）",
+            "type": "integer"
+          },
+          "username": {
+            "description": "Consumer 用户名",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "apisix.ConsumerKeyUpdateRequest": {
+        "properties": {
+          "create_only": {
+            "description": "true 时只新建，已存在则返回原 Token",
+            "type": "boolean"
+          },
+          "desc": {
+            "description": "不传或 null 时保留已有描述，空字符串表示清空",
+            "type": "string"
+          },
+          "key": {
+            "description": "待签发的完整 key-auth Token",
             "type": "string"
           }
         },

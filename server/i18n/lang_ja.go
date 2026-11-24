@@ -6,6 +6,14 @@ package i18n
 // 填好译文后用 scripts/apply-translations.py 导入，可保持格式与 gofmt 一致。
 func init() {
 	Register(Language{Code: "ja", Tags: []string{"ja"}}, map[string]string{
+		// APISIX Consumer Token
+		"读取 APISIX 消费者完整 Token": "APISIX コンシューマーの完全な Token を取得",
+		"签发 APISIX 消费者 Token":   "APISIX コンシューマーの Token を発行",
+		"消费者不存在":                "コンシューマーが存在しません",
+		"消费者未配置 key-auth Token": "コンシューマーに key-auth Token が設定されていません",
+		"消费者账号或 Token 参数无效":     "コンシューマーアカウントまたは Token パラメーターが無効です",
+		"消费者响应无效":               "コンシューマーのレスポンスが無効です",
+
 		"容器名称 %s 已被占用":            "コンテナ名 %s は使用中です",
 		"容器 inspect 数据不完整: %s":    "コンテナ %s の検査データが不完全です",
 		"恢复容器 %s 失败: %w":          "コンテナ %s の復元に失敗しました: %w",

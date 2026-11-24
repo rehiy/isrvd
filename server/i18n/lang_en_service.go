@@ -4,6 +4,14 @@ package i18n
 
 func init() {
 	Register(langEN, map[string]string{
+		// APISIX Consumer Token
+		"读取 APISIX 消费者完整 Token": "Read the full APISIX consumer Token",
+		"签发 APISIX 消费者 Token":   "Issue an APISIX consumer Token",
+		"消费者不存在":                "Consumer does not exist",
+		"消费者未配置 key-auth Token": "Consumer has no key-auth Token configured",
+		"消费者账号或 Token 参数无效":     "Invalid consumer account or Token parameters",
+		"消费者响应无效":               "Invalid consumer response",
+
 		"容器名称 %s 已被占用":            "Container name %s is already in use",
 		"容器 inspect 数据不完整: %s":    "Incomplete container inspect data for %s",
 		"恢复容器 %s 失败: %w":          "Failed to restore container %s: %w",

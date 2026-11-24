@@ -151,6 +151,9 @@ func (s *Service) WhitelistUserCreate(ctx context.Context, req WhitelistUserCrea
 		return nil, fmt.Errorf("key-auth key 不能为空")
 	}
 
+	unlock := s.lockConsumer(username)
+	defer unlock()
+
 	// 先确认路由可用，避免留下孤立的 Consumer
 	route, info, err := s.inspectRouteAuth(ctx, routeID)
 	if err != nil {

@@ -83,6 +83,8 @@
 | `apisix` | `PUT /api/apisix/metrics` | APISIX 管理（开启/关闭指标） |
 | `apisix` | `GET /api/apisix/routes` | APISIX 管理（路由列出） |
 | `apisix` | `GET /api/apisix/consumers` | APISIX 管理（消费者列出） |
+| `apisix` | `GET /api/apisix/consumer/:username/key` | 读取消费者完整 key-auth Token；独立授权、禁止缓存、强制审计 |
+| `apisix` | `PUT /api/apisix/consumer/:username/key` | 签发/更新 key-auth Token；同时要求上述 GET 权限，因为响应可能返回已有 Token |
 | `apisix` | `GET /api/apisix/upstreams` | APISIX 管理（上游列出） |
 | `apisix` | `GET /api/apisix/ssls` | APISIX 管理（证书列出） |
 | `apisix` | `GET /api/apisix/plugin-configs` | APISIX 管理（插件配置列出） |
