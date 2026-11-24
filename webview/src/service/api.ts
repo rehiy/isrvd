@@ -583,7 +583,7 @@ class ApiService {
     }
 
     // 容器管理
-    dockerContainerList(all = false, filters?: { id?: string[]; name?: string[] }, config?: AxiosRequestConfig) {
+    dockerContainerList(all = false, filters?: { id?: string[]; name?: string[]; health?: string[] }, config?: HttpRequestConfig) {
         return http.get<DockerContainerInfo[]>('docker/containers', {
             ...config,
             params: { all, filters: filters && JSON.stringify(filters) }

@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Component, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
@@ -9,20 +9,26 @@ import type { DockerInfo } from '@/service/types'
 @Component
 class DockerOverview extends Vue {
     portal = usePortal()
+    @Prop({ default: true }) readonly showContainerCounts!: boolean
+    @Prop({ default: false }) readonly compact!: boolean
 
     // ─── 数据属性 ───
     info: DockerInfo | null = null
     loading = false
 
-    readonly statCards: { key: keyof DockerInfo; label: string; icon: string; bgColor: string }[] = [
-        { key: 'containersRunning', label: '运行中容器', icon: 'fa-play',          bgColor: 'bg-emerald-500' },
-        { key: 'containersStopped', label: '已停止容器', icon: 'fa-stop',          bgColor: 'bg-amber-500' },
-        { key: 'containersPaused',  label: '已暂停容器', icon: 'fa-pause',         bgColor: 'bg-slate-400' },
-        { key: 'imagesTotal',       label: '镜像总数',   icon: 'fa-compact-disc',  bgColor: 'bg-blue-500' },
-        { key: 'networksTotal',     label: '网络总数',   icon: 'fa-network-wired', bgColor: 'bg-purple-500' },
-        { key: 'volumesTotal',      label: '数据卷总数', icon: 'fa-database',      bgColor: 'bg-indigo-500' },
-        { key: 'registryMirrors',   label: '镜像源',     icon: 'fa-gauge-high',    bgColor: 'bg-cyan-500' },
+    readonly statCards: { key: keyof DockerInfo; label: string; icon: string }[] = [
+        { key: 'containersRunning', label: '运行中容器', icon: 'fa-play' },
+        { key: 'containersStopped', label: '已停止容器', icon: 'fa-stop' },
+        { key: 'containersPaused', label: '已暂停容器', icon: 'fa-pause' },
+        { key: 'imagesTotal', label: '镜像', icon: 'fa-compact-disc' },
+        { key: 'networksTotal', label: '网络', icon: 'fa-network-wired' },
+        { key: 'volumesTotal', label: '数据卷', icon: 'fa-database' },
+        { key: 'registryMirrors', label: '镜像源', icon: 'fa-gauge-high' },
     ]
+
+    get visibleStatCards() {
+        return this.statCards.filter(card => this.showContainerCounts || !card.key.startsWith('containers'))
+    }
 
     // ─── 方法 ───
     async load() {
@@ -63,23 +69,34 @@ export default toNative(DockerOverview)
 <template>
   <div>
     <!-- Loading -->
-    <div v-if="loading" class="overview-loading">
+    <div v-if="loading" :class="compact ? 'flex items-center gap-2 py-1' : 'overview-loading'">
       <div class="spinner-md"></div>
       <span class="text-slate-400 text-sm">{{ $t('加载中...') }}</span>
     </div>
 
+    <dl v-else-if="info && compact" class="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
+      <div v-for="card in visibleStatCards" :key="card.key" class="flex min-w-0 items-baseline justify-between gap-2">
+        <dt class="inline-flex min-w-0 items-center gap-2 text-xs text-slate-500">
+          <i :class="['fas text-slate-400', card.icon]" aria-hidden="true"></i>{{ $t(card.label) }}
+        </dt>
+        <dd class="text-sm font-semibold tabular-nums text-slate-700">{{ cardValue(card.key) }}</dd>
+      </div>
+    </dl>
+
     <!-- Stats Grid -->
-    <div v-else-if="info" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-      <div v-for="card in statCards" :key="card.key" class="stat-card items-center">
-        <div :class="['page-icon', card.bgColor]">
-          <i :class="['fas', card.icon, 'text-white']"></i>
+    <div v-else-if="info" class="resource-service-grid">
+      <div v-for="card in visibleStatCards" :key="card.key" class="resource-service-stat">
+        <div class="resource-service-icon">
+          <i :class="['fas', card.icon]"></i>
         </div>
         <div class="min-w-0 flex-1">
-          <p class="text-xs text-slate-400 mb-0.5">{{ $t(card.label) }}</p>
-          <p class="font-semibold text-slate-800 truncate">{{ cardValue(card.key) }}</p>
+          <p class="resource-service-label">{{ $t(card.label) }}</p>
+          <p class="resource-service-value" :title="String(cardValue(card.key))">{{ cardValue(card.key) }}</p>
         </div>
       </div>
     </div>
+
+    <p v-else-if="compact" class="text-xs text-amber-700" :title="$t('请确认 Docker 服务是否正常运行')">{{ $t('无法获取 Docker 信息') }}</p>
 
     <!-- Empty/Error State -->
     <div v-else class="overview-unavailable">

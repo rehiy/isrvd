@@ -2,6 +2,40 @@ import type { DockerContainerStats, MonitorContainerRecord, SystemInfo } from '@
 
 type ContainerChartValues = Pick<DockerContainerStats, 'cpuPercent' | 'memoryPercent' | 'networkRx' | 'networkTx' | 'blockRead' | 'blockWrite'>
 
+const validResourceValue = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0
+
+export function containerResourceValues(record: MonitorContainerRecord): { cpuPercent: number | null; memoryUsage: number | null } {
+    const data = record.data
+    if ('cpuPercent' in data) {
+        return {
+            cpuPercent: validResourceValue(data.cpuPercent) ? data.cpuPercent : null,
+            memoryUsage: validResourceValue(data.memoryUsage) ? data.memoryUsage : null,
+        }
+    }
+    const cpu = data.cpu_stats
+    const previous = data.precpu_stats
+    const currentCPU = cpu?.cpu_usage?.total_usage
+    const previousCPU = previous?.cpu_usage?.total_usage
+    const currentSystem = cpu?.system_cpu_usage
+    const previousSystem = previous?.system_cpu_usage
+    const cores = cpu?.online_cpus || cpu?.cpu_usage?.percpu_usage?.length || 1
+    let cpuPercent: number | null = null
+    if (validResourceValue(currentCPU) && validResourceValue(previousCPU)
+        && validResourceValue(currentSystem) && validResourceValue(previousSystem) && previousSystem > 0
+        && currentSystem > previousSystem && currentCPU >= previousCPU && validResourceValue(cores) && cores > 0) {
+        cpuPercent = (currentCPU - previousCPU) / (currentSystem - previousSystem) * cores * 100
+        if (!validResourceValue(cpuPercent)) {
+            cpuPercent = null
+        }
+    }
+    const memory = data.memory_stats
+    const cache = memory?.stats?.total_inactive_file ?? memory?.stats?.inactive_file ?? 0
+    return {
+        cpuPercent,
+        memoryUsage: validResourceValue(memory?.usage) && validResourceValue(cache) ? Math.max(0, memory.usage - cache) : null,
+    }
+}
+
 export function containerHistoryValues(record: MonitorContainerRecord): ContainerChartValues {
     const data = record.data
     if ('cpuPercent' in data) {
@@ -13,8 +47,7 @@ export function containerHistoryValues(record: MonitorContainerRecord): Containe
     const systemDelta = (cpu?.system_cpu_usage || 0) - (previous?.system_cpu_usage || 0)
     const cores = cpu?.online_cpus || cpu?.cpu_usage?.percpu_usage?.length || 1
     const memory = data.memory_stats
-    const cache = memory?.stats?.total_inactive_file ?? memory?.stats?.inactive_file ?? 0
-    const used = Math.max(0, (memory?.usage || 0) - cache)
+    const used = containerResourceValues(record).memoryUsage ?? 0
     const values = {
         cpuPercent: systemDelta > 0 && cpuDelta > 0 ? cpuDelta / systemDelta * cores * 100 : 0,
         memoryPercent: memory?.limit ? used / memory.limit * 100 : 0,

@@ -16,14 +16,14 @@ class SwarmOverview extends Vue {
     swarmInfo: SwarmInfo | null = null
     loading = false
 
-    readonly statCards: { key: keyof SwarmInfo; label: string; icon: string; bgColor: string }[] = [
-        { key: 'clusterID', label: '集群 ID',  icon: 'fa-fingerprint', bgColor: 'bg-violet-500' },
-        { key: 'createdAt', label: '创建时间', icon: 'fa-calendar',     bgColor: 'bg-cyan-500' },
-        { key: 'nodes',     label: '总节点数', icon: 'fa-server',       bgColor: 'bg-blue-500' },
-        { key: 'managers',  label: 'Manager', icon: 'fa-crown',        bgColor: 'bg-indigo-500' },
-        { key: 'workers',   label: 'Worker',  icon: 'fa-circle-nodes', bgColor: 'bg-slate-400' },
-        { key: 'services',  label: '服务总数', icon: 'fa-cubes',        bgColor: 'bg-emerald-500' },
-        { key: 'tasks',     label: '任务总数', icon: 'fa-tasks',        bgColor: 'bg-amber-500' },
+    readonly statCards: { key: keyof SwarmInfo; label: string; icon: string }[] = [
+        { key: 'clusterID', label: '集群 ID', icon: 'fa-fingerprint' },
+        { key: 'createdAt', label: '创建时间', icon: 'fa-calendar' },
+        { key: 'nodes', label: '总节点数', icon: 'fa-server' },
+        { key: 'managers', label: 'Manager', icon: 'fa-crown' },
+        { key: 'workers', label: 'Worker', icon: 'fa-circle-nodes' },
+        { key: 'services', label: '服务总数', icon: 'fa-cubes' },
+        { key: 'tasks', label: '任务总数', icon: 'fa-tasks' },
     ]
 
     // ─── 生命周期 ───
@@ -72,14 +72,14 @@ export default toNative(SwarmOverview)
       <span class="text-slate-400 text-sm">{{ $t('加载中...') }}</span>
     </div>
     <div v-else-if="swarmInfo" class="space-y-4">
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        <div v-for="card in statCards" :key="card.key" class="stat-card items-center">
-          <div :class="['page-icon', card.bgColor]">
-            <i :class="['fas', card.icon, 'text-white']"></i>
+      <div class="resource-service-grid">
+        <div v-for="card in statCards" :key="card.key" class="resource-service-stat">
+          <div class="resource-service-icon">
+            <i :class="['fas', card.icon]"></i>
           </div>
           <div class="min-w-0 flex-1">
-            <p class="text-xs text-slate-400 mb-0.5">{{ $t(card.label) }}</p>
-            <p class="font-semibold text-slate-800 truncate">{{ cardValue(card.key) }}</p>
+            <p class="resource-service-label">{{ $t(card.label) }}</p>
+            <p class="resource-service-value" :title="String(cardValue(card.key))">{{ cardValue(card.key) }}</p>
           </div>
         </div>
       </div>

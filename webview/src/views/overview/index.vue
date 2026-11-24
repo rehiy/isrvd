@@ -129,7 +129,7 @@ export default toNative(Overview)
       </div>
     </div>
 
-    <div class="mx-auto max-w-[100rem] space-y-5 px-4 py-4 sm:px-6 lg:px-7">
+    <div class="mx-auto max-w-[100rem] space-y-4 px-4 py-4 sm:px-6 lg:px-7">
       <NodeResources v-if="canViewNodes" ref="nodesRef" :current-reading="currentReading" />
 
       <!-- 系统信息区块 -->
@@ -138,43 +138,43 @@ export default toNative(Overview)
         <SystemOverview ref="systemRef" :node-name="currentNodeName" @sample="currentReading = $event" />
       </div>
 
-      <WorkloadsOverview v-if="canViewWorkloads" ref="workloadsRef" @self-container="selfContainer = $event" />
+      <section v-if="canViewWorkloads || portal.hasPerm('GET /api/docker/info')" class="resource-panel resource-service-docker">
+        <WorkloadsOverview v-if="canViewWorkloads" ref="workloadsRef" @self-container="selfContainer = $event" />
+        <div v-else class="resource-section-heading mb-4">
+          <span class="resource-service-icon"><i class="fab fa-docker"></i></span>
+          <h2 class="resource-section-title">{{ $t('Docker 服务') }}</h2>
+        </div>
+        <div v-if="portal.hasPerm('GET /api/docker/info')" :class="{ 'mt-4 border-t border-slate-200/70 pt-3': canViewWorkloads }">
+          <DockerOverview ref="dockerRef" :show-container-counts="!canViewWorkloads" :compact="canViewWorkloads" />
+        </div>
+      </section>
 
       <!-- APISIX 概览区块 -->
-      <div v-if="canViewApisix" class="card bg-white p-4 sm:p-5">
-        <div class="flex items-center gap-2 mb-4">
-          <i class="fas fa-route text-orange-500 text-lg"></i>
-          <h2 class="text-lg font-semibold text-slate-700">{{ $t('APISIX 网关') }}</h2>
+      <section v-if="canViewApisix" class="resource-panel resource-service-apisix">
+        <div class="resource-section-heading mb-4">
+          <span class="resource-service-icon"><i class="fas fa-route"></i></span>
+          <h2 class="resource-section-title">{{ $t('APISIX 网关') }}</h2>
         </div>
         <ApisixOverview ref="apisixRef" />
-      </div>
+      </section>
 
       <!-- Caddy 概览区块 -->
-      <div v-if="portal.hasPerm('GET /api/caddy/info')" class="card bg-white p-4 sm:p-5">
-        <div class="flex items-center gap-2 mb-4">
-          <i class="fas fa-shield text-indigo-500 text-lg"></i>
-          <h2 class="text-lg font-semibold text-slate-700">{{ $t('Caddy 网关') }}</h2>
+      <section v-if="portal.hasPerm('GET /api/caddy/info')" class="resource-panel resource-service-caddy">
+        <div class="resource-section-heading mb-4">
+          <span class="resource-service-icon"><i class="fas fa-shield"></i></span>
+          <h2 class="resource-section-title">{{ $t('Caddy 网关') }}</h2>
         </div>
         <CaddyOverview ref="caddyRef" />
-      </div>
-
-      <!-- Docker 概览区块 -->
-      <div v-if="portal.hasPerm('GET /api/docker/info')" class="card bg-white p-4 sm:p-5">
-        <div class="flex items-center gap-2 mb-4">
-          <i class="fab fa-docker text-blue-500 text-lg"></i>
-          <h2 class="text-lg font-semibold text-slate-700">{{ $t('Docker 服务') }}</h2>
-        </div>
-        <DockerOverview ref="dockerRef" />
-      </div>
+      </section>
 
       <!-- Swarm 概览区块 -->
-      <div v-if="portal.hasPerm('GET /api/swarm/info')" class="card bg-white p-4 sm:p-5">
-        <div class="flex items-center gap-2 mb-4">
-          <i class="fas fa-circle-nodes text-cyan-600 text-lg"></i>
-          <h2 class="text-lg font-semibold text-slate-700">{{ $t('Swarm 集群') }}</h2>
+      <section v-if="portal.hasPerm('GET /api/swarm/info')" class="resource-panel resource-service-swarm">
+        <div class="resource-section-heading mb-4">
+          <span class="resource-service-icon"><i class="fas fa-circle-nodes"></i></span>
+          <h2 class="resource-section-title">{{ $t('Swarm 集群') }}</h2>
         </div>
         <SwarmOverview ref="swarmRef" />
-      </div>
+      </section>
     </div>
 
     <!-- 无任何权限时的空状态 -->

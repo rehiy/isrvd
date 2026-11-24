@@ -117,24 +117,24 @@ export default toNative(NodeResources)
 </script>
 
 <template>
-  <section class="card bg-white p-4 sm:p-5">
-    <div class="flex flex-wrap justify-between items-center gap-3">
-      <div class="title-group">
-        <span class="page-icon bg-primary-50 text-primary-600"><i class="fas fa-sitemap"></i></span>
-        <h2 class="text-base font-semibold text-slate-900">{{ $t('节点资源') }}</h2>
+  <section class="resource-panel">
+    <div class="resource-section-header">
+      <div class="resource-section-heading">
+        <span class="resource-section-icon"><i class="fas fa-sitemap"></i></span>
+        <h2 class="resource-section-title">{{ $t('节点资源') }}</h2>
       </div>
       <span v-if="nodes.length" class="badge-sm badge-muted tabular-nums">{{ $t('{0} / {1} 在线', onlineCount, nodes.length) }}</span>
     </div>
     <p v-if="portal.nodesLoadFailed" class="mt-3 text-sm text-amber-700">{{ $t('加载失败，请刷新重试') }}</p>
     <p v-else-if="portal.nodesLoading" class="mt-3 text-sm text-slate-500">{{ $t('加载中...') }}</p>
-    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+    <div class="resource-nodes-grid" :class="{ 'resource-nodes-single': nodes.length === 1 }">
       <article
         v-for="node in nodes" :key="node.id"
         :aria-current="node.id === portal.currentNodeId ? 'true' : undefined"
         :class="[
-          'card-interactive relative min-w-0',
-          node.id === portal.currentNodeId ? 'border-primary-300 bg-primary-50/70' : 'bg-slate-50/50',
-          node.online && 'hover:border-primary-300 focus-within:ring-2 focus-within:ring-primary-500'
+          'resource-node',
+          node.id === portal.currentNodeId ? 'border-primary-200 bg-primary-50/40' : 'border-slate-200/70 bg-slate-50/60',
+          node.online && node.id !== portal.currentNodeId && 'transition-colors hover:border-primary-300 focus-within:ring-2 focus-within:ring-primary-500'
         ]"
       >
         <div class="flex items-center gap-2.5">
@@ -155,7 +155,7 @@ export default toNative(NodeResources)
             <span class="size-1.5 rounded-full bg-current"></span>{{ $t(nodeStatus(node).text) }}
           </span>
         </div>
-        <dl class="mt-3 grid grid-cols-3 gap-3 border-t border-slate-200/70 pt-3">
+        <dl class="resource-node-metrics">
           <div v-for="metric in metricValues(node)" :key="metric.label" class="min-w-0" :title="metric.detail">
             <dt class="text-xs text-slate-500">{{ $t(metric.label) }}</dt>
             <dd class="mt-0.5 text-base font-semibold tabular-nums text-slate-900">

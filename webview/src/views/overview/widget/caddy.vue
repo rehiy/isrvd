@@ -15,10 +15,10 @@ class CaddyOverview extends Vue {
     loading = false
 
     readonly statCards = [
-        { key: 'routes',   label: '路由总数',   icon: 'fa-route',       bgColor: 'bg-orange-500' },
-        { key: 'servers',  label: 'Server 数',  icon: 'fa-server',      bgColor: 'bg-indigo-500' },
-        { key: 'certs',    label: 'SSL 证书',   icon: 'fa-lock',        bgColor: 'bg-cyan-500' },
-        { key: 'hasTls',   label: 'TLS 启用',   icon: 'fa-certificate', bgColor: 'bg-emerald-500' },
+        { key: 'routes', label: '路由总数', icon: 'fa-route' },
+        { key: 'servers', label: 'Server 数', icon: 'fa-server' },
+        { key: 'certs', label: 'SSL 证书', icon: 'fa-lock' },
+        { key: 'hasTls', label: 'TLS 启用', icon: 'fa-certificate' },
     ]
 
     // ─── 方法 ───
@@ -65,14 +65,14 @@ export default toNative(CaddyOverview)
       <span class="text-slate-400 text-sm">{{ $t('加载中...') }}</span>
     </div>
 
-    <div v-else-if="info && info.available" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-      <div v-for="card in statCards" :key="card.key" class="stat-card items-center">
-        <div :class="['page-icon', card.bgColor]">
-          <i :class="['fas', card.icon, 'text-white']"></i>
+    <div v-else-if="info && info.available" class="resource-service-grid">
+      <div v-for="card in statCards" :key="card.key" class="resource-service-stat">
+        <div class="resource-service-icon">
+          <i :class="['fas', card.icon]"></i>
         </div>
         <div class="min-w-0 flex-1">
-          <p class="text-xs text-slate-400 mb-0.5">{{ $t(card.label) }}</p>
-          <p class="font-semibold text-slate-800 truncate">{{ cardValue(card.key) }}</p>
+          <p class="resource-service-label">{{ $t(card.label) }}</p>
+          <p class="resource-service-value" :title="String(cardValue(card.key))">{{ cardValue(card.key) }}</p>
         </div>
       </div>
     </div>

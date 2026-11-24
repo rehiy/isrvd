@@ -531,100 +531,127 @@
 
 
   .resource-page {
-    @apply min-h-[calc(100dvh-4rem)] bg-slate-100/45;
+    @apply min-h-[calc(100dvh-4rem)] bg-slate-50;
   }
 
-  .resource-page .card {
-    @apply rounded-2xl shadow-xs;
+  .resource-panel {
+    @apply min-w-0 overflow-hidden rounded-xl border border-slate-200/70 bg-white p-4 shadow-xs sm:p-5;
   }
 
-  .resource-host {
-    @apply relative isolate overflow-hidden rounded-2xl;
-    color: #f8fafc;
-    border: 1px solid #263c60;
-    background:
-      radial-gradient(ellipse at 91% 3%, #224e82 0%, transparent 59%),
-      linear-gradient(115deg, #0b1629, #0d1e36);
-    box-shadow: 0 14px 28px -19px #101e3d8f;
+  .resource-section-header {
+    @apply flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-3;
   }
 
-  .resource-host::before {
-    content: '';
-    position: absolute;
-    inset: 0 0 0 42%;
-    z-index: -1;
-    pointer-events: none;
-    background-image:
-      linear-gradient(#a5ccff18 1px, transparent 1px),
-      linear-gradient(90deg, #a5ccff18 1px, transparent 1px);
-    background-size: 26px 26px;
-    mask-image: radial-gradient(ellipse at 100% 0%, #000 12%, transparent 73%);
+  .resource-section-heading {
+    @apply flex min-w-0 items-center gap-2.5;
   }
 
-  .resource-host-icon {
-    color: #b8defe;
-    background: #65b7fa26;
-    box-shadow: inset 0 0 0 1px #a6d6ff32;
+  .resource-section-title {
+    @apply text-sm font-semibold text-slate-800;
+  }
+
+  .resource-section-icon {
+    @apply flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-sm text-primary-600;
+  }
+
+  .resource-nodes-grid {
+    @apply mt-3 grid gap-3;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+  }
+
+  .resource-node {
+    @apply relative min-w-0 rounded-lg border p-3.5;
+  }
+
+  .resource-node-metrics {
+    @apply mt-3 grid grid-cols-3 gap-4 border-t border-slate-200/70 pt-3;
+  }
+
+  @media (min-width: 768px) {
+    .resource-nodes-single .resource-node {
+      @apply grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-6;
+    }
+
+    .resource-nodes-single .resource-node-metrics {
+      @apply mt-0 border-t-0 border-l pl-6 pt-0;
+    }
   }
 
   .resource-host-muted {
-    color: #b2c1d8;
+    @apply text-slate-500;
   }
 
   .resource-host-status {
-    @apply flex w-fit items-center gap-2 rounded-full border px-3 py-1.5;
-    border-color: #a5c2fa42;
-    background: #0b162968;
+    @apply flex w-fit items-center gap-2 rounded-lg border border-slate-200/70 bg-slate-50 px-2.5 py-1.5 text-slate-600;
   }
 
   .resource-live-dot {
-    background-color: #5ee9bb;
-    box-shadow: 0 0 0 3px #5ee9bb28;
+    @apply bg-emerald-600;
   }
 
-  .resource-metric-sky    { --metric-color: #7dd3fc; }
-  .resource-metric-violet { --metric-color: #c4b5fd; }
-  .resource-metric-amber  { --metric-color: #fcd78c; }
-  .resource-metric-teal   { --metric-color: #7ce9d8; }
+  .resource-metric-sky    { --metric-color: var(--color-primary-600); }
+  .resource-metric-violet { --metric-color: var(--color-violet-600); }
+  .resource-metric-amber  { --metric-color: var(--color-amber-600); }
+  .resource-metric-teal   { --metric-color: var(--color-teal-600); }
 
-  .resource-host-metrics .stat-card {
-    @apply items-start px-3.5 py-3.5 sm:p-4;
-    border-color: #b7d5ff28;
-    background-color: #c4dbff0c;
+  .resource-host-metrics {
+    @apply mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4;
+  }
+
+  .resource-host-metric {
+    @apply flex min-w-0 items-start gap-3 rounded-lg border border-slate-200/70 bg-slate-50/60 p-4;
   }
 
   .resource-metric-icon {
+    @apply flex size-8 shrink-0 items-center justify-center rounded-lg text-sm;
     color: var(--metric-color);
-    background: color-mix(in srgb, var(--metric-color) 15%, transparent);
+    background: color-mix(in srgb, var(--metric-color) 10%, transparent);
   }
 
   .resource-metric-value {
-    color: #fff;
-    font-size: clamp(1.5rem, 2.6vw, 2.125rem);
+    @apply text-2xl font-semibold leading-tight tracking-tight text-slate-900 tabular-nums;
   }
 
   .resource-metric-unit {
-    @apply ml-1 text-xs font-medium;
-    color: var(--metric-color);
+    @apply ml-1 text-xs font-medium tracking-normal text-slate-500;
   }
 
   .resource-meter {
-    @apply h-1 overflow-hidden rounded-full;
-    background: #bbd3fd24;
+    @apply h-1 overflow-hidden rounded-full bg-slate-200;
   }
 
   .resource-meter span {
-    @apply block h-full rounded-full transition-[width];
+    @apply block h-full rounded-full transition-[width] motion-reduce:transition-none;
     background-color: var(--metric-color);
   }
 
-  .resource-node-meter {
-    background: var(--color-slate-200);
+  .resource-service-grid {
+    @apply grid gap-3;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
   }
 
-  .resource-node-meter.resource-metric-sky    { --metric-color: var(--color-primary-600); }
-  .resource-node-meter.resource-metric-violet { --metric-color: var(--color-violet-600); }
-  .resource-node-meter.resource-metric-amber  { --metric-color: var(--color-amber-700); }
+  .resource-service-stat {
+    @apply flex min-w-0 items-center gap-3 rounded-lg border border-slate-200/70 bg-slate-50/60 p-3.5;
+  }
+
+  .resource-service-icon {
+    @apply flex size-8 shrink-0 items-center justify-center rounded-lg text-sm;
+    color: var(--service-color, var(--color-primary-600));
+    background: var(--service-tint, var(--color-primary-50));
+  }
+
+  .resource-service-label {
+    @apply mb-1 text-xs text-slate-500;
+  }
+
+  .resource-service-value {
+    @apply truncate text-lg font-semibold leading-tight text-slate-800 tabular-nums;
+  }
+
+  .resource-service-apisix { --service-color: var(--color-orange-600); --service-tint: var(--color-orange-50); }
+  .resource-service-caddy  { --service-color: var(--color-indigo-600); --service-tint: var(--color-indigo-50); }
+  .resource-service-docker { --service-color: var(--color-blue-600); --service-tint: var(--color-blue-50); }
+  .resource-service-swarm  { --service-color: var(--color-cyan-600); --service-tint: var(--color-cyan-50); }
 
   .resource-detail-link {
     @apply bg-slate-50;

@@ -273,17 +273,19 @@ export default toNative(SystemOverview)
 </script>
 
 <template>
-  <section class="space-y-5">
-    <div class="resource-host p-4 sm:p-5 lg:p-6">
-      <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pb-4 sm:pb-5">
-        <div class="title-group-static w-full xs:w-auto">
-          <div class="page-icon resource-host-icon">
+  <section class="space-y-4">
+    <div class="resource-panel">
+      <div class="resource-section-header">
+        <div class="resource-section-heading max-w-full">
+          <div class="resource-section-icon">
             <i class="fas fa-server"></i>
           </div>
           <div class="min-w-0">
-            <p class="text-xs font-medium resource-host-muted">{{ $t('当前主机') }}</p>
-            <h2 class="truncate text-2xl sm:text-[1.875rem] font-semibold tracking-tight" :title="nodeName || system?.hostName">{{ nodeName || system?.hostName || '—' }}</h2>
-            <p v-if="system" class="text-sm resource-host-muted truncate">
+            <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <h2 class="resource-section-title">{{ $t('当前主机') }}</h2>
+              <span class="truncate text-sm text-slate-600" :title="nodeName || system?.hostName">{{ nodeName || system?.hostName || '—' }}</span>
+            </div>
+            <p v-if="system" class="text-xs resource-host-muted truncate mt-0.5">
               <template v-if="nodeName">{{ system.hostName }} <span class="mx-1">·</span></template>
               {{ system.platform }} <span class="mx-1">·</span> {{ system.kernelArch }}
             </p>
@@ -291,7 +293,7 @@ export default toNative(SystemOverview)
         </div>
         <div class="resource-host-status text-xs tabular-nums">
           <span v-if="sampleState === 'loading'">{{ $t('加载中...') }}</span>
-          <span v-else-if="sampleState === 'failed'" class="text-amber-300">{{ $t('采样失败') }}</span>
+          <span v-else-if="sampleState === 'failed'" class="text-amber-700">{{ $t('采样失败') }}</span>
           <template v-else-if="latest">
             <span class="resource-live-dot size-1.5 shrink-0 rounded-full"></span>
             <span>{{ $t('实时采集') }}</span>
@@ -300,9 +302,9 @@ export default toNative(SystemOverview)
         </div>
       </div>
 
-      <div class="resource-host-metrics grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        <div v-for="card in statCards" :key="card.label" :class="['stat-card min-w-0', 'resource-metric-' + card.color]">
-          <div class="page-icon resource-metric-icon">
+      <div class="resource-host-metrics">
+        <div v-for="card in statCards" :key="card.label" :class="['resource-host-metric', 'resource-metric-' + card.color]">
+          <div class="resource-metric-icon">
             <i :class="['fas', card.icon]"></i>
           </div>
           <div class="min-w-0 flex-1">
@@ -319,12 +321,12 @@ export default toNative(SystemOverview)
       </div>
     </div>
 
-    <div class="grid gap-4 xl:grid-cols-[minmax(0,2.65fr)_minmax(0,1fr)]">
-      <div class="card bg-white min-w-0 p-4 sm:p-5">
-        <div class="flex flex-wrap justify-between items-center gap-3">
-          <div class="title-group">
-            <span class="row-icon bg-primary-50 text-primary-600"><i class="fas fa-wave-square text-xs"></i></span>
-            <h2 class="text-base font-semibold text-slate-900">{{ $t('资源趋势') }}</h2>
+    <div class="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
+      <div class="resource-panel">
+        <div class="resource-section-header">
+          <div class="resource-section-heading">
+            <span class="resource-section-icon"><i class="fas fa-wave-square"></i></span>
+            <h2 class="resource-section-title">{{ $t('资源趋势') }}</h2>
           </div>
           <div class="tab-group">
             <button
@@ -350,10 +352,10 @@ export default toNative(SystemOverview)
         <p v-if="historyState === 'failed' && records.length >= 2" class="mt-2 text-xs text-amber-700">{{ $t('获取监控数据失败') }}</p>
       </div>
 
-      <div class="card bg-white min-w-0 p-4 sm:p-5 flex flex-col">
-        <div class="title-group">
-          <span class="row-icon bg-slate-100 text-slate-600"><i class="fas fa-circle-info text-xs"></i></span>
-          <h2 class="text-base font-semibold text-slate-900">{{ $t('主机详情') }}</h2>
+      <div class="resource-panel flex flex-col">
+        <div class="resource-section-heading">
+          <span class="resource-section-icon"><i class="fas fa-circle-info"></i></span>
+          <h2 class="resource-section-title">{{ $t('主机详情') }}</h2>
         </div>
         <dl class="mt-2 divide-y divide-slate-100 text-sm flex-1">
           <div class="flex flex-wrap items-baseline justify-between gap-x-2 py-2.5">
