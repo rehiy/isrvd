@@ -4,6 +4,7 @@ package helper
 
 import "os"
 
-func preserveFileOwner(_ *os.File, _ os.FileInfo) error {
+// PreserveFileOwner is a no-op on platforms without Unix ownership.
+func PreserveFileOwner(_ *os.File, _ os.FileInfo) error {
 	return nil
 }

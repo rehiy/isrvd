@@ -7,7 +7,8 @@ import (
 	"syscall"
 )
 
-func preserveFileOwner(file *os.File, previous os.FileInfo) error {
+// PreserveFileOwner copies the original file's UID and GID to its replacement.
+func PreserveFileOwner(file *os.File, previous os.FileInfo) error {
 	current, err := file.Stat()
 	if err != nil {
 		return err

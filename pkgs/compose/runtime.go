@@ -21,6 +21,7 @@ const (
 	ComposeFileName = "compose.yml"
 	// EnvFileName 项目 .env 文件名。
 	EnvFileName = ".env"
+	envFileMode = 0644
 )
 
 var safeProjectName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]*$`)
@@ -66,20 +67,32 @@ func EnvSave(installDir, env string) error {
 		return fmt.Errorf("创建环境文件目录失败: %w", err)
 	}
 	path := filepath.Join(installDir, EnvFileName)
-	if info, err := os.Lstat(path); err == nil {
-		if !info.Mode().IsRegular() {
+	previous, err := os.Lstat(path)
+	if err == nil {
+		if !previous.Mode().IsRegular() {
 			return fmt.Errorf(".env 必须是普通文件")
 		}
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("检查 .env 失败: %w", err)
 	}
-	// .env 可能包含凭据，使用 0600 临时文件完整落盘后再替换，避免继承旧文件的宽松权限。
-	temp, err := os.CreateTemp(installDir, ".isrvd-env-*")
+	// 在私有目录内完整写入，创建模式仍受 umask 限制。
+	stageDir, err := os.MkdirTemp(installDir, ".isrvd-env-*")
+	if err != nil {
+		return fmt.Errorf("创建 .env 临时文件失败: %w", err)
+	}
+	defer os.Remove(stageDir)
+	temp, err := os.OpenFile(filepath.Join(stageDir, EnvFileName), os.O_WRONLY|os.O_CREATE|os.O_EXCL, envFileMode)
 	if err != nil {
 		return fmt.Errorf("创建 .env 临时文件失败: %w", err)
 	}
 	defer os.Remove(temp.Name())
 	_, writeErr := io.WriteString(temp, env)
+	if writeErr == nil && previous != nil {
+		writeErr = helper.PreserveFileOwner(temp, previous)
+		if writeErr == nil {
+			writeErr = temp.Chmod(previous.Mode().Perm())
+		}
+	}
 	if writeErr == nil {
 		writeErr = temp.Sync()
 	}
@@ -105,12 +118,11 @@ func EnvEnsure(installDir string) error {
 		if !info.Mode().IsRegular() {
 			return fmt.Errorf(".env 必须是普通文件")
 		}
-		// 既有 .env 可能以 0644 创建；不改内容，但收紧权限。
-		return os.Chmod(envPath, 0600)
+		return nil
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("检查 .env 失败: %w", err)
 	}
-	file, err := os.OpenFile(envPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	file, err := os.OpenFile(envPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, envFileMode)
 	if errors.Is(err, os.ErrExist) {
 		return EnvEnsure(installDir)
 	}

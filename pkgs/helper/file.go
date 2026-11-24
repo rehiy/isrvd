@@ -46,7 +46,7 @@ func WriteRootFile(ctx context.Context, root *os.Root, name string, createOnly b
 	defer root.Remove(staged)
 	err = write(file)
 	if err == nil && previous != nil {
-		err = preserveFileOwner(file, previous)
+		err = PreserveFileOwner(file, previous)
 		if err == nil {
 			err = file.Chmod(previous.Mode().Perm())
 		}
