@@ -5,7 +5,7 @@
  * Props：
  *   adapter       操作适配器（必填）
  *   initialPath   初始路径，默认 /
- *   stickyToolbar 页面完整展示时吸顶（默认 false）
+ *   stickyToolbar 整页模式：面板占满内容区高度，工具栏固定、列表独立滚动（默认 false）
  *   showSearch    是否显示搜索框（默认 false）
  *   showBatchOps  是否启用多选/批量删除/移动（默认 false）
  *   showMobileView 是否显示移动端卡片视图（默认 false）
@@ -332,7 +332,8 @@ export default toNative(ExplorerPanel)
     </div>
 
     <!-- ─── 工具栏 ──────────────────────────────────────────────────────────── -->
-    <div :class="['page-toolbar', { 'page-toolbar-static': !stickyToolbar }]">
+    <!-- 面板自身固定高度、内容区独立滚动，工具栏无需吸顶（sticky top-16 会在面板内再下移 4rem） -->
+    <div class="page-toolbar page-toolbar-static">
       <div class="flex items-center justify-between gap-3">
         <!-- 面包屑导航 -->
         <nav aria-label="breadcrumb" class="flex-1 min-w-0">
