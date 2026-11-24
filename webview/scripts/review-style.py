@@ -738,8 +738,31 @@ def check_dark_utility(filepath, lines, tmpl, tmpl_line0):
             report(filepath, tmpl_line0 + i - 1, "ERROR", "组件模板禁止使用 dark: 工具类")
 
 
+def check_overview_stat_grid(filepath, lines, tmpl, tmpl_line0):
+    """概览统计卡片使用统一响应式网格，宽屏最多四列。"""
+    if Path(filepath).parent != SRC_DIR / "views" / "overview" / "widget":
+        return
+    parser = FormTemplateParser()
+    parser.feed(tmpl)
+    standard = {"grid", "grid-cols-1", "sm:grid-cols-2", "md:grid-cols-3", "lg:grid-cols-4", "gap-3"}
+
+    def walk(node, in_grid=False):
+        classes = set((node["attrs"].get("class") or "").split())
+        bound = node["attrs"].get(":class") or ""
+        if ("stat-card" in classes or re.search(r"\bstat-card\b", bound)) and not in_grid:
+            report(filepath, tmpl_line0 + node["line"] - 1, "ERROR", "概览统计卡片须使用统一的四列响应式网格")
+        if "grid" in classes:
+            columns = {token for token in classes if "grid-cols-" in token}
+            in_grid = standard <= classes and columns == {token for token in standard if "grid-cols-" in token}
+        for child in node["children"]:
+            walk(child, in_grid)
+
+    walk(parser.root)
+
+
 CHECKS = [
     check_dark_utility,
+    check_overview_stat_grid,
     check_form_help_layout,
     check_form_label_hints,
     check_code_editor_height,

@@ -117,17 +117,17 @@ export default toNative(NodeResources)
 </script>
 
 <template>
-  <section class="resource-panel">
+  <section class="card resource-panel">
     <div class="resource-section-header">
       <div class="resource-section-heading">
-        <span class="resource-section-icon"><i class="fas fa-sitemap"></i></span>
+        <span class="row-icon resource-section-icon"><i class="fas fa-sitemap"></i></span>
         <h2 class="resource-section-title">{{ $t('节点资源') }}</h2>
       </div>
       <span v-if="nodes.length" class="badge-sm badge-muted tabular-nums">{{ $t('{0} / {1} 在线', onlineCount, nodes.length) }}</span>
     </div>
     <p v-if="portal.nodesLoadFailed" class="mt-3 text-sm text-amber-700">{{ $t('加载失败，请刷新重试') }}</p>
     <p v-else-if="portal.nodesLoading" class="mt-3 text-sm text-slate-500">{{ $t('加载中...') }}</p>
-    <div class="resource-nodes-grid" :class="{ 'resource-nodes-single': nodes.length === 1 }">
+    <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3" :class="{ 'resource-nodes-single': nodes.length === 1 }">
       <article
         v-for="node in nodes" :key="node.id"
         :aria-current="node.id === portal.currentNodeId ? 'true' : undefined"
@@ -161,7 +161,7 @@ export default toNative(NodeResources)
             <dd class="mt-0.5 text-base font-semibold tabular-nums text-slate-900">
               {{ metric.percent === null ? '—' : metric.percent.toFixed(1) + '%' }}
             </dd>
-            <div v-if="metric.percent !== null" :class="['resource-meter resource-node-meter mt-1.5', 'resource-metric-' + metric.color]" aria-hidden="true">
+            <div v-if="metric.percent !== null" :class="['resource-meter mt-1.5', 'resource-metric-' + metric.color]" aria-hidden="true">
               <span :style="{ width: Math.min(100, Math.max(0, metric.percent)) + '%' }"></span>
             </div>
           </div>

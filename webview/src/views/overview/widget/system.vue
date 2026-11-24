@@ -274,10 +274,10 @@ export default toNative(SystemOverview)
 
 <template>
   <section class="space-y-4">
-    <div class="resource-panel">
+    <div class="card resource-panel">
       <div class="resource-section-header">
         <div class="resource-section-heading max-w-full">
-          <div class="resource-section-icon">
+          <div class="row-icon resource-section-icon">
             <i class="fas fa-server"></i>
           </div>
           <div class="min-w-0">
@@ -302,9 +302,9 @@ export default toNative(SystemOverview)
         </div>
       </div>
 
-      <div class="resource-host-metrics">
-        <div v-for="card in statCards" :key="card.label" :class="['resource-host-metric', 'resource-metric-' + card.color]">
-          <div class="resource-metric-icon">
+      <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div v-for="card in statCards" :key="card.label" :class="['stat-card min-w-0', 'resource-metric-' + card.color]">
+          <div class="page-icon resource-metric-icon">
             <i :class="['fas', card.icon]"></i>
           </div>
           <div class="min-w-0 flex-1">
@@ -322,10 +322,10 @@ export default toNative(SystemOverview)
     </div>
 
     <div class="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
-      <div class="resource-panel">
+      <div class="card resource-panel">
         <div class="resource-section-header">
           <div class="resource-section-heading">
-            <span class="resource-section-icon"><i class="fas fa-wave-square"></i></span>
+            <span class="row-icon resource-section-icon"><i class="fas fa-wave-square"></i></span>
             <h2 class="resource-section-title">{{ $t('资源趋势') }}</h2>
           </div>
           <div class="tab-group">
@@ -352,9 +352,9 @@ export default toNative(SystemOverview)
         <p v-if="historyState === 'failed' && records.length >= 2" class="mt-2 text-xs text-amber-700">{{ $t('获取监控数据失败') }}</p>
       </div>
 
-      <div class="resource-panel flex flex-col">
+      <div class="card resource-panel flex flex-col">
         <div class="resource-section-heading">
-          <span class="resource-section-icon"><i class="fas fa-circle-info"></i></span>
+          <span class="row-icon resource-section-icon"><i class="fas fa-circle-info"></i></span>
           <h2 class="resource-section-title">{{ $t('主机详情') }}</h2>
         </div>
         <dl class="mt-2 divide-y divide-slate-100 text-sm flex-1">

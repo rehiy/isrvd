@@ -38,6 +38,7 @@ export interface Route {
     module: string
     label: string
     access: number
+    explicitGrant?: boolean
 }
 
 // ─── 成员管理 ───

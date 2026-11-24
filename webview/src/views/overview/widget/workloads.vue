@@ -10,7 +10,7 @@ import { POLL_INTERVAL } from '@/helper/format'
 import { containerResourceValues, formatMonitorBytes } from '@/helper/monitor'
 
 interface ContainerReading {
-    ts: number
+    receivedAt: number
     cpuPercent: number | null
     memoryUsage: number | null
 }
@@ -27,7 +27,7 @@ class WorkloadsOverview extends Vue {
     sampling = false
     healthLoading = false
     failed = false
-    clock = Date.now() / 1000
+    clock = performance.now()
     readonly rankings = [{ key: 'cpu', label: 'CPU' }, { key: 'memory', label: '内存' }] as const
     private timer: ReturnType<typeof setInterval> | null = null
     private clockTimer: ReturnType<typeof setInterval> | null = null
@@ -51,7 +51,7 @@ class WorkloadsOverview extends Vue {
         }
         return this.runningContainers.flatMap(container => {
             const reading = this.readings.get(container.id)
-            return reading && reading.ts <= this.clock + 5 && this.clock - reading.ts <= 90 ? [{ ...container, ...reading }] : []
+            return reading && this.clock - reading.receivedAt <= 90_000 ? [{ ...container, ...reading }] : []
         })
     }
 
@@ -160,7 +160,7 @@ class WorkloadsOverview extends Vue {
                     try {
                         const { payload } = await api.overviewMonitor({ type: 'container', id: container.id, since: 0 }, { signal, timeout: 5000, inlineErrors: true })
                         if (!signal.aborted && payload?.data && Number.isFinite(payload.ts)) {
-                            readings.set(container.id, { ts: payload.ts, ...containerResourceValues(payload) })
+                            readings.set(container.id, { receivedAt: performance.now(), ...containerResourceValues(payload) })
                         }
                     } catch {
                         if (signal.aborted) {
@@ -171,7 +171,7 @@ class WorkloadsOverview extends Vue {
             }))
             if (!signal.aborted) {
                 this.readings = readings
-                this.clock = Date.now() / 1000
+                this.clock = performance.now()
             }
         } finally {
             this.sampling = false
@@ -184,7 +184,7 @@ class WorkloadsOverview extends Vue {
         }
         const { signal } = this.lifetime
         this.loading = true
-        this.clock = Date.now() / 1000
+        this.clock = performance.now()
         try {
             const { payload } = await api.dockerContainerList(true, undefined, { signal, timeout: 10000 })
             if (signal.aborted) {
@@ -210,7 +210,7 @@ class WorkloadsOverview extends Vue {
     }
 
     handleVisibility() {
-        this.clock = Date.now() / 1000
+        this.clock = performance.now()
         if (!document.hidden) {
             this.load()
         }
@@ -220,7 +220,7 @@ class WorkloadsOverview extends Vue {
         this.load()
         document.addEventListener('visibilitychange', this.handleVisibility)
         this.timer = setInterval(this.handleVisibility, POLL_INTERVAL * 6)
-        this.clockTimer = setInterval(() => { this.clock = Date.now() / 1000 }, POLL_INTERVAL)
+        this.clockTimer = setInterval(() => { this.clock = performance.now() }, POLL_INTERVAL)
     }
 
     unmounted() {
@@ -242,7 +242,7 @@ export default toNative(WorkloadsOverview)
   <div class="min-w-0">
     <div class="resource-section-header">
       <div class="resource-section-heading flex-wrap">
-        <span class="resource-service-icon"><i class="fab fa-docker"></i></span>
+        <span class="row-icon resource-service-icon"><i class="fab fa-docker"></i></span>
         <h2 class="resource-section-title">{{ $t('Docker 服务') }}</h2>
         <span v-if="containers" class="badge-sm badge-muted tabular-nums" :title="$t('共 {0} 个容器，已暂停 {1} 个', containers.length, pausedCount)">
           {{ $t('{0} 个容器', containers.length) }}
@@ -272,9 +272,9 @@ export default toNative(WorkloadsOverview)
       <span class="spinner-md"></span><span class="text-sm text-slate-500">{{ $t('加载中...') }}</span>
     </div>
     <template v-else-if="containers">
-      <div class="grid grid-cols-2 gap-2 mt-4 sm:gap-3 xl:grid-cols-4">
-        <div v-for="card in summaryCards" :key="card.label" class="resource-host-metric p-3 sm:p-4">
-          <span :class="['row-icon text-xs hidden sm:inline-flex', card.color]"><i :class="['fas', card.icon]"></i></span>
+      <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div v-for="card in summaryCards" :key="card.label" class="stat-card min-w-0">
+          <span :class="['page-icon', card.color]"><i :class="['fas', card.icon]"></i></span>
           <div class="min-w-0 flex-1">
             <p class="resource-service-label" :title="card.hint ? $t(card.hint) : undefined">
               {{ $t(card.label) }}<i v-if="card.value === '—'" class="fas fa-circle-info ml-1 text-slate-400" aria-hidden="true"></i>

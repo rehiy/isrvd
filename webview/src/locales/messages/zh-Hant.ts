@@ -8,6 +8,7 @@ import type { LanguageModule } from '../types'
  */
 
 const messages: Record<string, string> = {
+    '需单独勾选': '需單獨勾選',
 
     // ─── 资源概览 ───
     'CPU': 'CPU',

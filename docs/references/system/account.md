@@ -63,6 +63,7 @@ isrvd_get "/account/routes"
 | module | string | 模块名 |
 | label | string | 路由显示名 |
 | access | number | 访问级别：`0`=需要具体权限，`1`=登录即可访问，`-1`=匿名访问 |
+| explicitGrant | boolean，可选 | 为 true 时，成员编辑界面的「全选」「只读」和模块勾选均不自动授予该项权限 |
 
 > 路由未显式配置 `access` 时默认为 `0`，即需要具体权限。
 

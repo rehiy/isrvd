@@ -27,8 +27,8 @@ func (app *App) defineApisixRoutes() []Route {
 		{Method: "PUT", Path: "/apisix/metrics", Handler: app.apisixMetricsUpdate, Module: "apisix", Label: "开关 APISIX 指标"},
 		// Consumer 管理
 		{Method: "GET", Path: "/apisix/consumers", Handler: app.apisixConsumerList, Module: "apisix", Label: "查询 APISIX 消费者列表"},
-		{Method: "GET", Path: "/apisix/consumer/:username/key", Handler: app.apisixConsumerKeyInspect, Module: "apisix", Label: "读取 APISIX 消费者完整 Token", Audit: AuditAlways},
-		{Method: "PUT", Path: "/apisix/consumer/:username/key", Handler: app.apisixConsumerKeyUpdate, Module: "apisix", Label: "签发 APISIX 消费者 Token", ExtraPerm: "GET /api/apisix/consumer/:username/key"},
+		{Method: "GET", Path: "/apisix/consumer/:username/key", Handler: app.apisixConsumerKeyInspect, Module: "apisix", Label: "读取 APISIX 消费者完整 Token", ExplicitGrant: true, Audit: AuditAlways},
+		{Method: "PUT", Path: "/apisix/consumer/:username/key", Handler: app.apisixConsumerKeyUpdate, Module: "apisix", Label: "签发 APISIX 消费者 Token", ExplicitGrant: true, ExtraPerm: "GET /api/apisix/consumer/:username/key"},
 		{Method: "POST", Path: "/apisix/consumer", Handler: app.apisixConsumerCreate, Module: "apisix", Label: "创建 APISIX 消费者"},
 		{Method: "PUT", Path: "/apisix/consumer/:username", Handler: app.apisixConsumerUpdate, Module: "apisix", Label: "更新 APISIX 消费者"},
 		{Method: "DELETE", Path: "/apisix/consumer/:username", Handler: app.apisixConsumerDelete, Module: "apisix", Label: "删除 APISIX 消费者"},

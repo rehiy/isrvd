@@ -106,9 +106,9 @@ export default toNative(ApisixOverview)
       <span class="text-slate-400 text-sm">{{ $t('加载中...') }}</span>
     </div>
 
-    <div v-else-if="info" class="resource-service-grid">
-      <div v-for="card in visibleStatCards" :key="card.key" class="resource-service-stat">
-        <div class="resource-service-icon">
+    <div v-else-if="info" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div v-for="card in visibleStatCards" :key="card.key" class="stat-card min-w-0">
+        <div class="page-icon resource-service-icon">
           <i :class="['fas', card.icon]"></i>
         </div>
         <div class="min-w-0 flex-1">
