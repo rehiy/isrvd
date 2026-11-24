@@ -51,7 +51,9 @@ export function makeMonitorChartOptions(scales: MonitorScales, label: (ctx: Tool
     }
 }
 
-export function makeLineDataset(data: (number | null)[], color: string, label = '', options: Partial<ChartDataset<'line', (number | null)[]>> & { opacity?: number; fillOpacity?: number } = {}) {
+export function makeLineDataset<T = number | null>(
+    data: T[], color: string, label = '', options: Partial<ChartDataset<'line', T[]>> & { opacity?: number; fillOpacity?: number } = {}
+) {
     const { opacity = 1, fillOpacity = 0.1, ...datasetOptions } = options
     return {
         label, data: [...data], borderColor: opacity === 1 ? color : hexToRgba(color, opacity),

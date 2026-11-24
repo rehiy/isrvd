@@ -70,7 +70,11 @@ const NODE_FEATURES: Record<string, string> = {
 export const nodeMissingFeatures = (node: { negotiated: boolean; features?: string[] }): string[] =>
     node.negotiated ? Object.keys(NODE_FEATURES).filter(key => !node.features?.includes(key)).map(key => NODE_FEATURES[key]) : []
 
+/** 指定节点的同源页面路径，包含部署根目录与末尾斜杠。 */
+export const nodePath = (id: string): string =>
+    nodeLocation().root + (id ? `n/${encodeURIComponent(id)}/` : '')
+
 /** 切换到指定节点（空字符串为本机）。整页刷新，使登录态之外的页面状态按新节点重新初始化 */
 export const switchNode = (id: string, hash = '') => {
-    window.location.href = nodeLocation().root + (id ? `n/${id}/` : '') + hash
+    window.location.href = nodePath(id) + hash
 }

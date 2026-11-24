@@ -13,7 +13,7 @@ const routes: RouteRecordRaw[] = [
     path: '/overview',
     name: 'overview',
     component: () => import('@/views/overview/index.vue'),
-    meta: { title: '概览' }
+    meta: { title: '资源概览' }
   },
   {
     path: '/local',

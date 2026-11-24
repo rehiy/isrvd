@@ -165,9 +165,9 @@ export default toNative(NavigationBar)
 
     <!-- 导航链接 -->
     <nav v-if="portal.username" class="flex-1 py-4 px-3 space-y-1 overflow-y-auto" @click="closeMobileSidebar">
-      <router-link to="/overview" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('概览') : ''">
+      <router-link to="/overview" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('资源概览') : ''">
         <i class="fas fa-gauge-high"></i>
-        <span v-if="!collapsed">{{ $t('概览') }}</span>
+        <span v-if="!collapsed">{{ $t('资源概览') }}</span>
       </router-link>
       <!-- 本机管理折叠子菜单 -->
       <div v-if="portal.hasPerm('GET /api/overview/monitor') || portal.hasPerm('GET /api/filer/files') || portal.hasPerm('GET /api/local/processes') || portal.hasPerm('GET /api/shell')">

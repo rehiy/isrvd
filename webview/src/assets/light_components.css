@@ -530,6 +530,106 @@
   }
 
 
+  .resource-page {
+    @apply min-h-[calc(100dvh-4rem)] bg-slate-100/45;
+  }
+
+  .resource-page .card {
+    @apply rounded-2xl shadow-xs;
+  }
+
+  .resource-host {
+    @apply relative isolate overflow-hidden rounded-2xl;
+    color: #f8fafc;
+    border: 1px solid #263c60;
+    background:
+      radial-gradient(ellipse at 91% 3%, #224e82 0%, transparent 59%),
+      linear-gradient(115deg, #0b1629, #0d1e36);
+    box-shadow: 0 14px 28px -19px #101e3d8f;
+  }
+
+  .resource-host::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 0 42%;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      linear-gradient(#a5ccff18 1px, transparent 1px),
+      linear-gradient(90deg, #a5ccff18 1px, transparent 1px);
+    background-size: 26px 26px;
+    mask-image: radial-gradient(ellipse at 100% 0%, #000 12%, transparent 73%);
+  }
+
+  .resource-host-icon {
+    color: #b8defe;
+    background: #65b7fa26;
+    box-shadow: inset 0 0 0 1px #a6d6ff32;
+  }
+
+  .resource-host-muted {
+    color: #b2c1d8;
+  }
+
+  .resource-host-status {
+    @apply flex w-fit items-center gap-2 rounded-full border px-3 py-1.5;
+    border-color: #a5c2fa42;
+    background: #0b162968;
+  }
+
+  .resource-live-dot {
+    background-color: #5ee9bb;
+    box-shadow: 0 0 0 3px #5ee9bb28;
+  }
+
+  .resource-metric-sky    { --metric-color: #7dd3fc; }
+  .resource-metric-violet { --metric-color: #c4b5fd; }
+  .resource-metric-amber  { --metric-color: #fcd78c; }
+  .resource-metric-teal   { --metric-color: #7ce9d8; }
+
+  .resource-host-metrics .stat-card {
+    @apply items-start px-3.5 py-3.5 sm:p-4;
+    border-color: #b7d5ff28;
+    background-color: #c4dbff0c;
+  }
+
+  .resource-metric-icon {
+    color: var(--metric-color);
+    background: color-mix(in srgb, var(--metric-color) 15%, transparent);
+  }
+
+  .resource-metric-value {
+    color: #fff;
+    font-size: clamp(1.5rem, 2.6vw, 2.125rem);
+  }
+
+  .resource-metric-unit {
+    @apply ml-1 text-xs font-medium;
+    color: var(--metric-color);
+  }
+
+  .resource-meter {
+    @apply h-1 overflow-hidden rounded-full;
+    background: #bbd3fd24;
+  }
+
+  .resource-meter span {
+    @apply block h-full rounded-full transition-[width];
+    background-color: var(--metric-color);
+  }
+
+  .resource-node-meter {
+    background: var(--color-slate-200);
+  }
+
+  .resource-node-meter.resource-metric-sky    { --metric-color: var(--color-primary-600); }
+  .resource-node-meter.resource-metric-violet { --metric-color: var(--color-violet-600); }
+  .resource-node-meter.resource-metric-amber  { --metric-color: var(--color-amber-700); }
+
+  .resource-detail-link {
+    @apply bg-slate-50;
+  }
+
   /* ============================================================
    * 10. 终端页面（Terminal Page）
    * ============================================================ */

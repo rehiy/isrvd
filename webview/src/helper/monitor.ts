@@ -1,4 +1,4 @@
-import type { DockerContainerStats, MonitorContainerRecord } from '@/service/types'
+import type { DockerContainerStats, MonitorContainerRecord, SystemInfo } from '@/service/types'
 
 type ContainerChartValues = Pick<DockerContainerStats, 'cpuPercent' | 'memoryPercent' | 'networkRx' | 'networkTx' | 'blockRead' | 'blockWrite'>
 
@@ -53,11 +53,23 @@ export const formatMonitorBytes = (bytes: number, rate = false): string => {
     return `${value.toFixed(1)} ${units[unitIndex]}`
 }
 
+export function hostCpuUsage(system?: SystemInfo): number | null {
+    const samples = system?.cpuPercent
+    return samples?.length ? samples.reduce((sum, value) => sum + value, 0) / samples.length : null
+}
+
 export function usagePercent(used: number, total: number): number {
     if (!total) {
         return 0
     }
     return parseFloat(((used / total) * 100).toFixed(1))
+}
+
+export function monitorCapacity(used?: number, total?: number) {
+    return used !== undefined && total ? {
+        percent: usagePercent(used, total),
+        detail: `${formatMonitorBytes(used)} / ${formatMonitorBytes(total)}`
+    } : { percent: null, detail: '' }
 }
 
 export function semanticColor(pct: number): string {

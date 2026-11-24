@@ -1,11 +1,11 @@
 <script lang="ts">
 import axios from 'axios'
-import { Component, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { DockerContainerCreate, SystemVersionInfo } from '@/service/types'
+import type { DockerContainerCreate, DockerContainerInfo, SystemVersionInfo } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
 import ToggleCard from '@/component/toggle-card.vue'
@@ -16,6 +16,8 @@ import ToggleCard from '@/component/toggle-card.vue'
 class SystemUpdater extends Vue {
     portal = usePortal()
 
+    @Prop({ default: null }) readonly selfContainer!: DockerContainerInfo | null
+
     version: SystemVersionInfo | null = null
 
     deploying = false
@@ -23,8 +25,6 @@ class SystemUpdater extends Vue {
     updaterModalOpen = false
     updaterContainer = ''
     updaterAutoRemove = true
-    selfContainerName = ''
-    inDocker = false
     pollController: AbortController | null = null
     refreshTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -35,8 +35,8 @@ class SystemUpdater extends Vue {
         }
     }
 
-    async mounted() {
-        await Promise.all([this.loadSelfContainer(), this.loadVersionInfo()])
+    mounted() {
+        return this.loadVersionInfo()
     }
 
     async loadVersionInfo() {
@@ -51,20 +51,8 @@ class SystemUpdater extends Vue {
         }
     }
 
-    async loadSelfContainer() {
-        if (!this.portal.hasPerm('GET /api/docker/containers')) {
-            return
-        }
-        try {
-            const res = await api.dockerContainerList(true)
-            const self = res.payload?.find(c => c.isSelf)
-            if (self) {
-                this.inDocker = true
-                this.selfContainerName = self.name ?? ''
-            }
-        } catch {
-            // 获取失败静默处理，不影响主流程
-        }
+    get selfContainerName() {
+        return this.selfContainer?.name ?? ''
     }
 
     openUpdaterModal() {
@@ -221,7 +209,7 @@ export default toNative(SystemUpdater)
         </a>
         <!-- Docker 容器升级（仅 Docker 环境） -->
         <button
-          v-if="inDocker && portal.hasPerm('POST /api/docker/container')"
+          v-if="selfContainer && portal.hasPerm('POST /api/docker/container')"
           class="btn btn-emerald w-full xs:w-auto"
           :title="$t('升级当前容器')"
           :disabled="deploying || upgrading"

@@ -10,7 +10,7 @@ export interface APIResponse<T = unknown> {
 
 // 响应拦截器已将 AxiosResponse 解包为 APIResponse。
 export interface HttpClient {
-    get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<APIResponse<T>>
+    get<T = unknown>(url: string, config?: HttpRequestConfig): Promise<APIResponse<T>>
     post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<APIResponse<T>>
     put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<APIResponse<T>>
     patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<APIResponse<T>>
@@ -24,6 +24,9 @@ export interface HttpBlobClient {
 }
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info'
+
+// 跨节点后台读请求由区块处理错误；节点侧 401 不代表中控会话失效。
+export type HttpRequestConfig = AxiosRequestConfig & { inlineErrors?: boolean }
 
 // API 使用相对 baseURL，业务接口只传模块路径
 const axiosInstance = axios.create({ baseURL: 'api/' })
@@ -100,6 +103,9 @@ export const interceptors = (
             throw error
         }
         const tracked = checkSession(error.config)
+        if ((error.config as HttpRequestConfig | undefined)?.inlineErrors) {
+            throw error
+        }
         let message = ''
         const data = error.response?.data
         if (data instanceof Blob) {

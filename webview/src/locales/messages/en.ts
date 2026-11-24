@@ -8,6 +8,37 @@ import type { LanguageModule } from '../types'
  */
 
 const messages: Record<string, string> = {
+    // ─── 资源概览 ───
+    'CPU': 'CPU',
+    '磁盘': 'Disk',
+    '{0} / {1} 在线': '{0} / {1} online',
+    '节点资源': 'Node Resources',
+    '当前节点': 'Selected',
+    '系统时间': 'System time',
+    '暂无磁盘数据': 'No disk data',
+    '资源概览': 'Resource Overview',
+    '主机指标与容器运行状态': 'Host metrics and container status',
+    '当前主机': 'Current Host',
+    '实时采集': 'Live',
+    '采样失败': 'Sampling failed',
+    '网络速率': 'Network Rate',
+    '资源趋势': 'Resource Trends',
+    'CPU 和内存使用率趋势': 'CPU and memory usage over time',
+    '获取监控数据失败': 'Could not load monitoring data',
+    '等待更多采样': 'Waiting for more samples',
+    '主机详情': 'Host Details',
+    '容器负载': 'Container Workloads',
+    '容器管理': 'Manage Containers',
+    '未运行': 'Not Running',
+    '获取容器列表失败': 'Could not load containers',
+    '已退出': 'Exited',
+    '已暂停': 'Paused',
+    '已创建': 'Created',
+    '重启中': 'Restarting',
+    '删除中': 'Removing',
+    '已终止': 'Dead',
+    '显示 {0} / {1} 个容器': 'Showing {0} of {1} containers',
+
 
     // ─── Caddy 可信代理 ───
     '以下服务的路由加载失败': 'Routes could not be loaded for these servers',
