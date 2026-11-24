@@ -46,9 +46,6 @@ func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployRe
 				return nil, err
 			}
 		}
-		if err := s.imagesEnsure(ctx, project, req.ForcePull); err != nil {
-			return nil, err
-		}
 		return s.swarmServicesCreate(ctx, project)
 	})
 	if err == nil {
@@ -160,7 +157,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 		return nil, err
 	}
 	oldContent, oldEnv := currentConfig.Content, currentConfig.EnvContent
-	content, project, err := s.prepareRedeployContent(ctx, name, installDir, oldContent, req)
+	content, project, err := s.resolveRedeployContent(ctx, name, installDir, oldContent, req)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +238,6 @@ func (s *Service) swarmProjectName(ctx context.Context, name, root string) (stri
 // ─── 内部方法 ───
 
 // swarmServicesCreate 批量创建 project 中的所有 Swarm 服务，失败时回滚已创建的服务。
-// 调用前须先通过 imagesEnsure 完成预拉取。
 func (s *Service) swarmServicesCreate(ctx context.Context, project *types.Project) (_ []string, resultErr error) {
 	networks, err := s.ensureNetworks(ctx, project, "overlay")
 	defer s.rollbackNetworks(ctx, networks, &resultErr)
@@ -281,7 +277,6 @@ func (s *Service) swarmServicesCreate(ctx context.Context, project *types.Projec
 }
 
 // swarmServiceCreate 根据 compose service 创建对应 Swarm 服务。
-// 不负责镜像拉取，调用前须确保镜像已存在。
 func (s *Service) swarmServiceCreate(ctx context.Context, project *types.Project, svc types.ServiceConfig) (string, string, error) {
 	spec, err := compose.ServiceToSwarmSpec(project, svc)
 	if err != nil {
