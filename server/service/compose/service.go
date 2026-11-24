@@ -116,7 +116,7 @@ func (s *Service) CheckAvailability(ctx context.Context) bool {
 	return err == nil
 }
 
-// imagesEnsure 预拉取 project 中所有 service 的镜像，避免删除旧实例后才发现镜像不可用。
+// imagesEnsure 预拉取单机 Compose 项目的镜像，避免删除旧容器后才发现镜像不可用。
 // forcePull 为 true 时，无论本地是否存在都重新拉取。
 func (s *Service) imagesEnsure(ctx context.Context, project *types.Project, forcePull bool) error {
 	for _, svc := range project.Services {
@@ -217,18 +217,6 @@ func (s *Service) projectDeploy(ctx context.Context, req DeployRequest, rollback
 	}
 	deployed = true
 	return &DeployResult{ProjectName: projectName, Items: items, InstallDir: installDir}, nil
-}
-
-// prepareRedeployContent 校验新配置并预拉取所需镜像。
-func (s *Service) prepareRedeployContent(ctx context.Context, name, installDir, oldContent string, req RedeployRequest) (string, *types.Project, error) {
-	content, project, err := s.resolveRedeployContent(ctx, name, installDir, oldContent, req)
-	if err != nil {
-		return "", nil, err
-	}
-	if err := s.imagesEnsure(ctx, project, req.ForcePull); err != nil {
-		return "", nil, err
-	}
-	return content, project, nil
 }
 
 // resolveRedeployContent 解析待部署内容并返回项目，供预览与实际部署共用。
