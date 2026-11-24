@@ -95,6 +95,7 @@ type Route struct {
 	Module     string          `json:"module"`        // 模块名，空字符串表示无需模块权限
 	Label      string          `json:"label"`         // 模块显示名，用于错误提示
 	Access     RouteAccess     `json:"access"`        // 访问级别，0：需要具体权限，-1：匿名，1：登录即可访问
+	ExtraPerm  string          `json:"-"`             // 额外要求的权限键（"METHOD /api/path"），单机与中控网关统一校验
 	Audit      AuditLevel      `json:"-"`             // 审计级别，0：按 Method 审计，-1：忽略，1：强制审计
 	QueryToken bool            `json:"-"`             // 允许从 query ?token= 提取 JWT（用于 SSE/文件下载等无法携带 Header 的场景）
 }

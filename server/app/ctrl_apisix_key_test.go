@@ -31,6 +31,8 @@ func TestConsumerKeyPermissionsResponsesAndAudit(t *testing.T) {
 			http.NotFound(w, r)
 		case "/consumers/no-key":
 			_, _ = w.Write([]byte(`{"value":{"username":"no-key"}}`))
+		case "/consumers/disabled":
+			_, _ = w.Write([]byte(`{"value":{"username":"disabled","plugins":{"key-auth":{"key":"disabled-secret-fixture","_meta":{"disable":true}}}}}`))
 		case "/consumers/broken":
 			http.Error(w, "upstream-secret-fixture", 403)
 		case "/consumers/alice":
@@ -104,8 +106,10 @@ func TestConsumerKeyPermissionsResponsesAndAudit(t *testing.T) {
 		if expected == 200 && response.Header().Get("Cache-Control") != "private, no-store" {
 			t.Fatal("Token response may be cached")
 		}
-		if strings.Contains(response.Body.String(), "jwt-secret-fixture") || strings.Contains(response.Body.String(), "upstream-secret-fixture") {
-			t.Fatal("response leaked unrelated secrets")
+		for _, secret := range []string{"jwt-secret-fixture", "upstream-secret-fixture", "disabled-secret-fixture"} {
+			if strings.Contains(response.Body.String(), secret) {
+				t.Fatalf("response leaked secret %q", secret)
+			}
 		}
 		return response.Body.String()
 	}
@@ -116,19 +120,35 @@ func TestConsumerKeyPermissionsResponsesAndAudit(t *testing.T) {
 	if reads != 0 || writes != 0 {
 		t.Fatal("unauthorized request reached upstream")
 	}
+	if len(app.auditSvc.LogList("writer", 0)) != 0 {
+		t.Fatal("missing extra read permission was not rejected before audit middleware")
+	}
 	if !strings.Contains(call("reader", "GET", "alice", "", 200), "alice-original-token") {
 		t.Fatal("read did not return original Token")
 	}
 	if !strings.Contains(call("appkey", "PUT", "alice", `{"key":"proposed-fixture","create_only":true}`, 200), "alice-original-token") || writes != 0 {
 		t.Fatal("create-only failed to preserve existing Token")
 	}
+	// Reject camelCase typo createOnly instead of silently overwriting alice's Token as create_only=false.
+	call("appkey", "PUT", "alice", `{"key":"proposed-fixture","createOnly":true}`, 400)
+	call("appkey", "PUT", "alice", `null`, 400)
+	call("appkey", "PUT", "alice", `{"key":"proposed-fixture"}{"key":"second"}`, 400)
+	call("appkey", "PUT", "%ff", `{"key":"proposed-fixture","create_only":true}`, 400)
+	if writes != 0 {
+		t.Fatalf("rejected request mutated upstream %d times", writes)
+	}
+	tooLarge := call("appkey", "PUT", "alice", `{"key":"proposed-fixture","desc":"`+strings.Repeat("x", 70<<10)+`"}`, 413)
+	if !strings.Contains(tooLarge, "请求体过大") {
+		t.Fatalf("unexpected 413 message: %s", tooLarge)
+	}
 	call("reader", "GET", "missing", "", 404)
 	call("reader", "GET", "no-key", "", 409)
+	call("reader", "GET", "disabled", "", 409)
 	call("reader", "GET", "broken", "", 502)
 	call("appkey", "PUT", "alice", `{"key":""}`, 400)
 	logs := app.auditSvc.LogList("", 0)
 	encoded, _ := json.Marshal(logs)
-	for _, secret := range []string{"alice-original-token", "proposed-fixture", "jwt-secret-fixture"} {
+	for _, secret := range []string{"alice-original-token", "proposed-fixture", "jwt-secret-fixture", "disabled-secret-fixture"} {
 		if strings.Contains(string(encoded), secret) {
 			t.Fatal("audit leaked a Token")
 		}
@@ -163,5 +183,12 @@ func TestConsumerKeyPermissionsResponsesAndAudit(t *testing.T) {
 		if status != want {
 			t.Fatalf("node authorization as %s returned %d, want %d", user, status, want)
 		}
+	}
+
+	// Upstream network failure must not expose internal AdminURL to non-system callers.
+	upstream.Close()
+	netFail := call("reader", "GET", "alice", "", 502)
+	if strings.Contains(netFail, upstream.URL) {
+		t.Fatalf("502 response leaked internal AdminURL: %s", netFail)
 	}
 }

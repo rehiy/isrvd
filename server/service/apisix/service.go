@@ -13,7 +13,7 @@ import (
 // Service Apisix 业务服务
 type Service struct {
 	client        *apisix.Client
-	consumerLocks [64]sync.Mutex
+	consumerLocks [64]sync.RWMutex
 }
 
 // NewService 创建 Apisix 业务服务

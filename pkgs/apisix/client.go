@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/rehiy/libgo/logman"
@@ -19,13 +20,18 @@ type Client struct {
 	httpClient *http.Client
 }
 
-// APIError retains the status without logging or returning a body that may contain credentials.
+// APIError 表示 Apisix Admin API 返回的非 2xx 响应。
+// 涉及消费者凭据的请求不保留响应体，避免日志或错误消息泄露密钥。
 type APIError struct {
 	StatusCode int
+	Body       string
 }
 
 func (e *APIError) Error() string {
-	return fmt.Sprintf("Apisix 返回错误状态码 %d", e.StatusCode)
+	if e.Body == "" {
+		return fmt.Sprintf("Apisix 返回错误状态码 %d", e.StatusCode)
+	}
+	return fmt.Sprintf("Apisix 返回错误状态码 %d: %s", e.StatusCode, e.Body)
 }
 
 // NewClient 创建 Apisix Admin API 客户端
@@ -71,8 +77,12 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		logman.Error("Apisix request error", "method", method, "path", path, "status", resp.StatusCode)
-		return nil, &APIError{StatusCode: resp.StatusCode}
+		if strings.HasPrefix(path, "/consumers") {
+			logman.Error("Apisix request error", "method", method, "path", path, "status", resp.StatusCode)
+			return nil, &APIError{StatusCode: resp.StatusCode}
+		}
+		logman.Error("Apisix request error", "method", method, "path", path, "status", resp.StatusCode, "body", string(respData))
+		return nil, &APIError{StatusCode: resp.StatusCode, Body: string(respData)}
 	}
 
 	return respData, nil

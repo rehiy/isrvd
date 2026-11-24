@@ -24,7 +24,7 @@ isrvd_get "/apisix/consumers"
 isrvd_get "/apisix/consumer/<USERNAME>/key"
 ```
 
-独立权限 `GET /api/apisix/consumer/:username/key`，不能用列表权限替代。新增接口自动出现在「用户管理 → 成员权限 → APISIX」勾选列表中，名称为「读取 APISIX 消费者完整 Token」；普通成员不会自动获得此权限。返回 `success: true` 与 `payload`：
+独立权限 `GET /api/apisix/consumer/:username/key`，不能用列表权限替代。新增接口自动出现在「用户管理 → 成员权限 → APISIX」勾选列表中，名称为「读取 APISIX 消费者完整 Token」；现有成员不会自动获得此权限（配置普通成员权限时请勿通过「只读」或「全选」误勾选该项）。返回 `success: true` 与 `payload`：
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -42,20 +42,20 @@ isrvd_get "/apisix/consumer/<USERNAME>/key"
 isrvd_put "/apisix/consumer/<USERNAME>/key" '{"key":"<AUTH_KEY>","desc":"<DESC>","create_only":true}'
 ```
 
-权限列表中的名称为「签发 APISIX 消费者 Token」。需要同时持有 `PUT /api/apisix/consumer/:username/key` 和上述 GET 权限，因为 create-only 可能返回已有 Token。中控向节点转发时，也对原始调用者校验两项权限。响应字段与读取接口一致，返回上游实际保存的 Token。
+权限列表中的名称为「签发 APISIX 消费者 Token」。需要同时持有 `PUT /api/apisix/consumer/:username/key` 和上述 GET 权限，因为 create-only 可能返回已有 Token。单机与中控向节点转发时均在权限中间件阶段对原始调用者校验两项权限。请求体须为单个 JSON 对象（上限 64 KiB，超出返回 413；未知字段或尾随数据返回 400）。响应字段与读取接口一致，返回上游实际保存的 Token。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| key | string | 必填、非空，最多 4096 字节，不接受控制字符或含 `******` 的脱敏值 |
+| key | string | 必填、非空，最多 4096 字节，不接受空白、控制字符或含 `******` 的脱敏值 |
 | desc | string | 可选；不传或 null 时保留已有描述；空字符串表示清空 |
 | create_only | boolean | 默认 false；AppKey 首次领取必须传 true |
 
-- `create_only: true`：Consumer 不存在时创建；已存在且有 Token 时返回原 Token，不修改描述、插件或密钥；已存在但没有 key-auth 时返回 409，不隐式添加认证方式。
-- `create_only: false`：创建或更新 key-auth.key，保留其他插件、key-auth 附加配置、标签、所属组和其他 Consumer 字段；只有显式提供 desc 时修改描述。
+- `create_only: true`：Consumer 不存在时创建；已存在且有启用状态的 Token 时返回原 Token，不修改描述、插件或密钥；已存在但没有启用状态的 key-auth（含 `_meta.disable: true`）时返回 409，不隐式添加或恢复认证方式。
+- `create_only: false`：创建或更新 key-auth.key，保留其他插件、key-auth 附加配置、标签、所属组和其他 Consumer 字段（更新时不回传只读时间戳，由 APISIX 自动刷新 `update_time`）；若已有 key-auth 被显式禁用（`_meta.disable: true`）同样返回 409，避免越权解除停用；只有显式提供 desc 时修改描述。
 - 只有确认 Consumer 不存在才新建，上游认证失败、连接失败、响应异常不会当作不存在。写入后回读返回实际 Token，写成功但响应丢失时可用 create-only 重试获取原 Token。
-- 同一 iSrvd 服务实例内，Token、普通 Consumer 编辑和白名单创建使用相同的按账号锁。APISIX PUT 本身是 upsert，不提供跨进程的原子 create-only；其他 iSrvd 实例或直接 Admin API 写入不受此锁保护，应统一签发入口。
+- 同一 iSrvd 服务实例内，Token 读写、普通 Consumer 编辑和白名单创建共用按账号分片的读写锁。APISIX PUT 本身是 upsert，不提供跨进程的原子 create-only；其他 iSrvd 实例或直接 Admin API 写入不受此锁保护，应统一签发入口。
 
-两个接口均限制账号为不超过 100 字节、无空白/控制字符或 `/`、`\`、`%`、`?`、`#`，不能为 `.` 或 `..`。错误状态：401 未认证、403 权限不足、400 参数无效、404 Consumer 不存在、409 已有 Consumer 无 key-auth Token、502 上游请求或响应异常；模块不可用沿用全局 503。接口尚未部署时也会返回 404（“接口不存在”），接入前应检查权限目录中是否已有这两个接口。
+两个接口均限制账号为合法 UTF-8、不超过 100 字节、无空白/控制字符或 `/`、`\`、`%`、`?`、`#`，不能为 `.` 或 `..`。错误状态：401 未认证、403 权限不足、400 参数或请求体格式无效、404 Consumer 不存在、409 已有 Consumer 无可用 key-auth Token、413 请求体超过 64 KiB、502 上游请求或响应异常（不透传内部 Admin 地址与响应正文）；模块不可用沿用全局 503。接口尚未部署时也会返回 404（“接口不存在”），接入前应检查权限目录中是否已有这两个接口。
 
 ## 创建消费者
 

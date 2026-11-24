@@ -2,7 +2,9 @@ package app
 
 import (
 	"context"
+	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -62,7 +64,6 @@ func (app *App) authMiddleware(routeIndex map[string]Route) gin.HandlerFunc {
 // 基于 METHOD+PATH 进行集中式权限校验
 func (app *App) permMiddleware(routeIndex map[string]Route) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		svc := app.accountSvc
 		path := c.FullPath()
 		route, ok := lookupRoute(routeIndex, c)
 		if path == "" || !ok {
@@ -82,16 +83,35 @@ func (app *App) permMiddleware(routeIndex map[string]Route) gin.HandlerFunc {
 
 		// 仅 AccessPerm 且声明了 Module 的路由才执行细粒度权限校验；
 		// AccessAuth 路由登录即可访问，无需 PermCheck。
-		if route.Access == AccessPerm && route.Module != "" {
-			if err := svc.PermCheck(c.GetString("username"), route.Label, c.Request.Method, path); err != nil {
-				respondError(c, http.StatusForbidden, err.Error())
-				c.Abort()
-				return
-			}
+		if err := app.checkRoutePerm(c.GetString("username"), c.Request.Method, route); err != nil {
+			respondError(c, http.StatusForbidden, err.Error())
+			c.Abort()
+			return
 		}
 
 		c.Next()
 	}
+}
+
+// checkRoutePerm 校验路由所需的主权限及附加权限（单机中间件与中控网关共用）。
+func (app *App) checkRoutePerm(username, method string, route Route) error {
+	if route.Access != AccessPerm || route.Module == "" {
+		return nil
+	}
+	if err := app.accountSvc.PermCheck(username, route.Label, method, APINamespace+route.Path); err != nil {
+		return err
+	}
+	if route.ExtraPerm != "" {
+		extra, ok := app.routeIndex[route.ExtraPerm]
+		extraMethod, extraPath, valid := strings.Cut(route.ExtraPerm, " ")
+		if !ok || !valid {
+			return errors.New("未授权的访问路径")
+		}
+		if err := app.accountSvc.PermCheck(username, extra.Label, extraMethod, extraPath); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // AuditMiddleware 操作审计中间件

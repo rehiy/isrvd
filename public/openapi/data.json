@@ -8768,23 +8768,23 @@
       "apisix.ConsumerKey": {
         "properties": {
           "create_time": {
-            "description": "create_time",
+            "description": "创建时间（Unix 时间戳，只读）",
             "type": "integer"
           },
           "desc": {
-            "description": "desc",
+            "description": "Consumer 描述",
             "type": "string"
           },
           "key": {
-            "description": "key",
+            "description": "完整未脱敏的 key-auth Token",
             "type": "string"
           },
           "update_time": {
-            "description": "update_time",
+            "description": "更新时间（Unix 时间戳，只读）",
             "type": "integer"
           },
           "username": {
-            "description": "username",
+            "description": "Consumer 用户名",
             "type": "string"
           }
         },
@@ -8797,7 +8797,7 @@
             "type": "boolean"
           },
           "desc": {
-            "description": "不传时保留已有描述",
+            "description": "不传或 null 时保留已有描述，空字符串表示清空",
             "type": "string"
           },
           "key": {

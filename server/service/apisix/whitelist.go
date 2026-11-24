@@ -140,8 +140,6 @@ func (s *Service) WhitelistUserCreate(ctx context.Context, req WhitelistUserCrea
 	routeID := strings.TrimSpace(req.RouteID)
 	username := strings.TrimSpace(req.Username)
 	key := strings.TrimSpace(req.Key)
-	unlock := s.lockConsumer(username)
-	defer unlock()
 
 	if routeID == "" {
 		return nil, fmt.Errorf("路由 ID 不能为空")
@@ -152,6 +150,9 @@ func (s *Service) WhitelistUserCreate(ctx context.Context, req WhitelistUserCrea
 	if key == "" {
 		return nil, fmt.Errorf("key-auth key 不能为空")
 	}
+
+	unlock := s.lockConsumer(username)
+	defer unlock()
 
 	// 先确认路由可用，避免留下孤立的 Consumer
 	route, info, err := s.inspectRouteAuth(ctx, routeID)

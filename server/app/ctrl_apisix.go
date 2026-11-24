@@ -1,7 +1,10 @@
 package app
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +28,7 @@ func (app *App) defineApisixRoutes() []Route {
 		// Consumer 管理
 		{Method: "GET", Path: "/apisix/consumers", Handler: app.apisixConsumerList, Module: "apisix", Label: "查询 APISIX 消费者列表"},
 		{Method: "GET", Path: "/apisix/consumer/:username/key", Handler: app.apisixConsumerKeyInspect, Module: "apisix", Label: "读取 APISIX 消费者完整 Token", Audit: AuditAlways},
-		{Method: "PUT", Path: "/apisix/consumer/:username/key", Handler: app.apisixConsumerKeyUpdate, Module: "apisix", Label: "签发 APISIX 消费者 Token"},
+		{Method: "PUT", Path: "/apisix/consumer/:username/key", Handler: app.apisixConsumerKeyUpdate, Module: "apisix", Label: "签发 APISIX 消费者 Token", ExtraPerm: "GET /api/apisix/consumer/:username/key"},
 		{Method: "POST", Path: "/apisix/consumer", Handler: app.apisixConsumerCreate, Module: "apisix", Label: "创建 APISIX 消费者"},
 		{Method: "PUT", Path: "/apisix/consumer/:username", Handler: app.apisixConsumerUpdate, Module: "apisix", Label: "更新 APISIX 消费者"},
 		{Method: "DELETE", Path: "/apisix/consumer/:username", Handler: app.apisixConsumerDelete, Module: "apisix", Label: "删除 APISIX 消费者"},
@@ -137,7 +140,8 @@ func (app *App) apisixConsumerKeyInspect(c *gin.Context) {
 	c.Header("Cache-Control", "private, no-store")
 	result, err := app.availability.Load().apisixSvc.ConsumerKeyInspect(c.Request.Context(), c.Param("username"))
 	if err != nil {
-		respondError(c, consumerKeyErrorStatus(err), err.Error())
+		status, msg := consumerKeyError(err)
+		respondError(c, status, msg)
 		return
 	}
 	respondSuccess(c, "", result)
@@ -145,36 +149,24 @@ func (app *App) apisixConsumerKeyInspect(c *gin.Context) {
 
 func (app *App) apisixConsumerKeyUpdate(c *gin.Context) {
 	c.Header("Cache-Control", "private, no-store")
-	// A create-only response can reveal an existing key, so read permission is required too.
-	if err := app.accountSvc.PermCheck(c.GetString("username"), "读取 APISIX 消费者完整 Token", http.MethodGet, "/api/apisix/consumer/:username/key"); err != nil {
-		respondError(c, http.StatusForbidden, err.Error())
+	raw, err := io.ReadAll(http.MaxBytesReader(c.Writer, c.Request.Body, 64<<10))
+	if err != nil || !json.Valid(raw) {
+		respondConsumerKeyBindError(c, err)
 		return
 	}
+	c.Request.Body = io.NopCloser(bytes.NewReader(raw))
 	var req apisix.ConsumerKeyUpdateRequest
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 64<<10)
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondBindError(c, err)
+		respondConsumerKeyBindError(c, err)
 		return
 	}
 	result, err := app.availability.Load().apisixSvc.ConsumerKeyUpdate(c.Request.Context(), c.Param("username"), req)
 	if err != nil {
-		respondError(c, consumerKeyErrorStatus(err), err.Error())
+		status, msg := consumerKeyError(err)
+		respondError(c, status, msg)
 		return
 	}
 	respondSuccess(c, "", result)
-}
-
-func consumerKeyErrorStatus(err error) int {
-	switch {
-	case errors.Is(err, pkgApisix.ErrConsumerNotFound):
-		return http.StatusNotFound
-	case errors.Is(err, pkgApisix.ErrConsumerKeyMissing):
-		return http.StatusConflict
-	case errors.Is(err, pkgApisix.ErrConsumerKeyInvalid):
-		return http.StatusBadRequest
-	default:
-		return http.StatusBadGateway
-	}
 }
 
 func (app *App) apisixConsumerUpdate(c *gin.Context) {
@@ -332,4 +324,31 @@ func (app *App) apisixSSLDelete(c *gin.Context) {
 func (app *App) apisixPluginList(c *gin.Context) {
 	result, err := app.availability.Load().apisixSvc.PluginList(c.Request.Context())
 	respondResult(c, result, err)
+}
+
+// ─── 辅助函数 ───
+
+func respondConsumerKeyBindError(c *gin.Context, err error) {
+	if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
+		respondError(c, http.StatusRequestEntityTooLarge, "请求体过大")
+		return
+	}
+	respondError(c, http.StatusBadRequest, "请求体格式错误")
+}
+
+func consumerKeyError(err error) (int, string) {
+	switch {
+	case errors.Is(err, pkgApisix.ErrConsumerNotFound):
+		return http.StatusNotFound, err.Error()
+	case errors.Is(err, pkgApisix.ErrConsumerKeyMissing):
+		return http.StatusConflict, err.Error()
+	case errors.Is(err, pkgApisix.ErrConsumerKeyInvalid):
+		return http.StatusBadRequest, err.Error()
+	case errors.Is(err, pkgApisix.ErrConsumerResponseInvalid):
+		return http.StatusBadGateway, err.Error()
+	}
+	if apiErr, ok := errors.AsType[*pkgApisix.APIError](err); ok {
+		return http.StatusBadGateway, apiErr.Error()
+	}
+	return http.StatusBadGateway, "请求 Apisix 失败"
 }
