@@ -1351,8 +1351,8 @@ const messages: Record<string, string> = {
     '本机': 'ローカル',
     // Switch Node
     '切换节点': 'ノードを切り替え',
-    // Local (controller)
-    '本机（中控）': 'ローカル（コントローラ）',
+    // Controller
+    '中控': 'コントローラー',
     // No connected nodes yet
     '暂无已接入的节点': '接続済みのノードはまだありません',
     // Created

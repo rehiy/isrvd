@@ -62,7 +62,7 @@ class Overview extends Vue {
             return ''
         }
         if (!this.portal.currentNodeId) {
-            return this.$t('本机（中控）')
+            return this.$t('中控')
         }
         return this.portal.nodes.find(node => node.id === this.portal.currentNodeId)?.name ?? ''
     }
