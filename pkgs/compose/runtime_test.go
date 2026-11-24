@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func checkEnv(t *testing.T, dir, want string) {
+func checkEnv(t *testing.T, dir, want string, mode os.FileMode) {
 	t.Helper()
 	path := filepath.Join(dir, EnvFileName)
 	content, err := os.ReadFile(path)
@@ -20,26 +20,46 @@ func checkEnv(t *testing.T, dir, want string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := info.Mode().Perm(); got != 0600 {
-		t.Fatalf(".env mode = %04o, want 0600", got)
+	if got := info.Mode().Perm(); got != mode {
+		t.Fatalf(".env mode = %04o, want %04o", got, mode)
 	}
 }
 
-func TestEnvSavePrivateAtomicReplace(t *testing.T) {
+func TestEnvApplyNewFilePermissions(t *testing.T) {
+	reference := filepath.Join(t.TempDir(), "reference")
+	if err := os.WriteFile(reference, nil, 0644); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	if err := EnvApply(dir, nil); err != nil {
+		t.Fatal(err)
+	}
+	checkEnv(t, dir, "", info.Mode().Perm())
+
+	dir = t.TempDir()
+	content := "VALUE=1\n"
+	if err := EnvApply(dir, &content); err != nil {
+		t.Fatal(err)
+	}
+	checkEnv(t, dir, content, info.Mode().Perm())
+}
+
+func TestEnvSaveAtomicReplaceRetainsPermissions(t *testing.T) {
 	dir := t.TempDir()
 	if err := EnvSave(dir, "PASSWORD=secret\n"); err != nil {
 		t.Fatal(err)
 	}
-	checkEnv(t, dir, "PASSWORD=secret\n")
-
-	// Older releases created 0644 files; saving must not preserve those permissions.
-	if err := os.Chmod(filepath.Join(dir, EnvFileName), 0644); err != nil {
+	if err := os.Chmod(filepath.Join(dir, EnvFileName), 0640); err != nil {
 		t.Fatal(err)
 	}
 	if err := EnvSave(dir, "PASSWORD=replaced\n"); err != nil {
 		t.Fatal(err)
 	}
-	checkEnv(t, dir, "PASSWORD=replaced\n")
+	checkEnv(t, dir, "PASSWORD=replaced\n", 0640)
 
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -50,12 +70,8 @@ func TestEnvSavePrivateAtomicReplace(t *testing.T) {
 	}
 }
 
-func TestEnvEnsurePrivateExistingContent(t *testing.T) {
+func TestEnvEnsureRetainsExistingContentAndPermissions(t *testing.T) {
 	dir := t.TempDir()
-	if err := EnvEnsure(dir); err != nil {
-		t.Fatal(err)
-	}
-	checkEnv(t, dir, "")
 	if err := os.WriteFile(filepath.Join(dir, EnvFileName), []byte("EXISTING=1"), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -65,15 +81,29 @@ func TestEnvEnsurePrivateExistingContent(t *testing.T) {
 	if err := EnvEnsure(dir); err != nil {
 		t.Fatal(err)
 	}
-	checkEnv(t, dir, "EXISTING=1")
+	checkEnv(t, dir, "EXISTING=1", 0644)
 }
 
-func TestEnvStateRestorePrivate(t *testing.T) {
+func TestEnvStateRestoreRetainsPermissions(t *testing.T) {
 	dir := t.TempDir()
-	if err := EnvStateRestore(dir, EnvState{Exists: true, Content: "TOKEN=restored"}); err != nil {
+	if err := EnvSave(dir, "TOKEN=restored"); err != nil {
 		t.Fatal(err)
 	}
-	checkEnv(t, dir, "TOKEN=restored")
+	if err := os.Chmod(filepath.Join(dir, EnvFileName), 0600); err != nil {
+		t.Fatal(err)
+	}
+	before, err := EnvStateRead(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := EnvSave(dir, "TOKEN=updated"); err != nil {
+		t.Fatal(err)
+	}
+	checkEnv(t, dir, "TOKEN=updated", 0600)
+	if err := EnvStateRestore(dir, before); err != nil {
+		t.Fatal(err)
+	}
+	checkEnv(t, dir, "TOKEN=restored", 0600)
 	if err := EnvStateRestore(dir, EnvState{}); err != nil {
 		t.Fatal(err)
 	}
