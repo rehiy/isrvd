@@ -84,7 +84,7 @@ func TestConsumerKeyPermissionsResponsesAndAudit(t *testing.T) {
 	for permission, label := range map[string]string{readPermission: "读取 APISIX 消费者完整 Token", writePermission: "签发 APISIX 消费者 Token"} {
 		found := false
 		for _, route := range catalog.Payload {
-			if route.Key == permission && route.Label == label && route.Module == "apisix" && route.Access == AccessPerm {
+			if route.Key == permission && route.Label == label && route.Module == "apisix" && route.Access == AccessPerm && route.ExplicitGrant {
 				found = true
 			}
 		}

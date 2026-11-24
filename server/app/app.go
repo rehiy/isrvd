@@ -98,6 +98,8 @@ type Route struct {
 	ExtraPerm  string          `json:"-"`             // 额外要求的权限键（"METHOD /api/path"），单机与中控网关统一校验
 	Audit      AuditLevel      `json:"-"`             // 审计级别，0：按 Method 审计，-1：忽略，1：强制审计
 	QueryToken bool            `json:"-"`             // 允许从 query ?token= 提取 JWT（用于 SSE/文件下载等无法携带 Header 的场景）
+
+	ExplicitGrant bool `json:"explicitGrant,omitempty"` // 成员编辑时须单独勾选
 }
 
 // StartApp 启动应用并阻塞到收到退出信号。

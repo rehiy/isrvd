@@ -14,6 +14,7 @@ import type { LanguageModule } from '../types'
  */
 
 const messages: Record<string, string> = {
+    '需单独勾选': '個別に選択',
     // ─── 资源概览 ───
     'CPU': 'CPU',
     '磁盘': 'ディスク',

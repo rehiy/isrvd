@@ -138,10 +138,10 @@ export default toNative(Overview)
         <SystemOverview ref="systemRef" :node-name="currentNodeName" @sample="currentReading = $event" />
       </div>
 
-      <section v-if="canViewWorkloads || portal.hasPerm('GET /api/docker/info')" class="resource-panel resource-service-docker">
+      <section v-if="canViewWorkloads || portal.hasPerm('GET /api/docker/info')" class="card resource-panel resource-service-docker">
         <WorkloadsOverview v-if="canViewWorkloads" ref="workloadsRef" @self-container="selfContainer = $event" />
         <div v-else class="resource-section-heading mb-4">
-          <span class="resource-service-icon"><i class="fab fa-docker"></i></span>
+          <span class="row-icon resource-service-icon"><i class="fab fa-docker"></i></span>
           <h2 class="resource-section-title">{{ $t('Docker 服务') }}</h2>
         </div>
         <div v-if="portal.hasPerm('GET /api/docker/info')" :class="{ 'mt-4 border-t border-slate-200/70 pt-3': canViewWorkloads }">
@@ -150,27 +150,27 @@ export default toNative(Overview)
       </section>
 
       <!-- APISIX 概览区块 -->
-      <section v-if="canViewApisix" class="resource-panel resource-service-apisix">
+      <section v-if="canViewApisix" class="card resource-panel resource-service-apisix">
         <div class="resource-section-heading mb-4">
-          <span class="resource-service-icon"><i class="fas fa-route"></i></span>
+          <span class="row-icon resource-service-icon"><i class="fas fa-route"></i></span>
           <h2 class="resource-section-title">{{ $t('APISIX 网关') }}</h2>
         </div>
         <ApisixOverview ref="apisixRef" />
       </section>
 
       <!-- Caddy 概览区块 -->
-      <section v-if="portal.hasPerm('GET /api/caddy/info')" class="resource-panel resource-service-caddy">
+      <section v-if="portal.hasPerm('GET /api/caddy/info')" class="card resource-panel resource-service-caddy">
         <div class="resource-section-heading mb-4">
-          <span class="resource-service-icon"><i class="fas fa-shield"></i></span>
+          <span class="row-icon resource-service-icon"><i class="fas fa-shield"></i></span>
           <h2 class="resource-section-title">{{ $t('Caddy 网关') }}</h2>
         </div>
         <CaddyOverview ref="caddyRef" />
       </section>
 
       <!-- Swarm 概览区块 -->
-      <section v-if="portal.hasPerm('GET /api/swarm/info')" class="resource-panel resource-service-swarm">
+      <section v-if="portal.hasPerm('GET /api/swarm/info')" class="card resource-panel resource-service-swarm">
         <div class="resource-section-heading mb-4">
-          <span class="resource-service-icon"><i class="fas fa-circle-nodes"></i></span>
+          <span class="row-icon resource-service-icon"><i class="fas fa-circle-nodes"></i></span>
           <h2 class="resource-section-title">{{ $t('Swarm 集群') }}</h2>
         </div>
         <SwarmOverview ref="swarmRef" />

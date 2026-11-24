@@ -535,7 +535,7 @@
   }
 
   .resource-panel {
-    @apply min-w-0 overflow-hidden rounded-xl border border-slate-200/70 bg-white p-4 shadow-xs sm:p-5;
+    @apply min-w-0 border-slate-200/70 bg-white p-4 shadow-xs sm:p-5;
   }
 
   .resource-section-header {
@@ -551,12 +551,7 @@
   }
 
   .resource-section-icon {
-    @apply flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-sm text-primary-600;
-  }
-
-  .resource-nodes-grid {
-    @apply mt-3 grid gap-3;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+    @apply bg-primary-50 text-sm text-primary-600;
   }
 
   .resource-node {
@@ -565,6 +560,10 @@
 
   .resource-node-metrics {
     @apply mt-3 grid grid-cols-3 gap-4 border-t border-slate-200/70 pt-3;
+  }
+
+  .resource-nodes-single .resource-node {
+    @apply col-span-full;
   }
 
   @media (min-width: 768px) {
@@ -594,16 +593,12 @@
   .resource-metric-amber  { --metric-color: var(--color-amber-600); }
   .resource-metric-teal   { --metric-color: var(--color-teal-600); }
 
-  .resource-host-metrics {
-    @apply mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4;
-  }
-
-  .resource-host-metric {
-    @apply flex min-w-0 items-start gap-3 rounded-lg border border-slate-200/70 bg-slate-50/60 p-4;
+  .resource-panel .stat-card {
+    @apply border-slate-200/70 bg-slate-50/60;
   }
 
   .resource-metric-icon {
-    @apply flex size-8 shrink-0 items-center justify-center rounded-lg text-sm;
+    @apply text-sm;
     color: var(--metric-color);
     background: color-mix(in srgb, var(--metric-color) 10%, transparent);
   }
@@ -625,17 +620,8 @@
     background-color: var(--metric-color);
   }
 
-  .resource-service-grid {
-    @apply grid gap-3;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
-  }
-
-  .resource-service-stat {
-    @apply flex min-w-0 items-center gap-3 rounded-lg border border-slate-200/70 bg-slate-50/60 p-3.5;
-  }
-
   .resource-service-icon {
-    @apply flex size-8 shrink-0 items-center justify-center rounded-lg text-sm;
+    @apply text-sm;
     color: var(--service-color, var(--color-primary-600));
     background: var(--service-tint, var(--color-primary-50));
   }

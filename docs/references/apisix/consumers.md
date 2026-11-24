@@ -24,7 +24,7 @@ isrvd_get "/apisix/consumers"
 isrvd_get "/apisix/consumer/<USERNAME>/key"
 ```
 
-独立权限 `GET /api/apisix/consumer/:username/key`，不能用列表权限替代。新增接口自动出现在「用户管理 → 成员权限 → APISIX」勾选列表中，名称为「读取 APISIX 消费者完整 Token」；现有成员不会自动获得此权限（配置普通成员权限时请勿通过「只读」或「全选」误勾选该项）。返回 `success: true` 与 `payload`：
+独立权限 `GET /api/apisix/consumer/:username/key`，不能用列表权限替代。新增接口自动出现在「用户管理 → 成员权限 → APISIX」勾选列表中，名称为「读取 APISIX 消费者完整 Token」；读取与签发两项权限均须单独勾选，批量预设和模块勾选不自动授予。返回 `success: true` 与 `payload`：
 
 | 字段 | 类型 | 说明 |
 |------|------|------|

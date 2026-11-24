@@ -37,17 +37,11 @@ const MODULE_META: Record<string, { icon: string; label: string }> = {
     cron:     { icon: 'fas fa-clock',       label: '计划任务' },
 }
 
-interface RouteItem {
-    key: string
-    label: string
-    access: number
-}
-
 interface RouteGroup {
     module: string
     label: string
     icon: string
-    routes: RouteItem[]
+    routes: Route[]
 }
 
 @Component({
@@ -106,12 +100,12 @@ class MemberEditModal extends Vue {
             this.autoPerms = autoPerms
             // 按 module 分组，保持模块顺序
             const moduleOrder = Object.keys(MODULE_META)
-            const groupMap = new Map<string, RouteItem[]>()
+            const groupMap = new Map<string, Route[]>()
             for (const item of items) {
                 if (!groupMap.has(item.module)) {
                     groupMap.set(item.module, [])
                 }
-                groupMap.get(item.module)?.push({ key: item.key, label: item.label || item.key, access: item.access })
+                groupMap.get(item.module)?.push(item)
             }
             // 按预定义顺序排列模块，未知模块追加到末尾
             const ordered: RouteGroup[] = []
@@ -179,62 +173,55 @@ class MemberEditModal extends Vue {
         }
     }
 
-    manualRouteKeys(): string[] {
-        return this.routeGroups
-            .flatMap(group => group.routes)
-            .filter(route => !this.autoPerms.has(route.key))
-            .map(route => route.key)
+    get routes() {
+        return this.routeGroups.flatMap(group => group.routes)
     }
 
-    applyRouteShortcut(keys: string[]) {
-        const manualKeySet = new Set(this.manualRouteKeys())
-        const nextKeySet = new Set(keys)
-        const preserved = this.formData.permissions.filter(key => !manualKeySet.has(key))
+    bulkRouteKeys(routes: Route[]) {
+        return routes.filter(route => route.access === RouteAccessPerm && !route.explicitGrant).map(route => route.key)
+    }
+
+    applyRouteShortcut(keys: string[], preserveExplicit = false) {
+        const replaced = preserveExplicit
+            ? this.bulkRouteKeys(this.routes)
+            : this.routes.filter(route => route.access === RouteAccessPerm).map(route => route.key)
+        const replacedKeys = new Set(replaced)
+        const preserved = this.formData.permissions.filter(key => !replacedKeys.has(key))
         this.formData.permissions = [...preserved, ...keys]
-        this.permSet = new Set([...preserved, ...nextKeySet])
+        this.permSet = new Set(this.formData.permissions)
     }
 
     selectAllRoutes() {
-        this.applyRouteShortcut(this.manualRouteKeys())
+        this.applyRouteShortcut(this.bulkRouteKeys(this.routes), true)
     }
 
     selectReadOnlyRoutes() {
-        const keys = this.routeGroups
-            .flatMap(group => group.routes)
-            .filter(route => !this.autoPerms.has(route.key) && this.methodOf(route.key) === 'GET')
-            .map(route => route.key)
-        this.applyRouteShortcut(keys)
+        this.applyRouteShortcut(this.bulkRouteKeys(this.routes).filter(key => this.methodOf(key) === 'GET'))
     }
 
     clearRoutes() {
         this.applyRouteShortcut([])
     }
 
-    isGroupAllChecked(routes: RouteItem[]): boolean {
-        return routes.every(r => this.isChecked(r.key))
+    isGroupAllChecked(routes: Route[]): boolean {
+        const keys = this.bulkRouteKeys(routes)
+        return keys.length > 0 && keys.every(key => this.permSet.has(key))
     }
 
-    isGroupPartialChecked(routes: RouteItem[]): boolean {
-        const checked = routes.filter(r => this.isChecked(r.key)).length
-        return checked > 0 && checked < routes.length
+    isGroupPartialChecked(routes: Route[]): boolean {
+        const keys = this.bulkRouteKeys(routes)
+        const checked = keys.filter(key => this.permSet.has(key)).length
+        return checked > 0 && checked < keys.length
     }
 
-    toggleGroup(routes: RouteItem[]) {
-        // 只操作非自动权限的路由
-        const manualRoutes = routes.filter(r => !this.autoPerms.has(r.key)).map(r => r.key)
-        if (manualRoutes.length === 0) {
-            return
-        }
-        const allChecked = manualRoutes.every(k => this.permSet.has(k))
-        if (allChecked) {
-            const removeSet = new Set(manualRoutes)
-            manualRoutes.forEach(k => this.permSet.delete(k))
-            this.formData.permissions = this.formData.permissions.filter(k => !removeSet.has(k))
+    toggleGroup(routes: Route[]) {
+        const keys = this.bulkRouteKeys(routes)
+        if (keys.every(key => this.permSet.has(key))) {
+            keys.forEach(key => this.permSet.delete(key))
         } else {
-            const toAdd = manualRoutes.filter(k => !this.permSet.has(k))
-            toAdd.forEach(k => this.permSet.add(k))
-            this.formData.permissions = [...this.formData.permissions, ...toAdd]
+            keys.forEach(key => this.permSet.add(key))
         }
+        this.formData.permissions = [...this.permSet]
     }
 
     methodOf(key: string): string {
@@ -340,10 +327,11 @@ export default toNative(MemberEditModal)
                   {{ methodOf(item.key) }}
                 </span>
                 <span class="min-w-0 flex-1 flex items-center gap-2">
-                  <span class="text-xs text-slate-700 truncate">{{ $t(item.label) }}</span>
+                  <span class="text-xs text-slate-700 truncate">{{ $t(item.label || item.key) }}</span>
                   <code class="hidden sm:inline text-xs text-slate-400 font-mono truncate">{{ pathOf(item.key) }}</code>
                 </span>
                 <span v-if="isAuto(item.key)" class="ml-auto text-xs text-slate-400 flex-shrink-0">{{ $t('自动') }}</span>
+                <span v-else-if="item.explicitGrant" class="badge-xs badge-warning shrink-0">{{ $t('需单独勾选') }}</span>
               </label>
             </div>
           </div>
