@@ -100,7 +100,7 @@ export default toNative(SSHHosts)
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="ssh-hosts" :placeholder="$t('搜索主机名、地址或用户名...')" focus-color="teal" type-to-search />
+          <PageSearch v-model="searchText" search-key="ssh-hosts" :placeholder="$t('搜索主机、地址或用户名...')" focus-color="teal" type-to-search />
           <button class="btn btn-secondary" @click="loadHosts()">
             <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
@@ -133,7 +133,7 @@ export default toNative(SSHHosts)
 
     <!-- 移动端搜索 -->
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="ssh-hosts" :placeholder="$t('搜索主机名、地址或用户名...')" width-class="w-full" focus-color="teal" />
+      <PageSearch v-model="searchText" search-key="ssh-hosts" :placeholder="$t('搜索主机、地址或用户名...')" width-class="w-full" focus-color="teal" />
     </div>
 
     <!-- Loading -->

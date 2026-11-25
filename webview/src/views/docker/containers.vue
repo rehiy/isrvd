@@ -153,7 +153,7 @@ export default toNative(Containers)
             </div>
           </div>
           <div class="action-group">
-            <PageSearch v-model="searchText" search-key="docker-containers" :placeholder="$t('搜索容器名称、ID、镜像或端口...')" focus-color="emerald" type-to-search />
+            <PageSearch v-model="searchText" search-key="docker-containers" :placeholder="$t('搜索容器、镜像或端口...')" focus-color="emerald" type-to-search />
             <div class="tab-group">
               <button :class="['tab-btn', !showAll ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="showAll = false; loadContainers()">
                 <i class="fas fa-play"></i><span>{{ $t('运行中') }}</span>
@@ -202,7 +202,7 @@ export default toNative(Containers)
         </div>
       </div>
       <div class="mobile-search">
-        <PageSearch v-model="searchText" search-key="docker-containers" :placeholder="$t('搜索容器名称、镜像或端口...')" width-class="w-full" focus-color="emerald" />
+        <PageSearch v-model="searchText" search-key="docker-containers" :placeholder="$t('搜索容器、镜像或端口...')" width-class="w-full" focus-color="emerald" />
       </div>
       <!-- Loading -->
       <div v-if="loading" class="card-body">

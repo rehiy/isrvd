@@ -109,7 +109,7 @@ export default toNative(Networks)
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="docker-networks" :placeholder="$t('搜索网络名称、ID、驱动或子网...')" focus-color="purple" type-to-search />
+          <PageSearch v-model="searchText" search-key="docker-networks" :placeholder="$t('搜索网络、驱动或子网...')" focus-color="purple" type-to-search />
           <button class="btn btn-secondary" @click="loadNetworks()">
             <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
@@ -141,7 +141,7 @@ export default toNative(Networks)
     </div>
 
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="docker-networks" :placeholder="$t('搜索网络名称、ID、驱动...')" width-class="w-full" focus-color="purple" />
+      <PageSearch v-model="searchText" search-key="docker-networks" :placeholder="$t('搜索网络、驱动或子网...')" width-class="w-full" focus-color="purple" />
     </div>
 
     <!-- Loading State -->

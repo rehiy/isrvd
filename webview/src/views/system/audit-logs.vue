@@ -156,7 +156,7 @@ export default toNative(AuditLogs)
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="system-audit-logs" :placeholder="$t('搜索用户、方法、URI、IP 或状态...')" focus-color="rose" type-to-search />
+          <PageSearch v-model="searchText" search-key="system-audit-logs" :placeholder="$t('搜索用户、URI 或 IP...')" focus-color="rose" type-to-search />
           <select v-model="selectedUsername" class="select-sm min-w-[140px]">
             <option value="">{{ $t('所有用户') }}</option>
             <option v-for="username in uniqueUsernames" :key="username" :value="username">{{ username }}</option>
@@ -197,7 +197,7 @@ export default toNative(AuditLogs)
       </div>
     </div>
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="system-audit-logs" :placeholder="$t('搜索用户、方法、URI、IP 或状态...')" width-class="w-full" focus-color="rose" />
+      <PageSearch v-model="searchText" search-key="system-audit-logs" :placeholder="$t('搜索用户、URI 或 IP...')" width-class="w-full" focus-color="rose" />
     </div>
 
     <!-- Loading -->

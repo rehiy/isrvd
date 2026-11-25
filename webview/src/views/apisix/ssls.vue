@@ -124,7 +124,7 @@ export default toNative(SSLs)
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="apisix-ssls" :placeholder="$t('搜索证书、SNI 或 ID...')" focus-color="cyan" type-to-search />
+          <PageSearch v-model="searchText" search-key="apisix-ssls" :placeholder="$t('搜索证书或 SNI...')" focus-color="cyan" type-to-search />
           <button class="btn btn-secondary" @click="loadSSLs()">
             <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>

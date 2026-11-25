@@ -287,7 +287,7 @@ export default toNative(Images)
     </div>
 
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="docker-images" :placeholder="$t('搜索镜像名称、标签或 ID...')" width-class="w-full" focus-color="blue" />
+      <PageSearch v-model="searchText" search-key="docker-images" :placeholder="$t('搜索镜像名称、标签、ID...')" width-class="w-full" focus-color="blue" />
     </div>
 
     <!-- Loading -->

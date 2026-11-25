@@ -134,7 +134,7 @@ export default toNative(Upstreams)
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="apisix-upstreams" :placeholder="$t('搜索上游、节点或策略...')" focus-color="emerald" type-to-search />
+          <PageSearch v-model="searchText" search-key="apisix-upstreams" :placeholder="$t('搜索上游或节点...')" focus-color="emerald" type-to-search />
           <button class="btn btn-secondary" @click="loadUpstreams()">
             <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
@@ -166,7 +166,7 @@ export default toNative(Upstreams)
     </div>
 
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="apisix-upstreams" :placeholder="$t('搜索上游、节点...')" width-class="w-full" focus-color="emerald" />
+      <PageSearch v-model="searchText" search-key="apisix-upstreams" :placeholder="$t('搜索上游或节点...')" width-class="w-full" focus-color="emerald" />
     </div>
 
     <div v-if="loading" class="card-body">

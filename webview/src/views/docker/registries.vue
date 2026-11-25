@@ -122,7 +122,7 @@ export default toNative(Registries)
             </div>
           </div>
           <div class="action-group">
-            <PageSearch v-model="searchText" search-key="docker-registries" :placeholder="$t('搜索仓库名称、地址或账号...')" focus-color="purple" type-to-search />
+            <PageSearch v-model="searchText" search-key="docker-registries" :placeholder="$t('搜索仓库、地址或账号...')" focus-color="purple" type-to-search />
             <button class="btn btn-secondary" @click="loadRegistries()">
               <i class="fas fa-rotate"></i>{{ $t('刷新') }}
             </button>
@@ -154,7 +154,7 @@ export default toNative(Registries)
       </div>
 
       <div class="mobile-search">
-        <PageSearch v-model="searchText" search-key="docker-registries" :placeholder="$t('搜索仓库名称、地址或账号...')" width-class="w-full" focus-color="purple" />
+        <PageSearch v-model="searchText" search-key="docker-registries" :placeholder="$t('搜索仓库、地址或账号...')" width-class="w-full" focus-color="purple" />
       </div>
 
       <!-- Loading -->

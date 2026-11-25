@@ -96,7 +96,7 @@ export default toNative(Volumes)
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="docker-volumes" :placeholder="$t('搜索卷名称、驱动或挂载点...')" focus-color="amber" type-to-search />
+          <PageSearch v-model="searchText" search-key="docker-volumes" :placeholder="$t('搜索卷名、驱动或挂载点...')" focus-color="amber" type-to-search />
           <button class="btn btn-secondary" @click="loadVolumes()">
             <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
@@ -128,7 +128,7 @@ export default toNative(Volumes)
     </div>
 
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="docker-volumes" :placeholder="$t('搜索卷名称、驱动或挂载点...')" width-class="w-full" focus-color="amber" />
+      <PageSearch v-model="searchText" search-key="docker-volumes" :placeholder="$t('搜索卷名、驱动或挂载点...')" width-class="w-full" focus-color="amber" />
     </div>
 
     <!-- Loading State -->

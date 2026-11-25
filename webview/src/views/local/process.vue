@@ -298,7 +298,7 @@ export default toNative(SystemProcessInfoView)
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="local-process" :placeholder="$t('搜索进程名、PID、父 PID、用户、命令行...')" :aria-label="$t('搜索本机进程')" type-to-search />
+          <PageSearch v-model="searchText" search-key="local-process" :placeholder="$t('搜索进程名、PID 或用户...')" :aria-label="$t('搜索本机进程')" type-to-search />
           <select v-model="showParentTree" class="select-sm min-w-[110px]" :aria-label="$t('展示方式')">
             <option :value="true">{{ $t('父子树') }}</option>
             <option :value="false">{{ $t('平铺列表') }}</option>
@@ -357,7 +357,7 @@ export default toNative(SystemProcessInfoView)
       </div>
     </div>
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="local-process" :placeholder="$t('搜索进程...')" :aria-label="$t('搜索本机进程')" width-class="w-full" />
+      <PageSearch v-model="searchText" search-key="local-process" :placeholder="$t('搜索进程名、PID 或用户...')" :aria-label="$t('搜索本机进程')" width-class="w-full" />
     </div>
 
     <div v-if="loading && processes.length === 0" class="card-body">

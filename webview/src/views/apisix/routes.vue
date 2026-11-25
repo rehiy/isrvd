@@ -204,7 +204,7 @@ export default toNative(Routes)
           <div><h1 class="title-text">{{ $t('路由') }}</h1><p class="text-xs text-slate-500">{{ $t('管理 APISIX 路由，配置匹配规则、上游转发与插件') }}</p></div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="apisix-routes" :placeholder="$t('搜索路由、URI、描述或上游...')" focus-color="indigo" type-to-search />
+          <PageSearch v-model="searchText" search-key="apisix-routes" :placeholder="$t('搜索路由、URI、上游...')" focus-color="indigo" type-to-search />
           <button class="btn btn-secondary" @click="loadRoutes()"><i class="fas fa-rotate"></i>{{ $t('刷新') }}</button>
           <button v-if="portal.hasPerm('POST /api/apisix/route')" class="btn btn-indigo" @click="openCreateModal()"><i class="fas fa-plus"></i>{{ $t('新建路由') }}</button>
         </div>
