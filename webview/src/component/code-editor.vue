@@ -107,7 +107,7 @@ export default toNative(CodeEditor)
       :disabled="disabled"
       :placeholder="placeholder"
       :tab-size="2"
-      :indent-with-tab="false"
+      :indent-with-tab="true"
       @focus="$emit('focus')"
       @blur="$emit('blur')"
     />
