@@ -542,6 +542,7 @@ const messages: Record<string, string> = {
     // Cancelled
     '已取消': 'キャンセルしました',
     // References upstream #{0}
+    '引用上游 {0}': 'アップストリーム {0} を参照',
     '引用上游 #{0}': 'アップストリーム #{0} を参照',
     // Cannot start Passkey registration
     '无法开始 Passkey 注册': 'Passkey の登録を開始できません',

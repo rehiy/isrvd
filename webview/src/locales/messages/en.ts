@@ -366,6 +366,7 @@ const messages: Record<string, string> = {
     '取消上传': 'Cancel Upload',
     '实时日志连接失败': 'Failed to connect to the live log stream',
     '已取消': 'Cancelled',
+    '引用上游 {0}': 'References upstream {0}',
     '引用上游 #{0}': 'References upstream #{0}',
     '无法开始 Passkey 注册': 'Cannot start Passkey registration',
     '无法开始 Passkey 登录': 'Cannot start Passkey sign-in',

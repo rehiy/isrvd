@@ -2,6 +2,7 @@ import type {
     ApisixRoute,
     ApisixRouteUpstreamFormNode,
     ApisixRouteUpstreamMode,
+    ApisixUpstream,
     ApisixUpstreamConfig,
     ApisixUpstreamScheme,
     ApisixUpstreamPassHost,
@@ -117,10 +118,17 @@ export const detectRouteUpstreamMode = (route?: Pick<ApisixRoute, 'upstream_id' 
     return 'none'
 }
 
-export const formatRouteUpstreamSummary = (route: Pick<ApisixRoute, 'upstream_id' | 'upstream'>): string => {
+/** 引用上游的显示文案：优先上游名称，其次描述，均缺失时回落 ID */
+export const formatRouteUpstreamRef = (upstreamId: string, upstream?: Pick<ApisixUpstream, 'name' | 'desc'>): string => {
+    const t = useLocaleStore().t
+    const label = upstream?.name?.trim() || upstream?.desc?.trim()
+    return label ? t('引用上游 {0}', label) : t('引用上游 #{0}', upstreamId)
+}
+
+export const formatRouteUpstreamSummary = (route: Pick<ApisixRoute, 'upstream_id' | 'upstream'>, upstream?: Pick<ApisixUpstream, 'name' | 'desc'>): string => {
     const t = useLocaleStore().t
     if (route.upstream_id) {
-        return t('引用上游 #{0}', route.upstream_id)
+        return formatRouteUpstreamRef(route.upstream_id, upstream)
     }
 
     const nodes = normalizeUpstreamNodes(route.upstream)
@@ -138,10 +146,10 @@ export const formatRouteUpstreamSummary = (route: Pick<ApisixRoute, 'upstream_id
 }
 
 /** 仅返回节点信息，引用上游时返回完整摘要 */
-export const formatRouteUpstreamNodes = (route: Pick<ApisixRoute, 'upstream_id' | 'upstream'>): string => {
+export const formatRouteUpstreamNodes = (route: Pick<ApisixRoute, 'upstream_id' | 'upstream'>, upstream?: Pick<ApisixUpstream, 'name' | 'desc'>): string => {
     const t = useLocaleStore().t
     if (route.upstream_id) {
-        return t('引用上游 #{0}', route.upstream_id)
+        return formatRouteUpstreamRef(route.upstream_id, upstream)
     }
     const nodes = normalizeUpstreamNodes(route.upstream)
     if (nodes.length === 0) {
