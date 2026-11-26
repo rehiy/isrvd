@@ -10,7 +10,7 @@ import type { MonitorHostRecord } from '@/service/types'
 
 import Chart, { makeLineDataset, makeMonitorChartOptions, makeMonitorScale } from '@/helper/chart'
 import { POLL_INTERVAL, hexToRgba } from '@/helper/format'
-import { formatMonitorBytes, hostCpuUsage, monitorCapacity, monitorTimeLabel, usagePercent } from '@/helper/monitor'
+import { formatMonitorBytes, hostCpuUsage, monitorCapacity, monitorTimeLabel, usageLevel, usagePercent } from '@/helper/monitor'
 
 @Component({ emits: ['sample'] })
 class SystemOverview extends Vue {
@@ -90,20 +90,21 @@ class SystemOverview extends Vue {
         const disk = monitorCapacity(system?.diskUsed, system?.diskTotal)
         const cards = [
             {
-                label: 'CPU 使用率', icon: 'fa-microchip', color: 'sky', percent: hostCpuUsage(system),
+                label: 'CPU 使用率', icon: 'fa-microchip', percent: hostCpuUsage(system),
                 detail: system ? this.$t('{0} 物理 / {1} 逻辑', system.cpuCore, system.cpuCoreLogic) : '—'
             },
-            { label: '内存使用', icon: 'fa-memory', color: 'violet', ...memory, detail: memory.detail || '—' },
-            { label: '磁盘使用率', icon: 'fa-hard-drive', color: 'amber', ...disk, detail: disk.detail || this.$t('暂无磁盘数据') }
+            { label: '内存使用', icon: 'fa-memory', ...memory, detail: memory.detail || '—' },
+            { label: '磁盘使用率', icon: 'fa-hard-drive', ...disk, detail: disk.detail || this.$t('暂无磁盘数据') }
         ].map(card => ({
             ...card,
+            level: usageLevel(card.percent),
             value: card.percent?.toFixed(1) ?? '—',
             unit: card.percent === null ? '' : '%'
         }))
         const network = this.networkRates
         const [download, unit] = network ? formatMonitorBytes(network.received, true).split(' ') : ['—', '']
         return [...cards, {
-            label: '网络速率', icon: 'fa-network-wired', color: 'teal', percent: null,
+            label: '网络速率', icon: 'fa-network-wired', level: 'normal', percent: null,
             value: network ? '↓ ' + download : download, unit,
             detail: network ? '↑ ' + formatMonitorBytes(network.sent, true) : this.$t('等待更多采样')
         }]
@@ -303,7 +304,7 @@ export default toNative(SystemOverview)
       </div>
 
       <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        <div v-for="card in statCards" :key="card.label" :class="['stat-card min-w-0', 'resource-metric-' + card.color]">
+        <div v-for="card in statCards" :key="card.label" :class="['stat-card min-w-0', 'resource-metric-' + card.level]">
           <div class="page-icon resource-metric-icon">
             <i :class="['fas', card.icon]"></i>
           </div>

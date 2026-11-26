@@ -588,10 +588,9 @@
     @apply bg-emerald-600;
   }
 
-  .resource-metric-sky    { --metric-color: var(--color-primary-600); }
-  .resource-metric-violet { --metric-color: var(--color-violet-600); }
-  .resource-metric-amber  { --metric-color: var(--color-amber-600); }
-  .resource-metric-teal   { --metric-color: var(--color-teal-600); }
+  /* 资源指标统一使用主色，仅在占用率越过阈值时切换为警告/危险色 */
+  .resource-metric-warn   { --metric-color: var(--color-amber-600); }
+  .resource-metric-danger { --metric-color: var(--color-red-600); }
 
   .resource-panel .stat-card {
     @apply border-slate-200/70 bg-slate-50/60;
@@ -599,8 +598,8 @@
 
   .resource-metric-icon {
     @apply text-sm;
-    color: var(--metric-color);
-    background: color-mix(in srgb, var(--metric-color) 10%, transparent);
+    color: var(--metric-color, var(--color-primary-600));
+    background: color-mix(in srgb, var(--metric-color, var(--color-primary-600)) 10%, transparent);
   }
 
   .resource-metric-value {
@@ -616,8 +615,8 @@
   }
 
   .resource-meter span {
-    @apply block h-full rounded-full transition-[width] motion-reduce:transition-none;
-    background-color: var(--metric-color);
+    @apply block h-full rounded-full transition-[width,background-color] motion-reduce:transition-none;
+    background-color: var(--metric-color, var(--color-primary-600));
   }
 
   .resource-service-icon {
