@@ -906,7 +906,6 @@ const messages: Record<string, string> = {
     // New Container
     '新建容器': 'コンテナを新規作成',
     // Stats
-    '统计': '統計',
     // Pull
     '拉取': '取得',
     // New Network
