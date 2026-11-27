@@ -4,7 +4,7 @@ import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { ApisixRoute } from '@/service/types'
+import type { ApisixRoute, ApisixUpstream } from '@/service/types'
 
 import { formatRouteUpstreamNodes, formatRouteUpstreamSummary, normalizeUpstreamNodes } from '@/helper/apisix'
 
@@ -30,7 +30,7 @@ class Routes extends Vue {
     loading = false
     searchText = ''
     collapsedHosts: string[] = []
-    formatRouteUpstreamNodes = formatRouteUpstreamNodes
+    upstreamMap: Record<string, ApisixUpstream> = {}
 
     // ─── 计算属性 ───
     get filteredRoutes() {
@@ -46,7 +46,8 @@ class Routes extends Vue {
                 (r.uris || []).some((u: string) => u.toLowerCase().includes(keyword)) ||
                 this.getRouteHost(r).toLowerCase().includes(keyword) ||
                 (r.desc || '').toLowerCase().includes(keyword) ||
-                formatRouteUpstreamSummary(r).toLowerCase().includes(keyword)
+                (r.upstream_id || '').toLowerCase().includes(keyword) ||
+                this.getRouteUpstreamLabel(r, true).toLowerCase().includes(keyword)
             )
         })
     }
@@ -100,10 +101,22 @@ class Routes extends Vue {
     async loadRoutes() {
         this.loading = true
         try {
-            this.routes = (await api.apisixRouteList()).payload || []
+            const [routes] = await Promise.all([api.apisixRouteList(), this.loadUpstreams()])
+            this.routes = routes.payload || []
         } finally {
             this.loading = false
         }
+    }
+
+    // 加载上游列表，用于把引用的上游 ID 显示为名称；无权限或失败时回落显示 ID
+    async loadUpstreams() {
+        if (!this.portal.hasPerm('GET /api/apisix/upstreams')) {
+            return
+        }
+        try {
+            const upstreams = (await api.apisixUpstreamList()).payload || []
+            this.upstreamMap = Object.fromEntries(upstreams.filter(u => u.id).map(u => [u.id as string, u]))
+        } catch {}
     }
 
     toggleHost(host: string) {
@@ -132,6 +145,15 @@ class Routes extends Vue {
 
     getRouteGroupHost(r: ApisixRoute) {
         return r.hosts?.[0] || r.host || '*'
+    }
+
+    getRouteUpstreamLabel(r: ApisixRoute, summary = false) {
+        const upstream = r.upstream_id ? this.upstreamMap[r.upstream_id] : undefined
+        return summary ? formatRouteUpstreamSummary(r, upstream) : formatRouteUpstreamNodes(r, upstream)
+    }
+
+    getRouteUpstreamTitle(r: ApisixRoute) {
+        return r.upstream_id ? `#${r.upstream_id}` : undefined
     }
 
     getRouteUpstreamTagClass(r: ApisixRoute) {
@@ -287,7 +309,7 @@ export default toNative(Routes)
                 </td>
                 <td class="px-4 py-3"><span :class="getRouteHost(row.route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm break-all">{{ getRouteHost(row.route) }}</span></td>
                 <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getRouteUri(row.route) }}</code></td>
-                <td class="px-4 py-3"><span :class="getRouteUpstreamTagClass(row.route)" class="code-chip">{{ formatRouteUpstreamNodes(row.route) }}</span></td>
+                <td class="px-4 py-3"><span :class="getRouteUpstreamTagClass(row.route)" :title="getRouteUpstreamTitle(row.route)" class="code-chip">{{ getRouteUpstreamLabel(row.route) }}</span></td>
                 <td class="px-4 py-3">
                   <div class="table-actions">
                     <button v-if="portal.hasPerm('PATCH /api/apisix/route/:id/status')" :class="['btn-icon', row.route.status === 1 ? 'btn-icon-amber' : 'btn-icon-emerald']" :title="row.route.status === 1 ? $t('禁用') : $t('启用')" @click="toggleStatus(row.route)">
@@ -344,7 +366,7 @@ export default toNative(Routes)
 
             <div class="card-prop-row-start">
               <span class="prop-label-start">{{ $t('上游') }}</span>
-              <span :class="getRouteUpstreamTagClass(row.route)" class="code-chip">{{ formatRouteUpstreamNodes(row.route) }}</span>
+              <span :class="getRouteUpstreamTagClass(row.route)" :title="getRouteUpstreamTitle(row.route)" class="code-chip">{{ getRouteUpstreamLabel(row.route) }}</span>
             </div>
 
             <!-- 底部：操作按钮 -->
