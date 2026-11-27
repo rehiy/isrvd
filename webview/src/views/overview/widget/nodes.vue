@@ -7,7 +7,7 @@ import api from '@/service/api'
 import type { MonitorHostRecord, NodeInfo } from '@/service/types'
 
 import { POLL_INTERVAL } from '@/helper/format'
-import { hostCpuUsage, monitorCapacity } from '@/helper/monitor'
+import { hostCpuUsage, monitorCapacity, usageLevel } from '@/helper/monitor'
 import { nodePath, nodeStatus } from '@/helper/node'
 
 @Component
@@ -45,11 +45,12 @@ class NodeResources extends Vue {
 
     metricValues(node: Pick<NodeInfo, 'id' | 'online'>) {
         const system = node.online ? this.reading(node.id)?.data.system : undefined
-        return [
-            { label: 'CPU', percent: hostCpuUsage(system), color: 'sky', detail: '' },
-            { label: '内存', color: 'violet', ...monitorCapacity(system?.memoryUsed, system?.memoryTotal) },
-            { label: '磁盘', color: 'amber', ...monitorCapacity(system?.diskUsed, system?.diskTotal) }
+        const metrics = [
+            { label: 'CPU', percent: hostCpuUsage(system), detail: '' },
+            { label: '内存', ...monitorCapacity(system?.memoryUsed, system?.memoryTotal) },
+            { label: '磁盘', ...monitorCapacity(system?.diskUsed, system?.diskTotal) }
         ]
+        return metrics.map(metric => ({ ...metric, level: usageLevel(metric.percent) }))
     }
 
     async load() {
@@ -161,7 +162,7 @@ export default toNative(NodeResources)
             <dd class="mt-0.5 text-base font-semibold tabular-nums text-slate-900">
               {{ metric.percent === null ? '—' : metric.percent.toFixed(1) + '%' }}
             </dd>
-            <div v-if="metric.percent !== null" :class="['resource-meter mt-1.5', 'resource-metric-' + metric.color]" aria-hidden="true">
+            <div v-if="metric.percent !== null" :class="['resource-meter mt-1.5', 'resource-metric-' + metric.level]" aria-hidden="true">
               <span :style="{ width: Math.min(100, Math.max(0, metric.percent)) + '%' }"></span>
             </div>
           </div>

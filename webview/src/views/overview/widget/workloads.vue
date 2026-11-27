@@ -319,7 +319,7 @@ export default toNative(WorkloadsOverview)
             </component>
             <span class="text-sm font-semibold text-slate-800 tabular-nums shrink-0">{{ container.value }}</span>
           </div>
-          <div :class="['resource-meter mt-3', ranking === 'cpu' ? 'resource-metric-sky' : 'resource-metric-violet']" aria-hidden="true">
+          <div class="resource-meter mt-3" aria-hidden="true">
             <span :style="{ width: container.width + '%' }"></span>
           </div>
         </li>

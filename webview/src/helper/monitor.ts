@@ -105,14 +105,20 @@ export function monitorCapacity(used?: number, total?: number) {
     } : { percent: null, detail: '' }
 }
 
+export type UsageLevel = 'normal' | 'warn' | 'danger'
+
+export function usageLevel(pct: number | null): UsageLevel {
+    if (pct !== null && pct >= 90) {
+        return 'danger'
+    }
+    if (pct !== null && pct >= 70) {
+        return 'warn'
+    }
+    return 'normal'
+}
+
 export function semanticColor(pct: number): string {
-    if (pct >= 90) {
-        return 'text-red-500'
-    }
-    if (pct >= 70) {
-        return 'text-amber-500'
-    }
-    return 'text-emerald-500'
+    return { danger: 'text-red-500', warn: 'text-amber-500', normal: 'text-emerald-500' }[usageLevel(pct)]
 }
 
 export function monitorTimeLabel(ts: number): string {
