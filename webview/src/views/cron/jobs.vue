@@ -174,7 +174,7 @@ export default toNative(CronJobs)
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="cron-jobs" :placeholder="$t('搜索任务名称、执行计划...')" focus-color="amber" type-to-search />
+          <PageSearch v-model="searchText" search-key="cron-jobs" :placeholder="$t('搜索任务名称或执行计划...')" focus-color="amber" type-to-search />
           <button class="btn btn-secondary" @click="loadJobs()">
             <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
@@ -207,7 +207,7 @@ export default toNative(CronJobs)
       </div>
     </div>
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="cron-jobs" :placeholder="$t('搜索任务...')" width-class="w-full" focus-color="amber" />
+      <PageSearch v-model="searchText" search-key="cron-jobs" :placeholder="$t('搜索任务名称或执行计划...')" width-class="w-full" focus-color="amber" />
     </div>
 
     <div v-if="loading" class="card-body">

@@ -172,7 +172,7 @@ export default toNative(CaddyServers)
     </div>
 
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="caddy-servers" :placeholder="$t('搜索服务...')" width-class="w-full" focus-color="rose" />
+      <PageSearch v-model="searchText" search-key="caddy-servers" :placeholder="$t('搜索名称、监听或协议...')" width-class="w-full" focus-color="rose" />
     </div>
 
     <div v-if="loading" class="card-body">

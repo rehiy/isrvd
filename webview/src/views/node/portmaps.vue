@@ -109,7 +109,7 @@ export default toNative(NodePortMaps)
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="node-portmaps" :placeholder="$t('搜索监听端口、目标、节点或备注...')" focus-color="orange" type-to-search />
+          <PageSearch v-model="searchText" search-key="node-portmaps" :placeholder="$t('搜索端口、目标或备注...')" focus-color="orange" type-to-search />
           <button class="btn btn-secondary" @click="portal.nodeLoad()">
             <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
@@ -142,7 +142,7 @@ export default toNative(NodePortMaps)
 
     <!-- 移动端搜索 -->
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="node-portmaps" :placeholder="$t('搜索监听端口、目标、节点或备注...')" width-class="w-full" focus-color="orange" />
+      <PageSearch v-model="searchText" search-key="node-portmaps" :placeholder="$t('搜索端口、目标或备注...')" width-class="w-full" focus-color="orange" />
     </div>
 
     <!-- Loading -->

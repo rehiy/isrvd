@@ -396,6 +396,17 @@ const messages: Record<string, string> = {
     // This action cannot be undone!
     '此操作不可恢复！': 'この操作は取り消せません！',
     // Search...
+    '搜索用户、URI 或 IP...': 'ユーザー・IP で検索...',
+    '搜索主机、地址或用户名...': 'ホスト・アドレスで検索...',
+    '搜索端口、目标或备注...': 'ポート・転送先で検索...',
+    '搜索节点、主机名或系统...': 'ノード・ホスト名で検索...',
+    '搜索进程名、PID 或用户...': 'プロセス名・PID で検索...',
+    '搜索卷名、驱动或挂载点...': 'ボリューム名で検索...',
+    '搜索仓库、地址或账号...': 'レジストリ・URL で検索...',
+    '搜索网络、驱动或子网...': 'ネットワーク名で検索...',
+    '搜索容器、镜像或端口...': 'コンテナ名で検索...',
+    '搜索任务名称或执行计划...': 'タスク名・計画で検索...',
+    '搜索上游或节点...': 'アップストリームを検索...',
     '搜索...': '検索...',
     // Unknown error
     '发生未知错误': '不明なエラーが発生しました',
@@ -1021,7 +1032,7 @@ const messages: Record<string, string> = {
     // Policy
     '策略': 'ポリシー',
     // Search route or user...
-    '搜索路由或用户...': 'ルートまたはユーザーを検索...',
+    '搜索路由或用户...': 'ルート・ユーザーで検索...',
     // Configure Authorization
     '配置授权': '権限を設定',
     // Authorized User
@@ -1057,7 +1068,7 @@ const messages: Record<string, string> = {
     // Handler
     '处理器': 'ハンドラー',
     // Search route or username...
-    '搜索路由或用户名...': 'ルートまたはユーザー名を検索...',
+    '搜索路由或用户名...': 'ルート・ユーザーで検索...',
     // Configure Auth
     '配置认证': '認証を設定',
     // Forward Headers
@@ -1175,13 +1186,11 @@ const messages: Record<string, string> = {
     // Push to Registry
     '推送到仓库': 'レジストリにプッシュ',
     // Search registry name, address or account...
-    '搜索仓库名称、地址或账号...': 'レジストリ名、アドレス、アカウントで検索...',
     // No registries yet
     '暂无镜像仓库': 'レジストリはまだありません',
     // No matching registry
     '未找到匹配仓库': '一致するレジストリが見つかりません',
     // Search volume name, driver or mount point...
-    '搜索卷名称、驱动或挂载点...': 'ボリューム名、ドライバ、マウント先で検索...',
     // New Volume
     '新建卷': 'ボリュームを新規作成',
     // Container Terminal
@@ -1261,7 +1270,7 @@ const messages: Record<string, string> = {
     // Total Routes
     '路由总数': 'ルート総数',
     // Search credential name or username...
-    '搜索凭据名或用户名...': '認証情報名またはユーザー名で検索...',
+    '搜索凭据名或用户名...': '認証情報名で検索...',
     // Add Credential
     '添加凭据': '認証情報を追加',
     // Credential Name
@@ -1271,7 +1280,6 @@ const messages: Record<string, string> = {
     // Not set
     '未设置': '未設定',
     // Search hostname, address or username...
-    '搜索主机名、地址或用户名...': 'ホスト名、アドレス、ユーザー名で検索...',
     // Add Host
     '添加主机': 'ホストを追加',
     // Saved Credentials
@@ -1315,7 +1323,6 @@ const messages: Record<string, string> = {
     // Reload
     '重载': '再読み込み',
     // Search user, method, URI, IP or status...
-    '搜索用户、方法、URI、IP 或状态...': 'ユーザー、メソッド、URI、IP、状態で検索...',
     // All Users
     '所有用户': 'すべてのユーザー',
     // Obtained when registering the app with the OIDC provider
@@ -1325,7 +1332,6 @@ const messages: Record<string, string> = {
     // Enter the Admin URL
     '请输入 Admin URL': 'Admin URL を入力',
     // Search node name, hostname or OS...
-    '搜索节点名、主机名或系统...': 'ノード名、ホスト名、OS で検索...',
     // Version
     '版本': 'バージョン',
     // Latency
@@ -1670,11 +1676,10 @@ const messages: Record<string, string> = {
     // Manage APISIX routes, matching rules, upstream forwarding and plugins
     '管理 APISIX 路由，配置匹配规则、上游转发与插件': 'APISIX のルートを管理し、一致条件、アップストリーム転送、プラグインを設定します',
     // Search route, URI, description or upstream...
-    '搜索路由、URI、描述或上游...': 'ルート、URI、説明、アップストリームで検索...',
     // Configure matching rules, upstream and plugins
     '配置匹配规则、上游与插件': '一致条件、アップストリーム、プラグインを設定',
     // Search route, URI, upstream...
-    '搜索路由、URI、上游...': 'ルート、URI、アップストリームで検索...',
+    '搜索路由、URI、上游...': 'ルート・URI で検索...',
     // {0} and {1} domains
     '{0} 等 {1} 个域名': '{0} ほか {1} ドメイン',
     // Delete certificate <strong class="text-slate-900">{0}</strong>? HTTPS access may be affected while it is used by SNI.
@@ -1682,11 +1687,10 @@ const messages: Record<string, string> = {
     // Manage APISIX SSL certificate bindings and SNI config
     '管理 APISIX 的 SSL 证书绑定与 SNI 配置': 'APISIX の SSL 証明書バインドと SNI 設定を管理します',
     // Search certificate, SNI or ID...
-    '搜索证书、SNI 或 ID...': '証明書、SNI、ID で検索...',
     // Manage certificates and SNI bindings
     '管理证书与 SNI 绑定': '証明書と SNI バインドを管理',
     // Search certificate or SNI...
-    '搜索证书或 SNI...': '証明書または SNI で検索...',
+    '搜索证书或 SNI...': '証明書・SNI で検索...',
     // Delete Upstream
     '删除上游': 'アップストリームを削除',
     // Delete upstream <strong class="text-slate-900">{0}</strong>? APISIX may refuse while it is referenced by routes.
@@ -1694,11 +1698,9 @@ const messages: Record<string, string> = {
     // Manage reusable backend upstreams and load balancing policies
     '管理可复用的后端上游对象与负载均衡策略': '再利用可能なバックエンドのアップストリームと負荷分散ポリシーを管理します',
     // Search upstream, node or policy...
-    '搜索上游、节点或策略...': 'アップストリーム、ノード、またはポリシーを検索...',
     // Manage reusable upstreams
     '管理可复用上游对象': '再利用可能なアップストリームオブジェクトを管理する',
     // Search upstream or node...
-    '搜索上游、节点...': 'アップストリーム、ノードを検索...',
     // No upstreams yet
     '暂无上游': 'アップストリームはまだありません',
     // No matching upstream
@@ -2006,11 +2008,10 @@ const messages: Record<string, string> = {
     // Manage named services such as srv0, listen addresses and protocols
     '管理 srv0 等命名服务、监听地址和协议': 'ネームサービス、リスニングアドレス、srv0 などのプロトコルを管理します。',
     // Search name, listen address or protocol...
-    '搜索名称、监听或协议...': '名前、リスナー、またはプロトコルを検索します...',
+    '搜索名称、监听或协议...': '名前・プロトコルで検索...',
     // Manage listen addresses and protocols
     '管理监听地址和协议': 'リスニングアドレスとプロトコルを管理する',
     // Search services...
-    '搜索服务...': '検索サービス...',
     // Click "New Service" to create one
     '点击「新建服务」开始创建': '「新しいサービス」をクリックして作成を開始します',
     // Global options saved
@@ -2522,11 +2523,9 @@ const messages: Record<string, string> = {
     // Runs script commands on a schedule or at a fixed time
     '按设定时间或周期自动执行脚本命令': '設定した時間または周期に従ってスクリプトコマンドを自動的に実行します',
     // Search job name or schedule...
-    '搜索任务名称、执行计划...': 'タスク名、実行計画を検索...',
     // Runs scripts automatically on schedule
     '定时自动执行脚本': 'スクリプトを定期的に自動的に実行する',
     // Search jobs...
-    '搜索任务...': 'タスクを検索...',
     // No cron jobs yet
     '暂无计划任务': 'スケジュールされたタスクはまだありません',
     // Click "New Job" to create the first scheduled task
@@ -2700,11 +2699,9 @@ const messages: Record<string, string> = {
     // Manage the lifecycle and running state of Docker containers
     '管理 Docker 容器的生命周期与运行状态': 'Dockerコンテナのライフサイクルと実行ステータスを管理する',
     // Search container name, ID, image or port...
-    '搜索容器名称、ID、镜像或端口...': 'コンテナ名、ID、イメージ、またはポートを検索します...',
     // Manage container lifecycle
     '管理容器生命周期': 'コンテナのライフサイクルを管理する',
     // Search container name, image or port...
-    '搜索容器名称、镜像或端口...': 'コンテナ名、イメージ、またはポートを検索します...',
     // Open Terminal
     '登录终端': 'ターミナルにログインする',
     // No containers yet
@@ -2730,11 +2727,10 @@ const messages: Record<string, string> = {
     // Pull, import, export and delete Docker images
     '拉取、导入、导出和删除 Docker 镜像': 'Docker イメージのプル、インポート、エクスポート、削除',
     // Search image name, tag or ID...
-    '搜索镜像名称、标签、ID...': 'イメージ名、タグ、IDを検索...',
+    '搜索镜像名称、标签、ID...': 'イメージ名・タグで検索...',
     // Pull and manage images
     '拉取与管理镜像': 'イメージの取得と管理',
     // Search image name, tag or ID...
-    '搜索镜像名称、标签或 ID...': 'イメージ名、タグ、またはIDを検索...',
     // Push
     '推送': 'プッシュ',
     // No images yet
@@ -2770,11 +2766,9 @@ const messages: Record<string, string> = {
     // Manage Docker networks and container communication
     '管理 Docker 网络，配置容器间通信': 'Docker ネットワークを管理し、コンテナ間通信を構成する',
     // Search network name, ID, driver or subnet...
-    '搜索网络名称、ID、驱动或子网...': 'ネットワーク名、ID、ドライバー、またはサブネットを検索します...',
     // Manage container networks
     '管理容器网络': 'コンテナネットワークを管理する',
     // Search network name, ID or driver...
-    '搜索网络名称、ID、驱动...': 'ネットワーク名、ID、ドライバーを検索...',
     // No custom networks yet
     '暂无自定义网络': 'カスタム ネットワークはまだありません',
     // No matching network
@@ -3127,7 +3121,6 @@ const messages: Record<string, string> = {
     // View local processes and resource usage, kill them as needed
     '查看本机进程与资源占用，并可按需终止': 'ローカルプロセスとリソースの使用状況を表示し、必要に応じて終了します',
     // Search process name, PID, parent PID, user or command line...
-    '搜索进程名、PID、父 PID、用户、命令行...': 'プロセス名、PID、親 PID、ユーザー、コマンド ラインを検索します...',
     // Flat List
     '平铺列表': 'タイルリスト',
     // Memory Usage
@@ -3147,7 +3140,6 @@ const messages: Record<string, string> = {
     // Flat
     '平铺': 'タイル',
     // Search processes...
-    '搜索进程...': '検索プロセス...',
     // No processes retrieved
     '未获取到进程': 'プロセスが取得できませんでした',
     // No matching process
@@ -3901,7 +3893,6 @@ const messages: Record<string, string> = {
     // Node port forwarding
     '节点端口转发': 'ノードのポート転送',
     // Search listen port, target, node or note...
-    '搜索监听端口、目标、节点或备注...': 'リッスンポート、転送先、ノード、メモを検索...',
     // Add Forward
     '添加转发': '転送を追加',
     // Edit Forward

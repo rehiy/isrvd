@@ -109,7 +109,7 @@ export default toNative(NodeManage)
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="node" :placeholder="$t('搜索节点名、主机名或系统...')" focus-color="orange" type-to-search />
+          <PageSearch v-model="searchText" search-key="node" :placeholder="$t('搜索节点、主机名或系统...')" focus-color="orange" type-to-search />
           <button class="btn btn-secondary" @click="portal.nodeLoad()">
             <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
@@ -142,7 +142,7 @@ export default toNative(NodeManage)
 
     <!-- 移动端搜索 -->
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="node" :placeholder="$t('搜索节点名、主机名或系统...')" width-class="w-full" focus-color="orange" />
+      <PageSearch v-model="searchText" search-key="node" :placeholder="$t('搜索节点、主机名或系统...')" width-class="w-full" focus-color="orange" />
     </div>
 
     <!-- Loading -->
