@@ -78,6 +78,10 @@ class BaseModal extends Vue {
     }
 
     handleEscape(e: KeyboardEvent) {
+        // 代码编辑器内 Tab 用于缩进，Esc 后再按 Tab 才能移出焦点，此时不关闭弹窗
+        if (e.target instanceof Element && e.target.closest('.cm-editor')) {
+            return
+        }
         if (e.key === 'Escape' && this.isOpen) {
             this.handleCancel()
         }
