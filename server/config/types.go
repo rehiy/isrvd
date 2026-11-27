@@ -9,23 +9,23 @@ import (
 
 // 配置结构
 type Config struct {
-	Schema      *SchemaConfig      `yaml:"schema"`            // 配置格式元信息，用于版本化迁移
-	Server      *ServerConfig      `yaml:"server"`            // 服务配置
-	Password    *PasswordConfig    `yaml:"password"`          // 密码登录配置
-	Passkey     *PasskeyConfig     `yaml:"passkey"`           // Passkey 登录配置
-	OIDC        *OIDCConfig        `yaml:"oidc"`              // OIDC 登录配置
-	THA         *THAConfig         `yaml:"tha"`               // 代理 Header 登录配置
-	Copilot     *CopilotConfig     `yaml:"copilot"`           // Copilot LLM 配置
-	Notify      *NotifyConfig      `yaml:"notify"`            // 告警通知配置
-	Apisix      *ApisixConfig      `yaml:"apisix"`            // APISIX 配置
-	Caddy       *CaddyConfig       `yaml:"caddy"`             // Caddy 配置
-	Docker      *DockerConfig      `yaml:"docker"`            // Docker 配置
-	Monitor     *MonitorConfig     `yaml:"monitor"`           // 监控配置
-	Metrics     *MetricsConfig     `yaml:"metrics"`           // 本机与容器指标出口配置
-	Marketplace *MarketplaceConfig `yaml:"marketplace"`       // 应用市场配置
-	PortMap     *PortMapConfig     `yaml:"portmap,omitempty"` // 中控端口映射（端口转发）配置，仅 center 模式使用
-	Links       []*LinkConfig      `yaml:"links"`             // 工具栏链接列表
-	Members     []*MemberConfig    `yaml:"members"`           // 成员列表
+	Schema      *SchemaConfig      `yaml:"schema"`                // 配置格式元信息，用于版本化迁移
+	Server      *ServerConfig      `yaml:"server"`                // 服务配置
+	Password    *PasswordConfig    `yaml:"password,omitempty"`    // 密码登录配置
+	Passkey     *PasskeyConfig     `yaml:"passkey,omitempty"`     // Passkey 登录配置
+	OIDC        *OIDCConfig        `yaml:"oidc,omitempty"`        // OIDC 登录配置
+	THA         *THAConfig         `yaml:"tha,omitempty"`         // 代理 Header 登录配置
+	Copilot     *CopilotConfig     `yaml:"copilot,omitempty"`     // Copilot LLM 配置
+	Notify      *NotifyConfig      `yaml:"notify,omitempty"`      // 告警通知配置
+	Apisix      *ApisixConfig      `yaml:"apisix,omitempty"`      // APISIX 配置
+	Caddy       *CaddyConfig       `yaml:"caddy,omitempty"`       // Caddy 配置
+	Docker      *DockerConfig      `yaml:"docker,omitempty"`      // Docker 配置
+	Monitor     *MonitorConfig     `yaml:"monitor,omitempty"`     // 监控配置
+	Metrics     *MetricsConfig     `yaml:"metrics,omitempty"`     // 本机与容器指标出口配置
+	Marketplace *MarketplaceConfig `yaml:"marketplace,omitempty"` // 应用市场配置
+	PortMap     *PortMapConfig     `yaml:"portmap,omitempty"`     // 中控端口映射（端口转发）配置，仅 center 模式使用
+	Links       []*LinkConfig      `yaml:"links"`                 // 工具栏链接列表
+	Members     []*MemberConfig    `yaml:"members"`               // 成员列表
 }
 
 // SchemaConfig 配置格式元信息
@@ -42,7 +42,7 @@ type ServerConfig struct {
 	AllowedOrigins []string `yaml:"allowedOrigins" json:"allowedOrigins"` // 允许的 Origin 列表，支持通配符 *
 	JWTSecret      string   `yaml:"jwtSecret" json:"jwtSecret,omitempty"` // 写入时为空表示保留原值；响应时不返回
 	JWTExpiration  int64    `yaml:"jwtExpiration" json:"jwtExpiration"`   // JWT 过期时间（秒），默认 86400
-	DataSecret     string   `yaml:"dataSecret,omitempty" json:"-"`       // SSH 凭据和 Compose 历史的持久化加密密钥；API 不可修改
+	DataSecret     string   `yaml:"dataSecret,omitempty" json:"-"`        // SSH 凭据和 Compose 历史的持久化加密密钥；API 不可修改
 	OpenAPI        bool     `yaml:"openapi" json:"openapi"`               // 是否对外提供 OpenAPI 文档（/openapi/），默认关闭
 	Debug          bool     `yaml:"debug" json:"debug"`                   // 是否启用调试模式
 }
