@@ -261,7 +261,7 @@ export default toNative(Containers)
                     <button v-if="portal.hasPerm('GET /api/docker/container/:id/logs')" class="btn-icon btn-icon-slate" :title="$t('日志')" @click="$router.push({ path: '/docker/container/' + ct.id + '/logs' })">
                       <i class="fas fa-file-lines text-xs"></i>
                     </button>
-                    <button v-if="ct.state === 'running' && portal.hasPerm('GET /api/docker/container/:id/stats')" class="btn-icon btn-icon-indigo" :title="$t('统计')" @click="$router.push({ path: '/docker/container/' + ct.id + '/stats', query: { name: ct.name } })">
+                    <button v-if="ct.state === 'running' && portal.hasPerm('GET /api/docker/container/:id/stats')" class="btn-icon btn-icon-indigo" :title="$t('性能')" @click="$router.push({ path: '/docker/container/' + ct.id + '/stats', query: { name: ct.name } })">
                       <i class="fas fa-chart-line text-xs"></i>
                     </button>
                     <button v-if="ct.state === 'running' && portal.hasPerm('GET /api/docker/container/:id/exec')" class="btn-icon btn-icon-teal" :title="$t('登录终端')" @click="$router.push({ path: '/docker/container/' + ct.id + '/exec' })">
@@ -331,8 +331,8 @@ export default toNative(Containers)
               <button v-if="portal.hasPerm('GET /api/docker/container/:id/logs')" class="btn-icon btn-icon-slate" :title="$t('日志')" @click="$router.push({ path: '/docker/container/' + ct.id + '/logs' })">
                 <i class="fas fa-file-lines text-xs"></i><span class="text-xs ml-1">{{ $t('日志') }}</span>
               </button>
-              <button v-if="ct.state === 'running' && portal.hasPerm('GET /api/docker/container/:id/stats')" class="btn-icon btn-icon-indigo" :title="$t('统计')" @click="$router.push({ path: '/docker/container/' + ct.id + '/stats', query: { name: ct.name } })">
-                <i class="fas fa-chart-line text-xs"></i><span class="text-xs ml-1">{{ $t('统计') }}</span>
+              <button v-if="ct.state === 'running' && portal.hasPerm('GET /api/docker/container/:id/stats')" class="btn-icon btn-icon-indigo" :title="$t('性能')" @click="$router.push({ path: '/docker/container/' + ct.id + '/stats', query: { name: ct.name } })">
+                <i class="fas fa-chart-line text-xs"></i><span class="text-xs ml-1">{{ $t('性能') }}</span>
               </button>
               <button v-if="ct.state === 'running' && portal.hasPerm('GET /api/docker/container/:id/exec')" class="btn-icon btn-icon-teal" :title="$t('终端')" @click="$router.push({ path: '/docker/container/' + ct.id + '/exec' })">
                 <i class="fas fa-terminal text-xs"></i><span class="text-xs ml-1">{{ $t('终端') }}</span>

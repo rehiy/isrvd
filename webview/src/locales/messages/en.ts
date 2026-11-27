@@ -560,7 +560,6 @@ const messages: Record<string, string> = {
     '子网': 'Subnet',
     '挂载点': 'Mount Point',
     '新建容器': 'New Container',
-    '统计': 'Stats',
     '拉取': 'Pull',
     '新建网络': 'New Network',
     '断开': 'Disconnect',
