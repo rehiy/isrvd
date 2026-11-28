@@ -10,10 +10,18 @@ import { POLL_INTERVAL } from '@/helper/format'
 import { hostCpuUsage, monitorCapacity, usageLevel } from '@/helper/monitor'
 import { nodePath, nodeStatus } from '@/helper/node'
 
+interface NodeMetric {
+    label: string
+    percent: number | null
+    detail: string
+    value?: string
+}
+
 @Component
 class NodeResources extends Vue {
     portal = usePortal()
     @Prop({ default: undefined }) readonly currentReading?: MonitorHostRecord | null
+    @Prop({ default: null }) readonly network!: { received: string; sent: string } | null
 
     nodeStatus = nodeStatus
     readings = new Map<string, MonitorHostRecord | null>()
@@ -22,13 +30,20 @@ class NodeResources extends Vue {
 
     get nodes() {
         const system = this.reading('')?.data.system
-        return [
+        const nodes = [
             {
                 id: '', name: this.$t('中控'), online: true, status: 'active',
                 hostname: system?.hostName, os: system?.platform, arch: system?.kernelArch
             },
             ...this.portal.nodes.filter(node => node.status === 'active')
         ]
+        const id = this.portal.currentNodeId
+        const current = this.currentReading?.data.system
+        const selected = nodes.find(node => node.id === id) ?? {
+            id, name: this.$t('节点'), online: !!current, status: 'active',
+            hostname: current?.hostName, os: current?.platform, arch: current?.kernelArch
+        }
+        return [selected, ...nodes.filter(node => node.id !== id)]
     }
 
     get onlineCount() {
@@ -44,13 +59,28 @@ class NodeResources extends Vue {
     }
 
     metricValues(node: Pick<NodeInfo, 'id' | 'online'>) {
-        const system = node.online ? this.reading(node.id)?.data.system : undefined
-        const metrics = [
-            { label: 'CPU', percent: hostCpuUsage(system), detail: '' },
-            { label: '内存', ...monitorCapacity(system?.memoryUsed, system?.memoryTotal) },
-            { label: '磁盘', ...monitorCapacity(system?.diskUsed, system?.diskTotal) }
+        const selected = node.id === this.portal.currentNodeId
+        const system = node.online || selected ? this.reading(node.id)?.data.system : undefined
+        const metrics: NodeMetric[] = [
+            {
+                label: 'CPU', percent: hostCpuUsage(system),
+                detail: system ? this.$t('{0} 物理 / {1} 逻辑', system.cpuCore, system.cpuCoreLogic) : ''
+            },
+            { label: '内存', ...monitorCapacity(system?.memoryUsed, system?.memoryTotal) }
         ]
-        return metrics.map(metric => ({ ...metric, level: usageLevel(metric.percent) }))
+        if (selected) {
+            const disk = monitorCapacity(system?.diskUsed, system?.diskTotal)
+            const { network } = this
+            metrics.push(
+                { label: '磁盘', ...disk, detail: disk.detail || (system ? this.$t('暂无磁盘数据') : '') },
+                { label: '网络速率', percent: null, value: network ? '↓ ' + network.received : '—', detail: network ? '↑ ' + network.sent : '' }
+            )
+        }
+        return metrics.map(metric => ({
+            ...metric,
+            value: metric.value ?? (metric.percent === null ? '—' : metric.percent.toFixed(1) + '%'),
+            level: usageLevel(metric.percent)
+        }))
     }
 
     async load() {
@@ -64,7 +94,7 @@ class NodeResources extends Vue {
             if (request.signal.aborted || this.portal.nodesLoadFailed) {
                 return
             }
-            const online = this.nodes.filter(node => node.online && node.id !== this.portal.currentNodeId)
+            const online = this.nodes.slice(1).filter(node => node.online)
             const onlineIDs = new Set(online.map(node => node.id))
             for (const id of this.readings.keys()) {
                 if (!onlineIDs.has(id)) {
@@ -124,25 +154,22 @@ export default toNative(NodeResources)
         <span class="row-icon resource-section-icon"><i class="fas fa-sitemap"></i></span>
         <h2 class="resource-section-title">{{ $t('节点资源') }}</h2>
       </div>
-      <span v-if="nodes.length" class="badge-sm badge-muted tabular-nums">{{ $t('{0} / {1} 在线', onlineCount, nodes.length) }}</span>
+      <span class="badge-sm badge-muted tabular-nums">{{ $t('{0} / {1} 在线', onlineCount, nodes.length) }}</span>
     </div>
     <p v-if="portal.nodesLoadFailed" class="mt-3 text-sm text-amber-700">{{ $t('加载失败，请刷新重试') }}</p>
     <p v-else-if="portal.nodesLoading" class="mt-3 text-sm text-slate-500">{{ $t('加载中...') }}</p>
-    <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3" :class="{ 'resource-nodes-single': nodes.length === 1 }">
+    <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
       <article
-        v-for="node in nodes" :key="node.id"
-        :aria-current="node.id === portal.currentNodeId ? 'true' : undefined"
-        :class="[
-          'resource-node',
-          node.id === portal.currentNodeId ? 'border-primary-200 bg-primary-50/40' : 'border-slate-200/70 bg-slate-50/60',
-          node.online && node.id !== portal.currentNodeId && 'transition-colors hover:border-primary-300 focus-within:ring-2 focus-within:ring-primary-500'
-        ]"
+        v-for="(node, index) in nodes" :key="node.id"
+        class="resource-node"
+        :aria-current="index === 0 ? 'true' : undefined"
+        :class="index !== 0 && node.online && 'transition-colors hover:border-primary-300 focus-within:ring-2 focus-within:ring-primary-500'"
       >
         <div class="flex items-center gap-2.5">
           <span class="row-icon bg-white text-primary-600"><i :class="['fas text-xs', node.id ? 'fa-server' : 'fa-sitemap']"></i></span>
           <div class="min-w-0 flex-1">
             <a
-              v-if="node.online && node.id !== portal.currentNodeId"
+              v-if="index !== 0 && node.online"
               :href="nodeOverviewPath(node.id)" :title="node.name"
               class="item-title-sm hover:text-primary-600 after:absolute after:inset-0"
             >
@@ -151,7 +178,7 @@ export default toNative(NodeResources)
             <span v-else class="item-title-sm" :title="node.name">{{ node.name }}</span>
             <p v-if="node.hostname || node.os || node.arch" class="truncate text-xs text-slate-500">{{ [node.hostname, node.os, node.arch].filter(Boolean).join(' · ') }}</p>
           </div>
-          <span v-if="node.online && node.id === portal.currentNodeId" class="badge-sm badge-primary shrink-0">{{ $t('当前节点') }}</span>
+          <span v-if="index === 0" class="badge-sm badge-primary shrink-0">{{ $t('当前节点') }}</span>
           <span v-else :class="['inline-flex items-center gap-1.5 shrink-0 text-xs', nodeStatus(node).cls]">
             <span class="size-1.5 rounded-full bg-current"></span>{{ $t(nodeStatus(node).text) }}
           </span>
@@ -159,15 +186,14 @@ export default toNative(NodeResources)
         <dl class="resource-node-metrics">
           <div v-for="metric in metricValues(node)" :key="metric.label" class="min-w-0" :title="metric.detail">
             <dt class="text-xs text-slate-500">{{ $t(metric.label) }}</dt>
-            <dd class="mt-0.5 text-base font-semibold tabular-nums text-slate-900">
-              {{ metric.percent === null ? '—' : metric.percent.toFixed(1) + '%' }}
-            </dd>
+            <dd class="mt-0.5 text-base font-semibold tabular-nums text-slate-900">{{ metric.value }}</dd>
+            <dd v-if="metric.detail" class="truncate text-xs text-slate-500 tabular-nums">{{ metric.detail }}</dd>
             <div v-if="metric.percent !== null" :class="['resource-meter mt-1.5', 'resource-metric-' + metric.level]" aria-hidden="true">
               <span :style="{ width: Math.min(100, Math.max(0, metric.percent)) + '%' }"></span>
             </div>
           </div>
         </dl>
-        <p v-if="node.online && reading(node.id) === null" class="mt-2 text-xs text-amber-700">{{ $t('获取监控数据失败') }}</p>
+        <p v-if="(index === 0 || node.online) && reading(node.id) === null" class="mt-2 text-xs text-amber-700">{{ $t('获取监控数据失败') }}</p>
       </article>
     </div>
   </section>

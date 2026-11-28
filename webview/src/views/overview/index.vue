@@ -3,7 +3,7 @@ import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
-import type { DockerContainerInfo, MonitorHostRecord } from '@/service/types'
+import type { DockerContainerInfo } from '@/service/types'
 
 import { NODE_LIST_PERM } from '@/helper/node'
 
@@ -13,15 +13,13 @@ import DockerOverview from './widget/docker.vue'
 import NodeResources from './widget/nodes.vue'
 import SwarmOverview from './widget/swarm.vue'
 import SystemOverview from './widget/system.vue'
-import SystemUpdater from './widget/updater.vue'
 import WorkloadsOverview from './widget/workloads.vue'
 
 @Component({
-    components: { SystemOverview, ApisixOverview, CaddyOverview, DockerOverview, SwarmOverview, SystemUpdater, WorkloadsOverview, NodeResources }
+    components: { SystemOverview, ApisixOverview, CaddyOverview, DockerOverview, SwarmOverview, WorkloadsOverview, NodeResources }
 })
 class Overview extends Vue {
     portal = usePortal()
-    currentReading: MonitorHostRecord | null | undefined = undefined
     selfContainer: DockerContainerInfo | null = null
 
     // ─── Refs ───
@@ -54,17 +52,7 @@ class Overview extends Vue {
     }
 
     get canViewNodes() {
-        return this.portal.initialized && this.canViewHost && this.portal.hasPerm(NODE_LIST_PERM)
-    }
-
-    get currentNodeName() {
-        if (!this.canViewNodes) {
-            return ''
-        }
-        if (!this.portal.currentNodeId) {
-            return this.$t('中控')
-        }
-        return this.portal.nodes.find(node => node.id === this.portal.currentNodeId)?.name ?? ''
+        return this.portal.initialized && this.portal.hasPerm(NODE_LIST_PERM)
     }
 
     get hasAnyBlock() {
@@ -130,13 +118,12 @@ export default toNative(Overview)
     </div>
 
     <div class="mx-auto max-w-[100rem] space-y-4 px-4 py-4 sm:px-6 lg:px-7">
-      <NodeResources v-if="canViewNodes" ref="nodesRef" :current-reading="currentReading" />
-
       <!-- 系统信息区块 -->
-      <div v-if="canViewHost">
-        <SystemUpdater :self-container="canViewWorkloads ? selfContainer : null" />
-        <SystemOverview ref="systemRef" :node-name="currentNodeName" @sample="currentReading = $event" />
-      </div>
+      <SystemOverview v-if="canViewHost" ref="systemRef" :self-container="canViewWorkloads ? selfContainer : null">
+        <template v-if="canViewNodes" #summary="{ reading, network }">
+          <NodeResources ref="nodesRef" :current-reading="reading" :network="network" />
+        </template>
+      </SystemOverview>
 
       <section v-if="canViewWorkloads || portal.hasPerm('GET /api/docker/info')" class="card resource-panel resource-service-docker">
         <WorkloadsOverview v-if="canViewWorkloads" ref="workloadsRef" @self-container="selfContainer = $event" />

@@ -6,17 +6,19 @@ import { Component, Prop, Ref, Vue, Watch, toNative } from 'vue-facing-decorator
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { MonitorHostRecord } from '@/service/types'
+import type { DockerContainerInfo, MonitorHostRecord } from '@/service/types'
 
 import Chart, { makeLineDataset, makeMonitorChartOptions, makeMonitorScale } from '@/helper/chart'
 import { POLL_INTERVAL, hexToRgba } from '@/helper/format'
 import { formatMonitorBytes, hostCpuUsage, monitorCapacity, monitorTimeLabel, usageLevel, usagePercent } from '@/helper/monitor'
 
-@Component({ emits: ['sample'] })
+import SystemUpdater from './updater.vue'
+
+@Component({ components: { SystemUpdater } })
 class SystemOverview extends Vue {
     portal = usePortal()
 
-    @Prop({ default: '' }) readonly nodeName!: string
+    @Prop({ default: null }) readonly selfContainer!: DockerContainerInfo | null
 
     readonly ranges = [
         { label: '5分钟', seconds: 300 },
@@ -27,11 +29,11 @@ class SystemOverview extends Vue {
     readonly memoryColor = '#7c3aed'
     range = 300
     records: MonitorHostRecord[] = []
+    currentReading: MonitorHostRecord | null | undefined = undefined
     latest: MonitorHostRecord | null = null
     version = ''
     sampleTime = monitorTimeLabel
     historyState: 'loading' | 'ready' | 'failed' = 'loading'
-    sampleState: 'loading' | 'ready' | 'failed' = 'loading'
     private chart: LineChart<'line', Point[]> | null = null
     private timer: ReturnType<typeof setInterval> | null = null
     private readonly lifetime = new AbortController()
@@ -81,7 +83,10 @@ class SystemOverview extends Vue {
                 sent += item.bytesSent - old.bytesSent
             }
         }
-        return matched ? { received: received / period, sent: sent / period } : null
+        return matched ? {
+            received: formatMonitorBytes(received / period, true),
+            sent: formatMonitorBytes(sent / period, true)
+        } : null
     }
 
     get statCards() {
@@ -102,11 +107,11 @@ class SystemOverview extends Vue {
             unit: card.percent === null ? '' : '%'
         }))
         const network = this.networkRates
-        const [download, unit] = network ? formatMonitorBytes(network.received, true).split(' ') : ['—', '']
+        const [download, unit] = network?.received.split(' ') ?? ['—', '']
         return [...cards, {
             label: '网络速率', icon: 'fa-network-wired', level: 'normal', percent: null,
             value: network ? '↓ ' + download : download, unit,
-            detail: network ? '↑ ' + formatMonitorBytes(network.sent, true) : this.$t('等待更多采样')
+            detail: network ? '↑ ' + network.sent : this.$t('等待更多采样')
         }]
     }
 
@@ -141,7 +146,7 @@ class SystemOverview extends Vue {
         }
         const { signal } = this.lifetime
         this.sampling = true
-        let reading: MonitorHostRecord | null | undefined
+        let reading: MonitorHostRecord | null
         try {
             const { payload } = await api.overviewMonitor({ since: 0 }, { signal })
             reading = payload?.data?.system ? payload : null
@@ -153,8 +158,7 @@ class SystemOverview extends Vue {
         if (signal.aborted) {
             return
         }
-        this.sampleState = reading ? 'ready' : 'failed'
-        this.$emit('sample', reading)
+        this.currentReading = reading
         if (reading) {
             this.latest = reading
             this.storeRecords([...this.records, reading])
@@ -275,7 +279,9 @@ export default toNative(SystemOverview)
 
 <template>
   <section class="space-y-4">
-    <div class="card resource-panel">
+    <slot name="summary" :reading="currentReading" :network="currentReading ? networkRates : null" />
+    <SystemUpdater :self-container="selfContainer" />
+    <div v-if="!$slots.summary" class="card resource-panel">
       <div class="resource-section-header">
         <div class="resource-section-heading max-w-full">
           <div class="row-icon resource-section-icon">
@@ -284,21 +290,20 @@ export default toNative(SystemOverview)
           <div class="min-w-0">
             <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <h2 class="resource-section-title">{{ $t('当前主机') }}</h2>
-              <span class="truncate text-sm text-slate-600" :title="nodeName || system?.hostName">{{ nodeName || system?.hostName || '—' }}</span>
+              <span class="truncate text-sm text-slate-600" :title="system?.hostName">{{ system?.hostName || '—' }}</span>
             </div>
             <p v-if="system" class="text-xs resource-host-muted truncate mt-0.5">
-              <template v-if="nodeName">{{ system.hostName }} <span class="mx-1">·</span></template>
               {{ system.platform }} <span class="mx-1">·</span> {{ system.kernelArch }}
             </p>
           </div>
         </div>
         <div class="resource-host-status text-xs tabular-nums">
-          <span v-if="sampleState === 'loading'">{{ $t('加载中...') }}</span>
-          <span v-else-if="sampleState === 'failed'" class="text-amber-700">{{ $t('采样失败') }}</span>
-          <template v-else-if="latest">
+          <span v-if="currentReading === undefined">{{ $t('加载中...') }}</span>
+          <span v-else-if="currentReading === null" class="text-amber-700">{{ $t('采样失败') }}</span>
+          <template v-else>
             <span class="resource-live-dot size-1.5 shrink-0 rounded-full"></span>
             <span>{{ $t('实时采集') }}</span>
-            <time class="resource-host-muted font-mono">{{ sampleTime(latest.ts) }}</time>
+            <time class="resource-host-muted font-mono">{{ sampleTime(currentReading.ts) }}</time>
           </template>
         </div>
       </div>
